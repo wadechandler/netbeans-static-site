@@ -1,0 +1,529 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <!-- -*- xhtml -*- -->
+        <title>Руководство по созданию модулей шаблонов файлов на платформе NetBeans 6.0</title>
+    <link rel="stylesheet" type="text/css" href="../../../netbeans.css"> 
+        <meta name="AUDIENCE" content="NBUSER">
+        <meta name="TYPE" content="ARTICLE">
+        <meta name="EXPIRES" content="N">
+        <meta name="developer" content="gwielenga@netbeans.org">
+        <meta name="indexed" content="y">
+        <meta name="description"
+        content="A short guide to using the Nodes API.">
+        <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+    <body>
+    <h1>Руководство по созданию модулей шаблонов файлов на платформе NetBeans</h1>
+
+    <p>В этом руководстве демонстрируется создание модуля, содержащего шаблоны файлов. После установки этого модуля в среде IDE в мастере создания файла будут доступны шаблоны файлов. Наличие модуля, содержащего шаблоны файлов, упрощает их совместное использование: среда IDE позволяет создать двоичный файл, который будет доступен другим пользователям посредством его установки с помощью диспетчера подключаемых модулей.
+
+    </p><p>Шаблон файла состоит из файла шаблона, файла описания в формате HTML и значка. Файл описания в формате HTML используется для вывода информации о шаблоне в мастере создания файла. Значок идентифицирует шаблон и отличает его от других шаблонов в мастере создания файла. В этом руководстве рассматривается создание нового шаблона файла путем копирования содержимого существующего шаблона файла в пустой файл. Затем после настройки файла описания для мастера создания файла и отличительного значка необходимо зарегистрировать шаблон, файл описания в формате HTML и значок в файле настройки NetBeans, т.е. в файле <tt>layer.xml</tt>.
+
+
+   </p><p><b>Содержание</b></p>
+   
+      <img  src="../../images/articles/60/netbeans-stamp60-61.gif" class="stamp" width="114" height="114" alt="Содержимое на этой странице относится к среде IDE NetBeans 6.1" title="Содержимое на этой странице относится к среде IDE NetBeans 6.1"> </p>
+      <ul class="toc">
+        <li><a href="#freemarker">Введение в FreeMarker</a></li>
+        <li><a href="#creatingthemoduleproject">Создание проекта модуля</a></li>
+        <li><a href="#creatingandgettingtoknowthemainfiles">Создание шаблона файла</a>
+        <ul>
+            <li><a href="#creating-the-template-file">Создание файла шаблона</a>
+            </li><li><a href="#creating-the-description-file">Создание файла описания</a>
+            </li><li><a href="#getting-an-icon">Получение значка</a>
+        </li></ul></li>
+        <li><a href="#registering">Регистрация шаблона файла</a></li>
+        <li><a href="#building">Сборка и установка модуля</a></li>
+        <li><a href="#additional">Предоставление дополнительных переменных</a></li>
+        <li><a href="#license">Предоставление лицензии на работу с проектом</a></li>
+       </ul>
+         
+<p><b>Для работы с этим руководством требуется программное обеспечение и ресурсы, перечисленные в следующей таблице. </b></p>
+
+     <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Программное обеспечение или ресурс</th>
+                <th class="tblheader" scope="col">Требуемая версия</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1">Среда IDE NetBeans</td>
+                <td class="tbltd1">версия <a href="http://download.netbeans.org/netbeans/6.1/final/">версия 6.1</a> или<br>
+                версия 6.0</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">Комплект для разработчика на языке Java (JDK)</td>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">версия 6</a> или<br>
+                версия 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+
+ <p class="tips">Дополнительно, в целях поиска и устранения ошибок, можно <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=3755">загрузить готовые примеры</a> и изучить исходный код.
+   
+
+ </p><h2 class="tutorial"><a name="freemarker"></a>Введение в FreeMarker</h2>
+   
+
+<p>Начиная с версии среды IDE NetBeans 6.0, для определения шаблонов файлов можно дополнительно использовать язык шаблонов <a href="http://freemarker.org/">FreeMarker</a>. Так определяются некоторые шаблоны, связанные со средой IDE. Например, шаблон класса Java определен следующим образом:
+
+</p><pre class="examplecode">&lt;#assign licenseFirst = &quot;/*&quot;&gt;
+&lt;#assign licensePrefix = &quot; * &quot;&gt;
+&lt;#assign licenseLast = &quot; */&quot;&gt;
+&lt;#include &quot;../Licenses/license-${project.license}.txt&quot;&gt;
+
+&lt;#if package?? &amp;&amp; package != &quot;&quot;&gt;
+package ${package};
+
+&lt;/#if&gt;
+/**
+ *
+ * @author ${user}
+ */
+public class ${name} {
+
+}</pre>
+
+<p>В приведенном выше шаблоне можно увидеть преимущество использования FreeMarker, который позволяет добавить к шаблонам <i>логику</i> с помощью таких <i>директив</i>, как if/elseif/else, и операторов цикла. Для ознакомления с полным описанием языка шаблонов FreeMarker см.&nbsp;документ <a href="http://freemarker.org/docs/index.html">FreeMarker Manual</a>, в частности, главу <a href="http://freemarker.org/docs/dgui_template_directives.html">Directives</a>. В этом руководстве, среди прочего, описаны действия, которые необходимо выполнить для включения языка FreeMarker в шаблоны файлов.
+    
+
+
+    <!-- ===================================================================================== -->
+
+    </p><h2 class="tutorial"><a name="creatingthemoduleproject"></a>Создание проекта модуля</h2>
+    
+    
+        <p>Сначала выполните все действия в мастере создания проекта модуля, в результате чего для нового модуля будет создана структура исходных файлов со всеми минимальными требованиями.
+    
+    </p><ol>
+    <li>Выберите &quot;File &gt; New Project&quot; (Ctrl-Shift-N). В области &quot;Categories&quot; выберите &quot;NetBeans Modules&quot;. В области &quot;Projects&quot; выберите &quot;Module Project&quot; и нажмите кнопку &quot;Next&quot;.</li>
+    <p></p><li>На экране &quot;Name and Location&quot; введите <tt>AdditionalFileTemplates</tt> в поле &quot;Project Name&quot;. В поле &quot;Project Location&quot; укажите любой каталог на компьютере. Установите переключатель &quot;Standalone Module&quot; и флажок &quot;Set as Main Project&quot;. Нажмите кнопку &quot;Next&quot;.
+
+    <p></p></li><li>На экране &quot;Basic Module Configuration&quot; замените <tt>yourorghere</tt> в поле &quot;Code Name Base&quot; на <tt>myorg</tt>; чтобы основа названия кода выглядела как <tt>org.myorg.additionalfiletemplates</tt>. Добавьте пробелы к значению поля &quot;Module Display Name&quot; по умолчанию; имя должно измениться на <tt>Additional File Templates</tt>. Не изменяйте местоположение пакета локализации и файла layer.xml для их сохранения в пакете с именем <tt>org/myorg/additionalfiletemplates</tt>. Нажмите кнопку &quot;Finish&quot;.</li></ol>
+
+    <p> Средой IDE будет создан проект <tt>Additional File Templates</tt>. Проект содержит все исходные файлы и метаданные проекта, например, сценарий сборки Ant. Проект открывается в среде IDE. Логическую структуру проекта можно просмотреть в окне &quot;Projects&quot; (Ctrl-1), а структуру файлов &ndash; в окне &quot;Files&quot; (Ctrl-2). Например, окно &quot;Projects&quot; теперь должно выглядеть следующим образом:
+
+    </p><p><img border="1" src="../../images/tutorials/filetemplates/initial-projects-window-60.png" alt="Начальное окно &quot;Projects&quot;">
+
+   
+    <br />
+
+    <!-- ===================================================================================== -->
+    </p><h2><a name="creating-the-file-template"></a>Создание шаблона файла</h2>
+    <p>Шаблон файла состоит из файла шаблона, файла описания в формате HTML и значка. Простой способ создания нового шаблона файла состоит в копировании содержимого существующего шаблона файла в пустой файл. Затем после настройки файла описания для мастера создания файла и отличительного значка необходимо зарегистрировать шаблон в файле <tt>layer.xml</tt>.
+
+  
+    </p><div class="indent">
+        <p></p><h3 class="tutorial"><a name="creating-the-template-file"></a>Создание файла шаблона</h3>
+<p>
+        
+        </p><ol>
+<li>Щелкните правой кнопкой мыши узел <tt>Additional File Templates</tt> и выберите &quot;New&nbsp;&gt; Other&quot;. В мастере создания файла в области &quot;Categories&quot; выберите &quot;Other&quot; и в области &quot;File Types&quot; выберите &quot;HTML&quot;. Нажмите кнопку &quot;Next&quot;. 
+            <p></p></li><li>Введите <tt>Description</tt> в &quot;File Name&quot;. Нажмите кнопку &quot;Browse&quot; и перейдите к <tt>src/org/myorg/additionalfiletemplates</tt>. Нажмите кнопку &quot;Select Folder&quot;. Нажмите кнопку &quot;Finish&quot;.</p>
+
+            <p>В редакторе исходного кода откроется новый файл HTML с именем <tt>HTML.html</tt>, содержащий стандартную структуру файла HTML:
+
+              </p><pre class="examplecode">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot;&gt;
+
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+  
+  &lt;/body&gt;
+&lt;/html&gt;</pre>
+
+
+            <p></p></li><li>Измените файл HTML в соответствии с требованиями. При необходимости можно добавить следующие предварительно определенные переменные:
+            
+<p></p><ul>
+<li>${date} вставляет текущую дату в следующем формате: Feb 16, 2008.
+</li><li>${encoding} вставляет кодировку по умолчанию, например: UTF-8.
+</li><li>${name} вставляет имя файла.
+</li><li>${nameAndExt} вставляет имя файла вместе с расширением.
+</li><li>${package} вставляет имя пакета, в котором был создан файл.
+</li><li>${time} вставляет текущее время в следующем формате: 7:37:58 PM.
+</li><li>${user} вставляет имя пользователя.
+</li></ul>
+
+<p><b class="notes">Примечание:</b> Значения этих переменных можно установить в окне Template Manager, которое можно вызвать из меню &quot;Tools&quot;. Выполните прокрутку вниз до пункта &quot;User Configuration Properties&quot;. Файл <tt>user.properties</tt> в этом узле можно использовать для установки перечисленных выше значений с целью замены значений, предоставляемых системой. Однако обычно это не требуется, так как для работы достаточно стандартных значений указанных переменных.
+
+</p><p>Кроме предварительно определенных переменных, пользователям через модуль могут быть предоставлены дополнительные переменные. Это вопрос рассматривается далее в данном руководстве. Для добавления логики к шаблону можно также использовать полный список директив FreeMarker:
+
+</p><p></p><ul>
+<li>#assign
+</li><li>#else
+</li><li>#elseif
+</li><li>#end
+</li><li>#foreach
+</li><li>#if
+</li><li>#include
+</li><li>#list
+</li><li>#macro
+</li><li>#parse
+</li><li>#set
+</li><li>#stop
+</li></ul>
+
+<p>В качестве примера рассмотрим определение шаблона класса Java:
+
+</p><pre class="examplecode">&lt;#assign licenseFirst = &quot;/*&quot;&gt;
+&lt;#assign licensePrefix = &quot; * &quot;&gt;
+&lt;#assign licenseLast = &quot; */&quot;&gt;
+&lt;#include &quot;../Licenses/license-${project.license}.txt&quot;&gt;
+
+&lt;#if package?? &amp;&amp; package != &quot;&quot;&gt;
+package ${package};
+
+&lt;/#if&gt;
+/**
+ *
+ * @author ${user}
+ */
+public class ${name} {
+
+}</pre>
+
+<p>Для получения сведений о директиве #assign см. <a href="#license">Предоставление лицензии на работу с проектом</a>. Для ознакомления с полным описанием языка шаблонов FreeMarker см.&nbsp;документ <a href="http://freemarker.org/docs/index.html">FreeMarker Manual</a>, в частности, главу <a href="http://freemarker.org/docs/dgui_template_directives.html">Directives</a>.
+
+        </p></li>
+
+
+        <h3 class="tutorial"><a name="creating-the-description-file"></a>Создание файла описания</h3>
+
+        <ol>
+            <li>Щелкните правой кнопкой мыши узел <tt>org.myorg.additionalfiletemplates</tt> и выберите &quot;New&nbsp;&gt; Other&quot;. В области &quot;Categories&quot; выберите &quot;Other&quot;. В области &quot;File Types&quot; выберите &quot;HTML File&quot;. Нажмите кнопку &quot;Next&quot;. Введите <tt>HTML</tt> в &quot;File Name&quot;. Нажмите кнопку &quot;Browse&quot; и перейдите к <tt>src/org/myorg/additionalfiletemplates</tt>. Нажмите кнопку &quot;Select Folder&quot;. Нажмите кнопку &quot;Finish&quot;.
+
+            <p>В редакторе исходного кода откроется пустой файл HTML, и его узел появится в окне &quot;Projects&quot;.
+
+            </p><p></p></li><li>Введите &quot;<tt>Creates new HTML file</tt>&quot; (без кавычек) между тегами <tt>&lt;body&gt;</tt>. Файл должен выглядеть следующим образом:
+
+            <pre class="examplecode">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot;&gt;
+&lt;html&gt;
+   &lt;head&gt;
+      &lt;title&gt;&lt;/title&gt;
+   &lt;/head&gt;
+   &lt;body&gt;
+      Creates new HTML file.
+   &lt;/body&gt;
+&lt;/html&gt;</pre>
+
+        </li></ol>
+
+        <h3 class="tutorial"><a name="getting-an-icon"></a>Получение значка</h3>
+
+        <p>В мастере создания файла шаблон файла сопровождается значком. Он идентифицирует шаблон и отличает его от других шаблонов файлов. Размер значка должен быть 16&times;16&nbsp;пикселей. 
+        
+        </p><p>Присвойте значку имя <tt>icon.png</tt> и добавьте его к пакету <tt>org.myorg.additionalfiletemplates</tt>.
+
+        </p><p>Окно &quot;Projects&quot; теперь должно выглядеть следующим образом:
+
+        </p><p align="left"><img border="1" src="../../images/tutorials/filetemplates/final-projects-window-60.png" alt="Итоговое окно &quot;Projects&quot;">
+
+    </p></ol></div>
+    <br />
+
+    <!-- ===================================================================================== -->
+
+    <h2><a name="registering"></a>Регистрация шаблона файла</h2>
+    <p>После создания шаблона файла его следует зарегистрировать в файловой системе среды NetBeans. С этой целью создается файл <tt>layer.xml</tt>.</p>
+
+    <ol><li>Добавьте следующие строки между тегами <tt>&lt;filesystem&gt;</tt> в файле <tt>layer.xml</tt>:
+
+<pre class="examplecode">&lt;folder name=&quot;Templates&quot;&gt;
+        
+        &lt;folder name=&quot;Other&quot;&gt;
+            
+            &lt;attr name=&quot;SystemFileSystem.localizingBundle&quot; stringvalue=&quot;org.myorg.additionalfiletemplates.Bundle&quot;/&gt;
+            &lt;file name=&quot;MyHTML.html&quot; url=&quot;HTML.html&quot;&gt;
+                &lt;attr name=&quot;template&quot; boolvalue=&quot;true&quot;/&gt;
+                &lt;attr name=&quot;SystemFileSystem.localizingBundle&quot; stringvalue=&quot;org.myorg.additionalfiletemplates.Bundle&quot;/&gt;
+                &lt;attr name=&quot;SystemFileSystem.icon&quot; urlvalue=&quot;nbresloc:/org/myorg/additionalfiletemplates/icon.png&quot;/&gt;
+                &lt;attr name=&quot;templateWizardURL&quot; urlvalue=&quot;nbresloc:/org/myorg/additionalfiletemplates/Description.html&quot;/&gt;
+                <b>&lt;!--Эту строку следует использовать только в том случае, если в шаблоне используется язык шаблонов FreeMarker:--&gt;</b>
+                &lt;attr name=&quot;javax.script.ScriptEngine&quot; stringvalue=&quot;freemarker&quot;/&gt;
+            &lt;/file&gt;
+            
+        &lt;/folder&gt;
+        
+&lt;/folder&gt;</pre>
+
+        <p></p></li><li>Добавьте отображаемое имя к файлу <tt>Bundle.properties</tt>:
+
+        <p></p><pre class="examplecode">Templates/Other/MyHTML.html=My HTML File</pre>
+
+    </li></ol>
+
+    <br />
+
+    <!-- ======================================================================================= -->
+
+    <h2><a name="building"></a>Сборка и установка модуля</h2>
+    <p>Для сборки и установки модуля в среде&nbsp;IDE используется сценарий сборки Ant. Сценарий сборки создается автоматически при создании проекта модуля.</p>
+    <div class="indent">
+
+        <h3 class="tutorial">Установка модуля NetBeans</h3>
+
+            <p>В окне &quot;Projects&quot; щелкните правой кнопкой мыши проект <tt>Additional File Templates</tt> и выберите &quot;Install/Reload&quot; в поле &quot;Target Platform&quot;. </p>
+            <p>Модуль компонуется и устанавливается в целевой среде IDE или платформе. После открытия целевой среды IDE или платформы новый модуль можно протестировать. По умолчанию целевая среда IDE или платформа представляют собой систему, используемую текущим экземпляром среды разработки IDE. 
+            </p><p><b class="notes">Примечание:</b> При запуске модуля используется временный каталог тестового пользователя, а не каталог пользователя среды разработки IDE. 
+
+        </p><h3 class="tutorial">Работа с модулем NetBeans</h3>
+
+        <ol>
+            <li>Выберите &quot;File &gt; New Project&quot; (Ctrl-Shift-N) и создайте новый проект.
+            <p></p></li><li>Щелкните правой кнопкой мыши проект и выберите &quot;New &gt; Other&quot;. В открывшемся мастере создания файла отобразится новая категория с новым типом файла. Экран должен выглядеть примерно следующим образом (значок может быть другим):</p>
+            <p><img border="1" src="../../images/tutorials/filetemplates/new-file-wizard-60.png" alt="Мастер создания файла">
+            </p><p></p></li><li>Выберите новый тип файла, нажмите кнопку &quot;Next&quot; и создайте новый файл. При нажатии кнопки &quot;Finish&quot; только что созданный шаблон должен появиться в редакторе исходного кода.
+        </li></ol>
+        <h3 class="tutorial">Создание совместно используемого двоичного модуля</h3>
+  
+        <ol>
+            <li>В окне &quot;Projects&quot; щелкните правой кнопкой мыши проект <tt>Additional File Templates</tt> и выберите &quot;Create NBM&quot;.
+
+            <p>Будет создан файл NBM, который можно просмотреть в окне &quot;Files&quot; (Ctrl-2):
+            </p><p><img border="1" src="../../images/tutorials/filetemplates/shareable-nbm-60.png" alt="Совместно используемый файл NBM">
+            </p></li><li>Этот файл можно распространить среди коллег, например, по электронной почте.
+        </li></ol>
+ 
+</div>
+ <!-- ===================================================================================== -->
+
+    <h2><a name="additional"></a>Предоставление дополнительных переменных</h2>
+    <p>Как было указано ранее, предварительно определенные переменные, такие как ${user} и ${time}, можно дополнить собственными переменными. Например, для передачи переменной, соответствующей списку имен, шаблон можно определить следующим образом:
+    
+     </p><pre class="examplecode">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot;&gt;
+
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+  
+        &lt;#list names as oneName&gt;
+            &lt;b&amp;gt${oneName}&lt;/b&amp;gt
+        &lt;/#list&gt;
+
+  &lt;/body&gt;
+&lt;/html&gt;</pre>
+
+<p>Приведенная выше директива #list языка FreeMarker выполняет итерации с помощью переменной &quot;names&quot; с каждым экземпляром, называемым &quot;oneName&quot;. Каждое значение итерации выводится в файл между тегами выделения полужирным. Значение &quot;names&quot; может поступать из различных мест; как правило, это экран мастера, где пользователь, в данном случае, должен был выбрать ряд имен из списка.
+    
+    </p><p>Для реализации такой процедуры, т.е. выполнения итераций с помощью новой переменной, см. описание в документе <a href="http://netbeans.dzone.com/news/freemarker-netbeans-ide-60-first-scenario">FreeMarker in NetBeans IDE 6.0: First Scenario</a>, а также обсуждение <tt>DataObject.createFromTemplate(df, targetName, hashMap)</tt> в <a href="http://blogs.oracle.com/geertjan/entry/freemarker_baked_into_netbeans_ide1">этом сообщении блога</a>.
+
+
+    <br />
+ <!-- ===================================================================================== -->
+
+    </p><h2><a name="license"></a>Предоставление лицензии на работу с проектом</h2>
+   
+
+<p>Еще один не рассмотренный ранее вопрос относится к директиве #assign языка FreeMarker, применение которой уместно в случае, если пользователю разрешено при создании файла создавать лицензию на работу с проектом. Для отражения требований пользователя по лицензированию можно добавить в шаблон файла директивы лицензирования. После этого все файлы в проекте пользователя будут создаваться с этими директивами лицензирования. 
+
+</p><p>Для этого выполните следующие действия:
+
+</p><ol>
+<li>Перейдите в меню &quot;Tools&quot;. Выберите &quot;Templates&quot;. Откройте в редакторе шаблон &quot;Java | Java Class&quot;:
+<p></p><p>
+</p><p><img src="http://blogs.oracle.com/geertjan/resource/freemarker-in-nb-2.png" border="1"/>
+
+</p><p></p></li><li>Указанный выше шаблон и способы его определения при помощи FreeMarker были описаны ранее. Тем не менее, рассмотрим подробно первые четыре строки:
+
+<p></p><pre>&lt;#assign licenseFirst = &quot;/*&quot;&gt;
+&lt;#assign licensePrefix = &quot; * &quot;&gt;
+&lt;#assign licenseLast = &quot; */&quot;&gt;
+&lt;#include &quot;../Licenses/license-${project.license}.txt&quot;&gt;</pre>
+
+<p>Эти четыре строки имеют отношение к <i>лицензированию</i>. Последняя строка определяет лицензию, которая будет использоваться для каждого проекта. Первые три строки определяют символы перед каждой строкой в лицензии и после нее. Выше приведены четыре строки для исходных файлов Java. Этот же набор определений можно найти в начале шаблона файла &quot;Properties&quot;:
+
+</p><p></p><pre>&lt;#assign licensePrefix = &quot;# &quot;&gt;
+&lt;#include &quot;../Licenses/license-${project.license}.txt&quot;&gt;</pre>
+
+<p>В первой строке сообщается, что каждой строке лицензии будут предшествовать символы &quot;#&quot; вместо символа &quot;*&quot;, который является префиксом для исходных файлов Java (&quot;/*&quot;&nbsp;&ndash; для первой строки и &quot;*/&quot; &ndash; для последней). Для проверки создайте исходный файл Java, а затем файл &quot;Properties&quot;. В обоих случаях появится лицензия. Однако символы, предшествующие каждой строке и завершающие ее, будут разными из-за указанных выше определений.
+
+</p><p></p></li><li>Теперь рассмотрим непосредственно лицензию. Найдите следующую строку в приведенных выше шаблонах:
+
+<p></p><pre>&lt;#include &quot;../Licenses/license-${project.license}.txt&quot;&gt;</pre>
+
+<p>Обратите внимание на эту часть:
+
+</p><p></p><pre>${project.license}</pre>
+
+<p>Поместите этот фрагмент в качестве ключа в файл приложения <tt>nbproject/project.properties</tt>. Теперь добавьте значение. Например:
+
+</p><pre>project.license=apache</pre>
+
+<p>Затем снова откройте окно Template Manager в папке &quot;Licenses&quot;. На экране появится несколько шаблонов. Создайте новый шаблон с именем &quot;<tt>license-apache.txt</tt>&quot;. Теперь можно просто скопировать существующий шаблон и вставить его в ту же самую категорию в Template Manager. В следующий раз при создании файла, который определен шаблоном FreeMarker, содержащим строку:
+
+</p><p></p><pre>&lt;#include &quot;../Licenses/license-${project.license}.txt&quot;&gt;</pre>
+
+... в только что созданный файл будет вложена указанная лицензия.
+
+</li></ol>
+
+<p>Таким образом, среда IDE NetBeans 6.0 позволяет пользователю определять для каждого проекта лицензию, которая должна отображаться в каждом соответствующем файле. Кроме того, представим, что пользователю необходимо создать новый проект с другой лицензией. При условии, что у пользователя в окне Template Manager есть ряд лицензий, использовать новую лицензию столь же просто, как добавить к файлу <tt>nbproject/project.properties</tt> пару &quot;ключ-значение&quot;. Невозможное стало возможным благодаря поддержке языка FreeMarker в среде IDE NetBeans 6.0. Для получения дополнительных сведений о лицензировании, особенно о комментариях в конце лицензии, см. <a href="http://blogs.oracle.com/geertjan/date/20071126">это сообщение в блоге</a>.
+</p><p>
+
+
+    <br />
+
+<br>
+   </p><div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20NetBeans%206.0%20File%20Template%20Module%20Tutorial">Мы ждем ваших отзывов</a></div>
+<br style="clear:both;" />
+    
+ <!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Что дальше?</h2>
+
+<p>Для получения дополнительной информации о создании и разработке модуля NetBeans см. следующие материалы: 
+  </p><ul>
+	  <p></p><li><a href="https://netbeans.org/kb/trails/platform.html">Другие связанные руководства</a></li>
+	  <p></p><li><a href="https://netbeans.org/download/dev/javadoc/">Документация Javadoc по интерфейсам API в среде NetBeans</a></li>
+  </ul>
+  
+  <hr>
+    
+    <!-- ======================================================================================== -->
+
+
+<h2><a name="version"></a>Версии </h2>
+  
+    <p>
+
+    <table width="76%" border="1">
+        <tbody>
+            <tr>
+                <td>
+                    <div align="left"><b>Версия</b></div>
+                </td>
+                <td>
+                    <div align="left"><b>Дата</b></div>
+                </td>
+                <td>
+                    <div align="left"><b>Изменения</b></div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    1
+                </td>
+                <td>
+                    26&nbsp;июня 2005 г.
+                </td>
+                <td>
+                    Начальная версия
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    2
+                </td>
+                <td>
+                    28&nbsp;июня 2005&nbsp;г.
+                </td>
+                <td>
+                    <ul>
+                    <li>К файлу описаний добавлены теги выделения полужирным для отображения в диалоговом окне &quot;Description&quot; тегов HTML.
+                    </li><li>Добавлены атрибуты упорядочивания.
+                    </li><li>Отображаемые имена перемещены в &quot;Bundle.properties&quot;.
+                    </li><li>Изменен снимок экрана в разделе &quot;Работа с подключаемым модулем NetBeans&quot;.
+                    </li><li>В качестве расширения имени файла к файлу &quot;BrandedJavaClass&quot; добавлен &quot;.template&quot;, так как <tt>layer.xml</tt> осуществляет поиск файла с именем &quot;BrandedJavaClass.template&quot;. Также изменен снимок экрана окна &quot;Projects&quot; в конце раздела &quot;Создание шаблона файла&quot; для отражения расширения имени файла &quot;.template&quot;.
+                </li></ul></td>
+            </tr>
+            <tr>
+                <td>
+                    3
+                </td>
+                <td>
+                    2 октября 2005&nbsp;г.
+                </td>
+                <td>
+                    <ul>
+                    <li>Все руководство пересмотрено в соответствии с последней версией среды. Внесено несколько изменений, главным образом потому, что шаблоны заменили собой окно &quot;Options&quot; для шаблонов.
+                    </li><li>К введению добавлены новые 2-ой и 3-ий параграфы, поясняющие, что при создании нового типа файла необходимость в данном руководстве отсутствует.
+                </li></ul></td>
+            </tr>
+            <tr>
+                <td>
+                    4
+                </td>
+                <td>
+                    3 октября 2005 г.
+                </td>
+                <td>
+                    <ul>
+                    <li>templateWizard [Iterator|URL] в layer.xml заменен на instantiating[Iterator|WizardURL], так как templateWizard[Iterator|URL] устарел.</li></ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    5
+                </td>
+                <td>
+                    16 марта 2006&nbsp;г.
+                </td>
+                <td>
+                    <ul>
+                        <li>Все руководство пересмотрено; немного скорректирован междустрочный интервал, все функционирует по-прежнему.
+                        </li><li>Необходимо заменить снимки экрана из-за отличающихся значков.
+                        </li><li>Необходимо добавить к документу значок, а не только ссылку на местоположение.
+                        </li><li>Необходимо показать, как в мастере создания файла можно одновременно создать несколько шаблонов файлов. </li></ul>
+                </td>
+            </tr>
+              <tr>
+                <td>
+                    6
+                </td>
+                <td>
+                    12 сентября 2006&nbsp;г.
+                </td>
+                <td>
+                    <ul>
+                        <li>Все руководство пересмотрено в соответствии с версией среды IDE NetBeans 5.5 Beta 2.
+                        </li><li>Проблемы отсутствуют, все работает в точности, как описано.
+                        </li><li>Обновлены некоторые снимки экранов.
+                        </li><li>Зафиксированы отступы в коде. </li></ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    7
+                </td>
+                <td>
+                    9&nbsp;июня 2007&nbsp;г.
+                </td>
+                <td>
+                    Начало перехода к NetBeans 6.
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    8
+                </td>
+                <td>
+                    16 февраля 2008&nbsp;г.
+                </td>
+                <td>
+                    Начало переноса информации в данное руководство из <a href="http://blogs.oracle.com/geertjan/entry/freemarker_baked_into_netbeans_ide1">этого сообщения в блоге</a>, <a href="http://blogs.oracle.com/geertjan/entry/freemarker_baked_into_netbeans_ide2">этого сообщения в блоге</a>, а также из еще одного <a href="http://blogs.oracle.com/geertjan/date/20071126">сообщения в блоге</a> и из <a href="http://netbeans.dzone.com/news/freemarker-netbeans-ide-60-first-scenario">данной статьи</a>.
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    9
+                </td>
+                <td>
+                    15 апреля 2008&nbsp;г.
+                </td>
+                <td>
+                    Стили (значок, оглавление, таблица требуемого программного обеспечения) обновлены в соответствии с новым форматом.
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    </p></body>
+</html>

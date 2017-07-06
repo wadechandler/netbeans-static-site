@@ -1,0 +1,558 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>NetBeans Platform CRUD Tutorial Using Maven</title>
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+        <meta name="AUDIENCE" content="NBUSER"/>
+        <meta name="TYPE" content="ARTICLE"/>
+        <meta name="EXPIRES" content="N"/>
+        <meta name="indexed" content="y"/>
+        <meta name="description"
+              content="This tutorial demonstrates how to use the the Maven build framework to create a simple
+              NetBeans Platform application that can read and write to a database."/>
+        <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+    <body>
+
+        <h1>NetBeans Platform CRUD Tutorial Using Maven</h1>
+
+        <p>This tutorial demonstrates how to use the Maven build framework to create a simple
+            NetBeans Platform application that can read from and write to a database.
+            In this document you will use Maven archetypes to create the NetBeans Platform application and module,
+            and the Swing UI toolkit and "Matisse" GUI Builder to create window components.
+        </p>
+
+        <p class="tips">This document is based on the Ant-based <a href="nbm-crud.html">NetBeans Platform CRUD Application Tutorial</a>
+            and can be used to understand some of the differences between using Ant and Maven 
+            to develop NetBeans Platform applications.
+            After you understand how Maven is different from Ant, you can easily proceed through other
+            tutorials on the <a href="https://netbeans.org/kb/trails/platform.html">NetBeans Platform Learning Trail</a>.
+        </p>
+
+        <p><b>Contents</b></p>
+        <p><img src="../images/articles/81/netbeans-stamp.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 7.2" title="Content on this page applies to NetBeans IDE 7.2"/></p>
+        <ul class="toc">
+            <li><a href="#00">Creating and Running the Sample Application</a></li>
+            <li><a href="#01">Creating the NetBeans Platform Application</a></li>
+            <li><a href="#02">Creating the Model</a></li>
+            <li><a href="#03">Creating the Viewer</a></li>
+            <li><a href="#04">Creating the Editor</a></li>
+        </ul>
+
+        <p><b>To follow this tutorial, you need the software and resources listed in the following table.</b></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Software or Resource</th>
+                    <th class="tblheader" scope="col">Version Required</th>
+                </tr> 
+                <tr>
+                    <td class="tbltd1"><a href="http://download.netbeans.org/netbeans/6.9/beta/">NetBeans IDE</a></td>
+                    <td class="tbltd1">version 7.2</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                    <td class="tbltd1">version 7 or above</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong class="notes">Note:</strong> You do not need to download Maven because it
+            is bundled with the IDE. Optionally, use your own download of Maven, in which
+            case use the Options window to configure your Maven settings.</p>
+
+        <p class="notes"><b>Note:</b> This is <u>not</u> a beginners tutorial. Before starting this tutorial, it is important that you familiarize yourself with
+            the following introductory Maven documentation:</p>
+        <ul>
+            <li><a href="http://wiki.netbeans.org/MavenBestPractices">Best Practices for Maven in NetBeans IDE</a></li>
+            <li><a href="http://www.sonatype.com/books/maven-book/reference/introduction.html">Chapter 1. Introducing Apache Maven</a>
+                (from <a href="http://www.sonatype.com/books/maven-book/reference/public-book.html">Maven: The Definitive Guide</a>)</li>
+            <li><a href="https://platform.netbeans.org/tutorials/nbm-maven-commandline.html">NetBeans Platform Command Line Tutorial</a></li>
+            <li><a href="https://platform.netbeans.org/tutorials/nbm-maven-quickstart.html">NetBeans Platform Quick Start Using Maven</a></li>
+        </ul>
+
+        <p>Watch this YouTube movie before beginning to work on the tutorial because
+            it shows the steps you will take below:</p>
+
+        <p><object><iframe width="560" height="315" src="http://www.youtube.com/embed/4RcAEoC9tis" frameborder="0" allowfullscreen></iframe></object>
+
+
+            <!-- =================================================================== -->
+            <!-- +++++++++++++++ Creating the Platform Application +++++++++++++++++ -->
+
+            <h2><a name="00"></a>Creating and Running the Sample Application</h2>
+
+            <p>In this section, you set up a sample application provided by NetBeans IDE.
+                The sample application access data and displays data in a Maven-based
+                NetBeans Platform application, similar to the application you create
+                in this tutorial. Successfully running the sample application and displaying
+                data will be useful in determining whether the database connection is set up
+                correctly.
+            </p>
+
+            <div class="indent">
+
+                <ol>
+                    <li><p>Choose File &gt; New Project (Ctrl-Shift-N) to open the New Project wizard.
+                            Select the Samples | Maven category and then
+                            select "CRUD Sample Application":</p>
+                        <p><img src="../images/tutorials/maven-crud/72/sample-1.png" alt="screenshot" title="screenshot" />
+                        </p>
+                        <p>Click Next.</p>
+                    </li>
+                    <li><p>Specify a location:</p>
+                        <p><img src="../images/tutorials/maven-crud/72/sample-2.png" alt="screenshot" title="screenshot" />
+                        </p>
+                        <p>Click Next.</p>
+                    </li>
+                    <li><p>Change, if needed, the location of libraries that the sample will use:</p>
+                        <p><img src="../images/tutorials/maven-crud/72/sample-3.png" alt="screenshot" title="screenshot" />
+                        </p>
+                        <p>Click Finish.</p>
+                        <p class="tips">Once the project is opened, if you see 
+                            projects with [unloadable] in the display name, that means 
+                            something is wrong with the POM file or that plugins are missing:</p>
+                        <p><img src="../images/tutorials/maven-crud/72/setup-2.png" alt="screenshot" title="screenshot" /></p>
+                        <p>Developers seeing the above in the IDE are typically new to Maven or are setting
+                            up Maven for the first time on their system.</p>
+                        <p>If you see the above, wait for the Maven dependencies to download, which is a process
+                            that you can follow
+                            by looking in the status bar of the IDE. Once the downloading has
+                            completed, and not before, right-click each project and choose "Build with Dependencies". 
+                            Also see <a href="https://netbeans.org/bugzilla/show_bug.cgi?id=205865">this issue</a> if problems
+                            relating to missing <tt>plexus-utils.jar</tt> occur. If problems continue, refer to the
+                            links at the start of this document, to set up your Maven repository correctly.</p>
+                    </li>
+                    <li><p>Examine the project structure:</p>
+                        <p><img src="../images/tutorials/maven-crud/72/sample-4.png" alt="screenshot" title="screenshot" />
+                        </p>
+
+                        <p>The project structure above is explained here:</p>
+
+                        <ul>
+                            <li><img src="../images/tutorials/maven-crud/72/Maven2Icon.gif"/> <strong>NetBeans Platform Application.</strong>
+                                This project is a Maven reactor project for the NetBeans Platform 
+                                application, which lists the modules to include and the location 
+                                of the project's repositories. This project does not contain any 
+                                sources.
+                                The IDE generates the modules containing the sources and resources 
+                                in sub-directories of this project.
+                            </li>
+                            <li><img src="../images/tutorials/maven-crud/72/suiteicon.png"/> <strong>NetBeans Platform based application.</strong>
+                                The NetBeans Platform application project enumerates included modules; permits interactive runs; 
+                                produces various kinds of packaging, such as ZIP by default, but optionally 
+                                JNLP, NBMs; holds functional tests. 
+                                Each module project specifies its own compile dependencies, while
+                                the app project's dependencies are anything additional that should be present at 
+                                runtime. For example, that includes, by default, the whole platform cluster, that is,
+                                the set of modules constituting the "platform" cluster. The app project could
+                                include other clusters, or subsets of clusters, or whatever plugins you want
+                                included in your app which are not used as compilation dependencies. At a minimum, 
+                                core.startup and its transitive dependencies are included. </li>
+                            <li><img src="../images/tutorials/maven-crud/72/nbmicon.png"/> <strong>Platform application branding resources.</strong>
+                                This project contains the global resources used for branding the application, such as the splash screen. </li>
+                            <li><img src="../images/tutorials/maven-crud/72/nbmicon.png"/> <strong>sample NetBeans Module.</strong>
+                                The project that contains the source code for accessing the database
+                                and displaying it in a window. </li>
+                        </ul>
+                    </li>
+
+                    <li><p>You need to have access to a database server.
+                            This tutorial uses the JavaDB database server, together with a
+                            sample database. Before continuing, start the JavaDB server in the Services window
+                            by connecting to the sample database. Right-click on the connection
+                            node shown below and choose Connect:</p>
+                        <p><img src="../images/tutorials/maven-crud/72/sample-5.png" alt="screenshot" title="screenshot" />
+                        </p>
+                        <p class="tips">If it is not already available, an easy way to make the JavaDB database server available is to 
+                            register an instance of GlassFish that is bundled with the IDE.
+                            The JavaDB database server and a sample database are included with 
+                            the GlassFish server.</p>
+                    </li>
+
+                    <li><p>Right-click the NetBeans Platform based application (<img src="../images/tutorials/maven-crud/72/suiteicon.png"/>)
+                            and choose Run. The application starts up and should show the following:</p>
+                        <p><img src="../images/tutorials/maven-crud/72/sample-6.png" alt="screenshot" title="screenshot" /></p>
+                        <p>Use Window | Customer to open the Customer window, wait a few seconds,
+                            and you should see your data displayed:</p>
+                        <p><img src="../images/tutorials/maven-crud/72/sample-7.png" alt="screenshot" title="screenshot" /></p>
+                        <p>
+                    </li>
+
+                    <li>
+                        <p>Open the editor window and notice that the selected customer's details are
+                            shown in the editor. Make changes in the editor and save them and then
+                            notice that the viewer is automatically updated. Changes you make are
+                            stored in the database.</p>
+                    </li>
+
+                </ol>
+
+                <p class="notes"><b>Note:</b> If you were not able to complete the above steps, do not continue with
+                    the rest of the tutorial. If you encountered problems relating to
+                    Maven repositories and unresolved Maven dependencies, refer to the introductory Maven
+                    links at the start of this document.</p>
+
+                <p>Since your database is being accessed correctly and your Maven dependencies
+                    have been correctly resolved, you are now ready to continue creating your own CRUD application.</p>
+
+            </div>
+
+            <!-- =================================================================== -->
+            <!-- +++++++++++++++ Creating the Platform Application +++++++++++++++++ -->
+
+            <h2><a name="01"></a>Creating the NetBeans Platform Application</h2>
+
+            <p>In this section you use the New Project wizard to create a 
+                NetBeans Platform application from a Maven archetype.
+            </p>
+
+            <div class="indent">
+
+                <ol>
+                    <li><p>If it is still open, close the sample application you created
+                            in the previous section. You do not need the sample anymore and leaving
+                            it open may cause confusion while you work on your real application.</p></li>
+                    <li><p>Choose File &gt; New Project (Ctrl-Shift-N) to open the New Project wizard.
+                            Select NetBeans Application from the Maven category:</p>
+                        <p><img src="../images/tutorials/maven-crud/72/pic1.png" alt="screenshot" title="screenshot" class="margin-around b-all" />
+                        </p>
+                        <p>Click Next.</p></li>
+                    <li><p>Type <strong>MavenPlatformCRUDApp</strong> for the Project 
+                            Name and set the Project Location:</p>
+                        <p><img src="../images/tutorials/maven-crud/72/pic2.png" alt="screenshot" title="screenshot" class="margin-around b-all" />
+                        </p>
+                        <p>Click Next.</p></li>
+                    <li><p>Select the version of the NetBeans APIs you'd
+                            like to use and type the name of a NetBeans module
+                            that you'd like to be created together with
+                            the application, in this case <b>MavenPlatformCRUDApp-dbaccess</b>:</p>
+                        <p><img src="../images/tutorials/maven-crud/72/pic3.png" alt="screenshot" title="screenshot" class="margin-around b-all" />
+                        </p>
+                        <p>Click Finish.</p>
+
+                        <p>Depending on the availability of JARs as specified by Maven dependencies in your repository, the IDE will spend some time
+                            downloading Maven dependencies. Once the downloading of Maven dependencies is completed,
+                            you should see the following:</p>
+
+                        <p><img src="../images/tutorials/maven-crud/72/pic4.png" alt="screenshot" title="screenshot" />
+                        </p>
+
+
+                        <p>The above project structure is explained here:</p>
+                        <ul>
+                            <li><img src="../images/tutorials/maven-crud/72/Maven2Icon.gif"/> <strong>app.</strong>
+                                This project is a Maven reactor project for the NetBeans Platform 
+                                application, which lists the modules to include and the location 
+                                of the project's repositories. This project does not contain any 
+                                sources.
+                                The IDE generates the modules containing the sources and resources 
+                                in sub-directories of this project.
+                            </li>
+                            <li><img src="../images/tutorials/maven-crud/72/nbmicon.png"/> <strong>branding.</strong>
+                                This project contains the global resources used for branding the application, such as the splash screen. </li>
+                            <li><img src="../images/tutorials/maven-crud/72/nbmicon.png"/> <strong>dbaccess.</strong>
+                                The project that will contain the Java sources you will create in the next section. </li>
+                            <li><img src="../images/tutorials/maven-crud/72/suiteicon.png"/> <strong>parent.</strong>
+                                The NetBeans Platform application project enumerates included modules; permits interactive runs; 
+                                produces various kinds of packaging, such as ZIP by default, but optionally 
+                                JNLP, NBMs; holds functional tests. 
+                                Each module project specifies its own compile dependencies, while
+                                the app project's dependencies are anything additional that should be present at 
+                                runtime. For example, that includes, by default, the whole platform cluster, that is,
+                                the set of modules constituting the "platform" cluster. The app project could
+                                include other clusters, or subsets of clusters, or whatever plugins you want
+                                included in your app which are not used as compilation dependencies. At a minimum, 
+                                core.startup and its transitive dependencies are included. </li>
+                        </ul>
+                    </li>
+                    <li><p>Right-click the "parent" project and choose "Build with Dependencies". After the process
+                            has completed, right-click the "app" project and choose Run. You
+                            should see the default splash screen and then the main window of the application:</p>
+                        <img src="../images/tutorials/maven-crud/72/result-1.png"/>
+                    </li>
+
+                </ol>
+
+            </div>
+            <p>You have successfully set up the application and are now ready to begin generating
+                the application's model classes.</p>
+
+            <!-- =================================================================== -->
+            <!-- +++++++++++++++++++++++ Creating the Entity Classes +++++++++++++++++++ -->
+
+
+            <h2><a name="02"></a>Creating the Model</h2>
+
+            <p>In this section you generate Java Persistence API (JPA)
+                entity classes from tables in the Java DB database.
+                To create the entity classes and to use JPA in 
+                your application,
+                you need to have access to a database server and the 
+                JPA persistence provider libraries.</p>
+            <p class="tips">Though this tutorial uses the JavaDB database server, you can later configure 
+                the application to use other database servers.</p>
+
+            <div class="indent">
+
+                <h3><a name="02b"></a>Generating Entity Classes From the Database</h3>
+                <p>In this section you use a wizard to generate entity classes in the <strong>dbaccess</strong> module.
+                </p>
+
+                <div class="indent">
+
+                    <ol>
+                        <li><p>Right-click the Source Packages of the <strong>dbaccess</strong> 
+                                module and choose New &gt; Other. Select Entity Classes from Database
+                                in the Persistence category:</p>
+                            <p><img src="../images/tutorials/maven-crud/72/generate-1.png" alt="screenshot" title="screenshot" />
+                            </p>
+                            <p>Click Next.</p></li>
+                        <li><p>Select the Java DB sample database from the Database Connection 
+                                drop-down list. Select the Customer table from the Available
+                                Tables list and click Add. When you click Add, the related 
+                                tables, such as DiscountCode, which could vary depending
+                                on your version of the database, are also added to the
+                                list of Selected Tables list:</p> 
+                            <p><img src="../images/tutorials/maven-crud/72/generate-2.png" alt="screenshot" title="screenshot" />
+                            </p>
+                            <p>Click Next.</p>
+                        </li>
+                        <li><p>Leave the package name as suggested,
+                                that is, <strong>com.mycompany.mavenplatformcrudapp</strong>. 
+                                Make sure that the
+                                Create Perisistence Unit and Generate Named Query Annotations 
+                                are selected:</p>
+                            <p><img src="../images/tutorials/maven-crud/72/generate-3.png" alt="screenshot" title="screenshot" />
+                            </p>
+                        </li>
+                        <li><p>Click Finish. When you click Finish, the IDE generates an entity
+                                class for each selected table. The IDE also generates 
+                                the <tt>persistence.xml</tt> file in the
+                                <tt>META-INF</tt> package under the Other Sources node 
+                                in the <tt>src/main/resources</tt> directory:</p>
+                            <p><img src="../images/tutorials/maven-crud/72/generate-4.png" alt="screenshot" title="screenshot" />
+                            </p>
+                        </li>
+                        <li><p>Right-click the <b>dbaccess</b> module and choose Build. Depending on their
+                                availability in your repository, several JARs may now start to be downloaded.</p>
+                        </li>
+                    </ol>
+                </div>
+
+                <h3><a name="02a"></a>Adding the DerbyClient as a Runtime Dependency</h3>
+
+                <p>In this section you will add <tt>derbyclient.jar</tt> library as a dependency.</p>
+
+                <div class="indent">
+
+                    <ol>
+                        <li><p>Right-click the Dependencies
+                                node of the <strong>dbaccess</strong> module and choose Add Dependency:</p>
+                            <p><img src="../images/tutorials/maven-crud/72/derby-1.png" alt="screenshot" title="screenshot" />
+                            </p>
+                            <p>The Add Library dialog appears.</p></li>
+                        <li><p>Specify the library by typing <strong>org.apache.derby</strong> for the "Group ID",
+                                <strong>derbyclient</strong> for the "Artifact ID",
+                                select <strong>runtime</strong> from the Scope drop-down, and choose the latest version
+                                available:</p>
+                            <p><img src="../images/tutorials/maven-crud/72/derby-3.png" alt="screenshot" title="screenshot" />
+                            </p>
+                            <p class="tips"> Notice that you can use code completion to help you throughout the
+                                above dialog:</p>
+                            <p><img style="border:1px solid black" src="../images/tutorials/maven-crud/72/derby-2.png" alt="screenshot" title="screenshot" />
+                            </p>
+                            <p>Click Add.</p>
+                        </li>
+                        <li><p>Expand the Runtime Dependencies node in the Projects window 
+                                and you can see that the <tt>derbyclient</tt> library is listed as
+                                a dependency:</p>
+                            <p><img src="../images/tutorials/maven-crud/72/derby-4.png" alt="screenshot" title="screenshot" />
+                            </p>
+                        </li>
+                    </ol>
+
+                </div>
+
+                <p>You have now registered the Derby database dependency for your module.</p>
+
+            </div>
+
+            <p>In this section, you created a module that now contains entity classes
+                for the tables you'd like to access, together with a <tt>persistence.xml</tt>
+                file providing the data access information, and new dependency declarations
+                in the project's POM file.</p>
+            <!-- =================================================================== -->
+            <!-- +++++++++++++++++++++++ Creating the Viewer Window +++++++++++++++++++ -->
+
+
+            <h2><a name="03"></a>Creating the Viewer</h2>
+
+            <p>In this section, we create a simple prototype GUI component that
+                accesses our data and displays it.</p>
+
+            <div class="indent">
+
+                <ol>
+                    <li><p>Right-click the <b>dbaccess</b> module and choose New | Window. Define
+                            the window to be opened in the "explorer" position and let it open when
+                            the application starts:
+                            <p><img src="../images/tutorials/maven-crud/72/new-window-1.png" alt="screenshot" title="screenshot" />
+                            </p>
+                            <p>Click Next.</p>
+                            <li><p>Set "Viewer" as the
+                                    class name prefix.</p>
+                                <p><img src="../images/tutorials/maven-crud/72/new-window-2.png" alt="screenshot" title="screenshot" />
+                                </p>
+                                <p>Click Finish.</p>
+                            </li>
+                            <li><p>In the Source tab of the new window, redefine the
+                                    constructor as follows:</p>
+                                <pre class="examplecode">public ViewerTopComponent() {
+
+    initComponents();
+
+    setName(Bundle.CTL_ViewerTopComponent());
+    setToolTipText(Bundle.HINT_ViewerTopComponent());
+
+    setLayout(new BorderLayout());
+    JTextArea area = new JTextArea();
+    add(area, BorderLayout.CENTER);
+
+    EntityManager entityManager = Persistence.createEntityManagerFactory("com.mycompany_MavenPlatformCRUDApp-dbaccess_nbm_1.0-SNAPSHOTPU").createEntityManager();
+    Query query = entityManager.createNamedQuery("Customer.findAll");
+    List&lt;Customer&gt; resultList = query.getResultList();
+    for (Customer c : resultList) {
+        area.append(c.getName() + " (" + c.getCity() + ")" + "\n");
+    }
+
+}</pre>                
+                                <li><p>Right-click in the editor and choose Fix Imports (Ctrl-Shift-I). Make
+                                        the choices below in the dialog that appears:</p>
+
+                                    <p><img src="../images/tutorials/maven-crud/72/dep-1.png" alt="screenshot" title="screenshot" />
+                                    </p>
+                                    <p>Click OK. The import statements at the top of the class should now
+                                        be as follows:</p>
+                                    <pre class="examplecode">import java.awt.BorderLayout;
+import java.util.List;
+import javax.persistence.EntityManager;
+import javax.persistence.Persistence;
+import javax.persistence.Query;
+import javax.swing.JTextArea;
+import org.netbeans.api.settings.ConvertAsProperties;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.util.NbBundle.Messages;
+import org.openide.windows.TopComponent;</pre>
+                                </li>
+                                <li><p>Right-click the <b>parent</b> project and choose Clean. Right-click the <b>app</b>
+                                    project and choose Build with Dependencies and, once the process has completed, right-click
+                                    it again and choose Run.</p>
+                                <p>After the splash screen is shown, you should see this:</p>
+                                <p><img src="../images/tutorials/maven-crud/72/result-2.png" alt="screenshot" title="screenshot" />
+                                </p>
+                            </li>
+                            </ol>
+
+                            </div>
+
+                            <p>The simple prototype is finished. You're using very few NetBeans APIs
+                                at the moment, but you're able to retrieve data from your database
+                                and display it in your view component.</p>
+
+                            <!-- =================================================================== -->
+                            <!-- +++++++++++++++++++++++ Creating the Editor +++++++++++++++++++ -->
+
+
+                            <h2><a name="04"></a>Creating the Editor</h2>
+                            <p>In this section, you add the start of an editor module to the application. You then
+                                continue with the instructions in the Ant based NetBeans Platform application
+                                tutorial to set up and listen to the selection and populate the editor with objects
+                                found there.</p>
+                            <ol>
+
+                                <li><p>In the New Project dialog, choose NetBeans Module in the Maven category:</p>
+                                    <p><img src="../images/tutorials/maven-crud/72/new-editor-1.png" alt="screenshot" title="screenshot" />
+                                    </p>
+                                    <p>Click Next.</p>
+                                </li>
+                                <li><p>Name the module <strong>MavenPlatformCRUDApp-editor</strong>.
+                                        On the next page, set the project location to the folder where the other modules are found,
+                                        which is within the <b>parent</b> folder. Click Next.</p></li>
+                                <li><p>Deselect the OSGi checkbox:</p>
+                                    <p><img src="../images/tutorials/maven-crud/72/new-editor-2.png" alt="screenshot" title="screenshot" />
+                                    </p>
+                                    <p>Click Finish. Because you set the project location to be the
+                                        folder where the <b>parent</b> project is found, you see that
+                                        the new module is created and visible within the <b>parent</b>
+                                        project:</p>
+                                    <p><img src="../images/tutorials/maven-crud/72/new-editor-3.png" alt="screenshot" title="screenshot" />
+                                </li>
+                                <li>Though the new module is now part of the <b>parent</b> project, it is not
+                                    part of the <b>app</b> project yet. Therefore, when you run the application,
+                                    your module will currently not be included. Let's include it now. In the <b>app</b>
+                                    project, right-click Dependencies, click Add Dependency, select the Open Projects tab,
+                                    and choose the <b>editor</b> module.</li>
+                                <li><p>In the same way as you did in the previous section, create a new window, in
+                                        the <b>editor</b> module. This time, it should be opened at start up in
+                                        the "editor" position, with "Editor" as its class name prefix.</p></li>
+                                <li>Right-click the <b>parent</b> project and choose Clean. Right-click the <b>app</b>
+                                    project and choose Build with Dependencies and, once the process has completed, right-click
+                                    it again and choose Run.
+                                <p>After the splash screen is shown, you should see this:</p>
+                                <p><img src="../images/tutorials/maven-crud/72/new-editor-4.png" alt="screenshot" title="screenshot" />
+                                </p>
+                                </li>
+                                <li><p>Now that you have completed
+                                        the steps above, you can refer to 
+                                        the Ant-based <a href="nbm-crud.html">NetBeans Platform CRUD Application Tutorial</a>,
+                                        since all the Java code in that tutorial is applicable to the
+                                        application you are creating here.</p></li>
+
+                            </ol>
+
+                            <!-- =================================================================== -->
+                            <!-- +++++++++++++++++++ Conclusion ++++++++++++++++++++++ -->
+
+
+
+                            <p>You have a basic
+                                understanding of how developing with
+                                Maven is different from Ant. You can easily proceed through other
+                                tutorials on the <a href="https://netbeans.org/kb/trails/platform.html">NetBeans 
+                                    Platform Learning Trail</a> and apply them to your Maven scenarios.
+                            </p>
+
+
+                            <!-- ======================================================================================== -->
+
+                            <div class="feedback-box"><a name="feedback"></a>
+                                <a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20NetBeans%20Platform%20CRUD%20Application%20Using%20Maven%207.2">
+                                    Send Us Your Feedback</a></div>
+
+                            <p>&nbsp;</p>
+                            <!-- ======================================================================================== -->
+                            <h2><a name="nextsteps"></a>See Also</h2>
+
+                            <p>This concludes the CRUD Tutorial. This document has described
+                                how to use the Maven build framework to create a new NetBeans Platform application with CRUD functionality.
+                                For more information about creating and developing applications, see the following resources.</p>
+                            <ul>
+                                <li><a href="https://netbeans.org/kb/trails/platform.html">NetBeans Platform Learning Trail</a></li>
+                                <li><a href="http://bits.netbeans.org/dev/javadoc/">NetBeans API Javadoc</a></li>
+                            </ul>
+
+                            <p>If you have any questions about the NetBeans Platform, feel free
+                                to write to the mailing list, dev@platform.netbeans.org, or view the
+                                <a href="https://netbeans.org/projects/platform/lists/dev/archive">NetBeans Platform mailing list archive</a>.</p>
+
+
+                            <!-- ======================================================================================== -->
+
+
+                            </body>
+
+                            </html>

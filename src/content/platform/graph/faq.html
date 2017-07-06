@@ -1,0 +1,163 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<link rel="Stylesheet" href="https://netbeans.org/netbeans.css" type="text/css">
+<title>netbeans.org : NetBeans Visual Library 2.0 - FAQ</title>
+<style type="text/css"><!--
+pre {
+    border: 1px solid black;
+    padding: 10px;
+    background-color: #FFD;
+}
+table.framed {
+    border: 2px solid black;
+    border-collapse: collapse;
+    border-spacing: 1px solid black;
+}
+table.framed th {
+    background-color: #FFD;
+    padding: 5px;
+    border: 2px solid black;
+}
+table.framed td {
+    padding: 5px;
+    border: 1px solid black;
+}
+code {
+    background-color: #FFD;
+    border: 1px solid #DD0;
+}
+--></style>
+</head>
+<body>
+
+<h1>Visual Library 2.0 - FAQ</h1>
+
+<p>
+<strong>Question:</strong>
+I have a <code>NullPointerException</code> exception at <code>SceneComponent</code> or <code>Widget</code> class.
+<p>
+<strong>Answer:</strong>
+Check whether the exception happen on a line which is related to the result of <code>Widget.getBounds</code> method call. This method returns null everytime when the Widget is not validated.
+<p>
+When a Widget is modified or added, then it requires to be validated. This can be done by <code>Scene.validate</code> method call.
+<p>
+The method is called automatically:
+<ul>
+<li>At the end of event processing in the SceneComponent after all appropriate WidgetAction.* methods have been called).
+<li>When the JComponent view appears on a screen (JComponent.addNotify method is called by Swing).
+<li>After <code>TextFieldInplaceEditor.setText</code> method call.
+<li>At the beginning of <code>Scene.paint(Graphics2D)</code> method call.
+</ul>
+<p>
+Usually this problem happens when you have your own AWT-event handling e.g. ActionListener and you are adding/removing/modifying widgets in the scene. In that case you have to call <code>Scene.validate</code> method manually.
+<hr>
+
+<p>
+<strong>Question:</strong>
+How do I specify tool-tip?
+<p>
+<strong>Answer:</strong>
+Use <code>Widget.setToolTipText</code> method.
+<hr>
+
+<p>
+<strong>Question:</strong>
+How to remove an object from Scene?
+<p>
+<strong>Answer:</strong>
+There are two approaches / data-models.
+<ul>
+<li>Scene class is storing a tree of Widgets. It is widget-oriented approach.
+<li>ObjectScene, GraphScene, GraphPinScene classes is storing mapping between objects and widgets too. It is object-oriented approach.
+</ul>
+Therefore:
+<ul>
+<li>When you are using Scene only, remove Widgets using Widget.removeFromParent or similar methods.
+<li>When you are using ObjectScene, ..., remove objects using GraphScene.removeNode, GraphScene.removeEdge, ... methods, the removal of Widget is performed automatically in GraphScene.detachNodeWidget or similar methods. These detach* methods can be overriden by developer too.
+</ul>
+<hr>
+
+<p>
+<strong>Question:</strong>
+I have a widget. When I use Widget.remove* method then the scene still remembers corresponding object.
+<p>
+<strong>Answer:</strong>
+If you are using ObjectScene, GraphScene, GraphPinScene you should use GraphScene.removeNode and similar methods. These methods will remove objects from scene and automatically invokes removal of corresponding widgets.
+<hr>
+
+<p>
+<strong>Question:</strong>
+How to interact with the Properties window?
+<p>
+<strong>Answer:</strong>
+This is kind of tricky because PropertiesWindow is using totally different classes/structures than the VisualLibrary.
+The PropertiesWindow is working with <code>org.openide.nodes.Node</code> class. There are various ways to do it:
+<p>
+The first way is to:
+<ol>
+<li>Put a ExplorerManager.Provider into your TopComponent
+<li>Create ExplorerManager and maintain the set of openide-nodes.
+<li>Synchronize the openide-nodes with objects in the GraphScene.
+<li>Synchronize selection of openide-nodess and objects in the GraphScene.
+</ol>
+If you will implement it the described way, it will be showing properties in the Properties window which could be opened using <strong>Windows | Properties</strong> main menu action.
+This window is showing "dynamic" content - properties of currently activated nodes.
+<p>
+The synchronization could be really hard to implement. Therefore you can do it simplier way:
+<ol>
+<li>Put a <code>ExplorerManager.Provider</code> into your <code>TopComponent</code>
+<li>Create ExplorerManager and maintain the set of openide-nodes.
+<li>Everytime when a node/edge in a scene is selected, create a openide-Node with properties and set it as a root and activated node in the ExplorerManager.
+</ol>
+This time you do not have to synchronize anything, except of creating the node, when a scene selection is changed.
+<p>
+The last way is to create a "static" Properties window. You have to:
+<ol>
+<li>Create a <code>PopupMenuAction</code> and assign it to your nodes and edges.
+<li>The popup menu will contain "Properties" menu item.
+<li>When the menu item is invoked then:
+<ol>
+<li>Create an openide-Node with properties for a node/edge which is selected at a scene.
+<li>Create a PropertySheet which uses the openide-Node
+<li>Create and show a dialog which will contain the PropertySheet.
+</ol>
+</ol>
+This time you will have "static" content - the window will still show the same properties of your node or edge.
+<hr>
+
+<p>
+<strong>Question:</strong>
+How the selection and other actions are working?
+<p>
+<strong>Answer:</strong>
+Each Widget has a state:ObjectState property and the notifyStateChanged method. When the state property is changed then the notifyStateChanged is called. The implementation of the method should change the widget and/or its children to reflect the state.
+<p>
+An example of a custom look of a widget:
+<pre>
+public class MyWidget extends Widget {
+  public void notifyStateChanged (ObjectState oldState, ObjectState newState) {
+    setBorder (newState.isSelected () ? BorderFactory.createResizeBorder (8) : BorderFactory.createEmptyBorder (8));
+  }
+}
+</pre>
+<p>
+When you are using ObjectScene, each object has its state too. When the state of an object is changed, then the change is propagated to the related widget that represents the object.
+<p>
+The SelectAction (or better SelectProvider) do not do anything with a scene or widgets. It just defines that something (SelectProvider.select method) can be executed triggered by a single-click on a widget where the action is assigned.
+<p>
+There is ObjectScene.createSelectAction method which creates an action which changes a set of selected objects in the a scene (the "selected" set contains only the object which widget an user clicked on). When a set of selected objects is changed then it changes a "selected" flag of a state of all affected objects. The state change is propagated to particular widgets of those objects. Therefore related widgets change their look/behaviour based on their state.
+<p>
+Each actions are usually assigned to a widget related to an object. This is kind of specifying of an select/hover ability of a particular widget/object on a scene. If you do not assign it, then the object cannot be selected/hovered/... from UI - it can be done by calling ObjectScene.setSelectedObjects method only.
+<hr>
+
+<!--
+<p>
+<strong>Question:</strong>
+<p>
+<strong>Answer:</strong>
+<hr>
+-->
+</body>
+</html>

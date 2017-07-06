@@ -1,0 +1,514 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <meta name="description" content="An introduction to using the Spring Framework
+            in NetBeans IDE">
+        <meta name="keywords" content="NetBeans, IDE, integrated development environment,
+            Spring framework, frameworks, MVC, Model View Controller, web application">
+
+        <link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+
+        <title>Spring Web MVC 入門 - NetBeans IDE チュートリアル</title>
+    </head>
+
+    <body>
+
+<!--
+Copyright (c) 2009, 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+-->
+
+        <h1>Spring Web MVC 入門</h1>
+
+        <p>このドキュメントでは、<a href="http://www.springframework.org/">Spring Framework</a> を使用して、簡単な Web <a href="http://www.oracle.com/technetwork/articles/javase/index-142890.html">MVC</a> アプリケーションを構築する方法を説明します。このアプリケーションでは、ユーザーが自分の名前をテキストフィールドに入力して「OK」をクリックすると、名前が返され、2 ページ目に挨拶メッセージとともにその名前を表示できます。</p>
+
+        <p>Spring Framework は普及しているオープンソースアプリケーションフレームワークで、Java EE 開発に役立ちます。このフレームワークはコンテナ、コンポーネント管理フレームワーク、および Web ユーザーインタフェース、トランザクション、持続性のためのスナップインサービスセットから構成されます。Spring Framework の一部は Spring Web MVC です。これは Web アプリケーション作成用の拡張可能な MVC フレームワークです。</p>
+
+        <p>IDE には Spring Framework 3.0 および 2.5 のサポートが組み込まれています。フレームワークライブラリは IDE とともにパッケージ化されており、フレームワークを選択するときに、プロジェクトクラスパスに自動的に追加されます。また、Spring Web MVC <code>DispatcherServlet</code> の命名やマッピングなどの構成設定が用意されています。JSTL ライブラリは、プロジェクト作成時に任意で登録できます。Spring XML Bean 構成ファイルのサポートも用意されており、これには次の機能が含まれます。</p>
+
+        <ul>
+            <li><strong>コードの補完</strong>。Spring XML 構成ファイル内の Java クラスや Bean 参照に対して起動します。</li>
+
+            <li><strong>ナビゲーション</strong>。Spring Bean 定義に含まれる Java クラスやプロパティーのハイパーリンクや、ほかの Spring Bean 参照へのハイパーリンク。</li>
+
+            <li><strong>リファクタリング</strong>。Spring XML 構成ファイル内の Java クラスへの参照の名前の変更。</li>
+        </ul>
+
+        <p>Spring Framework の詳細については、<a href="http://www.springsource.org/">http://www.springsource.org/</a> を参照してください。Spring Framework の成果物の動作方法と、アプリケーション内のほかのオブジェクトとの連携方法に関するさらに詳しい説明については、<a href="http://static.springsource.org/spring/docs/3.0.x/spring-framework-reference/html/">Spring Framework リファレンスドキュメント</a>または <a href="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/">Spring Framework API ドキュメント</a>を参照してください。</p>
+
+        <p><strong>目次</strong></p>
+
+        <img  src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" class="stamp" width="114" alt="このページの内容は NetBeans IDE 6.9、7.0、および 7.1 が対象です" title="このページの内容は NetBeans IDE 6.9、7.0、および 7.1 が対象です"  />
+
+        <ul class="toc">
+            <li><a href="#setting">Spring Web MVC サポートを使用した新規プロジェクトの設定</a>
+
+                <ul>
+                    <li><a href="#creating">Spring Web MVC スケルトンプロジェクトの作成</a></li>
+                    <li><a href="#running">スケルトンプロジェクトの実行</a></li>
+                </ul></li>
+
+            <li><a href="#overview">アプリケーションの概要</a></li>
+            <li><a href="#service">サービスの実装</a></li>
+            <li><a href="#controller">コントローラとモデルの実装</a></li>
+            <li><a href="#view">ビューの実装</a></li>
+            <li><a href="#seeAlso">関連項目</a></li>
+        </ul>
+
+        <p><strong>このチュートリアルを完了するには、次のソフトウェアとリソースが必要です。</strong></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                    <th class="tblheader" scope="col">必須バージョン</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                    <td class="tbltd1">6.8、6.9、7.0、7.1、Java</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit (JDK)</a></td>
+                    <td class="tbltd1">version 6</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://glassfish.dev.java.net/public/downloadsindex.html">GlassFish サーバー</a></td>
+                    <td class="tbltd1">Open Source Edition 3.x</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong class="notes">注: </strong></p>
+
+        <ul>
+            <li>IDE の Java インストール版では、IDE とともに GlassFish サーバーをインストールして登録することもできます。</li>
+            <li>プロジェクトを、正常に機能するソリューションと比較する必要がある場合は、<a href="https://netbeans.org/projects/samples/downloads/download/Samples%252FJava%2520Web%252FHelloSpring69.zip">サンプルアプリケーションをダウンロード</a>できます。</li>
+        </ul>
+
+
+        <h2 id="setting">Spring Web MVC サポートを使用した新規プロジェクトの設定</h2>
+
+        <ul>
+            <li><a href="#creating">Spring Web MVC スケルトンプロジェクトの作成</a></li>
+            <li><a href="#running">スケルトンプロジェクトの実行</a></li>
+        </ul>
+
+        <div class="indent">
+
+            <h3 id="creating">Spring Web MVC スケルトンプロジェクトの作成</h3>
+
+            <p>Spring Framework を使用し、まず Web アプリケーションの新規プロジェクトを次のように作成します。</p>
+
+            <ol>
+                <li>IDE の「ファイル」メニューから「新規プロジェクト」(Ctrl-Shift-N、Mac の場合は &amp;#8984-Shift-N) を選択します。「Java Web」カテゴリを選択し、「プロジェクト」で「Web アプリケーション」を選択します。「次へ」をクリックします。</li>
+
+                <li>「プロジェクト名」に「<strong>HelloSpring</strong>」と入力します。「次へ」をクリックします。</li>
+
+                <li>このチュートリアルでは <a href="http://jcp.org/en/jsr/detail?id=299">JSR-299</a> 仕様を使わないため、ステップ 3 の「サーバーと設定」の「コンテキストと依存関係の注入を有効にする」オプションは無効にします。
+
+                    <br><br>
+                    また、「サーバー」ドロップダウンリストで「GlassFish Server」が選択されていることを確認します。このサーバーのデフォルトの Java EE バージョンは「Java EE 6 Web」です。「次へ」をクリックします。</li>
+
+                <li>ステップ 4 の「フレームワーク」パネルで、「Spring Web MVC」を選択します。
+
+                    <br>
+                    <img src="../../../images_www/articles/71/web/spring/frameworks-window.png"
+                        class="margin-around b-all"
+                        title="「フレームワーク」パネルに表示された「Spring Web MVC 」"
+                        alt="「フレームワーク」パネルに表示された「Spring Web MVC 」">
+
+                    <p>
+                    「Spring Web MVC」を選択すると、プロジェクトの作成時に JSTL (JavaServer Pages Standard Tag Library) ライブラリがデフォルトでクラスパスに追加されます。このチュートリアルでは JSTL は必要ないため、このオプションの選択を解除します (上のスクリーンショットを参照)。また、IDE では、必要に応じて Spring 2.5 ライブラリをプロジェクトに追加できます。</p></li>
+
+                <li>「構成」タブをクリックすると、このウィザードで Spring Dispatcher サーブレットの名前とマッピングを指定できます。
+
+                    <br>
+                    <img src="../../../images_www/articles/71/web/spring/spring-configuration.png"
+                        title="「構成」タブでの「Spring Dispatcher」サーブレットの名前とマッピングの指定"
+                        class="margin-around b-all" alt="Spring の構成オプション"></li>
+
+                <li>「完了」をクリックします。IDE でアプリケーション全体のプロジェクトが作成されます。このプロジェクトには、すべてのメタデータに加え、「ファイル」ウィンドウ (Ctrl-2、Mac の場合は &amp;#8984-2) から検査できる、プロジェクトの Ant 構築スクリプトが含まれます。テンプレート構造は「プロジェクト」ウィンドウ (Ctrl-1、Mac の場合は &amp;#8984-1) から表示できます。また、IDE のエディタで <code>dispatcher-servlet.xml</code>、<code>applicationContext.xml</code>、<code>redirect.jsp</code>、および <code>index.jsp</code> の 4 つのファイルがデフォルトで開きます。</li>
+
+                <li>「プロジェクト」ウィンドウで新規プロジェクトの「ライブラリ」ノードを展開すると、Spring JAR がプロジェクトのクラスパスに含まれていることが確認できます。
+
+                    <br>
+                    <img src="../../../images_www/articles/71/web/spring/spring-libraries.png"
+                        title="プロジェクトの「ライブラリ」ノードに一覧表示されている Spring JAR"
+                        class="margin-around b-all" alt="プロジェクトの「ライブラリ」ノードに一覧表示されている Spring JAR">
+                </li>
+            </ol>
+
+
+            <h3 id="running">スケルトンプロジェクトの実行</h3>
+
+            <p>プロジェクトファイルに何らかの変更を加える前に、次のように IDE で新規プロジェクトの実行を試します。</p>
+
+            <ol>
+                <li>IDE のメインツールバーで「プロジェクトを実行」(<img src="../../../images_www/articles/71/web/spring/run-project-btn.png"
+                    alt="「プロジェクトを実行」ボタン">) をクリックします。GlassFish サーバーがまだ実行されていない場合は、IDE が自動的に GlassFish サーバーを起動し、プロジェクトをコンパイルしてサーバーに配備します。出力内容は、IDE の出力ウィンドウ (Ctrl-4、Mac の場合は &amp;#8984-4) に表示されます。生成された出力は、「<code>構築成功</code>」のメッセージが表示されて完了します。
+
+                    <br>
+                    <img src="../../../images_www/articles/71/web/spring/output.png"
+                        alt="プロジェクトの実行時の情報を示す「出力」ウィンドウ"
+                        title="プロジェクトの実行時の情報を示す「出力」ウィンドウ"
+                        class="margin-around b-all">
+
+                    <br>
+                    IDE のデフォルトブラウザが開始され、開始ページのビュー (<code>/WEB-INF/jsp/index.jsp</code>) からコンテンツが表示されます。
+
+                    <br>
+                    <img src="../../../images_www/articles/71/web/spring/browser-output.png"
+                        class="margin-around b-all" width="668"
+                        title="ブラウザに表示された開始ページ出力"
+                        alt=" ブラウザに表示された 開始ページ出力"></li>
+            </ol>
+
+            <p class="tips">IDE でプロジェクトを実行すると、コンパイルされたプロジェクトがサーバーに配備され、デフォルトのブラウザで開かれます。また、IDE には「保存時に配備」機能が用意されており、Web プロジェクトに対してデフォルトで有効にされています。ファイルをエディタで保存すると、プロジェクトが自動的に再コンパイルされ、サーバーに配備されます。変更の確認は、ブラウザでページを更新するだけで実行できます。</p>
+
+            <p>実行内容を理解するため、まずはプロジェクトの配備記述子 (<code>web.xml</code>) を調べることから始めます。このファイルをソースエディタで開くには、「<code>WEB-INF</code>」&gt;「<code>web.xml</code>」ノードを「プロジェクト」ウィンドウで右クリックし、「編集」を選択します。アプリケーションのデフォルトのエントリポイントは「<code>redirect.jsp</code>」です。</p>
+
+            <div class="indent">
+<pre class="examplecode">
+&lt;welcome-file-list&gt;
+    &lt;welcome-file&gt;redirect.jsp&lt;/welcome-file&gt;
+&lt;/welcome-file-list&gt;</pre>
+            </div>
+
+            <p><code>redirect.jsp</code> 内には、すべての要求を <code>index.htm</code> に向ける次の redirect 文があります。</p>
+
+            <div class="indent">
+                <pre class="examplecode">&lt;% response.sendRedirect(&quot;index.htm&quot;); %&gt;</pre>
+            </div>
+
+            <p>配備記述子内で、<code>*.htm</code> に一致する URL パターンのすべての要求は、次のように Spring の <a href="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/org/springframework/web/servlet/DispatcherServlet.html"><code>DispatcherServlet</code></a> にマップされます。</p>
+
+            <div class="indent">
+<pre class="examplecode">
+&lt;servlet&gt;
+    &lt;servlet-name&gt;dispatcher&lt;/servlet-name&gt;
+    &lt;servlet-class&gt;org.springframework.web.servlet.DispatcherServlet&lt;/servlet-class&gt;
+    &lt;load-on-startup&gt;2&lt;/load-on-startup&gt;
+&lt;/servlet&gt;
+
+&lt;servlet-mapping&gt;
+    &lt;servlet-name&gt;dispatcher&lt;/servlet-name&gt;
+    &lt;url-pattern&gt;*.htm&lt;/url-pattern&gt;
+&lt;/servlet-mapping&gt;</pre>
+            </div>
+
+            <p class="tips">dispatcher サーブレットの完全修飾名は、前述のとおり <code>org.springframework.web.servlet.DispatcherServlet</code> です。このクラスは Spring ライブラリに含まれ、このライブラリはプロジェクトの作成時にプロジェクトクラスパスに追加されています。「プロジェクト」ウィンドウでこのことを確認するには、「ライブラリ」ノードをドリルダウンします。<code>spring-webmvc-3.0.0.RELEASE.jar</code> を探し、「<code>org」&gt;「springframework」&gt;「web」&gt;「servlet</code>」と展開して、<code>DispatcherServlet</code> を探します。</p>
+
+            <p><code>DispatcherServlet</code> では、受信する要求が <code>dispatcher-servlet.xml</code> にある構成設定に基づいて処理されます。エディタでタブをクリックして、<code>dispatcher-servlet.xml</code> を開きます。次のコードを確認します。</p>
+
+            <div class="indent">
+<pre class="examplecode">
+&lt;bean id=&quot;urlMapping&quot; class=&quot;org.springframework.web.servlet.handler.<a href="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/org/springframework/web/servlet/handler/SimpleUrlHandlerMapping.html">SimpleUrlHandlerMapping</a>&quot;&gt; &lt;property name=&quot;mappings&quot;&gt; &lt;props&gt; &lt;prop key=&quot;/index.htm&quot;&gt;indexController&lt;/prop&gt; &lt;/props&gt; &lt;/property&gt; &lt;/bean&gt; &lt;bean id=&quot;viewResolver&quot; class=&quot;org.springframework.web.servlet.view.<a href="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/org/springframework/web/servlet/view/InternalResourceViewResolver.html">InternalResourceViewResolver</a>&quot; p:prefix=&quot;/WEB-INF/jsp/&quot; p:suffix=&quot;.jsp&quot; /&gt; &lt;bean name=&quot;indexController&quot; class=&quot;org.springframework.web.servlet.mvc.<a href="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/org/springframework/web/servlet/mvc/ParameterizableViewController.html">ParameterizableViewController</a>&quot; p:viewName=&quot;index&quot; /&gt;</pre>
+            </div>
+
+            <p>このファイルには、<code>indexController</code>、<code>viewResolver</code>、および <code>urlMapping</code> の 3 つの Beans が定義されています。<code>DispatcherServlet</code> で、<code>index.htm</code> など「<code>*.htm</code>」と一致する要求が受信されると、要求に対応する <code>urlMapping</code> 内のコントローラが検索されます。上記のコードに、<code>/index.htm</code> から <code>indexController</code> へのリンクを行う <code>mappings</code> プロパティーがあります。</p>
+
+            <p>次に、実行時環境で <code>indexController</code> という Bean の定義が検索されます。この Bean は、スケルトンプロジェクトによって必要なタイミングに合わせて提供されます。<code>indexController</code> は、<a href="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/org/springframework/web/servlet/mvc/ParameterizableViewController.html"><code>ParameterizableViewController</code></a> を拡張します。これが Spring で提供されるもう 1 つのクラスで、単純に表示を返すためのものです。上記のコードでは、<code>p:viewName=&quot;index&quot;</code> で論理ビュー名が指定され、この名前の前に <code>/WEB-INF/jsp/</code>、後ろに <code>.jsp</code> が付加されることで、<code>viewResolver</code> を使用して解決されます。これにより、実行時にアプリケーションディレクトリでファイルが特定されるようになり、開始ページのビュー (<code>/WEB-INF/jsp/index.jsp</code>) に応答できます。</p>
+        </div>
+
+
+        <h2 id="overview">アプリケーションの概要</h2>
+
+        <p>作成するアプリケーションは、2 つの JSP ページ (<a href="http://www.oracle.com/technetwork/articles/javase/index-142890.html">MVC</a> の用語では<em>ビュー</em>とも表現) で構成されます。最初のビューには、ユーザー名の入力を求める入力フィールドがある HTML フォームが含まれます。2 番目のビューは、ユーザー名を含む挨拶メッセージのみを表示するページです。</p>
+
+        <p>これらのビューは、アプリケーションへの要求を受信し、返すビューを判定する<em>コントローラ</em>によって管理されます。また、表示する必要がある情報をビューに渡します (<em>モデル</em>と呼ばれる)。このアプリケーションのコントローラは、<code>HelloController</code> と命名されています。</p>
+
+        <p>複雑な Web アプリケーションの場合、ビジネスロジックは直接コントローラには格納されません。その代わり、コントローラで何らかのビジネスロジックの実行が必要になったときに、<em>service</em> という名前の別のエンティティーがコントローラによって使用されます。このアプリケーションでは、ビジネスロジックは挨拶メッセージの処理の実行に限定されているため、この目的に合わせて <code>HelloService</code> を作成します。<a name="service"></a>
+        <h2>サービスの実装</h2>
+
+        <p>これまでの手順で、環境を適切に設定できたため、次は必要に合わせてスケルトンプロジェクトを拡張します。<code>HelloService</code> クラスの作成から始めます。</p>
+
+        <ol>
+            <li>IDE のツールバーにある「新規ファイル」(<img src="../../../images_www/articles/71/web/spring/new-file-btn.png"
+                alt="「新規ファイル」ボタン">) ボタンをクリックします。または、Ctrl-N (Mac の場合は ⌘-N) を押します。</li>
+
+            <li>「<strong>Java</strong>」カテゴリを選択し、「<strong>Java クラス</strong>」を選択して、「次へ」をクリックします。</li>
+
+            <li>表示された「新規 Java クラス」ウィザードで、「クラス名」に「<strong>HelloService</strong>」、「パッケージ」に「<strong>service</strong>」と入力して、このクラスの新規パッケージを作成します。</li>
+
+            <li>「完了」をクリックします。IDE によって新しいクラスが生成され、エディタで開きます。</li>
+        </ol>
+
+        <p><code>HelloService</code> クラスで実行されるサービスは、ごく簡単なものです。名前をパラメータとして取得し、その名前を格納する <code>String</code> を処理して返します。エディタで、クラスに次の <code>sayHello()</code> メソッドを作成します (<strong>ボールド</strong> で表示)。</p>
+
+        <div class="indent">
+<pre class="examplecode">
+public class HelloService {
+
+    <strong>public static String sayHello(String name) {
+        return &quot;Hello &quot; + name + &quot;!&quot;;
+    }</strong>
+}</pre></div>
+
+
+        <h2 id="controller">コントローラとモデルの実装</h2>
+
+        <p><a href="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/org/springframework/web/servlet/mvc/SimpleFormController.html"><code>SimpleFormController</code></a> を使用し、ユーザーデータの処理と、どのビューを返すかの判定を行うことができます。</p>
+
+        <ol>
+            <li>Ctrl-N (Mac の場合は □-N) を押して、「新規ファイル」ウィザードを開きます。「カテゴリ」で「<strong>Spring Framework</strong>」を選択します。または、「ファイルの種類」で「<strong>単純フォームコントローラ</strong>」を選択します。
+
+                <br>
+                <img src="../../../images_www/articles/71/web/spring/simple-form-controller.png"
+                     class="b-all margin-around" style="width:668px"
+                     alt="「新規ファイル」ウィザード - 「Spring Framework」カテゴリ"
+                     title="NetBeans IDE には、さまざまな Spring アーティファクト用のテンプレートが用意されています">
+
+                <br>
+                <span class="tips">NetBeans IDE には、「Spring XML 構成ファイル」、「<a href="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/org/springframework/web/servlet/mvc/AbstractController.html"><code>抽象コントローラ</code></a>」、「<a href="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/org/springframework/web/servlet/mvc/SimpleFormController.html"><code>単純フォームコントローラ</code></a>」など、さまざまな Spring アーティファクト用のテンプレートが用意されています。</span>
+
+            </li>
+
+
+            <li>「次へ」をクリックします。</li>
+
+            <li>クラスに「<strong>HelloController</strong>」という名前を付け、「パッケージ」テキストフィールドに「<strong>controller</strong>」と入力してクラスの新規パッケージを作成します。「完了」をクリックします。IDE によって新しいクラスが生成され、エディタで開きます。</li>
+
+            <li>クラステンプレートのデフォルトで表示する取得メソッドのコメントを解除し、コントローラプロパティーを指定します。コードスニペットのコメントを解除するには、次の図に示すようにコードを強調表示して、Ctrl-/ キー (Mac の場合は &amp;#8984-/) を押します。
+
+                <br>
+                <img src="../../../images_www/articles/71/web/spring/comment-out.png"
+                     class="b-all margin-around"
+                     alt="エディタ内で強調表示されたコードスニペット"
+                     title="コードスニペットを強調表示してから Ctrl-/ キーを押してコメントを切り替える">
+
+                <br>
+                <span class="tips">Ctrl-/ (Mac の場合は &amp;#8984-/) を押して、エディタ内のコメントを切り替えます。</span>
+            </li>
+
+            <li>次のように変更を加えます (<strong>ボールド</strong> で表示)。
+
+<pre class="examplecode">
+public HelloController() {
+    <a href="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/org/springframework/web/servlet/mvc/BaseCommandController.html#setCommandClass(java.lang.Class)">setCommandClass</a>(<strong>Name</strong>.class);
+    <a href="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/org/springframework/web/servlet/mvc/BaseCommandController.html#setCommandName(java.lang.String)">setCommandName</a>(&quot;<strong>name</strong>&quot;);
+    <a href="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/org/springframework/web/servlet/mvc/SimpleFormController.html#setSuccessView(java.lang.String)">setSuccessView</a>(&quot;<strong>hello</strong>View&quot;);
+    <a href="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/org/springframework/web/servlet/mvc/SimpleFormController.html#setFormView(java.lang.String)">setFormView</a>(&quot;<strong>name</strong>View&quot;);
+}</pre>
+
+                <p><code>FormView</code> を設定することによって、フォームの表示に使用されるビュー名を設定できます。これは、ユーザーが自分の名前を入力できるテキストフィールドがあるページです。同様に、<code>SuccessView</code> を設定することによって、送信の成功時に表示されるべきビュー名を設定できます。<code>CommandName</code> の設定時、モデル内でコマンド名を定義します。この場合、このコマンドは、バインドされる要求パラメータを持つフォームオブジェクトです。<code>CommandClass</code> を設定することで、コマンドクラス名を設定できます。このクラスのインスタンスは、各要求と同時に生成および検証されます。</p>
+
+                <p>エラーのフラグが <code>setCommandClass()</code> メソッド内の <code>Name</code> に表示されます。</p>
+
+                <img src="../../../images_www/articles/71/web/spring/set-command-class.png" class="b-all margin-around"
+                    alt="for setCommandClass() のエラーが表示されているエディタ"
+                    title="setCommandClass() に表示されたエラーバッジ">
+
+                <p>
+                ここで、各要求の情報を保持するための簡単な Bean として、<code>Name</code> クラスを作成する必要があります。</p></li>
+
+            <li>「プロジェクト」ウィンドウでプロジェクトノードを右クリックし、「新規」&gt;「Java クラス」を選択します。「新規 Java クラス」ウィザードが表示されます。</li>
+
+            <li>「クラス名」に「<strong>Name</strong>」と入力し、「パッケージ」のドロップダウンリストから「<strong>controller</strong>」を選択します。</li>
+
+            <li>「完了」をクリックします。<code>Name</code> クラスが作成され、エディタで開きます。</li>
+
+            <li><code>Name</code> クラスに対し、<code>value</code> という名前のフィールドを作成し、このフィールドのアクセス用メソッド (取得メソッドと設定メソッド) を作成します。まず、<code>value</code> フィールドを宣言します。
+
+<pre class="examplecode">
+public class Name {
+
+    <strong>private String value;</strong>
+
+}</pre>
+                <p class="tips">すばやく「<code>private</code>」と入力するには、「<code>pr</code>」と入力してから Tab キーを押します。「<code>private</code>」アクセス修飾子が自動的に行に追加されます。これは、エディタのコードテンプレートの使用例です。コードテンプレートの一覧を確認するには、「ヘルプ」&gt;「キーボードショートカットカード」を選択します。</p>
+
+                <br><a name="createAccessors"></a>IDE でアクセス用メソッドが作成されます。エディタ内で <code>value</code> を右クリックし、「コードを挿入」を選択するか、Alt-Insert キー (Mac の場合は Ctrl-I) を押します。ポップアップメニューで、「取得メソッドおよび設定メソッド」を選択します。
+
+                <br>
+                <img src="../../../images_www/articles/71/web/spring/generate-code.png"
+                    class="margin-around b-all"
+                    alt="エディタに表示された「コードを生成」ポップアップメニュー"
+                    title="「コードを生成」ポップアップメニューでは、アクセス用メソッドを設定できます"></li>
+
+
+            <li>表示されるダイアログで、「<code>value : String</code>」オプションを選択し、「了解」をクリックします。<code>getValue()</code> および <code>setValue()</code> メソッドが <code>Name</code> クラスに追加されます。
+
+<pre class="examplecode">
+public String getValue() {
+    return value;
+}
+
+public void setValue(String value) {
+    this.value = value;
+}</pre></li>
+
+            <li>Ctrl-Tab キーを押し、<code>HelloController</code> を選択して、<code>HelloController</code> クラスに切り替えます。<code>Name</code> クラスが存在するようになったため、以前のエラーバッジは表示されなくなります。</li>
+            <li><code>doSubmitAction()</code> メソッドを削除し、<a href="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/org/springframework/web/servlet/mvc/SimpleFormController.html#setFormView(java.lang.String)"><code>onSubmit()</code></a> メソッドのコメントを解除します。<code>onSubmit()</code> メソッドを使用し、ここで必要な独自の <code>ModelAndView</code> を作成できます。次の変更を加えます。
+
+<pre class="examplecode">@Override
+protected ModelAndView onSubmit(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Object command,
+            BindException errors) throws Exception {
+
+        Name name = (Name) command;
+        ModelAndView mv = new ModelAndView(getSuccessView());
+        mv.addObject(&quot;helloMessage&quot;, helloService.sayHello(name.getValue()));
+        return mv;
+}</pre>
+
+                上記に示すとおり、<code>command</code> は <code>Name</code> オブジェクトにキャストされます。<code>ModelAndView</code> のインスタンスが作成され、成功ビューが <code>SimpleFormController</code> の取得メソッドを使用して取得されます。最後に、モデルにデータが取り込まれます。このモデル内の唯一の項目は、以前の手順で作成した <code>HelloService</code> から取得された挨拶メッセージです。<code>addObject()</code> メソッドを使用し、<code>helloMessage</code> という名前のモデルに挨拶メッセージを追加します。</li>
+
+            <li>エディタ内を右クリックし、「インポートを修正」(Ctrl-Shift-I、Mac の場合は ⌘-Shift-I ) を選択してインポートエラーを修正します。
+
+                <br>
+                <img src="../../../images_www/articles/71/web/spring/fix-imports70.png"
+                    class="margin-around b-all" alt="「すべてのインポートを修正」ダイアログ"
+                    title="Ctrl-Shift-I を押してファイルのインポートを修正">
+                <p class="notes"><strong>注.</strong> 「すべてのインポートを修正」ダイアログボックスで <strong><tt>org.springframework.validation.BindException</tt></strong> と <strong><tt>org.springframework.web.servlet.ModelAndView</tt></strong> が選択されていることを確認してください。</p></li>
+
+            <li>「了解」をクリックします。次のインポート文がファイルの最初に追加されます。
+
+<pre class="examplecode">import <a href="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/org/springframework/web/servlet/ModelAndView.html">org.springframework.web.servlet.ModelAndView</a>;</pre>
+
+                API ドキュメントで説明されているように、このクラスは「ハンドラによって返されるモデルとビューを示しており、<code>DispatcherServlet</code> によって解決されます。このビューは、<code>ViewResolver</code> によって解決される必要がある <code>String</code> ビュー名か、または直接指定できる <code>View</code> オブジェクトの形を取ることができます。モデルは <code>Map</code> であるため、名前をキーとする複数のオブジェクトが使用できます」。
+
+                <br><br>
+                この時点では、クラスで <code>HelloService</code> クラスを特定することも、<code>sayHello()</code> メソッドを使用することもできないため、すべてのエラーが修正されるわけではありません。</li>
+
+            <li><code>HelloController</code> 内で <code>HelloService</code> という名前の private フィールドを宣言します。
+
+<pre class="examplecode">private HelloService helloService;</pre>
+
+                次に、このフィールドの public 取得メソッドを作成します。
+
+<pre class="examplecode">public void setHelloService(HelloService helloService) {
+    this.helloService = helloService;
+}</pre>
+
+                最後に、エディタを右クリックし、「インポートを修正」を選択します (Ctrl-Shift-I、Mac の場合は ⌘-Shift-I)。次の文がファイルの最初に追加されます。
+
+<pre class="examplecode">import service.HelloService;</pre>
+
+                今度はすべてのエラーが修正されるはずです。</li>
+
+            <li><code>HelloService</code> を <code>applicationContext.xml</code> に登録します。<code>applicationContext.xml</code> をエディタで開き、次の Bean 宣言を入力します。
+
+<pre class="examplecode">
+&lt;bean name=&quot;helloService&quot; class=&quot;service.HelloService&quot; /&gt;</pre>
+
+                <div class="tips">IDE 内の Spring サポートには、Bean 参照と同様に、Java クラスの XML 構成ファイル内でのコード補完が含まれています。コード補完を実行するには、エディタ内での操作の実行時に Ctrl- スペースキーを押します。
+
+                <br>
+                <img src="../../../images_www/articles/71/web/spring/code-completion.png"
+                    alt="Ctrl- スペースキーを押したときにコード補完が実行された状態"
+                    title="Ctrl- スペースキーを押したときにコード補完が実行された状態"
+                    class="b-all margin-around"></div></li>
+
+            <li><code>HelloController</code> を <code>dispatcher-servlet.xml</code> に登録します。<code>dispatcher-servlet.xml</code> をエディタで開き、次の Bean 宣言を入力します。
+
+<pre class="examplecode">
+&lt;bean class=&quot;controller.HelloController&quot; p:helloService-ref=&quot;helloService&quot;/&gt;</pre></li>
+        </ol>
+
+
+        <h2 id="view">ビューの実装</h2>
+
+        <p>このプロジェクトのビューを実装するには、2 つの JSP ページを作成する必要があります。最初のページは <code>nameView.jsp</code> で、開始ページとして機能し、ユーザーはここに名前を入力できます。もう 1 つのページは <code>helloView.jsp</code> で、入力された名前を含む挨拶メッセージがここに表示されます。最初に <code>helloView.jsp</code> を作成します。</p>
+
+        <ol>
+            <li id="create-jsp">「プロジェクト」ウィンドウで「WEB-INF」&gt;「<code>jsp</code>」ノードを右クリックし、「新規」&gt;「JSP」を選択します。「新規 JSP ファイル」ウィザードが開きます。ファイルに「<strong>helloView</strong>」という名前を付けます。</li>
+
+            <li>「完了」をクリックします。新規 JSP ページが <code>jsp</code> フォルダに作成され、エディタに表示されます。</li>
+
+            <li>エディタで、ファイルの title を「<code>Hello</code>」に変更し、<code>HelloController</code> で作成される <code>ModelandView</code> オブジェクトの <code>helloMessage</code> を取得するよう、出力メッセージを変更します。
+
+
+<pre class="examplecode">
+&lt;head&gt;
+    &lt;meta http-equiv=&quot;Content-Type&quot; content=&quot;text/html; charset=UTF-8&quot;&gt;
+    &lt;title&gt;<strong>Hello</strong>&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;<strong>${helloMessage}</strong>&lt;/h1&gt;
+&lt;/body&gt;
+</pre></li>
+
+            <li>もう 1 つの JSP ページを<a href="#create-jsp">上記</a>と同じ方法で作成し、名前は「<code>nameView</code>」とします。</li>
+
+            <li>エディタで、次の Spring タグライブラリ宣言を <code>nameView.jsp</code> に追加します。
+
+<pre class="examplecode">&lt;%@taglib uri=&quot;http://www.springframework.org/tags&quot; prefix=&quot;spring&quot; %&gt;</pre>
+
+                これにより、<a href="http://static.springframework.org/spring/docs/2.5.x/reference/spring.tld.html">Spring タグライブラリ</a> がインポートされます。このライブラリには、ビューを JSP ページとして実装する際に役立つタグが格納されます。
+
+            <li>「<code>Enter your name</code>」の入力を読み取るよう、<code>&lt;title&gt;</code> タグと <code>&lt;h1&gt;</code> タグの内容を変更します。</li>
+
+            <li><code>&lt;h1&gt;</code> タグの下に次のコードを入力します。
+
+<pre class="examplecode">
+&lt;spring:nestedPath path=&quot;name&quot;&gt;
+    &lt;form action=&quot;&quot; method=&quot;post&quot;&gt;
+        Name:
+        &lt;spring:bind path=&quot;value&quot;&gt;
+            &lt;input type=&quot;text&quot; name=&quot;${status.expression}&quot; value=&quot;${status.value}&quot;&gt;
+        &lt;/spring:bind&gt;
+        &lt;input type=&quot;submit&quot; value=&quot;OK&quot;&gt;
+    &lt;/form&gt;
+&lt;/spring:nestedPath&gt;
+</pre>
+
+                <a href="http://static.springframework.org/spring/docs/2.5.x/reference/spring.tld.html#spring.tld.bind">spring:bind</a> を使用することで、Bean プロパティーをバインドできます。bind タグによってバインド状態と値が提供され、これが入力フィールドの名前および値として使用されます。この方法で、フォームの送信時、送信された値の抽出方法が Spring で識別されます。ここで、コマンドクラス (<code>controller.Name</code>) に <code>value</code> プロパティーが追加されるため、「<code>path</code>」を「<code>value</code>」に設定します。
+
+                <br><br>
+                <a href="http://static.springframework.org/spring/docs/2.5.x/reference/spring.tld.html#spring.tld.nestedPath">spring:nestedPath</a> を使用することで、指定したパスを Bean の前に付加できます。そのため、上記のように <code>spring:bind</code> と一緒に使用すると、Bean へのパスは <code>name.value</code> になります。再呼び出し時、<code>HelloController</code> コマンドの名前は <code>name</code> になります。そのため、ページ範囲内の <code>name</code> という名前の Bean の <code>value</code> プロパティーがこのパスから参照されます。
+
+            <li>アプリケーションの相対エントリポイントを変更します。現在、プロジェクトのエントリポイントはまだ <code>index.htm</code> であり、前述の「<a href="#running">スケルトンプロジェクトの実行</a>」にあるとおり、このページから <code>WEB-INF/jsp/index.jsp</code> にリダイレクトされます。プロジェクトの配備および実行時のエントリポイントを指定できます。「プロジェクト」ウィンドウでプロジェクトノードを右クリックし、「プロパティー」を選択します。「プロジェクトプロパティー」ダイアログが表示されます。「カテゴリ」で「実行」を選択します。「相対 URL」フィールドに「<code>/hello.htm</code>」と入力し、「了解」をクリックします。
+
+                <br><br>
+                この時点では、<code>hello.htm</code> から <code>HelloController</code> へのマッピングがどこにあるか疑問に感じるかもしれません。<code>urlMapping</code> Bean へのマッピングは、スケルトンプロジェクトの開始ページである <code>index.htm</code> の場合と同様に、まだ追加していません。この処理は、次のように Bean を <code>dispatcher-servlet.xml</code> に定義することで実現できる Spring の機能を使えば可能になります。
+
+<pre class="examplecode">&lt;bean class=&quot;org.springframework.web.servlet.mvc.support.ControllerClassNameHandlerMapping&quot;/&gt;</pre>
+
+                この Bean には、このファイルに登録されたすべてのコントローラに対して URL マッピングを自動的に作成する役割があります。コントローラ (このチュートリアルでは <code>controller.HelloController</code>) の完全修飾クラス名が取得され、パッケージ名と <code>Controller</code> 接尾辞が取り除かれて、その結果が URL マッピングに使用されます。そのため、<code>HelloController</code> の場合は <code>hello.htm</code> というマッピングが作成されます。しかしこの機能は、<code>ParameterizableViewController</code> のような Spring Framework に含まれるコントローラには機能しません。これらには、明示的なマッピングが必要になります。</li>
+
+            <li>「プロジェクト」ウィンドウでプロジェクトノードを右クリックし、「実行」を選択します。これにより、プロジェクトがコンパイル、配備、および実行されます。デフォルトブラウザが開き、<code>hello.htm</code> がプロジェクトの <code>nameView</code> として表示されます。
+
+                <br>
+                <img src="../../../images_www/articles/71/web/spring/name-view.png"
+                    alt="ブラウザに表示された nameView"
+                    title="ブラウザに nameView が表示"
+                    class="b-all margin-around">
+
+                <br>
+                テキストフィールドに名前を入力し、「OK」をクリックします。<code>helloView</code> が次のように挨拶メッセージと一緒に表示されます。
+
+                <br>
+                <img src="../../../images_www/articles/71/web/spring/hello-view.png"
+                    alt="ブラウザに表示された helloView"
+                    title="ブラウザに helloView が表示"
+                    class="b-all margin-around"></li>
+        </ol>
+
+
+        <div class="feedback-box">
+            <a href="/about/contact_form.html?to=3&amp;subject=Feedback:%20Introduction%20to%20Spring">ご意見をお寄せください</a></div>
+
+        <br style="clear:both;">
+
+
+        <h2 id="seeAlso">関連項目</h2>
+
+        <p>これで、NetBeans IDE での Spring Framework 入門は終わりです。このドキュメントでは、Spring Framework を使用して NetBeans IDE で簡単な Web MVC アプリケーションを構築する方法をデモし、Web アプリケーション開発用の IDE インタフェースを紹介しました。</p>
+
+        <p>「<a href="http://sites.google.com/site/springmvcnetbeans/step-by-step/">NetBeans および GlassFish サーバーによる Spring Framework MVC アプリケーションの手順を追った開発</a>」などのほかの NetBeans IDE チュートリアル全般を実行し、Spring Framework の学習を続けることをお勧めします。これは Thomas Risberg による公式な <a href="http://static.springframework.org/docs/Spring-MVC-step-by-step/">Spring Framework チュートリアル</a>であり、Arulazi Dhesiaseelan によって NetBeans IDE のために改訂されました。</p>
+
+        <p>Spring NetBeans モジュール機能の多くは、Web ベース以外の Spring Framework アプリケーションにも適用できます。
+
+        <p>その他の関連チュートリアルについては、次のリソースを参照してください。</p>
+
+        <ul>
+            <li><a href="../../docs/web/framework-adding-support.html">Web フレームワークのためのサポートの追加</a>。NetBeans アップデートセンターを使用して Web フレームワークのプラグインをインストールすることによるサポート追加方法を説明した基本ガイドです。</li>
+
+            <li><a href="../../docs/web/jsf20-intro.html">JavaServer Faces 2.0 入門</a>. JSF 2.0 サポートを既存のプロジェクトに追加し、管理対象 Bean を接続し、Facelets テンプレートを利用する方法を説明しています。</li>
+        </ul>
+
+    </body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+
+<html>
+<head>
+<title>ビジュアルモバイルデザイナのカスタムコンポーネント: SMS コンポーザアプリケーションの作成 - NetBeans Java ME チュートリアル</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+<link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+<meta name="author" content="Karol Harelzak">
+</head>
+<BODY>
+<a name="top"></a>
+<H1>ビジュアルモバイルデザイナのカスタムコンポーネント: SMS コンポーザアプリケーションの作成 </H1>
+
+<p>ビジュアルモバイルデザイナ (VMD) は NetBeans Mobility に含まれるグラフィカルインタフェースで、コンポーネントのドラッグ＆ドロップを使用することでモバイルアプリケーションをデザインできます。VMD を使用すると、IDE に含まれるコンポーネントまたは独自にデザインしたコンポーネントを使用して、アプリケーションフローを定義し、GUI をデザインできます。VMD には、リスト、警告、フォーム、画像など、アプリケーションの作成に使用できる標準のユーザーインタフェース (UI) コンポーネントが多数含まれます。また、待機画面、スプラッシュ画面、表項目など、より複雑な機能を簡単に作成できるカスタムコンポーネントも含まれます。</p>
+<P>SMS コンポーザは、ショートメッセージサービス (SMS) を使用してショートメッセージを送信するメカニズムとユーザーインタフェースを備えたカスタムコンポーネントです。
+このコンポーネントでは、<a href="http://jcp.org/en/jsr/detail?id=120">JSR-120</a> の Wireless Messaging API が使用されます。この API は MIDP 2.0 仕様の一部ではないので、このカスタムコンポーネントは、JSR-120 のサポートが組み込まれているデバイスだけに配備できます。</P>
+<P>このチュートリアルでは、Wireless Messaging API (WMA) 対応デバイス用モバイルアプリケーションで SMS コンポーザコンポーネントを使用する方法を示します。このコンポーネントの基本機能と、ショートメッセージサービスを使用してメッセージを送信する方法を学びます。 </P>
+<P>SMS コンポーザカスタムコンポーネントに加え、スプラッシュ画面と警告の 2 つの他の MIDP コンポーネントも使用する必要があります。 
+</P>
+<!--<p class="notes"><b>注:</b> NetBeans IDE 6.8 を使用している場合、<a href="../../68/javame/smscomposer.html">「SMS コンポーザアプリケーションの作成」(NetBeans IDE 6.8)</a> チュートリアルを参照してください。</p>-->
+ <p><b>目次</b></p>
+<img  src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" class="stamp" alt="このページの内容は NetBeans IDE 6.9 以降が対象です" title="このページの内容は NetBeans IDE 6.9 以降が対象です" >
+<ul class="class">
+<li><a href="#sample-app">サンプルアプリケーションのインストールと実行</a></li>
+   <li><a href="#create-app">「SMS コンポーザ」コンポーネントを使用したアプリケーションの作成</a></li><div>
+	<ul>
+	<LI><A HREF="#create">SMSComposerExample プロジェクトの作成</A> </LI>
+	<LI><A HREF="#add">プロジェクトへのパッケージとビジュアル MIDlet の追加</A> </LI>
+	<LI><A HREF="#addcomponent">プロジェクトへのコンポーネントの追加</A> </LI>
+	<LI><A HREF="#addcommands">プロジェクトへのコマンドの追加</A> </LI>
+	<LI><A HREF="#connect">コンポーネントを接続してアプリケーションフローを作成する</A> </LI>
+	<LI><A HREF="#insert">待機画面のタスクの変更</A> </LI>
+	<LI><A HREF="#run">プロジェクトの実行</A> </LI>
+</ul>
+</div>
+<li><a href="#javadoc-loginscreen">SMS コンポーザコンポーネントの Javadoc</a></li>
+   <li><a href="#see-also">関連項目</a></li>
+</ul>
+ <p><b>このチュートリアルに従うには、次に示すソフトウェアとリソースが必要です。</b></p>
+
+<table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                <th class="tblheader" scope="col">必須バージョン</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE と Java ME</a></td>
+              <td class="tbltd1">version 6.9 以降 </td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit</a> (JDK)</td>
+                <td class="tbltd1">version 6 および version 7</td>
+            </tr>      
+        </tbody>
+</table>
+<a name="sample-app"></a>
+<H2>サンプルアプリケーションのインストールと実行</H2>
+<P>始める前に、チュートリアルの最終結果を確認します。 </P>
+<P>次の手順で <tt>SMSComposerExample</tt> アプリケーションをインストールします。</P>
+<OL>
+	<LI><A HREF="https://netbeans.org/projects/samples/downloads/download/Samples/Mobile/SMSComposerExample.zip">SMSComposerExample.zip</A> をダウンロードします。</LI>
+	<LI>ファイルを展開します。 </LI>
+	
+	<LI>IDE で、「<tt>ファイル</tt>」&gt;「<tt>プロジェクトを開く</tt>」を選択し、<tt>SMSComposerExample</tt> プロジェクトの展開したファイルがあるフォルダを参照します。</LI>
+	<li>「プロジェクトを開く」をクリックします。<br>
+	
+	「プロジェクト」ウィンドウは次のようになります。 
+<p class="align-center">	<img src="../../../images_www/articles/71/mobility/smscomposer/sms-project.png" alt="SMS Composer example を開いた「プロジェクト」ウィンドウ" border=1></p> </LI>
+	<LI>「プロジェクト」ウィンドウでプロジェクトノードを右クリックし、「<tt>プロジェクトを実行</tt>」を選択します (または F6 キーを押す)。 <br>
+	  アプリケーションが実行されると、エミュレータウィンドウが開き、デフォルトのデバイスエミュレータでアプリケーションが実行されるところが表示されます。 </LI>
+	<LI>「エミュレータ」ウィンドウで「起動」の下のボタンをクリックします。エミュレータにスプラッシュ画面コンポーネントが表示されてから、次に示す SMS コンポーザが表示されます。 
+	<p class="align-center"><img src="../../../images_www/articles/71/mobility/smscomposer/sms-emulator.png" alt="サンプルの SMS コンポーザアプリケーションが表示された WTK 2.5 エミュレータ" border=1></p> </LI>
+</OL>
+<UL>
+	<LI>電話番号やメッセージなどのオプション間を移動するには、カーソルを上下に移動します。 </LI>
+	<li>中央のボタンをクリックすると、選択されたテキストフィールドの編集が有効になります。</li>
+	<LI>メッセージを送信するには、「Send」の下のボタンをクリックします。 </LI>
+	<LI>アプリケーションを終了するには、「Exit」の下のボタンをクリックします。 </LI>
+</UL>
+ <p class="align-center"><a href="#top">ページの先頭へ</a></p>
+ <a name="create-app"></a>
+<H2 CLASS="western">「SMS コンポーザ」カスタムコンポーネントを使用したアプリケーションの作成 </H2>
+<P>SMS コンポーザコンポーネントが実際に動作するところを確認できたので、最初に戻ってこのアプリケーションを作成します。アプリケーションを作成するには、次の手順を実行します。 </P>
+<OL>
+	<LI><A HREF="#create">SMSComposerExample プロジェクトを作成する</A> </LI>
+	<LI><A HREF="#add">プロジェクトにパッケージとビジュアル MIDlet を追加する</A> </LI>
+	<LI><A HREF="#addcomponent">プロジェクトにコンポーネントを追加する</A> </LI>
+	<LI><A HREF="#addcommands">プロジェクトにコマンドを追加する</A> </LI>
+	<LI><A HREF="#connect">コンポーネントを接続してアプリケーションフローを作成する</A> </LI>
+	<LI><A HREF="#insert">待機画面のタスクを変更する</A> </LI>
+	<LI><A HREF="#run">プロジェクトを実行する</A> </LI>
+</OL>
+<A NAME="create"></A>
+<H3>SMSComposerExample プロジェクトの作成</H3>
+<OL>
+	<LI>「<tt>ファイル</tt>」&gt;「<tt>新規プロジェクト</tt>」(Ctrl-Shift-N) を選択します。「カテゴリ」で「JavaME」を選択します。「プロジェクト」で「モバイルアプリケーション」を選択して、「次へ」をクリックします。 	</LI>
+	<LI>「プロジェクト名」フィールドに <CODE>SMSComposerExample</CODE> と入力します。「プロジェクトの場所」をシステム上の任意のディレクトリに変更します。以降、この例では、このディレクトリを <code>$PROJECTHOME</code> とします。 </LI>
+	<LI>「Hello MIDlet を作成」チェックボックスの選択を解除します。「次へ」をクリックします。 </LI>
+	<LI>「エミュレータプラットフォーム」は、「Sun Java Wireless Toolkit」を選択したままにしておきます。「次へ」をクリックします。 </LI>
+	<LI>「完了」をクリックします。 </LI>
+	<p class="notes"><b>注:</b> このプロジェクトフォルダには、ソースおよび、プロジェクトの Ant スクリプトなどのプロジェクトメタデータのすべてが含まれます。 </p>
+</OL>
+<A NAME="add"></A>
+<H3>プロジェクトへのパッケージとビジュアル MIDlet の追加</H3>
+<OL>
+	<LI>「プロジェクト」ウィンドウで <CODE>SMSComposerExample</CODE> プロジェクトを選択し、「<tt>ファイル</tt>」&gt;「<tt>新規ファイル</tt>」(Ctrl-N) を選択します。「カテゴリ」から「Java」を選択します。「ファイルの種類」として「Java パッケージ」を選択します。「次へ」をクリックします。 </LI>
+	<LI>「パッケージ名」フィールドに <CODE>smscomposerexample</CODE> と入力します。「完了」をクリックします。 </LI>
+	<LI>「プロジェクト」ウィンドウで <CODE>smscomposerexample</CODE> パッケージを選択し、「<tt>ファイル</tt>」&gt;「<tt>新規ファイル</tt>」(Ctrl-N) を選択します。「カテゴリ」にある「MIDP」を選択します。「ファイルの種類」として「ビジュアル MIDIlet」を選択します。「次へ」をクリックします。 </LI>
+  <LI>「MIDlet 名」フィールドと「MIDP クラス名」フィールドに <CODE>SMSComposerExample</CODE> と入力します。「完了」をクリックします。<br>
+    アプリケーションはビジュアルモバイルデザイナの「フローデザイン」ウィンドウに表示されます。  </LI>
+	
+<p class="align-center"> <img src="../../../images_www/articles/71/mobility/smscomposer/sms-midlet.png" alt="ビジュアルモバイルデザイナでの SMSComposerExample" border=1></p>
+	
+</OL>
+<H3><A NAME="addcomponent"></A>プロジェクトへのコンポーネントの追加</H3>
+<OL>
+	<LI>フローデザイナウィンドウで、コンポーネントパレットから次のコンポーネントをドラッグ＆ドロップします。</LI>
+	<UL>
+		<LI>スプラッシュ画面</LI>
+		<LI>SMS コンポーザ</LI>
+		<LI>待機画面</LI>
+      <LI>警告 (x2)</LI>
+	</UL> 
+	<LI>splashScreen をクリックし、「プロパティー」ウィンドウで「テキスト」プロパティーの値を「<tt>null</tt>」から「<tt>SMS Composer Example</tt>」に変更して、Enter を押します。</LI>
+	<LI>alert をクリックし、「プロパティー」ウィンドウで、「タイトル」プロパティーの値を「<tt>alert</tt>」から「<tt>alertSent</tt>」に変更し、同様に、alert1 の「タイトル」プロパティーを「<tt>alert1</tt>」から「<tt>alertError</tt>」に変更します。 </LI>
+	<LI>
+	alert をクリックし、「プロパティー」ウィンドウで、「文字列」プロパティーの値を「<tt>Message Sent</tt>」に変更し、同様に、alertError コンポーネントの「文字列」プロパティーの値を「<tt>Error</tt>」に変更します。</LI>
+	<LI>smsComposer をクリックし、「プロパティー」ウィンドウで、「SMS Properties」カテゴリの「自動的に送信」プロパティーをオフにします。 </LI>
+</OL>
+<H3><A NAME="addcommands"></A>プロジェクトへのコマンドの追加</H3>
+<OL>
+	<LI>フローデザイナを開きます。</LI>
+	<LI>コンポーネントパレットの「コマンド」セクションで終了コマンドを選択します。これをフローデザイナの smsComposer コンポーネントにドラッグ＆ドロップします。</LI>
+</OL>
+<A NAME="connect"></A>
+<H3>コンポーネントを接続してアプリケーションフローを作成する</H3>
+
+	<p>フローデザイナで、モバイルデバイスの「起動」をクリックし、splashScreen コンポーネントまでドラッグします。同様に、次の図に示すようにコンポーネントを接続します。</p>
+	
+<p class="align-center"> <img src="../../../images_www/articles/71/mobility/smscomposer/sms-flow.png" alt="フローデザイナでコンポーネントをコマンドの線で接続したところ" border=1></p>
+	
+
+<A NAME="insert"></A>
+<H3>待機画面のタスクの変更</H3>
+
+	<p>ナビゲータのリソースカテゴリで、<tt>task</tt> コンポーネントを見つけて右クリックし、ポップアップメニューから「ソースへ移動」を選択します。ソースウィンドウで、<code>// write task-execution user code here&quot;</code> というセクションを探し、<code>smsComposer.sendSMS();</code> に置き換えます。	</p>
+
+    <A NAME="run"></A>
+<H3>プロジェクトの実行</H3>
+
+	<p>F6 キーを押して主プロジェクトを実行します。あるいは、「<tt>実行</tt>」&gt;「<tt>主プロジェクトを実行</tt>」を選択してもかまいません。</p>
+
+ <p class="align-center"><a href="#top">ページの先頭へ</a></p>
+ <a name="javadoc-loginscreen"></a>
+<H2>SMS コンポーザコンポーネントの Javadoc</H2>
+<P>NetBeans IDE には、<tt>SMSComposer</tt> コンポーネントや、VMD で使用できるその他のコンポーネントに関する API Javadoc が用意されています。<tt>SMSComposer</tt> コンポーネントの Javadoc を表示するには: 
+</P>
+<OL>
+<li>ソースコードの <tt>SMSComposer</tt> コンポーネントにカーソルを合わせ、Ctr-Shift- スペースキーを押します (または「<tt>ソース</tt>」&gt;「<tt>ドキュメントを表示</tt>」を選択します)。<br>
+この要素の Javadoc がポップアップウィンドウに表示されます。 </li>
+<li>ポップアップウィンドウで「外部 Web ブラウザにドキュメントを表示」アイコン (<img src="../../../images_www/articles/71/mobility/smscomposer/show-doc-button.png" alt="「外部 Web ブラウザにドキュメントを表示」">) をクリックすると、<tt>SMSComposer</tt> コンポーネントについての詳細な情報がブラウザに表示されます。</li>
+
+	
+</OL>
+ <p class="align-center"><a href="#top">ページの先頭へ</a></p>
+<div class="feedback-box"><a href="/about/contact_form.html?to=6&subject=NetBeans%20Java%20ME%20Custom%20Component:%20SMS%20Composer">ご意見をお寄せください</a></div>
+<br style="clear:both;" >  
+
+<a name="see-also"></a>
+<H2>関連項目</H2>
+ <UL>
+ <li><a href="filebrowser.html">ビジュアルモバイルデザイナのカスタムコンポーネント: モバイルデバイスのファイルブラウザの作成</a></li>
+ <li><a href="loginscreen.html">ビジュアルモバイルデザイナのカスタムコンポーネント: モバイルログイン画面の作成</a></li>
+ <li><a href="pimbrowser.html">ビジュアルモバイルデザイナのカスタムコンポーネント: PIM (Personal Information Manager) アプリケーションの作成</a></li>
+ <li><a href="splashscreen.html">ビジュアルモバイルデザイナのカスタムコンポーネント: Java ME アプリケーションでのスプラッシュ画面の使用</a></li>
+ <li><a href="waitscreen.html">ビジュアルモバイルデザイナのカスタムコンポーネント: モバイルアプリケーション用の待機画面の作成</a></li>
+<li><a href="tableitem.html">ビジュアルモバイルデザイナのカスタムコンポーネント: Java ME アプリケーションでの表項目の使用</a></li>
+ <li><a href="http://wiki.netbeans.org/VisualMobileDesignerPalatteReference">参照: ビジュアルモバイルデザイナのパレットのガイド</a></li>
+</UL>
+ <p class="align-center"><a href="#top">ページの先頭へ</a></p>
+</BODY>
+</HTML>

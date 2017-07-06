@@ -1,0 +1,431 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+<html>
+<head>
+   <title>为 Java ME 设备创建支持触摸的 SVG UI - NetBeans IDE 教程</title>
+   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+   <link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+   <meta name="Karol Harezlak" content="">
+</head>
+  <body>
+  <a name="top"></a>
+<h1>为 Java ME 设备创建支持触摸的 SVG UI</h1>
+ <p>本教程将向您说明如何使用 SVG UI 小部件为基于 Java ME 的触摸屏设备开发富 UI。随着基于 Java ME 的触摸屏设备（如 Samsung Omnia 和 Instinct、Nokia 5800 Xpress Music 或 Blackbery Storm）数量的快速增长，为这些设备开发应用程序成为任何专业 Mobile 应用程序开发者所必需具备的技能。本教程中创建的应用程序可以在大多数支持用于 J2ME 的 SVG API (<a href="http://jcp.org/en/jsr/summary?id=226">JSR226</a>) 的设备上运行，因为非触摸屏设备也支持富 SVG UI 小部件。</p> 
+<!--<p class="notes"><b>注意：</b>如果使用的是 NetBeans IDE 6.8，请参阅<a href="../../68/javame/svgtouch.html">在 NetBeans IDE 6.8 中为 Java ME 设备创建支持触摸的 SVG UI</a> 教程。</p>-->
+ <h3>目录</h3>
+<img  src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" class="stamp" alt="本页上的内容适用于 NetBeans IDE 6.9 或更高版本" title="本页上的内容适用于 NetBeans IDE 6.9 或更高版本" >
+<ul>
+<li><a href="#reqs" title="教程要求">教程要求</a></li>
+<li><a href="#setup" title="设置项目环境">设置项目环境</a></li>
+<li><a href="#svgcomp" title="在 SVG 构成器中创建 UI">在 SVG 构成器中创建 UI</a>
+<ul>
+<li><a href="#backinfo" title="背景信息">背景信息</a></li>
+<li><a href="#svgintro" title="SVG 小部件及其功能简介">SVG 小部件及其功能简介</a></li>
+<li><a href="#svgui" title="创建 SVG UI 的步骤">创建 SVG UI 的步骤</a></li>
+<li><a href="#createmidlet" title="在可视 Mobile 设计器中创建 MIDlet">在可视 Mobile 设计器中创建 MIDlet</a></li>
+</ul></li>
+<li><a href="#vmdflow" title="使用可视 Mobile 设计器创建应用程序流">使用可视 Mobile 设计器创建应用程序流</a></li>
+
+<li><a href="#applogic" title="向 UI 添加应用程序逻辑">向 UI 添加应用程序逻辑</a>
+<ul>
+<li><a href="#background" title="背景信息">背景信息</a></li>
+<li><a href="#creatingsvg" title="创建定制 SVGList 模型">创建定制 SVGList 模型</a></li>
+<li><a href="#nextprevious" title="&quot;Next&quot; 和 &quot;Previous&quot; 按钮逻辑">&quot;Next&quot; 和 &quot;Previous&quot; 按钮逻辑</a></li>
+</ul></li>
+<li><a href="#uitest" title="在触摸屏设备仿真器中测试应用程序">在触摸屏设备仿真器中测试应用程序</a></li>
+<li><a href="#summary" title="小结">小结</a></li>
+<li><a href="#see-also">另请参见</a></li>
+</ul>
+<h2><a name="reqs"></a>要求</h2>
+<p><b>要学完本教程，您需要具备以下软件和资源：</b></p>
+
+<table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">软件或资源</th>
+                <th class="tblheader" scope="col">要求的版本</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">带有 Java ME 的 NetBeans Beans</a></td>
+                <td class="tbltd1">版本 6.9 或更高版本</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit</a> (JDK)</td>
+                <td class="tbltd1">版本 6 或 7 </td>
+            </tr> 
+             <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/projects/samples/downloads/download/Samples/Mobile/ContactBrowserExample.zip">联系人浏览器示例</a></td>
+                <td class="tbltd1">NetBeans 项目</td>
+             </tr>
+             <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/projects/www/downloads/download/mobility%252Forg-netbeans-modules-mobility-svg-snippets.nbm">SVG UI 片段</a></td>
+                <td class="tbltd1">NetBeans 插件</td>
+            </tr> 
+                 
+        </tbody>
+</table>
+
+          
+<p class="notes">为确保启用 Java ME 功能，我们建议执行 &quot;Custom Installation&quot;（定制安装），并在 IDE 安装过程中取消选中 &quot;Features on Demand&quot;（按需启用功能）组件。</p>
+      
+
+<h2><a name="setup"></a>设置项目环境</h2>
+
+                      <p> 除了上面列出的必需软件以外，您还应在计算机上执行以下安装：</p>
+
+                      <ul>
+                        <li>应将 <code>ContactBrowser.zip</code> 文件解压缩到 NetBeans 项目文件夹中。</li>
+                        <li>应下载 SVG 片段插件并将其安装到 NetBeans 中：
+                        <ol>
+                        <li>在 IDE 中转至 &quot;Tools&quot;（工具）&gt; &quot;Plugins&quot;（插件）。单击 &quot;Downloaded&quot;（已下载）标签，然后单击 &quot;Add Plugins&quot;（添加插件）。</li>
+                        <li>导航至包含 <tt>svg-snippets.nbm</tt> 文件的本地文件夹，选择该文件，然后单击 &quot;Install&quot;（安装）。</li> 
+                        </ol></li>
+                      <li>单击 &quot;Install&quot;（安装），IDE 将指导您完成该插件的安装。安装该插件后，必须重新启动 IDE。 </li>
+                      <li>重新启动 IDE 后，转至 &quot;Tools&quot;（工具）&gt; &quot;Options&quot;（选项）。在 &quot;Options&quot;（选项）对话框窗口中选择 &quot;Miscellaneous&quot;（其他），然后单击 &quot;SVG&quot; 标签。</li>
+                      <li>在 &quot;SVG Rich Components Snippets&quot;（SVG 富组件片段）部分中打开 &quot;Snippets&quot;（片段）下拉菜单，然后选择 &quot;J1 HOL SVG Snippets&quot;<strong></strong>。单击 &quot;OK&quot;（确定）。
+                       <p class="align-center"><a href="../../../images_www/articles/71/mobility/svgtouch/ex0_3.png" rel="lytebox"
+                       title="&quot;Options&quot;（选项）对话框"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex0_3-small.png"
+                     alt="&quot;Options&quot;（选项）对话框" border=1></a></p>
+                      </li>
+                      </ul>
+<p class="align-center"><a href="#top">返回页首</a></p>                      
+<h2><a name="svgcomp"></a>在 SVG 构成器中创建 UI</h2>
+      <p> 我们将生成一个基于 SVG 的基本应用程序 UI。该应用程序非常简单，但它足以向您说明如何创建新的 Java ME 应用程序，如何将 SVG 图像从 SVG 构成器导入到 Visual MIDlet 中，以及如何在 MIDP 设备仿真器上运行项目。</p>
+ <a name="backinfo"></a>
+  <h3>背景信息</h3>
+
+      <p><strong>SVG：</strong>JSR-226 指定了用于以 XML 呈现可缩放二维矢量图形的 API。矢量图形仅包含每个像素的绘制说明，而不像 GIF 和 JPG 格式那样对每个像素的内容进行编码。因此，矢量图像具备以下几个优点： </p>
+      <ul>
+        <li><strong>可缩放</strong>，在不同大小和分辨率的显示器上图像质量保持不变。您还可以拉伸、翻转或反转图像，而图像质量不会受损。</li>
+        <li>支持<strong>脚本和动画</strong>，非常适合数据驱动的交互式图形。</li>
+        <li><strong>紧凑</strong>。矢量图像最多可比 GIF 或 JPEG 格式的相同图像小十倍。这一重要优点使其可为资源有限的手持设备创建富图形应用程序。 </li>
+        <li>用户可以与图像内容进行<strong>交互</strong>。</li>
+        <li><strong>可搜索</strong>，用户可以在图像中搜索文本。例如，用户可以在地图中搜索特定的街道名称，或在餐馆菜单列表中搜索喜欢的菜肴。</li>
+      </ul>
+      <p>一部分功能完备的 SVG 专用于移动设备，它们被称为 SVG-Tiny，并且 JSR-226 将 SVG-Tiny 配置文件版本 1.1 定为 J2ME 矢量图形的正式文件格式。 
+      </p>
+ <a name="svgintro"></a>
+      <h3>SVG 小部件及其功能简介</h3>
+      <p>通过使用 NetBeans 中的 SVG 构成器和 SVG 窗体富 UI 组件，可以更加容易地创建用户界面。 </p>
+          <p>下面对 SVG 构成器组件面板中提供的 SVG UI 片段进行了概述：</p>       
+          <ul>
+              <li>SVG &quot;List&quot;（列表）- 允许开发者创建一个 UI 所需的 UI 元素列表。</li>
+              <li>SVG &quot;Radio Button&quot;“单选按钮”- 在 SVG 片段中，用户可通过此按钮选择性别。</li>
+              <li>SVG &quot;Combo Box&quot;（组合框）- 用于显示下拉列表菜单的 UI 组件。 </li>
+              <li>SVG &quot;Text&quot;（文本）- 一个可以显示文本（如人名、产品 ID 等）的字段。 </li>
+              <li>SVG &quot;Button&quot;（按钮）- 用于提供 &quot;Next&quot;、&quot;Previous&quot;、&quot;OK&quot; 和其他 UI 功能的按钮。</li>
+              <li>SVG &quot;Spinner&quot; - 使用户能够通过 &quot;Up&quot;（向上）和 &quot;Down&quot;（向下）按钮滚动变量。</li>
+              <li>SVG &quot;Slider&quot;（滑块）- 允许用户调整变量特性。例如，从亮到暗，或在 0-100% 之间进行调整。</li>
+              <li>SVG &quot;Label&quot;（标签）- 使用户对文本字段或其他 UI 组件添加标签。</li>
+        </ul>
+          <p class="align-center"> <a href="../../../images_www/articles/71/mobility/svgtouch/ex1_2.png" rel="lytebox"
+                       title="SVG 构成器组件面板中提供的 SVG UI 片段"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex1_2-small.png"
+                     alt="SVG 构成器组件面板中提供的 SVG UI 片段" border=1></a></p>
+  
+   <p>以上内容仅仅是对 SVG UI 富组件的一个简要介绍。有关更多详细信息，请参见 <a href="http://wiki.netbeans.org/MobilityDesignerRichComponents">NetBeans 可视 Mobile 设计器 Wiki</a> 页。</p>
+
+       <a name="svgui"></a>
+	  <h3>创建 SVG UI 的步骤</h3>
+  <p> 为快速开始创建，我们将打开已准备好的 ContactBrowser 项目，将其用作创建项目的基础。 </p>
+    <ol>
+    <li>在 NetBeans IDE 中打开准备好的 ContactBrowser Java ME 项目。
+          <p>ContactBrowser 项目概览</p>
+          <p class="align-center"><img src="../../../images_www/articles/71/mobility/svgtouch/ex2_2.png"></p></li>
+        <li>在 SVG 构成器中打开 <code>employeeList.svg</code> 图像，然后将两个 SVG 按钮和一个 SVG &quot;List&quot;（列表）窗体组件从组件面板拖放至 &quot;Preview&quot;（预览）画布中，如下所示。我们将在该教程后面重命名这两个按钮。
+       <p>下面显示了添加下列组件后所完成的窗体：</p>
+        <ul>
+          <li>2 个按钮</li>
+          <li>1 个列表</li>
+        </ul>
+     
+
+        <p class="align-center">
+		<a href="../../../images_www/articles/71/mobility/svgtouch/ex2_3.png" rel="lytebox"
+                       title="具有两个按钮和一个列表的窗体"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_3-small.png"
+                     alt="具有两个按钮和一个列表的窗体" border=1></a>
+		</p></li>
+<li>在 &quot;Preview&quot;（预览）窗口中，单击左上方 &quot;OK&quot; 按钮中的文本，然后将其拖至左侧，如以下屏幕快照所示。这样做的目的是为了在 UI 按钮中正确显示 &quot;Select&quot; 一词。
+ <p class="align-center">
+ <a href="../../../images_www/articles/71/mobility/svgtouch/ex2_4b.png" rel="lytebox"
+                       title="具有两个按钮和一个列表的窗体"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_4b-small.png"
+                     alt="具有两个按钮和一个列表的窗体" border=1></a></p></li>
+
+       <li>我们的 SVG UI 还需要一个 SVG 文件 (<code>employeeForm.svg</code>)，因此将打开该文件，然后将按钮、文本字段、标签和单选按钮从组件面板添加到 SVG 构成器的图像中，并对这些组件进行重命名，从而创建 UI。完成后，图像应如下所示。
+      <ul>
+        <li>添加的组件
+        <ul>
+          <li>3 个按钮</li>
+          <li>4 个标签</li>
+          <li>2 个文本字段</li>
+          <li>1 个单选按钮</li>
+          <li>1 个 Spinner</li>
+        </ul></li>
+      </ul>
+
+        <p class="align-center">
+		<a href="../../../images_www/articles/71/mobility/svgtouch/ex2_4.png" rel="lytebox"
+                       title="添加了 SVG 组件"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_4-small.png"
+                     alt="添加了 SVG 组件" border=1></a>
+		
+		</p></li>
+
+ <li>在 &quot;Preview&quot;（预览）窗口中，单击左下角 &quot;OK&quot; 按钮中的文本，然后将其拖至右侧，如以下屏幕快照所示。这样做的目的是为了在 UI 按钮中正确显示 &quot;Previous&quot; 一词。
+ <p class="align-center">
+ <a href="../../../images_www/articles/71/mobility/svgtouch/ex2_4a.png" rel="lytebox"
+                       title="拖至左侧的 &quot;OK&quot; 按钮中的文本"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_4a-small.png"
+                     alt="拖至左侧的 &quot;OK&quot; 按钮中的文本" border=1></a>
+ </p></li>
+  </ol>
+
+<a name="createmidlet"></a>
+<h3>在可视 Mobile 设计器中创建 MIDlet</h3>
+  
+<p>SVG 富 UI 组件框架分为以下两个部分：</p> 
+<ul>
+<li>用于在 SVG 构成器或其他 SVG 编辑器中构建 UI 的 SVG 片段</li>
+<li>支持 UI 功能的 Java ME 库</li>
+</ul>
+<p>我们已经介绍了 SVG 构成器和 SVG 片段，下一步将说明可视 Mobile 设计器中的运行时库，这些库可帮助合并 SVG 图像和 Java ME 源代码中的应用程序逻辑。</p>
+
+  <ol>
+    <li>要创建新的 Visual MIDlet，请选择 &quot;File&quot;（文件）&gt; &quot;New File&quot;（新建文件），然后在 &quot;New File&quot;（新建文件）对话框的 &quot;Categories&quot;（类别）下选择 &quot;MIDP&quot;，并在 &quot;File Types&quot;（文件类型）中选择 &quot;Visual MIDlet&quot;。<tt></tt><tt></tt>新文件应为 <tt>org.netbeans.lab.ui.svg</tt> 包的一部分。           
+          <p class="align-center">
+		   <a href="../../../images_www/articles/71/mobility/svgtouch/ex2_5.png" rel="lytebox"
+                       title="&quot;New File&quot;（新建文件）对话框"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_5-small.png"
+                     alt="&quot;New File&quot;（新建文件）对话框" border=1></a>
+		  
+		  </p>
+    </li>
+
+        <li>在新创建的 MIDlet 中，切换至 &quot;Flow&quot;（流）视图。在组件面板中找到 &quot;SVG Components&quot;（SVG 组件）类别，然后将两个 SVG 窗体组件拖放至 &quot;Flow&quot;（流）视图的设计画布中，并使用右键单击上下文菜单分别将这两个窗体重命名为 <code>employeeList</code> 和 <code>employeeForm</code>。
+          
+          <p class="align-center"><a href="../../../images_www/articles/71/mobility/svgtouch/ex2_6.png" rel="lytebox"
+                       title="添加了两个 &quot;SVG Forms&quot;（SVG 窗体）"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_6-small.png"
+                     alt="添加了两个 &quot;SVG Forms&quot;（SVG 窗体）" border=1></a></p>
+        </li>
+        
+        <li>下一步将连接 SVG 图像和源代码。要将 SVG UI 组件连接至源代码，我们只需将 <code>employeeList.svg</code> 文件从 &quot;Project&quot;（项目）窗口拖放至 <code>employeeList</code> 组件上，然后以同样的方法将 <code>employeeForm.svg</code> 拖放至 <code>employeeForm</code> 上。
+          
+          <p class="align-center"><a href="../../../images_www/articles/71/mobility/svgtouch/ex2_8.png" rel="lytebox"
+                       title="SVG UI 组件已连接到源代码"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_8-small.png"
+                     alt="SVG UI 组件已连接到源代码" border=1></a></p>
+        </li>
+        
+        <li>现在，我们需要更改 <code>svgButton</code> 的实例名称，以使其与执行的操作相对应。请注意，该操作不会更改按钮 UI，我们将在稍后执行此更改。要更改 <code>svgButton</code> 的实例名称，请右键单击按钮，然后从上下文菜单中选择 &quot;Rename&quot;（重命名）。在 &quot;Rename Instance Name&quot;（重命名实例名称）对话框的 &quot;New Name&quot;（新名称）字段中为 <code>svgButton</code> 实例键入所需的操作名称。
+           <p class="notes"><b>注意：</b>在更改 UI 组件的实例名称时，请确保新名称与 UI 按钮的功能相对应。</p>
+           <p class="align-center">
+		  <a href="../../../images_www/articles/71/mobility/svgtouch/ex2_9.png" rel="lytebox"
+                       title="已更改 svgButtons 的实例名称"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_9-small.png"
+                     alt="已更改 svgButtons 的实例名称" border=1></a>
+		  </p>
+        </li>
+         <li>下一步，我们需要更改按钮和文本字段的缺省 SVG 标签，以使其与 <strong>ContactBrowser</strong> 应用程序显示的信息相匹配。要执行此操作，请切换至 &quot;Screen&quot;（屏幕）视图，并显示 <code>employeeForm</code>。然后，选择 &quot;Screen&quot;（屏幕）视图中的标签项，并编辑每个标签和按钮的“文本”属性，以使其与下面的屏幕快照类似。
+          <p class="align-center">
+		   <a href="../../../images_www/articles/71/mobility/svgtouch/ex2_11.png" rel="lytebox"
+                       title="已更改标签和按钮的 &quot;Text&quot;（文本）属性"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_11-small.png"
+                     alt="已更改标签和按钮的 &quot;Text&quot;（文本）属性" border=1></a>
+		  
+		  </p>  </li>
+        <li>我们还需要更改 SVG 文本字段的实例名称。右键单击 &quot;First Name&quot;，然后从上下文菜单中选择 &quot;Rename&quot;（重命名），并将其名称更改为 <code>svgTextFieldFirstName</code>。对 &quot;Last Name&quot; 字段重复此步骤，将其重命名为 <code>svgTextFieldLastName</code>。</li>
+		
+        <li>现在，在 IDE 项目窗口的下拉菜单中从 <strong>employeeForm</strong> 切换至 <strong>employeeList</strong>，然后按照下面的屏幕快照所示重命名按钮。您可以在 &quot;Properties&quot;（属性）窗口的 &quot;Text&quot;（文本）字段中看到所做的更改。
+        <p class="align-center">
+		<a href="../../../images_www/articles/71/mobility/svgtouch/ex2_11a.png" rel="lytebox"
+                       title="已更改按钮的 &quot;Text&quot;（文本）属性"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_11a-small.png"
+                     alt="已更改按钮的 &quot;Text&quot;（文本）属性" border=1></a>
+		
+		</p> </li> 
+  </ol>
+<p class="align-center"><a href="#top">返回页首</a></p>
+ <h2><a name="vmdflow"></a>使用可视 Mobile 设计器创建应用程序流</h2>
+  <p>现在，我们准备使用可视 Mobile 设计器的 &quot;Flow&quot;（流）视图创建应用程序流。 </p>
+        <ol>
+        <li>在 IDE 中从 &quot;Screen&quot;（屏幕）视图切换至 &quot;Flow&quot;（流）视图。</li>
+        <li>按照以下所示连接各个组件。首先，单击 &quot;Mobile Device&quot;（移动设备）<strong></strong>元素上的“起点”并将鼠标拖至 &quot;employeeList&quot;<strong></strong> 元素开始连接。重复此方法以完成其他组件连接。
+                  <p class="align-center">
+				  <a href="../../../images_www/articles/71/mobility/svgtouch/ex2_12.png" rel="lytebox"
+                       title="已创建应用程序流"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_12-small.png"
+                     alt="已创建应用程序流" border=1></a>
+				  </p>
+        </li>
+        </ol>
+  <p>在 &quot;Source&quot;（源）视图中，可以看到将 SVG XML UI 组件片段与 Java ME 运行时库绑定的机制。在下面的示例中，您可以了解到 SVG 按钮片段是如何与 Java ME 对象绑定的。SVG 组件是基于 XML 片段 ID 进行识别的；在此例中，该 ID 为 <code>button_0</code>。</p>
+      <p class="align-center"><img src="../../../images_www/articles/71/mobility/svgtouch/ex2_14.png"></p>
+      
+      <h3>运行应用程序</h3>
+      <p>在添加应用程序逻辑之前，我们应在仿真器上测试联系人浏览器 UI。</p>
+
+<p>在菜单中选择 &quot;Run Main Project&quot;（运行主项目）(F6)，将启动仿真器，之后您便可以看到 UI 并且可以对其进行测试。我们尚未实现应用程序逻辑，但可基于在可视 Mobile 设计器中所完成的工作验证 UI 是否按预期效果显示。</p>
+  
+
+  <p class="align-center"><a href="#top">返回页首</a></p>      
+  <h2><a name="applogic"></a>在 SVG 用户界面中添加应用程序逻辑</h2>
+
+  <p>现在，我们可以使用可视 Mobile 设计器为前一步创建的 UI 创建应用程序逻辑。我们将使用一些其他组件和方法，最后在 Java ME SDK 3.0 仿真器中运行应用程序。</p>
+  <a name="background"></a>
+  <h3>背景信息</h3>
+<ul>
+<li><strong>SVG ListModel</strong>：定义方法组件，如 SVGList 用来获取列表中每个单元格的值以及计算所需的单元格数量并显示该数量的方法组件。从逻辑上讲，该模型是一个矢量，索引范围在 <tt>0</tt> 到 <tt>ListDataModel.getSize() - 1</tt> 之间。对数据模型内容或长度所做的任何更改必须报告给所有 SVGListDataListener。如果您熟悉 Swing 的 JList 模型，则 SVGListModel 应该很容易理解。</li>
+<li><strong>Entry Point（入口点）组件</strong>：&quot;Entry Point&quot;（入口点）组件用于在设计的类中表示一个方法。该方法包含由为其分配的操作“已调用项”所指定的代码。如果在应用程序屏幕之间进行切换时需要执行代码，或者在我们的示例中，如果需要在 Visual MIDlet 的 &quot;Flow&quot;（流）视图中显示 SVGButton 逻辑，则此方法非常有用。</li>
+</ul>  
+<a name="creatingsvg"></a>
+<h3>创建定制 SVGList 模型</h3>
+<p> 在此步骤中，我们将创建自己的 SVGListModel 实现。我们的 SVGListModel 实现是 <code>getSvgList</code> 方法内的一个匿名类。</p>
+      <ol>
+         <li> 使用 &quot;Navigator&quot;（导航）（如果尚未显示，请按 Ctrl+7 组合键）查找 <code>employeeList</code> 组件下面的 <code>getSvgList</code> 元素，方法是单击鼠标右键，然后从上下文菜单中选择 &quot;Go to Source&quot;(转至源)。</li>
+         <li>在 <code>getSVGList</code> 方法的 <code>svgList = new SVGList(getEmployeeList(), &quot;list_0&quot;);</code> 后面添加以下代码：<br>
+		 <pre class="examplecode">
+		    //Creating and adding new SVGListModel as anonymous class. Implementation of ListModel
+            svgList.setModel(new SVGList.ListModel() {
+                //Getting contact data as Vector from class EmployeeData
+                Vector data = EmployeeData.getData();  
+                                
+                /**
+                 * Method returns combination of strings: First Name + Last Name
+                 * @return Employee name as String
+                 */
+                public Object getElementAt(int index) {
+                    //Getting First Name String
+                    String firstName = ((Employee) data.elementAt(index)).getFirstName();
+                    //Getting Last Name String
+                    String lastName = ((Employee) data.elementAt(index)).getLastName();
+                    
+                    return firstName + &quot; &quot; + lastName;
+                }
+                 /**
+                 * Number of employees
+                 * @return number of employees
+                 */
+                public int getSize() {
+                    return data.size();
+                }
+                //not used
+                public void addDataListener(DataListener listener) { }               
+                
+                //not used
+                public void removeDataListener(DataListener listener) { }                          
+            });</pre></li>
+  </ol>
+      <p class="notes"><b>注意：</b>您可以在 IDE 中使用代码完成功能并自行键入代码。</p>
+      
+<a name="nextprevious"></a>
+<h3>&quot;Next&quot; 和 &quot;Previous&quot; 按钮逻辑</h3> 
+      <p>在此步骤中，我们将为 <code>employeeForm</code> 中包含的 SVGButton 添加逻辑。这些按钮允许应用程序用户浏览员工数据。通过单击 &quot;Next&quot;，用户可以跳至下一个员工联系人。通过按 &quot;Previous&quot; 按钮，用户应会看到上一个员工记录。在此步骤中，我们将使用之前介绍的入口点元素。</p>
+     <ol>
+        <li>切换至 &quot;Flow&quot;（流）视图，然后从组件面板的 &quot;Flow&quot;（流）类别中添加两个入口点组件。右键单击这两个组件，然后将它们重命名为 <tt>nextMethod</tt> 和 <tt>previousMethod</tt>，如下所示：   
+      <p class="align-center">
+	  <a href="../../../images_www/articles/71/mobility/svgtouch/ex3_1.png" rel="lytebox"
+                       title="已创建 SVGButtons 流"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex3_1-small.png"
+                     alt="已创建 SVGButtons 流" border=1></a>
+	 </p>
+      </li>
+      <li> 现在，我们需要向 Visual MIDlet 中添加一个全局私有整型属性索引。让我们切换至 &quot;Source&quot;（源）视图，然后在 &quot;Generated Fields&quot; 保护块下面添加以下代码：<br>
+     
+     <pre class="examplecode">private int index = 0;</pre></li>
+      
+      <li>现在，我们需要添加逻辑以更新 <code>employeeForm</code> 中的 UI。我们在此处使用的方法将更新 <code>employeeForm</code> 组件中的 SVG UI 元素。在源代码编辑器中的类末尾处添加以下方法：
+      <p class="notes"><b>注意：</b>可以使用 IDE 的代码完成功能输入代码。</p>
+      
+	  <pre class="examplecode">
+	        //**Method is responsible for populating employee UI form with information about employees.
+            private void updateEmployeeFormUI() {
+              //Getting currently selected employee
+              final Employee employee = (Employee) EmployeeData.getData().elementAt(index);
+              //Setting First Name
+              getSvgTextFieldFirstName().setText(employee.getFirstName());
+              //Setting Last Name
+              getSvgTextFieldLastName().setText(employee.getLastName());
+              //Setting Gender
+              if (employee.getGender()) {
+                  getSvgRadioButton().setSelected(false);
+                  getSvgRadioButton1().setSelected(true);
+              } else {
+                  getSvgRadioButton().setSelected(true);
+                  getSvgRadioButton1().setSelected(false);
+              }    
+              //Setting age
+              getSvgSpinner().getModel().setValue(new Integer(employee.getAge()));
+            }  
+	  </pre>
+         
+      <p>现在，我们就可以开始在 <tt>nextMethod</tt> 和 <tt>previousMethod</tt> 中添加逻辑了。</p></li> 
+
+        <li>切换至 &quot;Flow&quot;（流）视图，右键单击 <code>nextMethod</code> 入口点，然后从弹出式菜单中选择 &quot;Go To Source&quot;（转至源）选项。</li>
+        <li>在源代码编辑器中，将以下代码添加到 <tt>switchDisplayable(null, getEmployeeForm().getSvgCanvas());</tt> 前面的 <tt>nextMethod()</tt> 方法中。此代码将显示员工数据记录队列中的下一个记录。此外，还会调用更新显示信息的 UI。<br>
+		<pre class="examplecode">// Move to the next Employee record
+        if (index &lt; EmployeeData.getData().size() - 1) {
+            //Update index.
+            index++;
+        }
+        //Update UI - employee form
+        updateEmployeeFormUI();
+        //Go back to employeeForm
+		</pre></li>
+       <li>切换至 &quot;Flow&quot;（流）视图，右键单击 <code>previousMethod</code> 入口点，然后从弹出式菜单中选择 &quot;Go To Source&quot;（转至源）选项。</li> 
+	   <li>在源代码编辑器中，在 <tt>switchDisplayable(null, getEmployeeForm().getSvgCanvas());</tt> 前面的 <tt>previousMethod()</tt> 方法中添加以下代码，使数据浏览功能可以正常工作。<br>
+       <pre class="examplecode">// Move to the previous Employee record
+        if (index &gt; 0) {
+            //Update index
+            index--;
+        }
+        //Update UI
+        updateEmployeeFormUI();
+        //Go back to employeeForm
+	  </pre>
+          
+     
+   <p>接下来，我们需要确保当 <code>employeeForm</code> 在基于员工列表中所做的选择而被设置为全局索引时，UI 会更新。</p></li>
+      <li>切换至 &quot;Flow&quot;（流）视图，右键单击 <code>employeeList</code> 中的 &quot;select&quot; 按钮，然后从弹出式菜单中选择 &quot;Go To Source&quot;（转至源）。<tt></tt></li>
+      <li>在源代码编辑器中，将以下代码添加到 <tt>public void actionPerformed(SVGComponent svgComponent) {</tt> 后面的 <code>getSelect()</code> 方法中：<br>
+	  <pre class="examplecode"> //Updating global index
+                    index = getSvgList().getSelectionModel().getSelectedIndex();
+                    //Updating UI after selection has been made
+                    updateEmployeeFormUI();
+                    //Switching to the employeeForm</pre></li>
+      
+  </ol>
+<p class="align-center"><a href="#top">返回页首</a></p>    
+    <h2><a name="uitest"></a>在触摸屏设备仿真器中测试应用程序</h2>
+      <p>现在，我们就可以在 NetBeans IDE 安装程序捆绑的 Java ME SDK 3.0 <strong>DefaultFxTouchPhone1</strong> 设备仿真器中测试应用程序了。为了启动应用程序，我们需要编辑项目属性。</p>
+      
+      <ol>
+        <li>右键单击项目节点，然后从上下文菜单中选择 &quot;Properties&quot;（属性）。在项目属性对话框的 &quot;Category&quot;（类别）下面选择 &quot;Platform&quot;（平台），然后从 &quot;Emulator Platform&quot;（仿真器平台）下拉菜单中选择 &quot;Java Platform Micro Edition SDK 3.0&quot;。</li>
+        <li>对于触摸屏设备仿真，请从 &quot;Device&quot;（设备）下拉菜单中选择 &quot;DefaultFxTouchPhone1&quot;，并选中 &quot;CLDC-1.1&quot; 作为设备配置（如下所示），然后单击 &quot;OK&quot;（确定）。
+          <p class="align-center">
+	 <a href="../../../images_www/articles/71/mobility/svgtouch/ex4_4.png" rel="lytebox"
+                       title="已选择仿真器平台和设备"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex4_4-small.png"
+                     alt="已选择仿真器平台和设备" border=1></a>
+	</p>
+	</li>
+        <li>转至 &quot;Run&quot;（运行）&gt; &quot;Run Project&quot;（运行项目）。此时将在仿真器中启动应用程序。可通过将鼠标指针放在 SVG 组件上，验证是否启用了触摸屏属性。可以在屏幕上移动鼠标光标以导航应用程序，就像用户用指尖点按一样。</li>
+        <li>在仿真器中，我们可以执行一些基本的 UI 测试，例如使用 &quot;Previous&quot; 或 &quot;Next&quot; 按钮验证 UI 元素是否能够正常工作。
+     <p class="align-center">
+	 <a href="../../../images_www/articles/71/mobility/svgtouch/ex4_5.png" rel="lytebox"
+                       title="在仿真器中启动了应用程序"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex4_5-small.png"
+                     alt="在仿真器中启动了应用程序" border=1></a>
+	</p> </li>
+</ol>
+
+ <h2>小结<a name="summary"></a></h2>
+      <p> 在本教程中，您了解了如何使用 NetBeans IDE 为 Java ME 设备创建基于 SVG 且支持触摸屏的 UI。</p>
+
+      <p class="align-center"><a href="#top">返回页首</a></p>
+
+ <div class="feedback-box"><a href="/about/contact_form.html?to=6&subject=Creating%20a%20Touch%20Enabled%20SVG%20UI%20for%20Java%20ME%20Devices">请将您的反馈发送给我们</a></div>
+   <br style="clear:both;" >
+     
+<a name="see-also"></a>
+<h2>另请参见</h2>
+<ul>	
+         <li><a href="http://wiki.netbeans.org/MobilityDesignerRichComponents">SVG 富 UI 组件参考</a></li>
+         <li><a href="http://blogs.sun.com/kharezlak/entry/playing_with_svg_components_in">SVG 富 UI 应用程序</a></li>
+         <li><a href="http://wiki.netbeans.org/MobilitySVGComponents">使用 SVG 富 UI 组件</a></li>
+         <li><a href="http://wiki.netbeans.org/VisualMobileDesignerPalatteReference">参考：可视 Mobile 设计器组件面板指南</a></li>
+  <li><a href="../../../kb/trails/mobility.html">NetBeans Java ME 应用程序学习资源</a></li>
+  </ul>
+	 <p class="align-center"><a href="#top">返回页首</a></p>
+  </body>
+  </HTML>

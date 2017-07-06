@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html><head>
+
+
+        <link rel="stylesheet" href="../../../print.css" type="text/css" media="print"><title>使用 JAXB 将 WSDL 绑定到 Java - NetBeans IDE</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="KEYWORDS" content="NETBEANS, TUTORIAL, GUIDE, USER, DOCUMENTATION, WEB SERVICE, WEB SERVICES, SOAP, METRO, WSDL, JAVA, JAXB, JAX-WS">
+
+        <meta name="description" content="This tutorial shows how to use NetBeans IDE 7.0-7.4
+              to work with Java Architecture for XML Binding (JAXB) to generate Java classes based on XML documents.">
+        <link rel="stylesheet" href="../../../netbeans.css"></head><body>
+        <h1>使用 JAXB 将 WSDL 绑定到 Java</h1>
+
+        <p>使用 <a href="http://www.oracle.com/technetwork/articles/javase/index-140168.html" target="_blank">Java Architecture for XML Binding API</a> (JAXB)，可以轻松地访问以 Java 编程语言编写的应用程序中的 XML 文档。JAXB 是使用 SAX 或 DOM 解析器访问 XML 文档中数据的替代方法。在使用 JAXB 访问 XML 文档时，先将 XML <a href="http://www.oracle.com/technetwork/articles/javase/index-140168.html#binsch" target="_blank">文档的方案<em>绑定</em></a>到表示该方案的一组 Java 类。然后，<a href="http://www.oracle.com/technetwork/articles/javase/index-140168.html#unmars" target="_blank">将 XML 文档<em>取消编组</em></a>。对文档取消编组意味着创建表示文档内容和组织的内容对象的树。</p>
+        <p>还可以使用 JAXB 构建 XML 文档。要使用 JAXB 构建 XML 文档，请先为要构建的 XML 文档<a href="http://www.oracle.com/technetwork/articles/javase/index-140168.html#binsch2" target="_blank">绑定方案</a>。然后，<a href="http://www.oracle.com/technetwork/articles/javase/index-140168.html#crtree" target="_blank">创建内容树</a>。最后，<a href="http://www.oracle.com/technetwork/articles/javase/index-140168.html#mars">将内容树<em>编组</em></a>到 XML 文档中。</p>
+        <p>下图来自<a href="http://www.oracle.com/technetwork/articles/javase/index-140168.html" target="_blank">用于 XML 绑定 API 的 Java 体系结构</a>，它显示了用于从 Java 应用程序中访问和构建 XML 文档的过程。</p>
+        <p><img alt="显示用于访问或从 Java 创建 XML 的 JAXB 进程的图" src="../../../images_www/articles/72/websvc/jaxb/xml_schema_fig1.PNG" style="width: 450px; height: 300px;"><br>
+        </p>
+
+        <p>本教程向您演示用于 JAXB 的 NetBeans IDE 工具支持。在本教程中，您将具体学习以下三方面的知识： </p>
+        <ul>
+
+            <li>如何使用 IDE 中的向导将 XML 文档的方案绑定到表示该方案的一组 Java 类以及如何对该文档取消编组。 </li>
+            <li>如何在应用程序代码中使用 JAXB 生成的类。</li>
+            <li>如何将 Java 代码编组到 XML 方案文档中。  </li>
+        </ul>
+
+        <p>有关 JAXB 体系结构以及整个 JAXB 的详细信息，请参见 <a href="http://java.sun.com/webservices/docs/2.0/tutorial/doc/" target="_blank">Java Web 服务教程</a>中的第 2 章 <a href="http://download.oracle.com/docs/cd/E17802_01/webservices/webservices/docs/2.0/tutorial/doc/JAXBWorks.html#wp100322" target="_blank">XML 方案与 Java 类之间的绑定</a>以及第 3 章<a href="http://download.oracle.com/docs/cd/E17802_01/webservices/webservices/docs/2.0/tutorial/doc/JAXBUsing.html#wp78319" target="_blank">使用 JAXB</a>。 </p>
+
+        <p><b>目录</b></p>
+
+        <img alt="此页上的内容适用于 NetBeans IDE 7.2、7.3 和 7.4" class="stamp" src="../../../images_www/articles/72/netbeans-stamp-74-73-72.png" title="此页上的内容适用于 NetBeans IDE 7.2、7.3 和 7.4">
+        <ul>
+
+            <li><a href="#Exercise_1">基于 XML 文档生成 Java 对象</a></li>
+            <li><a href="#Exercise_2">检查 JAXB 向导输出</a></li>
+            <li><a href="#Exercise_3">将 Java 代码编组到 XML 方案文档中</a></li>
+        </ul>
+
+        <p><b>要学习本教程，您需要具备以下软件和资源。</b></p>
+
+        <table>
+
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">软件或资源</th>
+                    <th class="tblheader" scope="col">要求的版本</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                    <td class="tbltd1"> Java EE 下载包 </td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java 开发工具包 (JDK)</a> </td>
+                    <td class="tbltd1">版本 7 或版本 6</td>
+                </tr>
+                                <tr>
+                    <td class="tbltd1">本教程中使用的 WSDL 文件</td>
+                    <td><a href="http://www.netbeans.org/files/documents/4/2518/CreditReportSimple.wsdl">CreditReportSimple.wsdl</a></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p class="notes">Tomcat 和 GlassFish Server 都可以随同 NetBeans IDE 的 Web 和 Java EE 分发一起安装。此外，也可以访问 <a href="https://glassfish.java.net/download.html">GlassFish Server 下载页</a>或 <a href="http://tomcat.apache.org/download-60.cgi">Apache Tomcat 下载页</a>。</p>
+
+        <!-- ===================================================================================== -->
+        <h2><a name="Exercise_1"></a><!--Exercise 1: --> 基于 XML 文档生成 Java 对象</h2>
+
+        <p>本练习的目的旨在创建一个项目，并基于 XML 文档生成 Java 对象。</p>
+
+        <ol>
+
+            <li>下载 <a href="http://www.netbeans.org/files/documents/4/2518/CreditReportSimple.wsdl" target="_blank">CreditReportSimple.wsdl</a> 并将其保存到所选位置。<br>
+            </li>
+            <li>选择 "File"（文件）> "New Project"（新建项目）。在 "Categories"（类别）下，选择 "Java"。在 "Projects"（项目）下，选择 "Java Application"（Java 应用程序），然后单击 "Next"（下一步）。</li>
+            <li>在 "Project Name"（项目名称）中输入 <tt>JseSimpleClientReport</tt>，然后单击 "Finish"（完成）。在 "Projects"（项目）窗口中，将显示 JseSimpleClientReport 项目。</li>
+            <li>在 "Projects"（项目）窗口中，右键单击 <tt>JseSimpleClientReport</tt> 节点，然后选择 "New"（新建）> "Other"（其他）> "XML" > "JAXB Binding"（JAXB 绑定）。然后，单击 "Next"（下一步）。此时将显示新建 JAXB 绑定向导。 <br> <img alt="JAXB 向导" border="1" class="margin-around" height="519" src="../../../images_www/articles/72/websvc/jaxb/jaxb-wiz-1.png" width="600">
+                <p>以上向导中的设置具有如下用途：</p>
+                <ul>
+                    <li><b>Binding Name</b>（绑定名称）。指定新 JAXB 绑定的名称，该名称将用于标识绑定。</li>
+                    <li><b>Project</b>（项目）。显示当前项目的名称。</li>
+                    <li><b>Schema File</b>（方案文件）。要处理的文件可以本地提供，也可以联机提供。</li>
+                    <li><b>Schema Type</b>（方案类型）。支持以下 XML 方案语言：
+                        <ul>
+                            <li><a href="http://www.w3.org/XML/Schema" target="_blank"><b>XML Schema（XML 方案）</b></a></li>
+                            <li><a href="http://relaxng.org/" target="_blank"><b>Relax NG</b></a>（释放 NG） - 简单的 XML 方案语言。XML 语法 </li>
+                            <li><a href="http://relaxng.org/" target="_blank"><b>Relax NG Compact</b></a>（释放 NG 压缩） - 简单的 XML 方案语言。非 XML 语法</li>
+                            <li><b>XML DTD - </b>XML 方案的早期替代方法<br></li>
+                            <li><b><a href="http://www.w3.org/TR/wsdl" style="font-weight: bold;">WSDL</a> - </b>Web 服务定义语言。用于定义基于 SOAP 的 Web 服务的 XML 方案语言。<br>
+                            </li>
+                        </ul>
+                    </li>
+                    <li><b>Package Name</b>（包名）。指定 Java 对象将生成到的包。</li>
+                    <li><b>Compiler Options</b>（编译器选项）。有多个编译器选项可用，如 Java EE 7 教程中的<a href="http://docs.oracle.com/javaee/7/tutorial/doc/">此处</a>所述。但是，只有以下选项与 JAXB 向导有关，您可以使用向导中的复选框对其进行设置：
+                        <ul>
+                            <li><b>nv</b>。不执行严格的输入方案验证。默认情况下，严格的源方案验证是在处理之前执行的。请注意，这并不意味着绑定编译器将不执行<i>任何</i>验证，而仅表示将执行较为宽松的验证。</li>
+                            <li><b>readOnly</b>（只读）。强制编译器将生成的 Java 源代码标记为只读。默认情况下，编译器不会对其生成的 Java 源文件进行写保护。</li>
+                            <li><b>npa</b>。禁止将包级别标注生成到 <tt>**/package-info.java</tt> 中。使用此开关将导致生成的代码将这些标注包含在其他的生成类中。</li>
+                            <li><b>verbose</b>（详细）。生成最多的编译器输出，例如进度信息和警告。</li>
+                            <li><b>quiet</b>（无提示）。禁止编译器输出，例如进度信息和警告。</li>
+                        </ul>
+                    </li>
+                    <li><b>Use Extension</b>（使用扩展）。默认情况下，编译器严格强制执行在 JAXB 规范的“兼容性”章节中概述的规则。在默认（严格）模式下，您也只能使用规范中定义的绑定定制。通过使用此选项，您可以使用 JAXB 供应商扩展。</li>
+                    <li><b>Use Binding File</b>（使用绑定文件）。可用于导入和编辑一个或多个 JAXB 绑定定制文件。</li>
+                    <li><b>Use Catalog File</b>（使用目录文件）。可用于导入和编辑 OASIS 目录文件。</li>
+                </ul>
+            </li>
+            <li>在 "Binding Name"（绑定名称）中键入 <tt>CreditReport</tt>。</li>
+            <li>在 "Schema File"（方案文件）的下面，选择 "From Local File System"（从本地文件系统中选择）。单击 "Browse"（浏览），然后浏览至本教程开头下载的 WSDL 文件。</li>
+            <li>在 "Schema Type"（方案类型）下拉列表中，选择 "WSDL"（如果 IDE 没有自动选择此选项）。
+                <p class="alert"><strong>注：</strong>可能会出现一个警告，表明 WSDL 方案支持仅是试验性的，需要使用 -wsdl 选项来激活它。忽略此警告。</p></li>
+            <li>在 "Package Name"（包名）中键入 <tt>org.netbeans.j2ee.wsdl.creditreport</tt>。您现在应该看到下面的屏幕： <img alt="已填充的 JAXB 向导" border="1" class="margin-around" height="531" src="../../../images_www/articles/72/websvc/jaxb/jaxb-wiz-2.png" title="已填充的 JAXB 向导" width="600"></li>
+            <li>单击 "Finish"（完成）。</li>
+        </ol>
+
+        <p>IDE 将基于给定的 XML 文档生成 Java 对象。在下一节中，我们将在 IDE 中检查 Java 对象。 </p>
+
+        <h2><a name="Exercise_2"></a>检查 JAXB 向导输出</h2>
+
+        <p>本练习的目的旨在帮助我们熟悉 NetBeans IDE 中用于处理 JAXB 向导输出的工具。</p>
+
+        <ol>
+
+            <li>如同在构建项目时 IDE 重新构建其他工件一样，它也会在 <tt>build</tt> 文件夹中构建 Java 对象。打开 "File"（文件）窗口，然后便可以浏览至生成的 Java 对象所在的位置。这些 Java 对象还将显示在 "Projects"（项目）窗口中的 "Generated Sources"（生成的源）节点下面。<br> <img alt="显示生成的 Java 对象的项目和文件视图" border="1" class="margin-around" height="552" src="../../../images_www/articles/72/websvc/jaxb/gen-src.png" title="显示生成的 Java 对象的项目视图" width="328"></li>
+            <li>"Projects"（项目）窗口还将显示一个包含 WSDL 文件的新节点，如下所示。请注意，您可以右键单击 "CreditReport" 节点，然后重新打开向导，以便更改之前指定的设置。 <br> <img alt="显示 "Change JAXB Options"（更改 JAXB 选项）选项的信用报告上下文菜单" class="margin-around" height="209" src="../../../images_www/articles/72/websvc/jaxb/change-jaxb-options.png" title="显示 "Change JAXB Options"（更改 JAXB 选项）选项的信用报告上下文菜单" width="325">
+                
+          </li>
+            <li>
+              <p>如果您更改了向导中的设置，则可以按如下所示重新生成 Java 对象： <br> <img alt="显示 "Regenerate Java Code"（重新生成 Java 代码）选项的 JAXB 绑定上下文菜单" class="margin-around" height="209" src="../../../images_www/articles/72/websvc/jaxb/regen-code.png" title="显示 "Regenerate Java Code"（重新生成 Java 代码）选项的 JAXB 绑定上下文菜单" width="325"></p>
+            </li>
+            <li>右键单击 WSDL 文件，然后选择 "Open"（打开）。文档在编辑器中打开。 <br>
+            </li>
+        </ol>
+
+        <p>现在，您已了解 IDE 为 XML 文档生成了哪些内容，接下来我们将使用一些熟悉的工具来对生成的 Java 对象执行一些有意义的操作。<!-- ===================================================================================== -->
+        </p>
+
+        <h2><a name="Exercise_1"></a><!--Exercise 2: --> 将 Java 代码编组到 XML 方案中 </h2>
+
+        <p>本练习的目的旨在对 IDE 所生成的文件和代码执行一些有意义的操作。您将在生成的某个 Java 对象中设置一些值，然后将该对象编组到 IDE 的 "Output"（输出）窗口中显示的 XML 方案文档中。</p>
+
+        <ol>
+
+            <li>打开新建 Java 应用程序向导所生成的 Main 类。默认情况下，此类根据项目命名为 <tt>JseSimpleClientReport.java</tt>。在 <tt>main</tt> 方法主体中声明 <tt>CreditReport</tt>，它是生成的一个根 JAXB 类：
+                <pre class="examplecode">public static void main(String[] args) {<br>     CreditReport cr = new CreditReport(); <br>}</pre>
+            </li>
+          <li>随即出现一个警告图标。悬停在它上面，将打开一个工具提示，告知您 IDE 无法找到类 <tt>CreditReport</tt>。左键单击警告图标，然后选择 IDE 的选项以添加导入语句。</li>
+            <li>在 <tt>main</tt> 方法主体中，键入 "cr"。IDE 会为 JAXB 工件提供相关的代码完成功能（在某些系统上您可能需要按 Ctrl-Space 组合键）： <br> <img alt="代码完成选项" border="1" class="margin-around" height="332" src="../../../images_www/articles/72/websvc/jaxb/jaxb-codecompletion.png" title="代码完成选项" width="447"></li>
+            <li>为 JAXB 类设置一些值，例如以下内容（为 <tt>java.math.BigInteger</tt> 添加一条导入语句）：
+                <pre class="examplecode">    cr.setFirstName("Butros Butros");<br>    cr.setLastName("Gali");<br>    cr.setDob("1930/05/30");<br>    cr.setScore("900");<br>    cr.setSsn("123-45-6789");<br><br>    cr.setLatestAddress1("2500 Some Ave");<br>    cr.setLatestAddress2("Suite 5000");<br>    cr.setCity("New York");<br>    cr.setState("New York");<br>    cr.setCountry("USA");<br>    cr.setPostalCode("NY 12345-6789");<br><br>    cr.setCurrency("USD");<br>    cr.setLiability(BigInteger.valueOf(2000000));<br>    cr.setLiquidAssests(BigInteger.valueOf(3000000));<br>    cr.setImmovableAssests(BigInteger.valueOf(5000000));<br>                </pre>
+            </li>
+            <li>在 <tt>main</tt> 方法主体中插入值下面，键入字母 "jaxbm"。这些字母表示 "<a href="http://www.oracle.com/technetwork/articles/javase/index-140168.html#mars" target="_blank">JAXB Marshalling</a>"。您现在应该看到下面的屏幕： <br> <img alt="编辑器中的代码片段，显示有红色下划线的 jaxbm" border="1" class="margin-around" height="171" src="../../../images_www/articles/72/websvc/jaxb/jaxb-template.png" title="编辑器中的代码片段，显示有红色下划线的 jaxbm" width="546">
+                <p>出现红色下划线的原因是，您键入的字符不能构成属于 Java 编程语言组成部分的单词。这些字母所构成的是将在下一步使用的 NetBeans 代码模板。</p> <p class="notes">NetBeans 还提供用于 JAXB 取消编组的代码模板。其缩写为 "jaxbu"。</p>
+            </li>
+            <li>按 "Tab" 键。
+                <p>将展开 "jaxbm" 字符，并显示以下代码片段：</p>
+                <pre class="examplecode">try {<br>    javax.xml.bind.JAXBContext jaxbCtx = javax.xml.bind.JAXBContext.newInstance(cr.getClass().getPackage().getName());<br>    javax.xml.bind.Marshaller marshaller = jaxbCtx.createMarshaller();<br>    marshaller.setProperty(javax.xml.bind.Marshaller.JAXB_ENCODING, "UTF-8"); //NOI18N<br>    marshaller.setProperty(javax.xml.bind.Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);<br>    marshaller.marshal(cr, System.out);<br>} catch (javax.xml.bind.JAXBException ex) {<br>    // XXXTODO Handle exception<br>    java.util.logging.Logger.getLogger("global").log(java.util.logging.Level.SEVERE, null, ex); //NOI18N<br>}</pre>
+                <p class="alert"><b>警告：</b>代码模板扩展要求非常精确。不能添加一个空格，然后单击标签，或者错误地键入短语，将其更正，然后单击标签，等等。您只能正确无误地键入短语，然后单击标签。如果键入错误，请删除之前键入的短语，然后键入整个短语。 </p>
+            </li>
+            <li>运行应用程序（右键单击项目节点，然后选择 "Run"（运行））。"Output"（输出）窗口将显示以下内容： <br> <img alt="客户端报告输出" border="1" class="margin-around" height="321" src="../../../images_www/articles/72/websvc/jaxb/jaxb-output.png" title="客户端报告输出" width="577"></li>
+        </ol>
+
+        <br>
+
+        <div class="feedback-box"><a href="/about/contact_form.html?to=3&amp;subject=Feedback:%20JAXB%20Wizard%20in%20NetBeans%20IDE">请将您的反馈意见发送给我们</a></div>
+
+        <br style="clear: both;">
+
+        <!-- ======================================================================================= -->
+        <h2><a name="seealso"></a>另请参见</h2>
+
+        <p>有关使用 NetBeans IDE 开发 Java EE 应用程序的更多信息，请参见以下资源： </p>
+
+        <ul>
+
+            <li><a href="../../docs/websvc/jax-ws.html">JAX-WS Web 服务入门指南</a></li>
+            <li><a href="../../docs/websvc/client.html">开发 JAX-WS Web 服务客户端</a></li>
+            <li><a href="../../docs/websvc/rest.html">REST 风格的 Web 服务入门指南</a></li>
+            <li><a href="../../docs/websvc/wsit.html">Advanced Web Service Interoperability</a>（高级 Web 服务互操作性）</li>
+            <li><a href="../../trails/web.html">Web 服务学习资源</a></li>
+        </ul>
+
+        <p>要发送意见和建议、获得支持以及随时了解 NetBeans IDE Java EE 开发功能的最新开发情况，请<a href="../../../community/lists/top.html">加入 nbj2ee@netbeans.org 邮件列表</a>。</p>
+
+    </body></html>

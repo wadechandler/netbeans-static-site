@@ -1,0 +1,377 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>NetBeans Project Template Module Tutorial</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="gwielenga@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A short guide to using the Nodes API.">
+<!--      Copyright (c) 2005 Sun Microsystems, Inc. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>NetBeans Project Template Module Tutorial</h1>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Project%20Template%20Module%20Tutorial">Feedback</a></div>
+
+
+
+
+<p>This tutorial demonstrates how to create a module that makes a new project template available to the IDE's New Project wizard.
+The IDE provides several project templates&#8212;for example, the Web Application, the Java Project with Existing Sources, 
+the EJB Module, and the Enterprise Application. Each project template provides a basic source structure and several files with
+ sample code. For example, the Web Application project template provides a source structure that conforms to the Java BluePrints
+ or a source structure that conforms to the Jakarta recommendations. In addition, it provides a default <tt>index.jsp</tt> file, a
+ <tt>web.xml</tt> deployment descriptor, and a deployment descriptor for the server selected in the Web Application template's wizard. 
+ 
+ <p>In this tutorial,
+ you add a project template for <a href="http://wicket.sourceforge.net/">Wicket</a>,  a Java web application framework.
+ When creating a Wicket project template,
+ the following Wicket-specific requirements are important to bear in mind:
+  <ul>
+	  <li>No JSP files. Each web page consists of a Java class and an HTML file, with the same name
+	   and found within the same package structure.
+	  <li>No XML configuration files. One Java class provides application-level information, such
+	    as the application's homepage.
+	    <li>Wicket-specific libraries and a <tt>web.xml</tt> deployment descriptor file that references a Wicket servlet
+	     for handling requests.
+  </ul>
+  
+  <p>After you create and install the module,
+  the New Project wizard will include the Wicket project template and the Library Manager will include the Wicket JAR files. 
+
+<p>The following topics are covered below:</p>
+<ul>
+	<li><a href="#installing">Installing the Software</a></li>
+<li><a href="#preparing">Preparing the Wicket Project Template</a></li>
+<li><a href="#creatingthemoduleproject">Creating the Module Project</a></li>
+<li><a href="#bundlinglibraries">Bundling the Libraries</a>
+<li><a href="#bundlingtemplate">Bundling the Project Template</a>
+<li><a href="#building">Building and Installing the Module</a></li>
+</ul>
+
+<p><a name="top"></a>Once the software is installed, this tutorial can be completed in 20 minutes.
+
+<p>For more information on working with NetBeans modules, see the <a href="https://platform.netbeans.org/index.html">
+NetBeans Development Project home</a> on the NetBeans website. If you have questions, visit the 
+ <a href="http://wiki.netbeans.org/wiki/view/NetBeansDeveloperFAQ"> NetBeans Developer FAQ</a> or use the feedback link
+ at the top of this page.</p>
+
+<br />
+
+<!-- ===================================================================================== -->
+ <h2 class="tutorial"><a name="installing"></a>Installing the Software</h2>
+   
+    
+      <p>Before you begin, you need to install the following software on your 
+        computer:</p>
+<ul>
+     <li>NetBeans IDE 5.x (<a href="http://www.netbeans.info/downloads/download.php?a=n&p=1">download</a>)</li>
+    <li>Java Standard Development Kit (JDK&trade;) version 
+      1.4.2 (<a href="http://java.sun.com/j2se/1.4.2/download.html">download</a>) 
+      or 5.0 (<a href="http://java.sun.com/j2se/1.5.0/download.jsp">download</a>)</li>
+  </ul>   
+  <br />
+
+<!-- ===================================================================================== -->
+<h2 class="tutorial"><a name="preparing"></a>Preparing the Wicket Project Template</h2>
+   
+    
+
+<ol>
+	<li>Download and unzip <a href="http://sourceforge.net/project/showfiles.php?group_id=119783&package_id=130482">Wicket 1.0.3</a>.
+	<p><b>Note:</b> This tutorial also applies to other releases of Wicket, but in other releases Wicket's libraries
+	  might be found in different folders to where they are indicated to be in this tutorial.</li>
+
+      <p> </p><li>Choose File &gt; New Project. Under Categories, select Web.
+Under Projects, select Web Application and click Next.</li>
+<p>	</p><li> Under Project Name, enter <tt>WicketApplication</tt>. Change the
+Project Location to any directory on your computer. From now
+on, this directory is referred to as <tt><i>$</i><i>PROJECTHOME</i></tt>.</li>
+
+<p></p><li>Select the recommendations to which your source structure will adhere, which is purely a personal preference:
+<ul><p></p><li><b>Java BluePrints.</b> For more information,
+see <a href="http://java.sun.com/blueprints/code/projectconventions.html" target="_blank">http://java.sun.com/blueprints/code/projectconventions.html</a>.</li>
+<p></p><li><b>Jakarta.</b> For more information,
+see <a href="http://jakarta.apache.org/tomcat/tomcat-5.0-doc/" target="_blank">http://jakarta.apache.org/tomcat/tomcat-5.0-doc/</a>.</li></ul></li>
+<p><li>Leave all the other defaults. Click Finish.
+<br>
+
+<p>The IDE creates the <tt><i>$PROJECTHOME</i>/WicketApplication</tt>
+project folder. The project folder contains all of your sources and
+project metadata, such as the project's Ant build script. The <tt>WicketApplication</tt> project
+opens in the IDE. You can view its logical structure in the Projects window and its
+file structure in the Files window.
+</p></li>
+<p><li>Delete <tt>index.jsp</tt>. A Wicket web page consists of a Java class together with an HTML file. The 
+	default JSP page is therefore superfluous.
+</ol>
+
+<p>The basis of your Wicket project template is now ready. In this example, the only difference between a standard web application
+and a Wicket application is the absence of the <tt>index.jsp</tt> file. You could make
+ further modifications yourself, depending on your needs. In the next sections, you
+create a module project, bundle the Wicket libraries, bundle the project template,
+ and install it in the New Project wizard.
+   
+ 
+ <br />
+
+<!-- ===================================================================================== -->
+ 
+<h2 class="tutorial"><a name="creatingthemoduleproject"></a>Creating the Module Project</h2>
+      <ol>
+	      <p><li>Choose File &gt; New Project (Ctrl-Shift-N). Under Categories, select NetBeans Plug-in Modules. Under projects, 
+ select Module Project and click Next.</li>
+	<p><li>In the Name and Location panel, type <tt>WicketTemplate</tt> in Project Name.
+ Change the
+Project Location to any directory on your computer, such as <tt>c:\mymodules</tt>. Leave the Standalone Module radiobutton
+and the Set as Main Project checkbox selected The panel should now look as follows:
+
+<p align="left"><img src="../images/tutorials/projecttemplates/new-module-project-wiz1.png" alt="Step 1 of wizard.">
+ <p>Click Next.
+
+<p><li>In the Basic Module Configuration panel, replace <tt>yourorghere</tt> in Code Name Base with <tt>myorg</tt>,
+ so that the whole code name base is <tt>org.myorg.wickttemplate</tt>. 
+ Leave the location of the localizing bundle and XML layer, so that they will be stored in a
+ package with the name <tt>org/myorg/wickttemplate</tt>. The panel should now look as follows:
+
+ <p align="left"><img src="../images/tutorials/projecttemplates/new-module-project-wiz2.png" alt="Step 2 of wizard.">
+
+<p><li>Click Finish.</ol>
+
+<p> The IDE creates the <tt>WicketTemplate</tt>
+project. The project contains all of your sources and
+project metadata, such as the project's Ant build script. The project
+opens in the IDE. You can view its logical structure in the Projects window (Ctrl-1) and its
+file structure in the Files window (Ctrl-2). For example, the Projects window should now look as follows:
+
+<p align="left"><img src="../images/tutorials/projecttemplates/projects-window-1.png" alt="Initial Projects window.">
+
+<p>For basic information on each of the files above, see the 
+ <a href="quickstart-nbm.html">Introduction to NetBeans Module Development</a>.
+     </ol><p>
+      <br />
+
+<!-- ===================================================================================== -->
+<h2><a name="bundlinglibraries"></a>Bundling the Wicket Libraries</h2>
+<p>
+
+  
+ <ol>
+	
+	 <p><li>Right-click the <tt>WicketTemplate</tt> project node and 
+	 choose New &gt; J2SE Library Descriptor. Click Next.</li>
+	 <p><li>In the Select Library panel, click Manage Libraries. In the Library Manager, click
+	 New Library and type <tt>Wicket</tt> as the Library Name. Click OK.
+	 <p><li>Click Add JAR/Folder and browse to the folder where you unzipped 
+	 <a href="http://sourceforge.net/project/showfiles.php?group_id=119783&package_id=130482">Wicket 1.0.3</a>.
+	 <p><li>Use the Browse JAR/Folder dialog box to add the following JAR files to the Classpath tab:<p>
+	 <ul>
+		 <li><tt>wicket-1.0.3</tt>
+		 <li><tt>lib/commons-fileupload-1.0</tt>
+		 <li><tt>lib/commons-logging-1.0.4</tt>
+		 <li><tt>lib/concurrent-1.3.3</tt>
+		 <li><tt>lib/dom4j-1.4</tt>
+		 <li><tt>lib/log4j-1.2.8</tt>
+		 <li><tt>lib/ognl-2.6.7</tt></ul>
+	 <p>The Classpath tab of the Library Manager should now look as follows:
+
+	 <p align="left"><img src="../images/tutorials/projecttemplates/library-manager-1.png" alt="Classpath in Library Manager.">
+	 <p><li>In the Javadoc tab, add the <tt>docs/apidocs</tt> folder.
+	<p>The Javadoc tab of the Library Manager should now look as follows:
+
+	 <p align="left"><img src="../images/tutorials/projecttemplates/library-manager-2.png" alt="Javadoc in Library Manager.">	
+	 <p><li>Click OK. In the Select Library panel, select the newly created Wicket library:
+	 <p align="left"><img src="../images/tutorials/projecttemplates/j2se-library-descriptor-1.png" alt="J2SE Library Descriptor.">
+	 <p>Click Next.
+	 <p><li>In the Name and Location panel, leave all the defaults.
+	 <p><li>Click Finish.
+
+	 <p>The Projects window now includes the <tt>Wicket</tt> J2SE library descriptor and the Files window
+	  shows the Wicket archive files that have been added to the module:
+
+<p align="left"><img src="../images/tutorials/projecttemplates/projects-window-2.png" alt="J2SE Library Descriptor Projects window.">
+<img src="../images/tutorials/projecttemplates/projects-window-3.png" alt="J2SE Library Descriptor Files window.">
+
+
+      <br />
+      
+<!-- ===================================================================================== -->
+<h2><a name="bundlingtemplate"></a>Bundling the Wicket Project Template</h2>
+<p>
+
+  
+ <ol>
+	
+	 <p><li>Right-click the <tt>WicketTemplate</tt> project node and 
+	 choose New &gt; Project Template.</li>
+	 <p><li>In the Select Project panel, the project that you want to bundle as a sample is automatically selected, as shown below:
+
+<p align="left"><img src="../images/tutorials/projecttemplates/new-project-template-wiz1.png" alt="Select Project panel.">
+
+<p>If there are more projects open in the IDE, use the drop-down list to select the Wicket Application.
+	      
+	      <p>Click Next.
+
+	      <p><li>In the Name and Location panel, type <tt>WicketApplication</tt> as the template name,
+	      type <tt>Wicket Application</tt> as the display name, and select Web in the Category drop-down list, as shown below: 
+
+	      <p align="left"><img src="../images/tutorials/projecttemplates/new-project-template-wiz2.png" alt="Name and Location panel.">
+
+<p><li>Click Finish.
+
+<p> The IDE does the following:
+<ul><li>creates a ZIP file containing your project
+	<li>provides a Java panel and an iterator used in the New Project wizard to create the sample
+	<li>provides an HTML file for the description displayed in the New Project wizard
+	<li>registers the sample in the XML layer file
+	<li>adds localization strings to the <tt>bundle.properties</tt> file</ul>
+<p>The Projects window should now look as follows:
+
+<p align="left"><img src="../images/tutorials/projecttemplates/projects-window-4.png" alt="Project Template Projects window.">
+
+<p>Finally, you will replace the template's default icon with Wicket's icon. To get Wicket's icon,
+ right-click on the image below and save it in your filesystem:
+ <p><img src="../images/tutorials/projecttemplates/wicket.gif" alt="Wicket icon.">
+
+<li>In the Important Files node, expand XML Layer. The two nodes <tt>&lt;xml layer&gt;</tt> and <tt>&lt;this layer in context&gt;</tt>,
+      together with their subnodes, make up the <a href="https://platform.netbeans.org/tutorials/nbm-glossary.html">System Filesystem</a> Browser. Expand <tt>&lt;this layer&gt;</tt>, expand <tt>Templates</tt>, 
+    continue expanding nodes until you see the template that you created above.
+    <p><li>Right-click the node for the new template and choose Pick Icon, as shown below:
+    <p align="left"><img src="../images/tutorials/projecttemplates/layerxml1.png" alt="Layer XML.">
+    <p>Browse to where you saved the Wicket icon. Notice that the default icon changes to Wicket's icon:
+    <p align="left"><img src="../images/tutorials/projecttemplates/layerxml2.png" alt="Layer XML.">
+    </ol>
+    <p>You are now ready to build, install, and use the module containing the Wicket libraries and template.
+      <br />
+
+<!-- ======================================================================================= -->
+
+<h2><a name="building"></a>Building and Installing the Module</h2>
+<p>The IDE uses an Ant build script to build and install your module. The build script is created for you
+when you create the module project.</p>
+<div class="indent">
+
+	<h3 class="tutorial">Installing the NetBeans Module</h3>
+	<p>
+      <ul>
+	      <li>In the Projects window, right-click the <tt>WicketTemplate</tt> project and choose Install/Reload
+	      in Target Platform. 
+	      <p>The module is built and installed in the target IDE or Platform. The target IDE or Platform opens so that you
+	      can try out your new module. The default target IDE or Platform is the 
+	      installation used by the current instance of the development IDE. Note that when you run your module, you will be using 
+ a temporary test user directory, not the development IDE's user directory. 
+       </ul>
+
+       <h3 class="tutorial">Using the NetBeans Module</h3>
+    
+       <p>
+       <ol>
+	       <li>Choose File &gt; New Project (Ctrl-Shift-N).<p> The New Project wizard opens and displays
+       the new Wicket Application template:</tt>
+	<p align="left"><img src="../images/tutorials/projecttemplates/new-project-wizard.png" alt="New template opened.">
+	<li>Select the Wicket application and click Next. The Name and Location panel appears. Type a name in the project name field.
+	<p><li>Click Finish.<p>The IDE opens and
+	displays the newly created project sample. Notice that the <tt>index.jsp</tt> is not created.
+	<p><li>Right-click the Libraries node and choose Add Library, as shown below:
+
+	<p align="left"><img src="../images/tutorials/projecttemplates/projects-window-5.png" alt="Selecting the Wicket libraries.">
+	<p><li>Select the Wicket library and click Add Library.
+	<p><li>Create a new Java class and notice that there is code completion and Javadoc
+	support for the Wicket libraries, as shown below:
+	<p align="left"><img src="../images/tutorials/projecttemplates/source-editor.png" alt="Source Editor.">
+</ol>	<p>
+<h3 class="tutorial">Creating a Shareable Module Binary (NBM File)</h3>
+ <p>An NBM file is a NetBeans module packaged for delivery via the web. 
+       The principal differences between NBM files and module JAR files are:
+       <ul><li>An NBM file is compressed.
+	       <li>An NBM file can contain more than one JAR file&#8212;modules can package any libraries they use into their NBM file.
+	       <li>An NBM file contains metadata that NetBeans will use to display information about it in the Update Center, such as the manifest contents, the license, etc.
+	       <li>An NBM file is typically signed for security purposes.</ul>
+       <p>NBM files are just ZIP files with a special extension. They use the JDK's mechanism for 
+       signing JAR files. Unless you are doing something unusual, you will not need to worry about the 
+       contents of an NBM file&#8212;just let the standard Ant build script for NBM creation take care of 
+       it for you. The IDE generates the build script based on the options you enter in the project's 
+       Project Properties dialog box. You can set the module's dependencies, versioning, and packaging 
+       information in the Project Properties dialog box. You can further customize program execution 
+       by editing the Ant script and Ant properties for the project.
+      <ol>
+	      <li>In the Projects window, right-click the <tt>WicketTemplate</tt> project and choose Create NBM.
+
+	      <p>The NBM file is created and you can view it in the Files window (Ctrl-2):
+	      <p align="left"><img src="../images/tutorials/projecttemplates/shareable-nbm.png" alt="Shareable NBM.">
+	      <li>Make it available to others via, for example, e-mail.
+       </ol>
+ 
+    </div>
+
+    </br>
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Next Steps</h2>
+
+<p>For more information about creating and developing NetBeans Modules, see the following resources: 
+  <ul>
+	  <p><li><a href="https://platform.netbeans.org/index.html">Plug-in Developer's Resources</a></li>
+	  <p><li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API List (Current Development Version)</a></li>
+	  <p><li><a href="http://apisupport.netbeans.org/new-apisupport.html">New API Support-Proposal</a></li>
+  <p><li><a href="https://platform.netbeans.org/tutorials">Other Plug-in Module Tutorials</a></li></ul>
+  </p>
+  
+  <hr>
+<!-- ======================================================================================== -->
+
+<h2><a name="version"></a>Versioning </h2>
+  
+<p>
+
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+ <tr>
+      <td>
+	 1
+      </td>
+      <td>
+         1 October 2005
+      </td>
+      <td><ul>
+	      <li>Initial version.
+	     
+	      
+	      <li>To do: 
+	      
+	      <ul>
+	<li>P1. Show how to create wizard that lets user specify number of web pages,
+	 and then IDE creates Java class and HTML file for each; and <tt>web.xml</tt>
+	  automatically filled with servlet definitions for application name.
+	<li>P1. Add some post-processing customization steps (e.g., how to put the sample in a 
+	different category in the New Project wizard).
+	<li>P2. Add details on each of the created files (currently there's only a sentence,
+	this should be expanded).
+	<li>P2. Explain relationship between generated files and resulting project template wizard.
+	<li>P2. Info about XML layer file to be added.
+	<li>P3. Add introductory sentences to each section.
+	<li>Note: <a href="https://netbeans.org/issues/show_bug.cgi?id=65595">http://www.netbeans.org/issues/show_bug.cgi?id=65595</a></ul></ul>
+      </td>
+  </tr>
+
+  
+  
+  </tbody>
+</table>
+</body>
+</html>

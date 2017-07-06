@@ -1,0 +1,602 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>Quick Search Integration Tutorial for NetBeans Platform 6.9</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+  <meta name="AUDIENCE" content="NBUSER"/>
+  <meta name="TYPE" content="ARTICLE"/>
+  <meta name="EXPIRES" content="N"/>
+  <meta name="developer" content="gwielenga@netbeans.org"/>
+  <meta name="indexed" content="y"/>
+  <meta name="description"
+ content="A short guide to using the Quick Search API."/>
+<!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+	<h1>Quick Search Integration Tutorial</h1>
+
+<p>This tutorial shows you how to write a module that integrates
+ new items into the NetBeans Quick Search feature. </p>
+
+   <p><b>Contents</b></p>
+   
+   <p><img  src="../../images/articles/69/netbeans-stamp7-8-9.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.5, 6.7, 6.8" title="Content on this page applies to NetBeans IDE 6.5, 6.7, 6.8"/></p>
+      <ul class="toc">
+  <li><a href="#intro">Introduction to Quick Search Integration</a></li>
+  <li><a href="#creating">Creating the Module Project</a></li>
+  <li><a href="#use">Using the Quick Search Provider Wizard</a></li>
+  <li><a href="#third">Integrating an External HTML DOM Parser</a></li>
+  <li><a href="#code">Coding the Quick Search Integration</a></li>
+  <li><a href="#install">Installing and Trying Out the Functionality</a></li>
+  <li><a href="#platform">Using the Quick Search Feature on the NetBeans Platform</a>
+  <ul>
+     <li><a href="#enable">Enabling the Quick Search Feature on the NetBeans Platform</a></li>
+     <li><a href="#enable2">Enabling the Default Web Search Provider on the NetBeans Platform</a></li>
+  </ul></li>
+  <li><a href="#share">Creating a Shareable Binary</a></li>
+       </ul>
+         
+<p><b>To follow this tutorial, you need the software and resources listed in the following 
+table.</b></p>
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.7 or above</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Version 6 or<br/>version 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+ <p class="tips">Optionally, for troubleshooting purposes, you can <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=11179">download the
+   completed sample</a> and inspect the sources.</p>
+    
+
+
+<h2 class="tutorial"><a name="intro"></a>Introduction to Quick Search Integration</h2>
+
+<p>The Quick Search feature, introduced in NetBeans IDE 6.5, consists of
+ a text field in the top right corner of the IDE. As a search string is typed in
+ the field, a drop-down list appears, showing matching items. By default, the items
+ come from the names of actions registered in the IDE, as well as help topics
+ in the IDE's Java Help. When an action item is selected, the action is invoked; when
+ a help item is selected, the topic opens in JavaHelp.</p>
+ 
+ <p>In addition, however, the <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/overview-summary.html">Quick Search API</a>
+  is exposed. You can use it to integrate your own search items into the
+  Quick Search feature. You can use the feature either within the IDE or
+  as part of your own application on top of the NetBeans Platform.</p>
+
+<p>In this tutorial, you create a module that integrates items
+from <a href="http://netbeans.dzone.com">NetBeans Zone</a> with the
+Quick Search feature:</p>
+
+<p align="left"><img border="1" src="../../images/tutorials/qsearch/deployed-result.png" alt="Deployed result"/></p>
+
+
+<!-- ===================================================================================== -->
+
+<h2 class="tutorial"><a name="creating"></a>Creating the Module Project</h2>
+      
+<p>In this section, we use a wizard to create the source structure that every NetBeans module requires. The
+source structure consists of certain folders in specific places and a set of files that are
+always needed. For example, every NetBeans module requires a <tt>nbproject</tt> folder, which holds
+the project's metadata, and a <tt>layer.xml</tt> file, for declarative registration of items
+such as toolbar buttons and windows.</p>
+
+<ol>
+          
+	      <li>Choose File &gt; New Project (Ctrl-Shift-N). Under Categories, select NetBeans Modules. Under Projects, 
+ select Module and click Next.</li>
+	<li>In the Name and Location panel, type <tt>NetBeansZoneSearch</tt> in Project Name.
+ Change the
+Project Location to any directory on your computer, such as <tt>c:\mymodules</tt>. Leave the Standalone Module radiobutton
+selected. The panel should now look as follows:
+
+<p align="left"><img src="../../images/tutorials/qsearch/new-module-1.png" alt="Step 1 of New Project wizard."/></p>
+            <p>Click Next.</p></li>
+
+<li>In the Basic Module Configuration panel, type <tt>org.netbeans.modules.nbzone</tt>
+ as the Code Name Base. 
+ Add spaces to the suggested Module Display Name, so that it is changed to <tt>NetBeans Zone Search</tt>.
+ Select the "Generate XML Layer" checkbox and
+ leave the location of the localizing bundle and XML layer as they are,
+ so that they will be stored in a
+ package with the name <tt>org/netbeans/modules/nbzone</tt>. The panel should now look as follows:
+
+<p align="left"><img src="../../images/tutorials/qsearch/new-module-2.png" alt="Step 2 of New Project wizard."/></p></li>
+
+<li>Click Finish.</li></ol>
+
+<p> The IDE creates the <tt>NetBeans Zone Search</tt>
+project. The project contains all of your sources and
+project metadata, such as the project's Ant build script. The project
+opens in the IDE. You can view its logical structure in the Projects window (Ctrl-1) and its
+file structure in the Files window (Ctrl-2). </p>
+
+<!-- ===================================================================================== -->
+<h2><a name="use"></a>Using the Quick Search Provider Wizard</h2>
+
+<p>In this section, we use a wizard to create the stub class and
+ layer entries necessary for beginning our integration with the
+ Quick Search feature.</p>
+
+  
+ <ol>
+	
+	 <li>Right-click the project node and 
+	      choose New &gt; Other. In the New File dialog,
+              choose Module Development &gt; Quick Search Provider.</li>
+	      <li>In the Quick Search Provider panel, set the following:
+        <ul>
+            <li><b>Provider Class Name.</b> Specifies the class 
+            name of the stub that the wizard will generate. Type "NBZoneSearchProvider"
+            in this field.</li>
+            <li><b>Package.</b> Specifies the package where the stub class 
+            will be generated. Select "org.netbeans.modules.nbzone" from the drop-down.</li>
+            <li><b>Category Display Name.</b> Specifies the display name of 
+            the category that the stub will create. Type "NetBeans Zone" in this field.</li>
+            <li><b>Command Prefix.</b> Specifies prefix for narrowing the 
+            search to the category that the stub will create. Type "nb" in this field.</li>
+            <li><b>Position in Popup.</b> Specifies the position of the new
+            category in within the Quick Search feature. Leave "0", so that the category
+            will be first in the popup.</li>
+          </ul>
+          <p>You should now see the following:</p>
+<p align="left"><img src="../../images/tutorials/qsearch/quick-search-template.png" alt="Quick search template"/></p>
+ </li>          
+<li><p>Click Finish.</p>
+
+<p>The Projects window should now look as follows:</p>
+
+<p align="left"><img src="../../images/tutorials/qsearch/projects-window-final.png" alt="Final Projects window."/></p></li></ol>
+
+      <p>In the <tt>layer.xml</tt> file, you should see the following:</p>
+      
+<pre class="examplecode">&lt;filesystem&gt;
+    &lt;folder name="QuickSearch"&gt;
+        &lt;folder name="NetBeansZone"&gt;
+            &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.netbeans.modules.nbzone.Bundle"/&gt;
+            &lt;attr name="command" stringvalue="nb"/&gt;
+            &lt;attr name="position" intvalue="0"/&gt;
+            &lt;file name="org-netbeans-modules-nbzone-NBZoneSearchProvider.instance"/&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/filesystem&gt;</pre>      
+
+      
+    <!-- ======================================================================================= -->
+      
+      <h2><a name="third"></a>Integrating an External HTML DOM Parser</h2>
+<p>In the next section, we will need an HTML DOM Parser so that we can parse
+ NetBeans Zone. You can use any appropriate parser of your choice. For purposes
+of this tutorial, we will use <a href="http://sourceforge.net/project/showfiles.php?group_id=13153">JTidy</a>.</p>
+
+<p>There are two ways of making an external JAR file available
+ to a module. The first way is to put the JAR into a separate
+ module, called a "library wrapper module", and have the
+ functionality module <i>depend on</i> the library wrapper 
+ module, after putting both into a module suite. The advantage
+ of having two separate modules is that, when a new version of
+ the external JAR is released, you will only need to redistribute
+ a small module containing only the external JAR, rather than
+ a larger one that also contains the functionality code. The
+ second way is to add the JAR to the functionality module, which
+ is what is done below. The advantage of this approach is that
+ it is more convenient in the short term only,
+ since you only have one module to distribute, while the disadvantage
+ is that you are mixing your external library with the
+ functionality code, which is not a strictly modular approach.
+</p>
+<div class="indent">
+    
+ <ol>
+    
+    <li>Download <a href="http://sourceforge.net/project/showfiles.php?group_id=13153">JTidy</a>
+    and find the <tt>Tidy.jar</tt> that is within the download.</li>
+    
+    <li>In the Files window, create the folder structure shown below, putting the
+    <tt>Tidy.jar</tt> into the <tt>release/modules/ext</tt> folder:
+     
+    <p align="left"><img src="../../images/tutorials/qsearch/tidyjar.png" alt="JTidy JAR."/></p></li>
+
+<li>Towards the end of the <tt>project.xml</tt> file, which is in the <tt>nbproject</tt>
+ folder, add the bold tags below, i.e., right near the end of the file:
+ 
+ <pre class="examplecode">
+            ...
+            ...
+            ...
+            <b>&lt;class-path-extension&gt;
+                &lt;runtime-relative-path&gt;ext/Tidy.jar&lt;/runtime-relative-path&gt;
+                &lt;binary-origin&gt;release/modules/ext/Tidy.jar&lt;/binary-origin&gt;
+            &lt;/class-path-extension&gt;</b>
+        &lt;/data&gt;
+    &lt;/configuration&gt;
+ &lt;/project&gt;</pre></li>
+ 
+ <li>In the <tt>project.properties</tt> file, add the following line:
+ 
+ <pre class="examplecode">cp.extra=release/modules/ext/Tidy.jar</pre></li>
+
+ </ol>
+ 
+ <p>The external HTML DOM Parser is now on your module's
+  classpath. Now you can use the classes within the JAR,
+  as you will need to do in the next section.</p>
+    </div>
+    
+    <!-- ======================================================================================= -->
+      
+      <h2><a name="code"></a>Coding the Quick Search Integration</h2>
+<p>Next, we will implement the API. The API's classes are as follows:</p>
+
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Class</th>
+                <th class="tblheader" scope="col">Description</th>
+            </tr>
+            <tr>
+              <td class="tbltd1"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchProvider.html">SearchProvider</a></td>
+                <td class="tbltd1">The main interface of the Quick Search API.
+                Implement this interface to provide a new group of results for
+                your quick search.</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchRequest.html">SearchRequest</a></td>
+                <td class="tbltd1">The description of the quick search request.</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchResponse.html">SearchResponse</a></td>
+                <td class="tbltd1">The response object for collecting the
+                results of the SearchRequest.</td>
+            </tr>
+        </tbody>
+    </table>
+    
+<p>Below, we set dependencies on the required modules and then implement them in
+ our own module.</p>
+
+<div class="indent">
+    
+    <ol>
+        
+        <li>Right-click the project, choose Properties, and
+        set the following dependencies in the Libraries panel:
+        
+     <p align="left"><img src="../../images/tutorials/qsearch/set-dependencies.png" alt="Set dependencies."/></p></li>
+        
+        <li>Open the generated class.</li>
+        
+        <li>Modify the class as follows:
+    
+ <pre class="examplecode">public class NBZoneSearchProvider implements <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchProvider.html">SearchProvider</a> {
+
+    /**
+     * Method is called by infrastructure when search operation is requested.
+     * Implementors should evaluate given request and fill response object with
+     * apropriate results
+     *
+     * @param request Search request object that contains search string
+     * @param response Search response object that stores search results 
+     * Note that it's important to react to return value of 
+     * SearchResponse.addResult(...) method and stop computation if 
+     * false value is returned.
+     */
+    @Override 
+    public void evaluate(<a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchRequest.html">SearchRequest request</a>, <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchResponse.html">SearchResponse response</a>) {
+        try {
+
+            <b>//The URL that we are providing a search for:</b>
+            URL url = new URL("http://netbeans.dzone.com");
+            <b>//Stuff needed by Tidy:</b>
+            Tidy tidy = new Tidy();
+            tidy.setXHTML(true);
+            tidy.setTidyMark(false);
+            tidy.setShowWarnings(false);
+            tidy.setQuiet(true);
+
+            <b>//Get the org.w3c.dom.Document from Tidy,
+            //or use a different parser of your choice:</b>
+            Document doc = tidy.parseDOM(url.openStream(), null);
+
+            <b>//Get all "a" elements:</b>
+            NodeList list = doc.getElementsByTagName("a");
+
+            <b>//Get the number of elements:</b>
+            int length = list.getLength();
+
+            <b>//Loop through all the "a" elements:</b>
+            for (int i = 0; i < length; i++) {
+
+                String href = null;
+                if (null != list.item(i).getAttributes().getNamedItem("href")) {
+                    <b>//Get the "href" attribute from the current "a" element:</b>
+                    href = list.item(i).getAttributes().getNamedItem("href").getNodeValue();
+                }
+
+                <b>//Get the "title" attribute from the current "a" element:</b>
+                if (null != list.item(i).getAttributes().getNamedItem("title")) {
+                    String title = list.item(i).getAttributes().getNamedItem("title").getNodeValue();
+
+                    <b>//If the title matches the requested text:</b>
+                    if (title.toLowerCase().indexOf(<a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchRequest.html">request.getText().toLowerCase()</a>) != -1) {
+
+                        <b>//Add the runnable and the title to the response
+                        //and return if nothing is added:</b>
+                        if (!<a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchResponse.html">response.addResult(new OpenFoundArticle(href), title)</a>) {
+                            return;
+                        }
+
+                    }
+
+                }
+
+            }
+
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+    }
+
+    private static class OpenFoundArticle implements Runnable {
+
+        private String article;
+
+        public OpenFoundArticle(String article) {
+            this.article = article;
+        }
+
+        public void run() {
+            try {
+                URL url = new URL("http://netbeans.dzone.com" + article);
+                StatusDisplayer.getDefault().setStatusText(url.toString());
+                URLDisplayer.getDefault().showURL(url);
+            } catch (MalformedURLException ex) {
+                Logger.getLogger(NBZoneSearchProvider.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        
+    } 
+    
+ }</pre></li>
+ 
+ <li>Make sure the following import statements are declared:
+ 
+<pre class="examplecode">import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.netbeans.spi.quicksearch.SearchProvider;
+import org.netbeans.spi.quicksearch.SearchRequest;
+import org.netbeans.spi.quicksearch.SearchResponse;
+import org.openide.awt.HtmlBrowser.URLDisplayer;
+import org.openide.awt.StatusDisplayer;
+import org.openide.util.Exceptions;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.w3c.tidy.Tidy;</pre> 
+ </li>
+ </ol>
+    </div>
+
+      
+    <!-- ======================================================================================= -->
+
+<h2><a name="install"></a>Installing and Trying Out the Functionality</h2>
+<p>Let's now install the module and then use the quick search feature
+ integration.
+  The IDE uses an Ant build script to build and install your module. The build 
+  script is created for you
+when you create the project.</p>
+<div class="indent">
+
+
+      <ol>
+	      <li>In the Projects window, right-click the project and choose Run.
+	      <p>A new instance of the IDE starts up
+                  and installs the Quick Search integration module. </p></li>
+               <li>Type a string in the Quick Search feature and, if the string
+                matches the title of something on NetBeans Zone, the item from
+                NetBeans Zone is included in the result:
+                <p align="left"><img border="1" src="../../images/tutorials/qsearch/deployed-result.png" alt="Deployed result"/></p>
+<p>If you type the command prefix that you defined in the <tt>layer.xml</tt>, followed by
+ a space, then only the related category is searched:</p>
+<p align="left"><img border="1" src="../../images/tutorials/qsearch/command.png" alt="Command prefix"/></p></li>
+		 <li>Click an item and, if you have set a browser in the IDE,
+                  it opens, displaying the selected article.</li>
+       </ol>          
+   </div>
+
+<!-- ======================================================================================= -->
+
+<h2><a name="platform"></a>Using the Quick Search Feature on the NetBeans Platform</h2>
+
+<p>The previous sections assumed that you were creating a module for an existing
+ application. The two topics that follow are applicable if, instead of creating
+  a module, you are creating your own application on top of the NetBeans Platform.</p>
+
+<div class="indent">
+    
+<h3><a name="enable"></a>Enabling the Quick Search Feature on the NetBeans Platform</h3>
+
+<p>Although NetBeans IDE comes with support for the Quick
+ Search feature, the NetBeans Platform does not. By default,
+ the Quick Search feature is hidden. Take the steps below to enable
+ it there.</p>
+
+<div class="indent">
+  
+      <ol>
+          <li>Add the following tags to the <tt>layer.xml</tt>
+           file:
+<pre class="examplecode">&lt;folder name="Toolbars"&gt;
+    &lt;folder name="QuickSearch"&gt;
+        &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.netbeans.modules.nbzone.Bundle"/&gt;
+        &lt;file name="org-netbeans-modules-quicksearch-QuickSearchAction.shadow"&gt;
+            &lt;attr name="originalFile" 
+            stringvalue="Actions/Edit/org-netbeans-modules-quicksearch-QuickSearchAction.instance"/&gt;
+        &lt;/file&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>           </li>
+
+<li>Add this key/value pair to the <tt>Bundle.properties</tt>
+ file:
+ 
+ <pre class="examplecode">Toolbars/QuickSearch=Quick Search</pre></li>
+
+              <li>Run the NetBeans Platform application
+               and you should see that the Quick Search
+               feature is now available and functioning:
+
+               <p align="left"><img src="../../images/tutorials/qsearch/netbeans-platform-qsearch.png" alt="NetBeans Platform with Quick Search feature"/></p>
+            </li>
+
+       </ol>
+ 
+    </div>
+<!-- ======================================================================================= -->
+
+<h3><a name="enable2"></a>Enabling the Default Web Search Provider on the NetBeans Platform</h3>
+
+<p>A default web search provider implementation is available in the NetBeans sources.
+ This provider searches Google for texts that match the search string. In the IDE, it
+ was intended to be used to search <tt>netbeans.org</tt>, and related sites, for online documentation
+ that relates to the IDE. </p>
+ 
+ <p><b>Note:</b> Unfortunately, the web search provider was disabled in
+ the IDE because after using it a lot, Google complained that automated
+ searches are against its terms of use and refuses to continue functioning.</p>
+ 
+ <p>If you accept the above limitation, you can brand this web search provider and then
+     use it in your NetBeans Platform application.</p>
+
+<div class="indent">
+  
+      <ol>
+          <li>Ensure that the Quick Search feature is enabled, as described
+              in the previous section.</li>
+          <li>Add the following tags to the <tt>layer.xml</tt>
+           file:
+<pre class="examplecode">&lt;folder name="Guardian"&gt;
+   &lt;file name="org-netbeans-modules-quicksearch-web-WebQuickSearchProviderImpl.instance"/&gt;
+&lt;/folder&gt;</pre>           </li>
+
+<li>In the application's <tt>branding</tt> folder, create the folder hierarchy
+shown below, as well as the <tt>Bundle.properties</tt> file that you see 
+in the screenshot:
+ 
+<p align="left"><img border="1" src="../../images/tutorials/qsearch/brand-provider.png" alt="Brand provider"/></p>
+
+<p>In the IDE, the above properties are hardcoded to the following, but for the NetBeans Platform they are undefined and hence need to be branded as the above:</p>
+
+<pre class="examplecode">quicksearch.web.site=netbeans.org
+quicksearch.web.url_patterns=.*netbeans\.org/kb.*,\
+    /.*wiki\.netbeans\.org/.*faq.*,.*wiki\.netbeans\.org/.*howto.*,\
+    .*platform\.netbeans\.org/tutorials.*</pre></li>
+
+              <li>Run the NetBeans Platform application
+               and you should see that the default Web Quick Search
+               provider is now available and functioning:
+               <p align="left"><img border="1" src="../../images/tutorials/qsearch/clare-wigfall.png" alt="Guardian search"/></p>
+              </li>
+
+       </ol>
+ 
+    </div>
+ </div>
+    
+<!-- ======================================================================================= -->
+
+<h2><a name="share"></a>Creating a Shareable Module Binary</h2>
+
+<p>Now that the module is complete, you can let others use it. To do so, you
+    need to create a binary "NBM" (NetBeans module) file and distribute it. </p>
+
+<div class="indent">
+  
+      <ol>
+          <li>In the Projects window, right-click the <tt>NetBeans Zone Search</tt> project and choose Create NBM.
+
+              <p>The NBM file is created and you can view it in the Files window (Ctrl-2):</p>
+              <p align="left"><img border="1" src="../../images/tutorials/qsearch/shareable-binary.png" alt="Shareable NBM."/></p></li>
+	      <li>Make it available to others via, for example, the
+              <a href="http://plugins.netbeans.org/PluginPortal/">NetBeans Plugin Portal</a>.
+              The recipient should
+	      use the Plugin Manager (Tools &gt; Plugins) to install it.</li>
+       </ol>
+ 
+    </div>
+
+
+<!-- ======================================================================================== -->
+
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Quick%20Search%20Integration%20Tutorial">Send Us Your Feedback</a></div>
+  
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Next Steps</h2>
+
+<p>For more information about creating and developing NetBeans modules, see the following resources:</p>
+  <ul>
+	  <li><a href="https://platform.netbeans.org/index.html">NetBeans Platform Homepage</a></li>
+	  <li><a href="http://bits.netbeans.org/dev/javadoc/index.html">NetBeans API List (Current Development Version)</a></li>
+  <li><a href="https://netbeans.org/kb/trails/platform.html">Other Related Tutorials</a></li></ul>
+  
+<!-- ======================================================================================== -->
+<!-- 
+<h2><a name="version"></a>Versioning </h2>
+<p>
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+         19 July 2008
+      </td>
+      <td>
+      Initial version.
+      </td>
+  </tr>
+  <tr>
+      <td>
+         2
+      </td>
+      <td>
+         6 September 2010
+      </td>
+      <td>
+      Fixed formatting problems.
+      </td>
+  </tr>
+ </tbody>
+</table>
+-->
+</body>
+</html>

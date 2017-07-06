@@ -1,0 +1,902 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<!--
+Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+    <head>
+        <title>高级自由格式项目配置</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+        <meta http-equiv="Content-Style-Type" content="text/css" >
+        <meta name="AUTHOR" content="John Jullion-Ceccarelli, Geertjan Wielenga, and Patrick Keegan">
+        <meta name="KEYWORDS" content="NETBEANS, IDE, TRANSITION, MIGRATION, DOCUMENTATION">
+        <meta name="DESCRIPTION" content="如何配置复杂的类路径、调试和单文件目标，以及 NetBeans IDE 自由格式项目中的其他设置。">
+        <link REL="STYLESHEET" HREF="../../netbeans.css" TYPE="text/css">
+        <meta name="keywords" content="java IDE, java editor, java Platform, free, open source, java development, j2ee support, development enviroment, web development, NetBeans, IDE, java" >
+    </head>
+    <body class="composite">
+    <!-- begin TopTabs  -->
+    <!-- end TopTabs -->
+    <!-- Begin Content Area -->
+    <!-- Servlet-Specific template -->
+        <h1>高级自由格式项目配置<a name="top"></a></h1>
+        <p>对于使用 Ant 脚本生成和运行应用程序的 Java 开发者，IDE 中的自由格式项目为提供了一个非常强大的工具。</p>
+        <p>如果你熟悉使用 Ant，就可以编辑 Ant 脚本和 IDE 项目配置文件，使得 NetBeans IDE 和你的生成过程之间更紧密地集成。</p>
+        <p>本文假设你已经使用“新建项目”向导建立了一个自由格式项目。</p>
+        <p>本文覆盖了下列信息：</p>
+        <ul class="toc">
+            <li><a href="#hook">将 IDE 命令映射到 Ant 目标</a>
+                <ul>
+                    <li><a href="#prop_box">在“项目属性”对话框中映射 IDE 命令</a></li>
+                    <li><a href="#in_file">在 project.xml 中映射 IDE 命令</a></li>
+                    <li><a href="#shortcuts">将快捷键添加到项目节点的上下文菜单</a></li>
+                </ul>
+            </li>
+            <li><a href="#edit">编辑 project.xml 文件</a>
+                <ul>
+                    <li><a href="#props_proj">在 project.xml 文件中使用属性</a></li>
+                    <li><a href="#validating">验证 project.xml 文件</a></li>
+                </ul>
+            </li>
+            <li><a href="#debugj2se">创建目标以调试 Java SE 应用程序</a></li>
+            <li><a href="#debugweb">创建目标以调试 Web 应用程序</a></li>
+            <li><a href="#compilesingle">创建目标以编译单个文件</a>
+            <li><a href="#runsingle">编写目标以运行/调试/测试单个文件</a>
+                <ul>
+                    <li><a href="#run_sing">运行选定的文件</a></li>
+                    <li><a href="#reference">在 IDE 中获取当前选定文件的引用</a></li>
+                    <li><a href="#debug_sing">调试选定的文件</a></li>
+                </ul>
+            </li>
+            <li><a href="#fix">为“应用代码更改”命令编写目标</a></li>
+        </ul>
+        <p>你还可以下载<a href="https://netbeans.org/kb/articles/nb_targets.xml" target="targets">示例 Ant 目标</a>。</p>
+        <h2>在自由格式项目中映射类路径</h2>
+        <p>
+            在自由格式项目中，所有源文件夹的类路径都是由 Ant 脚本处理的。要让项目源代码可用于
+            Ant，就需要为项目源代码指定类路径。如果有任何定制任务，还需要将它们添加到 Ant 的类路径。
+        </p>
+        <div class="indent">
+            <h3>为项目源代码指定类路径</h3>
+            <p>
+                在自由格式项目中，你告诉 IDE 哪些类需要进行代码完成和重构，并为这些项目源指定类路径。在“项目属性”对话框的“Java
+                源类路径”设置中指定类路径。这样做是因为缺省情况下，不管何时运行 Ant，IDE 都将忽略环境中的 CLASSPATH 变量。
+            </p>
+            <p>
+                在“项目属性”对话框中设置的类路径变量不会影响 Ant 脚本中指定的项目实际类路径。在“项目属性”对话框中声明类路径不会改变源文件夹的实际编译或运行时类路径。然而，项目类路径变量必须匹配
+                Ant 脚本所用的类路径，以便为代码编译、错误突出显示和重构命令提供正确信息。你必须在生成脚本中设置显式类路径，因为不管何时运行 Ant，IDE 都将忽略环境中的
+                CLASSPATH 变量。如果你更改其中一个类路径，就必须更改另一个类路径。</p>
+            <h3 class="tutorial">为定制任务指定类路径</h3>
+            <p>
+                在自由格式项目中，可以在生成脚本中调用并运行定制 Ant 任务。为使生成脚本能够使用定制任务，必须将这些任务添加到
+                IDE 中的 Ant 类路径中。例如，你可能要将一项任务添加到生成脚本以便用 Jalopy
+                格式化你的代码。然而，为此你必须将 Jalopy JAR 文件添加到 Ant 的类路径。
+            </p>
+            <p>按下列方法之一，将定制任务添加到 IDE 内的 Ant 类路径：</p>
+            <ul>
+                <li>
+                    在生成脚本中提供到任务的显式类路径。这是推荐的方法，因为它指定了包含 Ant 脚本要使用的定制任务的 JAR
+                    文件的位置，从而确保了生成脚本是完全可移植的。你可以在生成文件中编写自己的任务以及添加指令，以进行编译和产生
+                    JAR 文件。在使用这些任务时，需要加入一个长 <code>taskdef</code> 标记，并在其中包含类路径。这是此类任务的一个简单示例：
+                </li>
+            </ul>
+            <pre class="examplecode">
+&lt;project name=&quot;test&quot; default=&quot;all&quot; basedir=&quot;.&quot;&gt;
+    &lt;target name=&quot;init&quot;&gt;
+        &lt;javac srcdir=&quot;tasksource&quot; destdir=&quot;build/taskclasses&quot;/&gt;
+        &lt;jar jarfile=&quot;mytasks.jar&quot;&gt;
+            &lt;fileset dir=&quot;build/taskclasses&quot;/&gt;
+        &lt;/jar&gt;
+        &lt;taskdef name=&quot;customtask&quot; classname=&quot;com.mycom.MyCustomTask&quot;&gt;
+            &lt;classpath&gt;
+                 &lt;pathelement location=&quot;mytasks.jar&quot;/&gt;
+            &lt;/classpath&gt;
+        &lt;/taskdef&gt;
+    &lt;/target&gt;
+&lt;/project&gt;
+            </pre>
+            <p>
+                这种方法的优点在于不需要特殊准备即可开始使用脚本。该脚本完全是自包含并可移植的。此方法还使你在
+                IDE 中开发任务变得更容易，因为脚本会自动为您编译这些任务。
+            </p>
+            <p>
+                要使您的生成脚本更加稳定，请使用属性来代替固定编码位置，用以指定任务的类路径。你可以将该属性保存在生成脚本或单独的
+                <code>ant.properties</code> 文件中。然后，只更改指定属性的值就可以使整个脚本的类路径设置得到更改。
+            </p>
+            <ul>
+                <li>配置“选项”窗口中的“Ant 类路径”属性。如果无法在生成脚本中声明类路径，或使用无法更改的第三方生成脚本，则可以在“选项”窗口中，将任务添加到 IDE 中的 Ant 类路径。</li>
+            </ul>
+            <p class="notes">
+                <b>注意：</b>如果在“选项”窗口中修改了 Ant 类路径，则当在 IDE 中运行 Ant
+                时，对于所有的项目，任务都在 Ant 的类路径上。
+            </p>
+        </div>
+        <h2>将 IDE 命令映射到 Ant 目标<a name="hook"></a></h2>
+        <p>有三种当时来将 IDE 命令映射到 Ant 脚本中的目标：</p>
+        <ul>
+            <li>通过在项目的“项目属性”对话框中调整“生成和运行”页中的设置。</li>
+            <li>通过令 IDE 为你生成一个目标，然后按需定制该目标。这对“调试项目”和“编译文件”命令有效。在项目中首次运行那些命令时，IDE 可生成这些目标。</li>
+            <li>通过手动编辑项目的 <tt>project.xml</tt> 文件。</li>
+        </ul>
+        <div class="indent">
+            <h3 class="tutorial">在“项目属性”对话框中映射 IDE 命令<a name="prop_box"></a></h3>
+            <p>
+                “项目属性”对话框是用来在 IDE 中配置自由格式项目的主要工具。要打开该对话框，在“项目”窗口中，右键单击
+                自由格式项目节点（图标），然后选择“属性”。在“生成和运行”页中，可为下列命令设置要运行的 Ant 目标：
+            </p>
+            <ul>
+                <li>生成项目</li>
+                <li>清理项目</li>
+                <li>生成 Javadoc</li>
+                <li>运行项目（自由格式 Java 项目）</li>
+                <li>部署项目（自由格式 Web 项目）</li>
+                <li>测试项目</li>
+            </ul>
+            <p>
+                <b>注意：</b>如果 Ant 脚本使用 <tt>import</tt> 语句从另一个 Ant 脚本导入目标，
+                这些目标不会显示在“项目属性”对话框中的下拉列表。要将命令映射到这些目标，就必须
+                将目标的名称键入到下拉列表。
+            </p>
+            <p>还可以在“定制菜单项”列表中，为 Ant 脚本中的任何目标向项目节点的上下文菜单添加快捷键。</p>
+            <h3 class="tutorial">在 <tt>project.xml</tt> 中映射 IDE 命令<a name="in_file"></a></h3>
+            <p>
+                每个 IDE 项目都有一个 <tt>project.xml</tt> 文件，其中包含有关项目的重要元数据、项目 Ant
+                脚本的位置、为 IDE 命令运行哪些目标，以及其他信息。如果要映射 IDE 中工作于当前选定文件上的命令，或者要将命令映射到单独的
+                Ant 脚本中的目标，就必须动手编辑 <tt>project.xml</tt> 文件。在“文件”窗口中，依次展开项目的根文件夹和
+                <tt>nbproject</tt> 文件夹，然后双击 <tt>project.xml</tt>。
+            </p>
+            <p>
+                <tt>ide-actions</tt> 元素持有 IDE 命令的映射。输入带任何标准 IDE 操作名称的 <tt>action</tt>
+                元素，并定义要将命令映射到的脚本和目标。
+            </p>
+            <p>可使用下列标准 IDE 操作：</p>
+            <ul>
+                <li><tt>build</tt> - 生成项目（F11）</li>
+                <li><tt>rebuild</tt> - 清理并生成项目（Shift-F11）</li>
+                <li><tt>compile.single</tt> - 编译选定文件（F9）</li>
+                <li><tt>clean</tt> - 清理项目</li>
+                <li><tt>run</tt> - 运行项目（F6）</li>
+                <li><tt>run.single</tt> - 运行选定文件（Shift-F6）</li>
+                <li><tt>redeploy</tt> - 用于 Web 应用程序项目：生成项目、从服务器取消部署项目，和将项目部署到服务器</li>
+                <li><tt>test</tt> - 为项目运行 JUnit 测试（Alt-F6）</li>
+                <li><tt>test.single</tt> - 为选定文件运行 JUnit 测试（Ctrl-F6）</li>
+                <li><tt>debug.test.single</tt> - 为选定文件调试 JUnit 测试（Ctrl-Shift-F6）</li>
+                <li><tt>debug</tt> - 在调试器中运行项目（F5）</li>
+                <li><tt>debug.single</tt> - 调试选定文件（Ctrl-Shift-F5）</li>
+                <li><tt>debug.fix</tt> - 运行“应用代码更改”命令以在调试会话过程中重新装入选定文件</li>
+                <li><tt>debug.stepinto</tt> - 在调试器中执行项目主类中的一行并暂停（F7）</li>
+                <li><tt>javadoc</tt> - 为项目生成 Javadoc</li>
+            </ul>
+            <p>例如，下面将“调试项目”映射到项目 Ant 脚本的 <tt>debug-nb</tt> 目标：</p>
+            <pre class="examplecode">
+&lt;action name=&quot;debug&quot;&gt;
+    &lt;target&gt;debug-nb&lt;/target&gt;
+&lt;/action&gt;
+            </pre>
+            <p>
+                NetBeans IDE 命令的 Ant 脚本不须位于用来生成和运行项目的同一个 Ant 脚本中。这对不想修改 Ant
+                脚本的用户有用。下面将“调试项目”映射到一个单独的 Ant 脚本中的 <tt>debug-nb</tt> 目标：
+            </p>
+            <pre class="examplecode">
+&lt;action name=&quot;debug&quot;&gt;
+    &lt;script&gt;path/to/my/nbtargets.xml&lt;/script&gt;
+    &lt;target&gt;debug-nb&lt;/target&gt;
+&lt;/action&gt;</pre>
+            <p><b>注意：</b><tt>&lt;script&gt;</tt> 必须在 <tt>&lt;target&gt;</tt> 之前。</p>
+            <p>还可以配置一个命令来运行多个目标。这些目标按它们出现在操作中的顺序运行。例如，映射“清理并生成项目”的命令看起来像这样：</p>
+            <pre class="examplecode">
+&lt;action name=&quot;rebuild&quot;&gt;
+    &lt;target&gt;clean&lt;/target&gt;
+    &lt;target&gt;compile&lt;/target&gt;
+&lt;/action&gt;</pre>
+            <h3 class="tutorial">将快捷键添加到项目节点的上下文菜单<a name="shortcuts"></a></h3>
+            <p>
+                <tt>project.xml</tt> 还有一个 <tt>context-menu</tt> 元素，它控制项目节点上下文菜单的内容。如果手动添加一个运行在项目上的操作，需确保也将操作名称注册到
+                <tt>&lt;context-menu&gt;</tt> 中。如果使用“项目属性”对话框来配置标准项目命令，IDE 会自动将命令添加到项目的上下文菜单。
+            </p>
+        </div>
+        <h2>编辑 project.xml 文件<a name="edit"></a></h2>
+        <p>每个 IDE 项目都有一个 <tt>project.xml</tt> 文件，其中包含有关项目的重要信息，例如：</p>
+        <ul>
+            <li>项目命令与 Ant 脚本中目标之间的映射。</li>
+            <li>有关项目内容、类路径和目标 Java 平台的信息。此信息用于可视化项目以及启用代码完成和重构。</li>
+        </ul>
+        <div class="indent">
+            <h3 class="tutorial">在 <tt>project.xml</tt> 文件中使用属性<a name="props_proj"></a></h3>
+            <p>
+                可以在 <tt>project.xml</tt> 文件自身内部定义属性，也可以将属性存储在单独的 <tt>.properties</tt> 文件中。将
+                <tt>project.xml</tt> 文件与 Ant 脚本中的信息保持同步的一种方法是：将 Ant 脚本所用的 <tt>.properties</tt>
+                文件中的属性导入到 <tt>project.xml</tt> 中。
+            </p>
+            <p>
+                然而要注意，<tt>project.xml</tt> 中的所有文件路径都缺省相对于项目文件夹。如果 Ant
+                脚本不在项目文件夹中，指向 <tt>build/classes/</tt> 的 <tt>classdir</tt> 属性就不会为
+                Ant 脚本和 <tt>project.xml</tt> 文件指向相同的目录。（项目文件夹是指包含 <tt>nbproject</tt>
+                文件夹的文件夹，而不是 <tt>nbproject</tt> 文件夹本身。缺省情况下，新建自由格式项目向导使
+                Ant 脚本的副文件夹成为项目文件夹。）
+            </p>
+            <p>可通过为重要路径（像 <tt>project.dir</tt>）定义属性并让这些属性更准确来解决此问题（例如，<tt>classdir=${project.dir}/build/classes</tt>）。</p>
+            <p>
+                要在 <tt>project.xml</tt> 中创建和导入属性，需要在 <tt>name</tt> 元素和 <tt>folders</tt>
+                元素之间输入以下内容：
+            </p>
+            <pre class="examplecode">
+&lt;properties&gt;
+    &lt;property name=&quot;<i>name</i>&quot;&gt;<i>value</i>&lt;/property&gt;
+    &lt;property-file&gt;<i>my-properties-file</i>.properties&lt;/property-file&gt;
+    &lt;property-file&gt;<i>another-properties-file</i>.properties&lt;/property-file&gt;
+&lt;/properties&gt; </pre>
+            <p>
+                注意语法和 Ant 脚本中使用的语法不同。还要注意尽管可以按任意顺序添加属性，但这些属性只能引用此前已在
+                <tt>project.xml</tt> 中定义的其他属性。属性文件路径本身也可以使用属性替换。
+            </p>
+            <h3 class="tutorial">验证 <tt>project.xml</tt> 文件<a name="validating"></a></h3>
+            <p>
+                IDE 与自由格式 <tt>project.xml</tt> 文件的 XML 架构捆绑在一起，在每次编辑和保存自由格式的
+                <tt>project.xml</tt> 文件时，IDE 都会自动对其进行验证。您可以在以下位置查看自由格式
+                <tt>project.xml</tt> 文件的 XML 架构：
+            <ul>
+                <li><a href="https://netbeans.org/ns/freeform-project/1.xsd">https://netbeans.org/ns/freeform-project/1.xsd</a>。控制自由格式 <tt>project.xml</tt> 的主体部分（<tt>&lt;general-data&gt;</tt>）。</li>
+                <li><a href="https://netbeans.org/ns/freeform-project-java/1.xsd">https://netbeans.org/ns/freeform-project-java/1.xsd</a>。控制 <tt>&lt;java-data&gt;</tt> 部分。</li>
+                <li><a href="https://netbeans.org/ns/freeform-project-web/1.xsd">https://netbeans.org/ns/freeform-project-web/1.xsd</a>。控制 <tt>&lt;web-data&gt;</tt> 部分（如果有该部分的话）。</li>
+            </ul>
+        </div>
+        <h2>创建目标以调试 Java SE 应用程序<a name="debugj2se"></a></h2>
+        <p>与编译命令和运行命令相似，调试命令依赖各种不同的信息，如源位置、编译类和其他项在类路径中的位置，以及项目主类的名称。</p>
+        <p>
+            在自由格式项目中，IDE 并不“了解”其中的任何内容。在 IDE 中运行命令（如“生成”）时，IDE
+            仅调用生成脚本中的目标，然后由该脚本处理命令。因此，要使调试正常运行，您还必须具有一个用于调试的生成脚本目标。IDE
+            提供了一些使用调试器的 Ant 定制任务，并且还可以生成基本的调试目标，该目标尝试基于脚本中的其他目标来提供重要的详细信息。
+        </p>
+        <p>要在自由格式项目中设置调试，需要执行以下操作：</p>
+        <ul>
+            <li>
+                确保使用所包含的调试信息来编译类。例如，可以通过在 <tt>&lt;javac&gt;</tt> 任务中包含参数
+                <tt>debug="true"</tt>，在生成脚本的 <tt>compile</tt> 目标中完成此操作。
+            </li>
+            <li>如果自由格式项目的输出在另一个项目的类路径中，则需要将自由格式项目的源包映射到其输出中。这可确保在对自由格式项目具有依赖关系的项目中启动调试会话时，使用调试器步入自由格式项目的源。可以在自由格式项目的“项目属性”对话框的“输出”面板中执行此操作。通过在“项目”窗口中右键单击项目节点并选择“属性”，可以打开“项目属性”对话框。<!--TODO explain this more?--></li>
+            <li>在生成脚本中创建调试目标，然后将该目标映射到 IDE 的“调试项目”命令。IDE 可以帮助你生成基本目标和映射，但你可能需要修改该目标。</li>
+        </ul>
+        <div class="indent">
+            <h3 class="tutorial">创建调试目标</h3>
+            <p>
+                如果没有为项目编写 <tt>debug</tt> 目标，则在第一次尝试调试项目时，IDE
+                将为你生成一个基本目标。然后你可以检查该目标，并对该目标进行定制以满足项目的特定需求。
+            </p>
+            <p>
+                <b>注意：</b>在生成调试目标前，最好先确保有映射到“运行项目”命令的目标。当 IDE
+                生成调试目标时，它在已映射到“运行项目”命令的目标中查找相关信息以确定运行类路径和项目的主类等。如果已将某个目标映射到“运行项目”命令，则很可能不需要进一步定制就可以使用生成的调试目标。
+            </p>
+            <p>为自由格式项目创建调试目标：</p>
+            <ol>
+                <li>在“项目”窗口中，右键单击项目节点，然后选择“设置为主项目”。</li>
+                <li>选择“调试”&gt;“调试主项目”。</li>
+                <li>在出现的“调试项目”对话框中，单击“生成”。
+                    <p>
+                        将在名为 <tt>ide-targets.xml</tt> 的文件中创建一个名为 <tt>debug-nb</tt>
+                        的目标。生成的 <tt>ide-targets.xml</tt> 文件是一个用于导入主 <tt>build.xml</tt>
+                        文件的生成脚本，因此，调试目标可以利用主生成脚本设置或引用的目标和属性。
+                    </p>
+                    <p>
+                        此外，还会在 <tt>project.xml</tt> 文件中创建该目标的映射，以便在 IDE
+                        中选择“调试项目”命令时调用该目标。如果从头开始编写目标，还需要自行创建该映射。参见<a href="#map_projectxml">手动将目标映射到菜单项</a>。
+                    </p>
+                </li>
+                <li>验证生成的 <tt>debug-nb</tt> 目标是否适当地兼顾了项目的所有元素。特别是，如果目标未在运行类路径中包含所有项，则可能需要在目标中修改 <tt>&lt;classpath&gt;</tt> 参数。</li>
+            </ol>
+            <p>在创建目标后，便可以开始调试了。开始调试：</p>
+            <ol>
+                <li>在主类中设置一个断点。单击要设置断点的行的左侧空白处，可以完成此操作。具有断点的行将以粉红色突出显示。</li>
+                <li>重新右键单击项目的节点，然后选择“调试项目”。
+                    <p>将运行目标并开始执行程序。目标的运行进度将显示在“输出”窗口中，而调试器的状态则显示在“输出”窗口底部的状态栏中。
+                </li>
+            </ol>
+            <h3 class="tutorial">典型的自由格式项目调试目标</h3>
+            <p>生成的 Ant 目标将执行以下操作：</p>
+            <ul>
+                <li>使用 <tt>nbjpdastart</tt> 任务启动调试器。</li>
+                <li>
+                    在 <tt>jpda.address</tt> 属性（<tt>addressproperty=&quot;jpda.address&quot;</tt>）中存储调试器侦听应用程序时所在的地址。不必在
+                    Ant 脚本或属性文件中定义 <tt>jpda.address</tt> 属性。该属性是由 IDE 定义的。
+                </li>
+                <li>建立运行时类路径。如果 IDE 无法确定运行时类路径，则会在脚本中放置一些占位符，你需要亲自填充这些值。</li>
+                <li>在调试模式下运行应用程序，设置 <tt>fork=&quot;true&quot;</tt> 可确保进程在单独的虚拟机中启动。</li>
+            </ul>
+            <p><b>注意：</b>还可在 <tt>java</tt> 中附加任何 JVM 参数或程序参数。</p>
+            <p>生成的调试目标（IDE 能够猜测出运行时类路径）会按以下方式显示，其中，<tt><i>斜体</i></tt>项表示特定于具体项目的值：</p>
+            <pre class="examplecode">
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+    &lt;project basedir=".." name="<i>YourProjectName</i>"&gt;
+    &lt;import file="../build.xml"/&gt;
+    &lt;!-- TODO: edit the following target according to your needs --&gt;
+    &lt;!-- (more info: https://netbeans.org/kb/archive/index.html) --&gt;
+    &lt;target name="debug-nb"&gt;
+    &lt;nbjpdastart addressproperty="jpda.address" name="<i>NameOfProject</i>" transport="dt_socket"&gt;
+    &lt;classpath path="<i>ClasspathSpecifiedInYourRunTarget</i>"/&gt;
+    &lt;/nbjpdastart&gt;
+    &lt;java classname="<i>MainClassSpecifiedInRunTarget</i>" classpath="<i>ClasspathSpecifiedInYourRunTarget</i>" fork="true"&gt;
+    &lt;jvmarg value="-Xdebug"/&gt;
+    &lt;jvmarg value="-Xnoagent"/&gt;
+    &lt;jvmarg value="-Djava.compiler=none"/&gt;
+    &lt;jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/&gt;
+    &lt;/java&gt;
+    &lt;/target&gt;
+&lt;/project&gt;
+            </pre>
+            <p>如果尚未映射运行目标，或者 IDE 无法确定项目的类路径或主类，则生成的调试目标会包括“TODO”占位符，你可以按以下示例填充这些值。</p>
+            <pre class="examplecode">
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+    &lt;project basedir=".." name="<i>YourProjectName</i>"&gt;
+    &lt;!-- TODO: edit the following target according to your needs --&gt;
+    &lt;!-- (more info: https://netbeans.org/kb/archive/index.html) --&gt;
+    &lt;target name="debug-nb"&gt;
+    &lt;path id="cp"&gt;
+    &lt;!-- TODO configure the runtime classpath for your project here: --&gt;
+    &lt;/path&gt;
+    &lt;nbjpdastart addressproperty="jpda.address" name="<i>NameOfProject</i>" transport="dt_socket"&gt;
+    &lt;classpath refid="cp"/&gt;
+    &lt;/nbjpdastart&gt;
+    &lt;!-- TODO configure the main class for your project here: --&gt;
+    &lt;java classname="<i>some.main.Class</i>" fork="true"&gt;
+    &lt;classpath refid="cp"/&gt;
+    &lt;jvmarg value="-Xdebug"/&gt;
+    &lt;jvmarg value="-Xnoagent"/&gt;
+    &lt;jvmarg value="-Djava.compiler=none"/&gt;
+    &lt;jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/&gt;
+    &lt;/java&gt;
+    &lt;/target&gt;
+&lt;/project&gt;
+            </pre>
+            <p>
+                要指定运行时类路径，需要在 <tt>path</tt> 元素中插入 <tt>pathelement</tt>
+                元素，并将它们指向包含类路径项的目录。例如，可以使用 <tt>pathelement</tt>
+                的 <tt>location</tt> 属性来指定类路径项相对于项目目录的位置。项目目录通常是包含项目的
+                <tt>build.xml</tt> 文件的目录。下面是一个示例：
+            </p>
+            <pre class="examplecode">
+&lt;path id="cp"&gt;
+    &lt;pathelement location="libs"&gt;
+    &lt;pathelement location="build"&gt;
+&lt;/path&gt;
+            </pre>
+            <a name="map_projectxml"></a>
+            <h3 class="tutorial">手动将目标映射到菜单项</h3>
+            <p>在 IDE 为您生成某个目标时，IDE 会自动提供该目标与 IDE 命令的菜单项之间的映射。但是，如果手动创建目标，则还需要手动创建映射。</p>
+            <p><b>将“调试项目”命令映射到外部 Ant 脚本中的目标：</b>
+            <ol>
+                <li>打开项目的 <tt>project.xml</tt> 文件，并将以下代码添加到 <tt>&lt;ide-actions&gt;</tt> 中：
+                    <pre>
+    &lt;action name=&quot;debug&quot;&gt;
+        &lt;script&gt;<i>path_to_Ant_script</i>&lt;/script&gt;
+        &lt;target&gt;<i>target_name</i>&lt;/target&gt;
+    &lt;/action&gt;
+                    </pre>
+                </li>
+                <li>通过将下面一行添加到 <tt>&lt;context-menu&gt;</tt> 目标中，可以将命令添加到项目节点的上下文菜单中：
+                    <pre>
+    &lt;ide-action name=&quot;debug&quot;/&gt;
+                    </pre>
+                    IDE 会将“调试项目”操作映射到项目 Ant 脚本中的指定目标。
+                </li>
+            </ol>
+<!--
+<p>Let's look at a target that runs the project in the debugger. To view all of
+  the targets discussed below, see these <a href="nb_targets.xml" target="targets">sample
+  NetBeans IDE targets</a>. Of course, you have to change the names of the properties
+  and the target dependencies to match the properties and targets in your Ant
+  script.</p>
+<p>Now let's map the <tt>debug</tt> target to the Debug Project command. If the
+  <tt>debug</tt> target is in the same Ant script that is used to build and run
+  the project, open the project's Project Properties dialog box, go to Build and
+  Run, and set Debug Project to the <tt>debug</tt> target. </p>
+<p>If you keep this target in a separate Ant script, open the project's <tt>project.xml</tt>
+  file and enter the following under<tt> ide-actions</tt>:</p>
+<pre class="examplecode">  &lt;action name=&quot;debug&quot;&gt;
+    &lt;script&gt;path/to/my/nbtargets.xml&lt;/script&gt;
+    &lt;target&gt;debug&lt;/target&gt;
+  &lt;/action&gt;</pre>
+<p>Of course, you have to point the <tt>script</tt> element to your Ant script.</p>
+<p><a href="#top">Back to top</a></p>
+-->
+        </div>
+        <h2>创建目标以调试 Web 应用程序<a name="debugweb"></a></h2>
+        <p>
+            现在来看一个将调试器附加到 Web 应用程序上的目标。首先，选择“调试”>“调试主项目”（Ctrl-F5）。
+            如果未将任何目标<a href="#hook">映射</a>到“调试”命令，系统会提示你让 IDE 在
+            <tt>nbproject/ide-targets.xml</tt> 文件中生成特定于 IDE 的调试目标。单击“生成”时，将生成
+            <tt>debug-nb</tt> 目标，同时还生成 <tt>-load-props</tt>、<tt>-check-props</tt>、<tt>-init</tt>
+            和 <tt>debug-display-browser</tt> 目标，它们用来支持调试目标。目标在“源编辑器”中显示为以下内容：
+        </p>
+        <p>（<b>注意：</b>这些目标不在 IDE 中生成。因此，你需要将生成的代码更改成下面的样子。）</p>
+        <a name="debug.target"></a>
+        <pre class="examplecode">
+    &lt;target name="-load-props"&gt;
+        &lt;property file="nbproject/project.properties"/&gt;
+    &lt;/target&gt;
+
+    &lt;target name="-check-props"&gt;
+        &lt;fail unless="session.name"/&gt;
+        &lt;fail unless="jpda.host"/&gt;
+        &lt;fail unless="jpda.address"/&gt;
+        &lt;fail unless="jpda.transport"/&gt;
+        &lt;fail unless="web.docbase.dir"/&gt;
+        &lt;fail unless="debug.sourcepath"/&gt;
+        &lt;fail unless="client.url"/&gt;
+    &lt;/target&gt;
+
+    &lt;target depends="-load-props, -check-props" name="-init"/&gt;
+
+    &lt;target depends="-init" name="debug-nb" description="Debug Project"&gt;
+        &lt;nbjpdaconnect address="${jpda.address}" host="${jpda.host}" name="${session.name}" transport="${jpda.transport}"&gt;
+            &lt;sourcepath&gt;
+        &lt;path path="${debug.sourcepath}"/&gt;
+            &lt;/sourcepath&gt;
+        &lt;/nbjpdaconnect&gt;
+        &lt;antcall target="debug-display-browser"/&gt;
+    &lt;/target&gt;
+
+    &lt;target name="debug-display-browser"&gt;
+        &lt;nbbrowse url="${client.url}"/&gt;
+    &lt;/target&gt;
+        </pre>
+        <p>
+            你不需要定制生成的目标。你必须做的一切就是设置属性，IDE 需要用它们来使用生成的目标。例如，你需要告诉 IDE
+            应用程序源的位置。为此，需要在 IDE 在创建上面的 <tt>debug-nb</tt> 目标时创建的 <tt>nbproject/debug.properties</tt>
+            文件中设置属性。使用上面的 <tt>-load-props</tt> 目标，IDE 将装入运行 <tt>debug-nb</tt> 目标时的属性。
+        </p>
+        <p>
+            （<b>注意：</b>该文件不会在 IDE 中生成。你需要转至“文件”窗口，展开项目节点，右键单击
+            <tt>nbproject</tt> 文件夹，然后选择“新建”&gt;“文件/文件夹”。选择“其他”&gt;“属性文件”，将文件命名为
+            <tt>debug</tt>，然后单击“完成”。在新建的 <tt>debug.properties</tt> 文件中，添加下列属性。）
+        </p>
+        <a name="debug.properties"></a>
+        <pre class="examplecode">
+    jpda.session.name=MyProject
+    jpda.host=localhost
+
+    # Sun Java System Application Server using shared memory (on Windows)
+    # jpda.address=localhost4848
+    # jpda.transport=dt_shmem
+
+    # Sun Java System Application Server using a socket
+    # jpda.address=9009
+    # jpda.transport=dt_socket
+
+    # Tomcat using shared memory (on Windows)
+    jpda.address=tomcat_shared_memory_id
+    jpda.transport=dt_shmem
+
+    # Tomcat using a socket
+    #jpda.address=11555
+    #jpda.transport=dt_socket
+
+    src.folders=src
+    web.docbase.dir=web
+
+    # you can change this property to a list of your source folders
+    debug.sourcepath=${src.folders}:${web.docbase.dir}
+
+    # Client URL for Tomcat
+    client.url=http://localhost:8084/MyProject
+
+    # Client URL for Sun Java System Application Server
+    # client.url=http://localhost:8080
+        </pre>
+        <p>下表解释了上面定义的属性。</p>
+        <table border="1" cellpadding="5" cellspacing="0" summary="左边一列列出属性。右边一列列出值和注意。">
+            <tr class="valign-top">
+                <th scope="col" class="align-left">属性</th>
+                <th scope="col" class="align-left">值</th>
+                <th scope="col" class="align-left">注意</th>
+            </tr>
+            <tr class="valign-top">
+                <td><tt>jpda.session.name</tt></td>
+                <td>调试项目时在“会话”窗口中的显示名称。</td>
+            </tr>
+            <tr class="valign-top">
+                <td><tt>jpda.host</tt></td>
+                <td>要调试的程序的主机，用来连接到调试器，比如 <tt>localhost</tt>。</td>
+            </tr>
+            <tr class="valign-top">
+                <td><tt>jpda.address</tt></td>
+                <td>绑定的 Tomcat Web 服务器缺省值，套接字连接为 <tt>11555</tt>，共享内存连接为 <tt>tomcat_shared_memory_id</tt>。</td>
+                <td>要设置不同的地址，在“服务”窗口中右键单击“Tomcat”节点，然后选择“属性”。在“属性”表单中，更改“调试端口”属性（对套接字连接）或“名称”属性（对共享内存连接）。然后关闭“属性”表单。如果已经启动了 Tomcat Web 服务器，现在就停止并重启。</td>
+            </tr>
+            <tr class="valign-top">
+                <td><tt>jpda.transport</tt></td>
+                <td><tt>dt_socket</tt>（对套接字连接）或 <tt>shmem</tt>（对共享内存连接）。</td>
+                <td>要设置不同的传输，在“服务”窗口中右键单击“Tomcat”节点，然后选择“属性”。在“属性”表单中，更改“调试类型”。然后关闭“属性”表单。如果已经启动了 Tomcat Web 服务器，现在就停止并重启。</td>
+            </tr>
+            <tr class="valign-top">
+                <td><tt>web.docbase.dir</tt><br>
+                <tt>src.folders</tt></td>
+                <td>Web 根（<tt>web.docbase.dir</tt>）和 Java 源文件（<tt>src.folders</tt>）的位置。</td>
+                <td>多个源根可以在预案路径中以“:”分隔符的方式包含。注意 Java 源文件夹必须在“项目属性”对话框的“Java 源”面板中指定为“源包文件夹”。（右键单击项目，选择“属性”，然后在“项目属性”对话框中单击“Java 源”。）</td>
+            </tr>
+            <tr class="valign-top">
+                <td><tt>client.url</tt></td>
+                <td>需要在 IDE 的缺省浏览器中打开的 URL，比如 <tt>http://localhost:8084/MyProject</tt>。</td>
+            </tr>
+    </table>
+        <p>
+            注意 <tt>debug-nb</tt> 目标被自动映射到“调试项目”命令。然而，如果你将此目标放在不同的
+            Ant 脚本中，就需要打开项目的 <tt>project.xml</tt> 文件，然后在 <tt>ide-actions</tt>
+            段更改 <tt>script</tt> 元素：
+        </p>
+        <pre class="examplecode">
+&lt;action name=&quot;debug&quot;&gt;
+    &lt;script&gt;path-to-my-debug-target.xml&lt;/script&gt;
+    &lt;target&gt;debug-nb&lt;/target&gt;
+&lt;/action&gt;</pre>
+        <div class="indent">
+            <h3 class="tutorial">使用调试目标</h3>
+            <p>
+                在能够使用调试目标前，需要部署应用程序。因此，启动服务器并运行部署应用程序。注意首次逐会话运行应用程序时，Tomcat
+                Web 服务器会向你询问用户名和口令。唯一可接受得用户名和口令是具有“manager”角色的用户。这在 Tomcat Web
+                服务器主目录中的 <tt>conf/tomcat-users.xml</tt> 文件中定义。要确定该目录的位置，在“服务”窗口中右键单击
+                Tomcat Web 服务器实例，然后选择“属性”。在“属性”对话框中，“主目录”属性指向 Tomcat Web 服务器的主目录。
+            </p>
+            <p>一旦应用程序已被部署，停止服务器并以调试模式启动。完成的方式和服务器有关：</p>
+            <ul><li>捆绑的 Tomcat Web 服务器
+                    <p>在“服务”窗口展开“服务器”节点，右键单击“捆绑的 Tomcat”节点，选择“启动/停止服务器”，然后单击“启动服务器（调试）”。</p>
+                </li>
+                <li>外部 Tomcat Web 服务器
+                    <p>运行以下命令：</p>
+            <pre class="examplecode">
+    catalina jpda start
+            </pre></li></ul>
+            <p>一旦服务器以调试模式启动，就选择“运行”&gt;“调试主项目”（F5）。应用程序将被部署然后附着到调试器。调试器在第一个断点停止，然后就可以“步入”（F7）或“越过”（F8）代码。</p>
+            <a name="troubleshoot-debug"></a>
+            <h3 class="tutorial">调试目标疑难解答</h3>
+            <p>
+                虽然 IDE 尽可能<a href="#debugweb">为你生成完整的调试目标</a>，并带有最适合你的特定环境的属性，你也始终应当分析和微调调试过程。如果在使用
+                NetBeans IDE 生成的 Ant 调试目标时遇到问题，可通读下列问题：
+            </p>
+            <div class="indent">
+                <h4 class="tutorial">Web 应用程序被正确部署了吗？</h4>
+                <p>检查 Web 应用程序已被部署：</p>
+                <ol>
+                    <li>在“服务”窗口中，展开“服务器”节点，启动服务器（如果没启动），展开服务器实例的节点，然后展开“Web 应用程序”节点。</li>
+                    <li>如果看不到应用程序的上下文（对本文档中的应用程序来说是 <tt>/MyProject</tt>），就没有被正确部署。</li>
+                <li>部署应用程序。</li></ol>
+                <h4>你在防火墙后面吗？</h4>
+                <p>检查你的代理设置是否正确。根据你的代理类型，进行以下操作：</p>
+                <ul>
+                    <li>
+                        <b>HTTP 代理。</b>选择“工具”&gt;“设置向导”。在向导中，选择“使用 HTTP
+                        代理”复选框。在“代理服务器名称”字段中键入代理主机名，“端口”字段中键入端口号。单击“完成”。
+                    </li>
+                    <li>
+                        <b>SOCKS 代理。</b>你必须在启动 IDE 时，将 SOCKS 代理主机名和代理端口参数传给 JVM
+                        软件。在 Microsoft Windows 机器上，使用 <tt>IDE-HOME/etc/netbeans.conf</tt>
+                        文件来传递参数。在 UNIX 和 Linux 机器上，可编写一个包装器外壳脚本。
+                        有关详细信息，可转至“帮助”&gt;“帮助内容”。
+                    </li>
+                </ul>
+                <h4>服务器以调试模式运行吗？</h4>
+                <p>检查服务器是否以调试模式启动：</p>
+                <ol>
+                    <li>在“服务”窗口中，展开“服务”节点并检查服务器是否在运行。注意即使它在运行，也可能没有以调试模式运行。</li>
+                    <li>如果没有运行，右键单击，选择“启动/停止服务器”，然后单击“启动服务器（调试）”。如果正在运行，但不确定是否以调试模式运行，停止服务器并以调试模式重启。</li>
+                </ol>
+                <h4>服务器的端口和地址设置正确吗？</h4>
+                <p>检查 <tt>debug.properties</tt> 中设置的 <tt>jpda.address</tt> 是否匹配服务器的设置：</p>
+                <ol>
+                    <li>在“服务”窗口中，右键单击服务器节点，然后选择“属性”。</li>
+                    <li>
+                        在“属性”表单中：
+                        <ul>
+                            <li>
+                                检查“调试端口”属性（对于套接字连接）。缺省情况下，对 SJS 应用程序服务器应当是
+                                <tt>9009</tt>，Tomcat Web 服务器是 <tt>11555</tt>。
+                            </li>
+                            <li>
+                                检查“名称”属性（对于共享内存连接）。缺省情况下，对 SJS 应用程序服务器应当是
+                                <tt>localhost4848</tt>，Tomcat Web 服务器是 <tt>tomcat_shared_memory_id</tt>。
+                            </li>
+                        </ul>
+                        如果更改了服务器的“调试端口”属性或“名称”属性，需确保它匹配 <tt>debug.properties</tt> 文件中的相关属性。
+                    </li>
+                    <li>关闭“属性”表单，如果已经启动服务器，就停止并重启。</li>
+                </ol>
+                <p>检查 <tt>debug.properties</tt> 中设置的 <tt>jpda.transport</tt> 是否匹配服务器的设置：</p>
+                <ol>
+                    <li>在“服务”窗口中，右键单击服务器节点，然后选择“属性”。</li>
+                    <li>
+                        在“属性”表单中，检查“调试类型”属性：
+                        <ul>
+                            <li>对于套接字连接是 <tt>dt_socket</tt>。</li>
+                            <li>对于共享内存（Windows）是 <tt>dt_shmem</tt></li>
+                        </ul>
+                        如果更改了服务器的“调试类型”属性，需确保它匹配 <tt>debug.properties</tt> 文件中的相关属性。
+                    </li>
+                    <li>关闭“属性”表单，如果已经启动服务器，就停止并重启。</li>
+                </ol>
+                <h4>无法在代码中步进？</h4>
+                <p>如果无法在代码中逐行步进，而只能逐断点，表明 IDE 无法找到源。这是因为没有正确指定源。</p>
+                <ul>
+                    <li>
+                        <b>Servlets：</b>选择“窗口”&gt;“调试”&gt;“源”。“源”窗口显示所有可用于调试的 Java
+                        源文件夹。如果要调试不能在“源”窗口中找到的源文件夹，就需要在“项目属性”对话框中指定：
+                        <ol>
+                            <li>右键单击项目节点，选择“属性”，单击“Java 源”。</li>
+                            <li>将要调试的源文件夹添加到“源包文件夹”表格或“测试包文件夹”表格。</li>
+                        </ol>
+                        注意在调用 <tt>javac</tt> 任务时，用来编译 Servlet 的目标必须指定
+                        <tt>debug="true"</tt>。如果 Servlet 被编译成不带调试信息，调试器就不会在断点停下。
+                    </li>
+                    <li>
+                        <b>JSP 页：</b>确保已为项目定义了上下文路径：
+                        <ol>
+                            <li>右键单击项目节点，选择“属性”，单击“Web 源”。</li>
+                            <li>键入上下文路径，例如，在“上下文路径”字段中键入 <tt>/MyProject</tt>。</li>
+                        </ol>
+                        <p>注意，如果已经在指定上下文路径<i>前</i>设置了断点，就必须删除它们，并在指定上下文路径后重设。换句话说，必须先设置上下文路径。</p>
+                    </li>
+                </ul>
+                <p>
+                    同时确保在 <tt><a href="#debug.properties">debug.properties</a></tt> 文件和
+                    <tt><a href="#debug.target">debug-nb</a></tt> 目标中正确指定了源。注意，如果
+                    <tt>nbproject</tt> 文件夹没有放在源文件夹所放的文件夹内，就必须为 <tt>src.folder</tt>
+                    和 <tt>web.docbase.folders</tt> 属性设置以下属性：
+                </p>
+                <ul>
+                    <li><tt>src.folders=${project.dir}/src</tt></li>
+                    <li><tt>web.docbase.dir=${project.dir}/web</tt></li>
+                </ul>
+            </div>
+            <p><a href="#top">回到页首</a></p>
+        </div>
+        <h2>创建目标以编译单个文件<a name="compilesingle"></a></h2>
+        <p>
+            如果想能够在 IDE 中选择文件并单独编译它们，则需要使用 Ant
+            目标来执行此命令。第一次选择该命令时，IDE 将为你生成一个目标。生成的目标看起来像这样：
+        </p>
+        <pre class="examplecode">
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project basedir=".." name="<i>MyProjectName</i>"&gt;
+    &lt;!-- TODO: edit the following target according to your needs --&gt;
+    &lt;!-- (more info: https://netbeans.org/kb/archive/index.html) --&gt;
+    &lt;target name="compile-selected-files-in-src"&gt;
+        &lt;fail unless="files"&gt;Must set property 'files'&lt;/fail&gt;
+        &lt;!-- TODO decide on and define some value for ${build.classes.dir} --&gt;
+        &lt;mkdir dir="${build.classes.dir}"/&gt;
+        &lt;javac destdir="${build.classes.dir}" includes="${files}" source="1.5" srcdir="src"/&gt;
+    &lt;/target&gt;
+&lt;/project&gt;
+        </pre>
+        <p>
+            在生成的目标中，需要指定用于放置编译类的目录。可通过在生成的目标中指定 <tt>build.classes.dir</tt>
+            属性的值来执行此操作。例如，可以将下面一行添加到 <tt>&lt;target name="compile-selected-files-in-src"&gt;</tt>
+            条目上面的一行中：
+        </p>
+        <pre>&lt;property name="build.classes.dir"  value="build"/&gt;</pre>
+        <p>或者，可以替换所提供的 <tt>build.classes.dir</tt> 值，还可以完全重新编写目标。</p>
+        <p><tt>includes</tt> 参数的值就是生成的 <tt>files</tt> 参数的值。IDE 使用该属性来存储当前选定文件的名称。</p>
+        <p>
+           注意：可以配置多个 <tt>compile.single</tt> 操作，以便根据选定文件，用不同的功能来重载 F9
+           快捷键和菜单命令。例如，可为 JUnit 测试类设置一个单独的 <tt>compile-selected-files</tt>
+           目标，然后对 JUnit 测试目录中的所有源，将 <tt>compile.single</tt> 映射到此目标。或者可以更改到
+           <tt>\.xml$</tt> 的模式，并且对所有 XML 文件，将 F9 映射到“验证 XML”目标。
+        </p>
+        <!--<p>See <a href="#reference">Getting a Reference to the Currently Selected File
+        in the IDE</a> for more information.</p>-->
+        <h2>编写目标以运行/调试/测试单个文件<a name="runsingle"></a></h2>
+        <p>IDE 不会为“运行文件”、“测试文件”和“为文件调试测试”命令生成目标，但可以创建自己的目标，然后将它们映射到以下预定义的操作：</p>
+        <ul>
+            <li><tt>run.single</tt> - 运行选定文件（Shift-F6）</li>
+            <li><tt>debug.single</tt> - 调试选定文件（Ctrl-Shift-F5）</li>
+            <li><tt>test.single</tt> - 为选定文件运行 JUnit 测试（Ctrl-F6）</li>
+            <li><tt>debug.test.single</tt> - 为选定文件调试 JUnit 测试（Ctrl-Shift-F6）</li>
+        </ul>
+        <p>这些操作中，每个都包含一个 <tt>context</tt> 元素，它可获取当前选定文件的引用并将你的选择保存到一个属性中。可在 Ant 目标中使用此属性来指定哪些文件需要处理。</p>
+        <div class="indent">
+            <h3 class="tutorial">运行选定的文件<a name="run_sing"></a></h3>
+            <p>我们演示一下运行一个类时是如何工作的。一个用来运行项目的典型目标看起来像下面这样：</p>
+            <pre class="examplecode">
+    &lt;target name="run2" depends=&quot;...&quot;&gt;
+        &lt;java fork="true" classname="<i>MyMainClass</i>" classpath="<i>MyRunClasspath</i>" /&gt;
+    &lt;/target&gt;
+            </pre>
+            <p>目标根据 <tt>classname</tt> 运行指定的文件。要在 IDE 中运行当前选定的文件，你需要将上面的目标修改为下面的样子：</p>
+            <pre class="examplecode">
+    &lt;target name=&quot;run-selected-file&quot; depends=&quot;compile&quot; description=&quot;Run Single File&quot;&gt;
+        &lt;fail unless=&quot;runclass&quot;&gt;Must set property 'classname'&lt;/fail&gt;
+        &lt;java classname=&quot;${runclass}&quot;&gt;
+            &lt;classpath refid=&quot;run.classpath&quot;/&gt;
+        &lt;/java&gt;
+    &lt;/target&gt;
+            </pre>
+            <h3 class="tutorial">在 IDE 中获取当前选定文件的引用<a name="reference"></a></h3>
+            <p>
+                一旦有了运行选定文件的 Ant 目标，就必须在 IDE 中获取到那个文件的引用，并存储到一个属性中。例如，上面的
+                <tt>run-selected-file</tt> 目标在 <tt>runclass</tt> 属性中寻找当前选中的文件。
+            </p>
+            <p>将此引用存储到和将生成目标映射到 IDE 操作（<tt>run-selected-file</tt>）相同的位置。我们先看看如何做，然后下详细解释：</p>
+            <pre class="examplecode">
+    &lt;action name=&quot;run.single&quot;&gt;
+        &lt;target&gt;run-single&lt;/target&gt;
+        &lt;context&gt;
+            &lt;property&gt;runclass&lt;/property&gt;
+            &lt;folder&gt;${src.dir}&lt;/folder&gt;
+            &lt;pattern&gt;\.java$&lt;/pattern&gt;
+            &lt;format&gt;java-name&lt;/format&gt;
+            &lt;arity&gt;
+                &lt;one-file-only/&gt;
+            &lt;/arity&gt;
+        &lt;/context&gt;
+    &lt;/action&gt;
+            </pre>
+            <p><tt>runclass</tt> 属性是新定义的，它持有要运行的文件，并被 <tt>java</tt> 任务引用。</p>
+            <p>现在看看下面几行来了解工作方式。</p>
+            <pre class="examplecode">
+    &lt;action name=&quot;run.single&quot;&gt;
+        &lt;target&gt;run-selected-file&lt;/target&gt;
+        &lt;context&gt;
+    &lt;property&gt;runclass&lt;/property&gt;
+            </pre>
+            <ul>
+                <li>
+                    <tt>&lt;action name=&quot;run.single&quot;&gt;</tt> 映射“运行文件”命令，F9
+                    快捷键映射 <tt>run-selected-file</tt> 目标。
+                </li>
+                <li><tt>&lt;context&gt;</tt> 设置 Ant 目标运行在其上的上下文。本例中为要运行的文件的名称。</li>
+                <li><tt>runclass</tt> 是持有上下文的属性名称。可为该属性选择任何唯一的名称。该属性必须在目标运行前由 IDE 设置。</li>
+                <li>
+                    <tt>&lt;arity&gt;</tt> 指定 <tt>runclass</tt> 只能持有一个文件。
+                    如果想要该属性能够持有一个以上的文件（例如对“编译文件”目标），可使用下列代码，逗号（,）是文件名称的分隔符：
+                    <pre class="examplecode">
+    &lt;arity&gt;
+        &lt;separated-files&gt;,&lt;/separated-files&gt;
+    &lt;/arity&gt;
+                    </pre>
+                </li>
+                <li>
+                    <tt>&lt;format&gt;java-name&lt;/format&gt;</tt> 指定 IDE 应当将相对文件名称传递给目标，
+                    但由点号（.）分界，并不带扩展名。其他格式化选项如下所示：
+                    <ul>
+                        <li><tt>relative-path</tt> - 指定IDE 应当将相对文件名称传递给目标</li>
+                        <li><tt>relative-path-noext</tt> - 同 <tt>relative-path</tt>，但删除了文件扩展名</li>
+                        <li><tt>absolute-path</tt> - 绝对文件名</li>
+                        <li><tt>absolute-path-noext</tt> - 同 <tt>absolute-path</tt>，但删除了文件扩展名</li>
+                    </ul>
+                </li>
+                <li>
+                    <tt>&lt;folder&gt;${src.dir}&lt;/folder&gt;</tt> 指定文件名必须相对于 <tt>src.dir</tt>
+                    目录，且该操作只对 <tt>src.dir</tt> 目录启用。
+                    <p>
+                        <b>注意：</b>IDE 不会为你定义 ${src.dir} 属性。必须定义该属性，或导入 Ant
+                        在 <tt>project.xml</tt> 中使用的 <tt>.properties</tt> 文件。参见<a href="#props_proj">在
+                        <tt>project.xml</tt> 文件中使用属性</a>。
+                    </p>
+                </li>
+                <li>
+                    <tt>&lt;pattern&gt;\.java$&lt;/pattern&gt;</tt> 是文件名称必须通过的正则表达式。使用
+                    <tt>&lt;pattern&gt;</tt> 来限制哪些文件可以传给 Ant 目标。本例中，你将要让目标只能用
+                    <tt>.java</tt> 结尾的文件来运行。
+                </li>
+            </ul>
+            <h3 class="tutorial">调试选定的文件<a name="debug_sing"></a></h3>
+            <p>过程基本上和编写目标以调试和运行单个文件相同。<tt>debug-selected-files</tt> 目标看起来像这样：</p>
+            <pre class="examplecode">
+    &lt;target name=&quot;debug-selected-files&quot; depends=&quot;compile&quot; if=&quot;netbeans.home&quot; description=&quot;Debug a Single File&quot;&gt;
+        &lt;fail unless=&quot;classname&quot;&gt;Must set property 'classname'&lt;/fail&gt;
+        &lt;nbjpdastart name=&quot;${classname}&quot; addressproperty=&quot;jpda.address&quot; transport=&quot;dt_socket&quot;&gt;
+            &lt;classpath refid=&quot;run.classpath&quot;/&gt;
+            &lt;!-- Optional - If source roots are properly declared in project, should
+            work without setting source path.
+            &lt;sourcepath refid=&quot;debug.sourcepath&quot;/&gt; --&gt;
+        &lt;/nbjpdastart&gt;
+        &lt;java classname=&quot;${classname}&quot; fork=&quot;true&quot;&gt;
+            &lt;jvmarg value=&quot;-Xdebug&quot;/&gt;
+              &lt;jvmarg value=&quot;-Xnoagent&quot;/&gt;
+              &lt;jvmarg value=&quot;-Djava.compiler=none&quot;/&gt;
+              &lt;jvmarg value=&quot;-Xrunjdwp:transport=dt_socket,address=${jpda.address}&quot;/&gt;
+              &lt;classpath refid=&quot;run.classpath&quot;/&gt;
+        &lt;/java&gt;
+    &lt;/target&gt;
+            </pre>
+            <ul>
+                <li>
+                    这基本和 <tt>debug</tt> 目标相同。不将主类，而是将 <tt>classname</tt> 属性传递给
+                    <tt>java</tt>，它被 IDE 设置为当前选定的文件。
+                </li>
+            </ul>
+            <p>然后将 <tt>debug-selected-files</tt> 目标映射到 <tt>debug.single</tt>操作：</p>
+            <pre class="examplecode">
+    &lt;action name=&quot;debug.single&quot;&gt;
+        &lt;target&gt;debug-selected-files&lt;/target&gt;
+        &lt;context&gt;
+            &lt;property&gt;classname&lt;/property&gt;
+            &lt;folder&gt;${src.dir}&lt;/folder&gt;
+            &lt;pattern&gt;\.java$&lt;/pattern&gt;
+            &lt;format&gt;java-name&lt;/format&gt;
+            &lt;arity&gt;
+                &lt;one-file-only/&gt;
+            &lt;/arity&gt;
+        &lt;/context&gt;
+    &lt;/action&gt;
+            </pre>
+            <ul>
+                <li><tt>&lt;property&gt;</tt> 现在在 <tt>classname</tt> 属性中存储上下文。</li>
+                <li>既然 <tt>java</tt> 只能处理单个文件，就将 <tt>&lt;arity&gt;</tt> 设置为 <tt>&lt;one-file-only&gt;</tt>。</li>
+                <li>
+                    将 <tt>&lt;format&gt;</tt> 设置为 <tt>java-name</tt>，使它相对于
+                    <tt>src.dir</tt> 可为当前选定的文件创建全限定类名。
+                    <p>
+                        <b>注意：</b>IDE 不会为你定义 ${src.dir} 属性。必须定义该属性，或导入 Ant
+                        在 <tt>project.xml</tt> 中使用的 <tt>.properties</tt> 文件。参见<a href="#props_proj">在
+                        <tt>project.xml</tt> 文件中使用属性</a>。
+                    </p>
+                </li>
+            </ul>
+        <p><a href="#top">回到页首</a></p></div>
+        <h2>为“应用代码更改”命令编写目标<a name="fix"></a></h2>
+        <p>
+            “应用代码更改”允许你在调试会话过程中更改代码，并无需重启应用程序，并用更改的代码继续调试。IDE
+            包含一个 <tt>nbjpdareload</tt> 任务，你可用来为“应用代码更改”命令编写目标。
+        </p>
+        <p>一个“修复”命令的典型目标看起来像这样：</p>
+        <pre class="examplecode">
+    &lt;target name=&quot;debug-fix&quot;&gt;
+        &lt;javac srcdir=&quot;${src.dir}&quot; destdir=&quot;${classes.dir}&quot; debug=&quot;true&quot; &gt;
+            &lt;classpath refid=&quot;javac.classpath&quot;/&gt;
+            &lt;include name=&quot;${fix.file}.java&quot;/&gt;
+        &lt;/javac&gt;
+        &lt;nbjpdareload&gt;
+            &lt;fileset dir=&quot;${classes.dir}&quot;&gt;
+                &lt;include name=&quot;${fix.file}.class&quot;/&gt;
+            &lt;/fileset&gt;
+        &lt;/nbjpdareload&gt;
+    &lt;/target&gt;
+        </pre>
+        <ul>
+            <li>
+                目标使用 <tt>${fix.file}</tt> 属性来编译当前选定的文件。（下一节中，你将设置 IDE
+                以在该属性中存储当前选定文件的名称。）
+            </li>
+            <li><tt>nbjpdareload</tt> 任务在应用程序中重新装入修正的文件。</li>
+        </ul>
+        <p>
+            要将该目标挂接到“应用代码更改”命令（和前一个版本的 IDE 中的“修复”命令相同），需在
+            <tt>project.xml</tt> 中的 <tt>&lt;ide-actions&gt;</tt> 中定义以下操作：
+        </p>
+        <pre class="examplecode">
+    &lt;action name=&quot;debug.fix&quot;&gt;
+        &lt;target&gt;debug-fix&lt;/target&gt;
+        &lt;context&gt;
+            &lt;property&gt;fix.file&lt;/property&gt;
+            &lt;folder&gt;${src.dir}&lt;/folder&gt;
+            &lt;pattern&gt;\.java$&lt;/pattern&gt;
+            &lt;format&gt;relative-path-noext&lt;/format&gt;
+            &lt;arity&gt;
+                &lt;one-file-only/&gt;
+            &lt;/arity&gt;
+        &lt;/context&gt;
+    &lt;/action&gt;
+        </pre>
+        <ul>
+            <li><tt>&lt;property&gt;</tt> 现在在 <tt>fix.file</tt> 属性中存储上下文。</li>
+            <li>因为一次只能在一个文件上运行“修复”命令，可将 <tt>&lt;arity&gt;</tt> 设置为 <tt>&lt;one-file-only&gt;</tt>。</li>
+            <li>
+                必须将 <tt>.java</tt> 文件的完整路径传给 <tt>javac</tt> 任务，<tt>.class</tt>
+                文件的完整路径传给 <tt>nbjpdareload</tt> 任务。所以要将 <tt>&lt;format&gt;</tt>
+                设置为 <tt>rel-path-noext</tt>，然后根据需要，在 <tt>debug-fix</tt> 目标中追加
+                <tt>.class</tt> 或 <tt>.java</tt>。
+                <p>
+                    <b>注意：</b>IDE 不会为你定义 ${src.dir} 属性。必须定义该属性，或导入 Ant
+                    在 <tt>project.xml</tt> 中使用的 <tt>.properties</tt> 文件。有关更多信息，参见<a href="#props_proj">在
+                    <tt>project.xml</tt> 文件中使用属性</a>。
+                </p>
+            </li>
+        </ul>
+        <br>
+        <div class="feedback-box">
+            <a href="/about/contact_form.html?to=3&amp;subject=Feedback:%20Advanced%20Freeform%20Project%20Configuration">向我们发送反馈</a>
+        </div>
+        <br style="clear:both;" />
+        <p><a href="#top">回到页首</a></p>
+<!-- /Servlet-Specific template -->
+<!-- end of right navigation -->
+<!-- servlets and anything not on www or testwww -->
+    </body>
+</html>

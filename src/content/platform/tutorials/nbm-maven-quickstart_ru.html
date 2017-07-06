@@ -1,0 +1,678 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Руководство по началу работы с платформой NetBeans с использованием Maven</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="AUDIENCE" content="NBUSER"/>
+    <meta name="TYPE" content="ARTICLE"/>
+    <meta name="EXPIRES" content="N"/>
+    <meta name="indexed" content="y"/>
+    <meta name="description"
+          content="A short demonstration of how to create a simple
+    NetBeans Platform application and module and use Maven for the build framework."/>
+   <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+<body>
+
+   <h1>Руководство по началу работы с платформой NetBeans с использованием Maven</h1>
+
+   <p>Добро пожаловать в <a href="https://platform.netbeans.org/"><b>платформу NetBeans</b></a>!</p>
+
+    <p>В данном документе представлено краткое описание способов создания простого приложения и модуля платформы NetBeans, а также использования Maven для платформы построения. Для создания приложения и модуля платформы NetBeans в этом документе используются архетипы Maven. Для создания оконного компонента в модуле используется инструментарий интерфейса пользователя Swing и конструктор графического интерфейса пользователя Matisse. Модульный аспект платформы NetBeans позволяет разрабатывать и расширять функциональные возможности приложения, добавляя новые модули.
+    </p>
+
+    <p>Этот документ базируется на <a href="nbm-quick-start_ru.html">руководстве по началу работы с платформой NetBeans</a> на основе приложения Ant и демонстрирует некоторые различия между использованием Ant и Maven для разработки приложений платформы NetBeans. После изучения отличий Maven от Ant можно легко пройти другие учебные курсы в <a href="https://netbeans.org/kb/trails/platform_ru.html">Учебной карте по платформе NetBeans</a>.</p>
+
+    <p class="tips">При использовании версии среды IDE NetBeans 6.8 обратитесь к <a href="68/nbm-maven-quickstart.html">Руководству по началу работы с платформой NetBeans 6.8 с использованием Maven</a>.</p>
+
+    <p class="tips">При отсутствии опыта работы с платформой NetBeans рекомендуется просмотреть серию демонстрационных роликов <a href="https://platform.netbeans.org/tutorials/nbm-10-top-apis.html">10 лучших интерфейсов API NetBeans</a>.</p>
+
+    <p><b>Содержание</b></p>
+    <p><img src="../images/articles/81/netbeans-stamp.png" class="stamp" width="114" height="114" alt="Содержимое этой страницы относится к среде IDE NetBeans версий 6.5, 6.7, 6.8" title="Содержимое этой страницы относится к среде IDE NetBeans версий 6.5, 6.7, 6.8" /></p>
+
+    <ul class="toc">
+        <li><a href="#config">Настройка Maven</a></li>
+        <li><a href="#01">Создание проекта приложения на платформе NetBeans</a>
+            <ul>
+            <li><a href="#01a">Изменение элементов брэндинга</a></li>
+            </ul>
+        </li>
+        <li><a href="#02">Создание модуля MavenWordEngine</a>
+            <ul>
+            <li><a href="#02b">Добавление модуля в качестве зависимости</a></li>
+            <li><a href="#02c">Добавление оконного компонента</a></li>
+            </ul>
+        </li>
+        <li><a href="#04">Создание модуля TextFilter</a>
+            <ul>
+            <li><a href="#04b">Добавление модуля в качестве зависимости</a></li>
+            <li><a href="#04c">Добавление интерфейса</a></li>
+            <li><a href="#04d">Преобразование модуля в общедоступный</a></li>
+            </ul>
+        </li>
+        <li><a href="#05">Создание модуля MyFilter</a>
+            <ul>
+            <li><a href="#05b">Добавление модуля TextFilter в качестве зависимости</a></li>
+            <li><a href="#05c">Добавление класса Java</a></li>
+            <li><a href="#05d">Вызов метода из модуля MavenWordEngine</a></li>
+            </ul>
+        </li>
+        <li><a href="#06">Добавление слушателя и поля содержимого</a></li>
+        <li><a href="#07">Создание модуля History</a>
+            <ul>
+            <li><a href="#07b">Добавление оконного компонента</a></li>
+            </ul>
+        </li>
+        <li><a href="#08">Запуск приложения</a></li>
+      </ul>
+
+<p><b>Для работы с этим учебным курсом требуется программное обеспечение и ресурсы, перечисленные в следующей таблице.</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Программное обеспечение или ресурс</th>
+                <th class="tblheader" scope="col">Требуемая версия</th>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://download.netbeans.org/">Среда IDE NetBeans</a></td>
+                <td class="tbltd1">версия 6.9</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Комплект для разработчика на языке Java (JDK)</a></td>
+                <td class="tbltd1">версия 6</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://maven.apache.org/">Maven</a></td>
+                <td class="tbltd1">Версия 2.0.9 или более поздняя версия</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><strong class="notes">Примечание.</strong> Для разработки приложений на платформе NetBeans не требуется загружать отдельную версию этой платформы. Как правило, разработка приложений и модулей осуществляется в среде IDE NetBeans, затем необходимо просто включить требуемые модули для выполнения платформы NetBeans и созданного приложения.</p>
+
+    <p>Перед изучением этого учебного курса можно ознакомиться со следующей документацией:</p>
+    <ul>
+        <li><a href="http://wiki.netbeans.org/MavenBestPractices">Практические рекомендации по Apache Maven в NetBeans 6.x</a>;</li>
+        <li><a href="http://www.sonatype.com/books/maven-book/reference/introduction.html">Глава 1. Введение в Apache Maven</a> (фрагмент из книги <a href="http://www.sonatype.com/books/maven-book/reference/public-book.html">Maven: The Definitive Guide</a>);</li>
+        <li><a href="https://netbeans.org/kb/docs/java/gui-functionality_ru.html">Введение в разработку графического интерфейса </a>.</li>
+    </ul>
+
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++ Configuring Maven +++++++++++++++++++++++++++++++++ -->
+
+<h2><a name="config"></a>Настройка Maven</h2>
+    <p>Если это первый опыт работы с Maven, следует проверить параметры настройки Maven в окне &quot;Параметры&quot;. Для работы с этим учебным курсом необходимо установить Maven на локальный компьютер. Программу установки можно загрузить с <a href="http://maven.apache.org/">сайта Maven</a>.</p>
+
+    <ol>
+        <li>Выберите категорию &quot;Разное&quot; в окне &quot;Параметры&quot; и перейдите на вкладку &quot;Maven&quot;.</li>
+        <li>Укажите папку установки Maven (требуется версия 2.0.9 или более поздняя).</li>
+        <li>Проверьте корректность адреса к локальному репозиторию Maven.</li>
+        <li>Нажмите кнопку &quot;ОК&quot;.</li>
+    </ol>
+    <p>В большинстве случаев при использовании типичной настройки Maven данные в окне &quot;Параметры&quot; уже корректны.</p>
+    
+    <p class="notes"><strong>Примечание.</strong> Поддержка Maven активируется как часть набора функциональных возможностей Java SE. Если вкладка &quot;Maven&quot; в окне &quot;Параметры&quot; недоступна, подтвердите активацию Java SE при создании приложения Java.</p>
+
+    <p>Maven SCM используется в среде IDE для проверки артефактов Maven. Может потребоваться проверка факта установки всех необходимых клиентов для проверки исходных файлов на локальном компьютере и корректности их настройки.</p>
+    <p class="tips">Дополнительные сведения о Maven SCM приведены на <a href="http://maven.apache.org/scm/index.html">странице Maven SCM</a>.</p>
+
+    <div class="indent">
+        <h3><a name="config1"></a>Просмотр репозиториев Maven</h3>
+        <p>Артефакты, используемые Maven для создания всех проектов, сохраняются в локальном репозитории Maven. Если артефакт объявлен как зависимость проекта, он загружается в локальный репозиторий из одного из зарегистрированных удаленных репозиториев.</p>
+
+        <p>Репозиторий NetBeans и некоторые известные индексированные репозитории Maven зарегистрированы и включены в список окна &quot;Обозреватель репозитория&quot; по умолчанию. Репозиторий NetBeans содержит большинство общедоступных артефактов, требуемых для создания проекта. Обозреватель репозиториев Maven можно использовать для просмотра содержимого локальных и удаленных репозиториев. Для просмотра локальных артефактов разверните узел &quot;Локальный репозиторий&quot;. Артефакты, указанные в узлах удаленного репозитория, могут быть добавлены в качестве зависимостей проекта, однако не все из них представлены локально. Они добавляются к локальному репозиторию только в том случае, если объявляются в качестве зависимостей проекта.</p>
+
+        <p>Чтобы открыть обозреватель репозиториев Maven:</p>
+        <ul>
+            <li>выберите в главном меню &quot;Окно&quot; &gt; &quot;Прочее&quot; &gt; &quot;Обозреватель репозиториев Maven&quot;.<br/>
+            <img src="../images/tutorials/maven-quickstart68/maven-nbm-netbeans-repo.png" alt="Снимок экрана: обозреватель репозиториев Maven" title="Снимок экрана: обозреватель репозиториев Maven" class="margin-around b-all"  />
+            </li>
+        </ul>
+
+
+        <p>Когда курсор находится над артефактом, среда IDE отображает всплывающую подсказку с координатами артефакта. Посмотреть дополнительные сведения об артефакте можно с помощью двойного щелчка по файлу JAR артефакта в обозревателе.</p>
+
+        <p class="tips">Чтобы выполнить поиск артефакта, нажмите кнопку &quot;Найти&quot; на панели инструментов обозревателя репозиториев Maven или используйте текстовое поле &quot;Быстрый поиск&quot; на главной панели инструментов.</p>
+        <p class="tips">Подробные сведения об управлении зависимостями путей классов Maven и работе с репозиториями Maven в среде IDE приведены в разделе <a href="http://wiki.netbeans.org/MavenBestPractices#Dependency_management">Управление зависимостями</a> курса <a href="http://wiki.netbeans.org/MavenBestPractices">Практические рекомендации по Apache Maven в NetBeans 6.x</a>.
+        </p>
+        <p class="tips">Для просмотра видеоролика по использованию Artifact Viewer обратитесь к демонстрации <a href="https://netbeans.org/kb/docs/java/maven-dependencies-screencast.html">Работа с зависимостями Maven</a>.</p>
+
+</div>
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++ Creating the Platform Application +++++++++++++++++ -->
+
+<h2><a name="01"></a>Создание проекта приложения на платформе NetBeans</h2>
+
+    <p>В этом разделе для построения приложения на платформе NetBeans из архетипа Maven используется мастер создания проекта. Этот мастер создает проекты модуля Maven, требуемые для разработки приложения на платформе NetBeans. Также мастер предоставляет возможность создания модуля NetBeans в проекте приложения, однако в данном учебном курсе выполняется отдельное создание каждого модуля.</p>
+
+    <div class="indent">
+        <h3>Создание проекта</h3>
+
+        <p>Чтобы создать приложение на платформе NetBeans с помощью мастера создания проекта, выполните следующие действия:</p>
+        <ol>
+            <li>Выберите в меню &quot;Файл&quot; команду &quot;Новый проект&quot; (CTRL+SHIFT+N), чтобы открыть мастер создания проекта.</li>
+            <li>Выберите приложение Maven NetBeans из категории Maven. Нажмите кнопку &quot;Далее&quot;.</li>
+            <li>В поле &quot;Имя проекта&quot; введите <strong>MavenPlatformWordApp</strong> и укажите местоположение проекта. Нажмите кнопку &quot;Готово&quot;.  <br/>
+            <img src="../images/tutorials/maven-quickstart/maven-newproject.png" alt="Снимок экрана: мастер создания проекта" title="Снимок экрана: мастер создания проекта" class="margin-around b-all"  />
+            </li>
+        </ol>
+
+        <p class="notes"><strong>Примечание.</strong> Первое создание приложения платформы NetBeans с использованием Maven может занять некоторое время, поскольку среде IDE требуется загрузить все необходимые артефакты из репозитория NetBeans.</p>
+
+        <p>При нажатии кнопки &quot;Готово&quot; в среде IDE по умолчанию создаются следующие типы проектов Maven.</p>
+        <ul>
+            <li><strong>Приложение на платформе NetBeans.</strong> Данный проект является проектом-контейнером для приложения на платформе. В нем перечисляются включаемые модули и местоположения репозиториев проекта. Данный проект не содержит исходных файлов. В среде IDE создаются модули, содержащие исходные файлы и ресурсы в подкаталогах проекта.</li>
+            <li><strong>Приложение на базе платформы NetBeans.</strong> В данном проекте указываются артефакты (исходные файлы), требуемые для компиляции приложения. Необходимые зависимости (артефакты среды IDE, артефакты модуля) указываются в файле проекта <tt>pom.xml</tt>. При развертке узла &quot;Библиотеки&quot; можно просмотреть библиотеки, необходимые для приложения платформы NetBeans.</li>
+            <li><strong>Ресурсы брэндинга приложения на платформе.</strong> Этот проект содержит ресурсы, используемые для брэндинга приложения. </li>
+        </ul>
+
+        <p>Во всех проектах Maven файл <tt>pom.xml</tt> (POM) расположен в узле &quot;Файлы проекта&quot; в окне &quot;Проекты&quot;. При просмотре файла POM для проекта приложения NetBeans можно заметить, что в качестве модулей приложения перечислены два других модуля, созданные мастером.</p>
+<pre class="examplecode">
+&lt;modules&gt;
+   &lt;module&gt;branding&lt;/module&gt;
+   &lt;module&gt;application&lt;/module&gt;
+&lt;/modules&gt;
+</pre>
+
+
+        <h3><a name="01a"></a>Изменение элементов брэндинга</h3>
+        <p>В модуле брэндинга указываются ресурсы брэндинга, используемые для построения приложения на платформе. Диалоговое окно брэндинга обеспечивает удобное редактирование свойств брэндинга приложения для изменения имени, экрана заставки и значений текстовых элементов.</p>
+
+        <p>При создании приложения платформы NetBeans на основе архетипа именем приложения по умолчанию будет идентификатор артефакта приложения. В этом упражнении для изменения имени приложения и замены изображения экрана заставки по умолчанию используется мастер брэндинга.</p>
+        <p class="notes"><strong>Примечание.</strong> В среде IDE модуль брэндинга необходимо создать до изменения ресурсов брэндинга.</p>
+        <ol>
+            <li>Щелкните правой кнопкой мыши модуль <strong>ресурсов брэндинга приложения платформы </strong> и выберите команду &quot;Брэндинг&quot;.</li>
+            <li>На вкладке &quot;Основной&quot; измените заголовок приложения на <strong>My Maven Platform Word App</strong>.<br/>
+            <img src="../images/tutorials/maven-quickstart/maven-branding1.png" alt="Снимок экрана: мастер создания проекта" title="Снимок экрана: мастер создания проекта" class="margin-around b-all"  />
+            </li>
+            <li>Выберите вкладку &quot;Экран заставки&quot; и нажмите кнопку &quot;Обзор&quot; рядом с изображением экрана заставки по умолчанию для поиска другого изображения. Нажмите кнопку &quot;ОК&quot;.</li>
+            <!--<li>Click the Resource Bundles tab and expand the <strong>org/netbeans/core/startup/Bundle.properties</strong> node.</li>
+            <li>Double-click <strong>CTL_About_Title</strong> and type a new title for the About dialog window. Click OK.<br/>
+            <img src="../images/tutorials/maven-quickstart/maven-branding2.png" alt="Screenshot of New Project wizard" title="Screenshot of New Project wizard" class="margin-around b-all" />
+            </li>-->
+        </ol>
+
+
+        <p class="tips">Можно скопировать изображение, представленное ниже, в локальную систему и указать его в качестве экрана заставки в диалоговом окне &quot;Брэндинг&quot;.</p>
+        <img src="../images/tutorials/maven-quickstart68/splash.gif" alt="Пример изображения заставки, заданного по умолчанию" title="Пример изображения заставки, заданного по умолчанию" class="margin-around b-all"  />
+
+    </div>
+
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++ Creating the MavenWordEngine Module +++++++++++++++ -->
+
+
+<h2><a name="02"></a>Создание модуля MavenWordEngine</h2>
+
+    <p>В этом разделе выполняется создание нового модуля с именем MavenWordEngine. Затем модуль преобразуется для добавления оконного компонента, а также кнопки и текстовой области.</p>
+
+    <div class="indent">
+        <h3><a name="02a"></a>Создание модуля</h3>
+        <p>В этом упражнении выполняется создание нового проекта модуля в каталоге, содержащем модуль брэндинга и модуль приложения.</p>
+        <ol>
+            <li>В главном меню выберите &quot;Файл&quot; &gt; &quot;Новый проект&quot;.</li>
+            <li>Выберите модуль Maven NetBeans в категории Maven. Нажмите кнопку &quot;Далее&quot;.</li>
+            <li>В качестве имени проекта введите текст <strong>MavenWordEngine</strong>.</li>
+            <li>Нажмите кнопку &quot;Обзор&quot; и выберите местоположение проекта для каталога MavenPlatformWordApp. Нажмите кнопку &quot;Готово&quot;. </li>
+        </ol>
+
+        <img src="../images/tutorials/maven-quickstart/maven-wizard-project-location.png" alt="Снимок экрана: мастер создания проекта" title="Снимок экрана: мастер создания проекта" class="margin-around b-all"  />
+
+
+        <p>При просмотре файла POM для модуля MavenWordEngine можно заметить, что для идентификатора <tt>artifactId</tt> проекта установлено значение <strong>MavenWordEngine</strong>.</p>
+
+        <pre class="examplecode">
+&lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+&lt;parent&gt;
+    &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+    &lt;artifactId&gt;MavenPlatformWordApp&lt;/artifactId&gt;
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+&lt;/parent&gt;
+&lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+&lt;artifactId&gt;<strong>MavenWordEngine</strong>&lt;/artifactId&gt;
+&lt;packaging&gt;nbm&lt;/packaging&gt;
+&lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+&lt;name&gt;MavenWordEngine NetBeans Module&lt;/name&gt;
+</pre>
+
+        <p>Для создания модуля NetBeans необходимо использовать подключаемый модуль <tt>nbm-maven-plugin</tt>. При просмотре POM для модуля можно заметить, что в среде IDE автоматически указывается файл <tt>nbm</tt> для <tt>packaging</tt>, и что подключаемый модуль <strong>nbm-maven-plugin</strong> указывается в качестве модуля построения.</p>
+
+        <pre class="examplecode">
+&lt;plugin&gt;
+   &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+   &lt;artifactId&gt;<strong>nbm-maven-plugin</strong>&lt;/artifactId&gt;
+   &lt;version&gt;3.2-SNAPSHOT&lt;/version&gt;
+   &lt;extensions&gt;true&lt;/extensions&gt;
+&lt;/plugin&gt;
+</pre>
+
+        <p>При просмотре POM для приложения платформы NetBeans обратите внимание, что модуль <strong>MavenWordEngine</strong> добавлен в список модулей приложения.</p>
+
+        <pre class="examplecode">
+&lt;modules&gt;
+   &lt;module&gt;branding&lt;/module&gt;
+   &lt;module&gt;application&lt;/module&gt;
+   &lt;module&gt;<strong>MavenWordEngine</strong>&lt;/module&gt;
+&lt;/modules&gt;
+</pre>
+
+        <h3><a name="02b"></a>Добавление модуля в качестве зависимости для MavenPlatformWordApp</h3>
+        <p>В данном упражнении модуль MavenWordEngine объявляется в качестве зависимости приложения на базе платформы NetBeans путем добавления зависимости в POM. В файле POM для приложения выполняется объявление следующих зависимостей.</p>
+        <pre class="examplecode">&lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.netbeans.cluster&lt;/groupId&gt;
+        &lt;artifactId&gt;platform&lt;/artifactId&gt;
+        &lt;version&gt;${netbeans.version}&lt;/version&gt;
+        &lt;type&gt;pom&lt;/type&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+        &lt;artifactId&gt;branding&lt;/artifactId&gt;
+        &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;</pre>
+
+        <p>При развертке узла &quot;Библиотеки&quot; для приложения на базе платформы NetBeans можно заметить, что в модуле брэндинга и некоторых других библиотеках, являющихся зависимостями кластера, необходимыми для создания приложения, существует зависимость.</p>
+        <img src="../images/tutorials/maven-quickstart/maven-projects-libraries.png" alt="Снимок экрана: узел &quot;Библиотеки&quot;" title="Снимок экрана: диалоговое окно &quot;Добавить зависимость&quot;" class="margin-around b-all"  />
+        <p class="tips">Можно развернуть список зависимостей, не связанных с classpath для просмотра полного списка зависимостей.</p>
+
+        <p>Для добавления зависимости в файл POM можно изменить файл POM непосредственно в редакторе или посредством диалогового окна &quot;Добавить зависимость&quot; в окне &quot;Проекты&quot;.</p>
+
+        <ol>
+            <li>Разверните <strong>MavenPlatformWordApp - приложение на основе платформы NetBeans</strong> в окне &quot;Проекты&quot;.</li>
+            <li>Щелкните узел &quot;Библиотеки&quot; правой кнопкой мыши и выберите команду &quot;Добавить зависимость&quot;.</li>
+            <li>Перейдите на вкладку &quot;Открыть проекты&quot; и выберите <strong>MavenWordEngine</strong>. Нажмите кнопку &quot;ОК&quot;.</li>
+        </ol>
+        <img src="../images/tutorials/maven-quickstart/maven-add-dependency1.png" alt="Снимок экрана: диалоговое окно &quot;Добавить зависимость&quot;" title="Снимок экрана: диалоговое окно &quot;Добавить зависимость&quot;" class="margin-around b-all"  />
+
+        <p class="notes"><strong>Примечание.</strong> Новый проект будет отображен в диалоговом окне по завершении сканирования и обновления индексов в среде IDE.</p>
+
+        <p>При развертке узла &quot;Библиотеки&quot; для MavenPlatformWordApp в окне &quot;Проекты&quot; можно заметить, что модуль MavenWordEngine выведен теперь в качестве зависимости.</p>
+
+        <h3><a name="02c"></a>Добавление оконного компонента в модуль</h3>
+
+        <p>В этом упражнении используется мастер для добавления оконного компонента в модуль MavenWordEngine.</p>
+        <ol>
+            <li>Щелкните <strong>модуль NetBeans MavenWordEngine</strong> в окне &quot;Проекты&quot; правой кнопкой мыши и выберите команду &quot;Создать&quot; &gt; &quot;Прочее&quot; для открытия мастера создания файла.</li>
+            <li>Выберите &quot;Окно&quot; в категории &quot;Разработка модулей&quot;. Нажмите кнопку &quot;Далее&quot;.</li>
+            <li>Выберите команду <strong>Вывод</strong> в раскрывающемся списке &quot;Позиция окна&quot;. Нажмите кнопку &quot;Далее&quot;.<br/>
+            <img src="../images/tutorials/maven-quickstart/maven-new-window.png" alt="Снимок экрана: страница оконного компонента в мастере создания файла" title="Снимок экрана: страница оконного компонента в мастере создания файла" class="margin-around b-all"  />
+            </li>
+            <li>Введите текст <strong>Text</strong> в поле &quot;Префикс имени класса&quot;. Нажмите кнопку &quot;Готово&quot;. 
+            <p>Выводится список создаваемых и изменяемых файлов. </p></li>
+        </ol>
+
+
+
+        <p>При нажатии кнопки &quot;Готово&quot; в окне &quot;Проекты&quot; можно заметить, что в среде IDE создан класс <tt>TextTopComponent.java</tt> в <tt>com.mycompany.mavenwordengine</tt> в узле &quot;Папка с исходными файлами&quot;. Также в среде IDE созданы дополнительные файлы ресурсов в <tt>com.mycompany.mavenwordengine</tt> в узле &quot;Другие исходные файлы&quot;. В этом упражнении выполняется редактирование только для класса <tt>TextTopComponent.java</tt>.</p>
+
+        <p>В окне &quot;Файлы&quot; можно просмотреть структуру проекта. Для компиляции проекта Maven в узле &quot;Папка с исходными файлами&quot; могут находиться только исходные файлы (каталог <tt>src/main/java</tt> в окне &quot;Файлы&quot;). Другие ресурсы (например, файлы XML) должны быть расположены в узле &quot;Другие исходные файлы&quot; (каталог <tt>src/main/resources</tt> в окне &quot;Файлы&quot;). </p>
+
+        <h3><a name="02d"></a>Изменение оконного компонента</h3>
+
+        <p>В этом упражнении выполняется добавление текстовой области и кнопки в оконный компонент. Затем выполняется изменение метода, вызываемого при нажатии кнопки, для замены букв в текстовой области на прописные.</p>
+        <ol>
+            <li>Выберите в редакторе вкладку &quot;Проектировщик&quot; класса <tt>TextTopComponent.java</tt>.</li>
+            <li>Перетащите кнопку и текстовую область из палитры в окно.</li>
+            <li>Щелкните текстовую область правой кнопкой мыши и выберите команду &quot;Изменить имя переменной&quot;, а затем введите текст <strong>text</strong> в качестве имени. Имя используется для получения доступа к компоненту из кода.</li>
+            <li>Введите для кнопки текст &quot;<strong>Filter!</strong>&quot;.<br/>
+            <img src="../images/tutorials/maven-quickstart68/maven-nbm-textopcomponent.png" alt="Снимок экрана: страница оконного компонента в мастере создания файла" title="Снимок экрана: страница оконного компонента в мастере создания файла" class="margin-around b-all"  />
+            </li>
+            <li>Дважды щелкните элемент кнопки &quot;Filter!&quot; в представлении &quot;Проектировщик&quot;, чтобы открыть в редакторе исходного кода метод обработчика события для кнопки. Этот метод создается автоматически при двойном щелчке элемента кнопки.</li>
+            <li>Измените тело метода для добавления следующего кода. Сохраните изменения.
+            <pre class="examplecode">
+private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {
+   <strong>String s = text.getText();
+   s = s.toUpperCase();
+   text.setText(s);</strong>
+}</pre>
+            <p class="tips">Для упрощения ввода кода в редакторе можно использовать автозавершение кода. </p>
+            </li>
+        </ol>
+
+        <p>Для тестирования правильности работы приложения можно щелкнуть узел проекта <strong>приложения MavenPlatformWordApp на основе платформы NetBeans</strong> правой кнопкой мыши и выбрать команду &quot;Построить вместе с зависимостями&quot;.</p>
+
+        <p>Действием по умолчанию, привязанным к функции &quot;Построить вместе с зависимостями&quot;, является создание проекта при помощи подключаемого модуля Reactor. При создании проекта с использованием подключаемого модуля Reactor построение зависимостей подпроектов выполняется до построения проекта. В окне &quot;Вывод&quot; отображается порядок построения.</p>
+
+        <img src="../images/tutorials/maven-quickstart/maven-buildwithdependencies1.png" alt="Снимок экрана: порядок построения Reactor в окне &quot;Вывод&quot;" title="Снимок экрана: порядок построения Reactor в окне &quot;Вывод&quot;" class="margin-around b-all"  />
+
+        <p>Результаты построения также отображаются в окне &quot;Вывод&quot;.</p>
+
+        <img src="../images/tutorials/maven-quickstart/maven-buildwithdependencies2.png" alt="Снимок экрана: успешное построение Reactor в окне &quot;Вывод&quot;" title="Снимок экрана: успешное построение Reactor в окне &quot;Вывод&quot;" class="margin-around b-all"  />
+
+        <p>В окне &quot;Проекты&quot; можно заметить, что проекты больше не содержат метки, поскольку артефакты необходимых зависимостей теперь доступны в локальном репозитории узла <tt>com.mycompany</tt>.</p>
+
+        <img src="../images/tutorials/maven-quickstart/maven-localrepo.png" alt="Снимок экрана: локальный репозиторий" title="Снимок экрана: локальный репозиторий" class="margin-around b-all"  />
+
+        <p>Для запуска проекта щелкните узел проекта <strong>приложения MavenPlatformWordApp на основе платформы NetBeans</strong> и выберите команду &quot;Выполнить&quot;. После запуска приложения можно протестировать его, выполнив следующие действия.</p>
+        <ol>
+            <li>Выберите в главном меню приложения платформы команду &quot;Окно&quot; &gt; &quot;Тext&quot;, чтобы открыть окно &quot;Text&quot;.</li>
+            <li>Наберите в текстовой области текст строчными буквами и нажмите кнопку &quot;Filter!&quot; </li>
+            <li>Закройте приложение Maven Platform Word App.</li>
+        </ol>
+        <p>При нажатии кнопки &quot;Filter!&quot; буквы введенного текста изменяются на прописные и отображаются в текстовой области. </p>
+
+    </div>
+
+
+
+
+
+<!-- =================================================================== -->
+<!-- +++++++++++++ Creating the TextFilter Module ++++++++++++++++++++++ -->
+
+
+<h2><a name="04"></a>Создание модуля TextFilter</h2>
+
+    <p>В этом упражнении выполняется создание модуля <b>TextFilter</b> и добавление модуля в приложение в качестве зависимости. Модуль TextFilter предоставляет определенную службу и содержит только интерфейс. Доступ к этой службе можно впоследствии получить из других модулей при помощи поиска.</p>
+
+    <div class="indent">
+        <h3><a name="04a"></a>Создание модуля</h3>
+        <p>В этом упражнении для создания модуля TextFilter выполняются следующие действия.</p>
+
+        <ol>
+            <li> Выберите в меню &quot;Файл&quot; команду &quot;Новый проект&quot; (CTRL+SHIFT+N).</li>
+            <li> Выберите архетип модуля Maven NetBeans в категории &quot;Maven&quot;. Нажмите кнопку &quot;Далее&quot;.</li>
+            <li> Введите текст <b>TextFilter</b> в качестве имени проекта.</li>
+            <li> Нажмите кнопку &quot;Обзор&quot; для установки местоположения проекта и найдите каталог MavenPlatformWordApp. Нажмите кнопку &quot;Готово&quot;. </li>
+        </ol>
+
+        <p>При нажатии кнопки &quot;Готово&quot; в среде IDE создается модуль, и в окне &quot;Проекты&quot; открывается проект модуля <b>TextFilter NetBeans Module</b>.</p>
+        <p>Среда IDE изменяет файл <tt>pom.xml</tt> проекта POM &quot;MavenPlatformWordApp - приложение платформы NetBeans&quot; для добавления нового модуля в список включаемых в проект модулей.</p>
+
+<pre class="examplecode">&lt;modules&gt;
+    &lt;module&gt;branding&lt;/module&gt;
+    &lt;module&gt;application&lt;/module&gt;
+    &lt;module&gt;MavenWordEngine&lt;/module&gt;
+    &lt;module&gt;TextFilter&lt;/module&gt;
+&lt;/modules&gt;</pre>
+
+        <p>По завершении создания модуля необходимо добавить модуль в качестве зависимости приложения.</p>
+
+        <h3><a name="04b"></a>Добавление модуля TextFilter в качестве зависимости приложения MavenPlatformWordApp</h3>
+
+        <p>В этом упражнении выполняется добавление модуля TextFilter в качестве зависимости приложения MavenPlatformWordApp на базе платформы NetBeans.</p>
+        <ol>
+            <li>Щелкните правой кнопкой мыши узел &quot;Библиотеки&quot; проекта <strong>MavenPlatformWordApp - приложение на базе платформы NetBeans</strong> и выберите команду &quot;Добавить зависимость&quot;.</li>
+            <li>Выберите вкладку &quot;Открыть проекты&quot; в диалоговом окне &quot;Добавить зависимость&quot;.</li>
+            <li>Выберите модуль <strong>TextFilter NetBeans Module</strong>. Нажмите кнопку &quot;ОК&quot;.</li>
+        </ol>
+
+        <p>При нажатии кнопки &quot;ОК&quot; среда IDE добавляет модуль в качестве зависимости проекта. При развертке узла &quot;Библиотеки&quot; можно заметить, что модуль добавлен в список зависимостей. В файле POM для проекта <strong>MavenPlatformWordApp - приложение на основе платформы NetBeans</strong> видно, что среда IDE добавила в элемент <tt>зависимостей</tt> следующие строки.</p>
+
+<pre class="examplecode">&lt;dependency&gt;
+   &lt;groupId&gt;${project.groupId}&lt;/groupId&gt;
+   &lt;artifactId&gt;TextFilter&lt;/artifactId&gt;
+   &lt;version&gt;${project.version}&lt;/version&gt;
+&lt;/dependency&gt;</pre>
+
+
+
+        <h3><a name="04c"></a>Добавление интерфейса в модуль TextFilter</h3>
+        <p>В этом упражнении выполняется добавление простого интерфейса в модуль TextFilter.</p>
+
+        <ol>
+            <li> Щелкните правой кнопкой мыши модуль <strong>TextFilter NetBeans Module</strong> и выберите &quot;Создать&quot; &gt; &quot;Интерфейс Java&quot;.</li>
+            <li> Введите текст <strong>TextFilter</strong> в качестве имени класса.</li>
+            <li> Выберите пункт <b>com.mycompany.textfilter</b> в раскрывающемся списке &quot;Упаковка&quot;. Нажмите кнопку &quot;Готово&quot;. </li>
+            <li> Измените класс путем добавления следующего кода. Сохраните изменения.</li>
+        </ol>
+<pre class="examplecode">package com.mycompany.textfilter;
+
+public interface TextFilter {
+    <strong>public String process(String s);</strong>
+}</pre>
+
+
+        <h3><a name="04d"></a>Преобразование модуля TextFilter в общедоступный</h3>
+        <p>В этом упражнении выполняется определение пакета <tt>com.mycompany.textfilter</tt> как общедоступного, чтобы другие модули имели доступ к методам. Для объявления пакета как общедоступного необходимо преобразовать элемент <tt>configuration</tt> подключаемого модуля <tt>nbm-maven-plugin</tt> в файле POM для определения пакетов, экспортируемых как общедоступные посредством подключаемого модуля. Можно внести изменения в файл POM в редакторе или путем выбора пакетов, определяемых как общедоступные, в диалоговом окне &quot;Свойства&quot; проекта.
+        </p>
+
+
+        <ol>
+            <li> Щелкните модуль <strong>TextFilter NetBeans Module</strong> правой кнопкой мыши и выберите команду &quot;Свойства&quot;.</li>
+            <li> Выберите в диалоговом окне &quot;Свойства проекта&quot; категорию &quot;Общедоступные пакеты&quot;.</li>
+            <li> Выберите пакет <strong>com.mycompany.textfilter</strong>. Нажмите кнопку &quot;ОК&quot;.</li>
+        </ol>
+        <img src="../images/tutorials/maven-quickstart/maven-public-packages.png" alt="Снимок экрана: диалоговое окно &quot;Свойства&quot;" title="Снимок экрана: диалоговое окно &quot;Свойства&quot;" class="margin-around b-all"  />
+
+
+        <p>При нажатии кнопки &quot;ОК&quot; в среде IDE изменяется файл POM проекта для редактирования элемента <tt>configuration</tt> артефакта <tt>nbm-maven-plugin</tt> и добавляются следующие записи.</p>
+
+<pre>&lt;publicPackages&gt;
+   &lt;publicPackage&gt;com.mycompany.textfilter&lt;/publicPackage&gt;
+&lt;/publicPackages&gt;</pre>
+
+        <p>Теперь запись POM содержит следующие записи.</p>
+<pre>&lt;plugin&gt;
+    &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+    &lt;artifactId&gt;nbm-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;3.2&lt;/version&gt;
+    &lt;extensions&gt;true&lt;/extensions&gt;
+    &lt;configuration&gt;
+                    &lt;publicPackages&gt;
+                        &lt;publicPackage&gt;com.mycompany.textfilter&lt;/publicPackage&gt;
+                    &lt;/publicPackages&gt;
+
+    &lt;/configuration&gt;
+&lt;/plugin&gt;</pre>
+
+
+        <p class="tips">Дополнительные сведения приведены по адресу <a href="http://mojo.codehaus.org/nbm-maven-plugin/manifest-mojo.html#publicPackages" class="external text" title="http://mojo.codehaus.org/nbm-maven-plugin/manifest-mojo.html#publicPackages" rel="nofollow">nbm-maven-plugin manifest</a></p>
+
+    </div>
+
+<!-- =================================================================== -->
+<!-- +++++++++++++ Creating the MyFilter Module ++++++++++++++++++++++++ -->
+
+
+    <h2><a name="05"></a>Создание модуля MyFilter</h2>
+    <p>В этом упражнении выполняется создание модуля <b>MyFilter</b> и добавление этого модуля в качестве зависимости модуля TextFilter. Впоследствии можно вызвать методы в модуле MyFilter путем поиска службы TextFilter.</p>
+    <div class="indent">
+
+        <h3><a name="05a"></a>Создание модуля</h3>
+        <p>В этом упражнении выполняется создание модуля <strong>MyFilter</strong>. Для создания модуля необходимо выполнить действия, которые были выполнены при создании модуля TextFilter.</p>
+
+        <ol>
+            <li> Выберите в меню &quot;Файл&quot; команду &quot;Новый проект&quot; (CTRL+SHIFT+N).</li>
+            <li> Выберите модуль Maven NetBeans в категории Maven. Нажмите кнопку &quot;Далее&quot;.</li>
+            <li> Введите текст <b>MyFilter</b> в качестве имени проекта.</li>
+            <li> Нажмите кнопку &quot;Обзор&quot; для установки местоположения проекта и найдите каталог <strong>MavenPlatformWordApp</strong>. Нажмите кнопку &quot;Готово&quot;. </li>
+            <li> Добавьте модуль MyFilter в качестве зависимости проекта <b>MavenPlatformWordApp - приложение на базе платформы NetBeans</b>.</li>
+        </ol>
+
+
+        <h3><a name="05b"></a>Добавление модуля TextFilter в качестве зависимости</h3>
+        <p>В этом упражнении выполняется добавление модуля TextFilter в качестве зависимости модуля MyFilter.</p>
+
+        <ol>
+            <li>Щелкните правой кнопкой мыши узел &quot;Библиотеки&quot; проекта <b>MyFilter</b> и выберите команду &quot;Добавить зависимость&quot;.</li>
+            <li>Выберите вкладку &quot;Открыть проекты&quot; в диалоговом окне &quot;Добавить зависимость&quot;.</li>
+            <li>Выберите модуль <strong>TextFilter</strong>. Нажмите кнопку &quot;ОК&quot;.</li>
+        </ol>
+
+        <h3><a name="05c"></a>Изменение модуля MyFilter</h3>
+        <p>В этом упражнении выполняется добавление класса Java с отдельным методом с именем <tt>process</tt>, преобразующим буквы строки в прописные. Также указывается выполнение реализации интерфейса TextFilter классом. Для указания, что TextFilter является службой, которая будет зарегистрирована во время компиляции, используется аннотация <tt>@ServiceProvider</tt>.</p>
+
+        <ol>
+            <li> Щелкните модуль <b>MyFilter</b> правой кнопкой мыши и выберите &quot;Создать&quot; &gt; &quot;Класс Java&quot;.</li>
+            <li> Введите текст <b>UpperCaseFilter</b> в качестве имени класса.</li>
+            <li> Выберите в раскрывающемся списке &quot;Пакет&quot; элемент <b>com.mycompany.myfilter</b>. Нажмите кнопку &quot;Готово&quot;. </li>
+            <li> Измените класс для добавления следующего кода. Сохраните изменения.</li>
+        </ol>
+
+<pre>package com.mycompany.myfilter;
+
+import com.mycompany.textfilter.TextFilter;
+import org.openide.util.lookup.ServiceProvider;
+
+<strong>@ServiceProvider(service=TextFilter.class)</strong>
+public class UpperCaseFilter <strong>implements TextFilter {
+
+    public String process(String s) {
+        return s.toUpperCase();
+    }</strong>
+}</pre>
+
+        <p class="tips">Обратите внимание на принцип использования аннотации для определения поставщика служб. Для получения дополнительных сведений об аннотации <tt>@ServiceProvider</tt> и поведении механизма ServiceLoader в пакете JDK 6 обратитесь к документации по интерфейсу API для утилит.</p>
+
+
+
+        <h3><a name="05d"></a>Изменение модуля MavenWordEngine</h3>
+        <p>В этом упражнении выполняется изменение обработчика событий в оконном компоненте &quot;Text&quot; для использования поиска в целях вызова интерфейса TextFilter и получения доступа к методу MyFilter. До добавления кода в обработчик событий необходимо объявить зависимость от модуля TextFilter.</p>
+
+        <ol>
+            <li>Щелкните узел &quot;Библиотеки&quot; модуля <strong>MavenWordEngine</strong> правой кнопкой мыши и добавьте зависимость от модуля TextFilter.</li>
+            <li>Разверните узел &quot;Пакеты с исходными файлами&quot; модуля <strong>MavenWordEngine</strong> и откройте <tt>TextTopComponent</tt> в редакторе исходного кода.</li>
+            <li>Отредактируйте метод обработчика кнопки <tt>jButton1ActionPerformed</tt> для добавления следующего кода. Сохраните изменения.
+
+<pre>private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {
+    String s = text.getText();
+    <strong>TextFilter filter = Lookup.getDefault().lookup(TextFilter.class);
+    if (filter != null) {
+        s = filter.process(s);
+    }</strong>
+    text.setText(s);
+}</pre>
+            </li>
+        </ol>
+        <p class="tips">Для удобства работы с кодом используйте автозавершение кода.</p>
+
+        <p>Теперь можно проверить правильность работы приложения. Далее выполняется добавление нового оконного компонента, отображающего историю текста, обработанного при помощи фильтра.</p>
+
+    </div>
+
+
+<!-- =================================================================== -->
+<!-- ++++++++++++++++++ Adding a LookupListener ++++++++++++++++++++++++ -->
+
+    <h2><a name="06"></a>Добавление объектов LookupListener и InstanceContent в оконный компонент &quot;Text&quot;</h2>
+    <p>В этом упражнении выполняется добавление слушателя и поля для сохранения содержимого текстовой области при нажатии кнопки &quot;Filter!&quot; .</p>
+
+    <ol>
+        <li>Добавьте в модуль <strong>MavenWordEngine</strong> объект <tt>InstanceContent</tt> и измените конструктор <tt>TextTopComponent</tt> путем добавления следующего кода.
+
+        <pre>public final class TextTopComponent extends TopComponent {
+    <strong>private InstanceContent content;</strong>
+
+    public TextTopComponent() {
+        initComponents();
+        setName(NbBundle.getMessage(TextTopComponent.class, &quot;CTL_TextTopComponent&quot;));
+        setToolTipText(NbBundle.getMessage(TextTopComponent.class, &quot;HINT_TextTopComponent&quot;));
+        //        setIcon(Utilities.loadImage(ICON_PATH, true));
+
+        <strong>content = new InstanceContent();
+        associateLookup(new AbstractLookup(content));</strong>
+    }</pre>
+        </li>
+        <li>Измените метод <tt>jButton1ActionPerformed</tt> для добавления старого значения текста в объект <tt>InstanceContent</tt> при нажатии кнопки.
+
+        <pre>private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {
+     String s = text.getText();
+     TextFilter filter = Lookup.getDefault().lookup(TextFilter.class);
+     if (filter&nbsp;!= null) {
+         <strong>content.add(s);</strong>
+         s = filter.process(s);
+     }
+     text.setText(s);
+ }</pre>
+        </li>
+    </ol>
+
+
+<!-- =================================================================== -->
+<!-- ++++++++++++++ Creating the History Module ++++++++++++++++++++++++ -->
+
+    <h2><a name="07"></a>Создание модуля History</h2>
+    <p>В этом разделе выполняется создание модуля с именем <strong>History</strong>, отображающего значение <tt>InstanceContent</tt>. Для создания модуля необходимо выполнить действия, которые были выполнены при создании модулей TextFilter и MyFilter.</p>
+
+    <div class="indent">
+        <ol>
+            <li>Выберите в меню &quot;Файл&quot; команду &quot;Новый проект&quot; (CTRL+SHIFT+N).</li>
+            <li>Выберите модуль Maven NetBeans в категории Maven. Нажмите кнопку &quot;Далее&quot;.</li>
+            <li>Введите текст <strong>History</strong> в качестве имени проекта.</li>
+            <li>Нажмите кнопку &quot;Обзор&quot; для установки местоположения проекта и найдите каталог MavenPlatformWordApp. Нажмите кнопку &quot;Готово&quot;. </li>
+            <li>Добавьте модуль History в качестве зависимости проекта <b>MavenPlatformWordApp - приложение на базе платформы NetBeans</b>.</li>
+        </ol>
+
+        <h3><a name="07a"></a>Создание оконного компонента в модуле History</h3>
+        <p>В этом упражнении используется мастер добавления оконного компонента в модуль.</p>
+
+        <ol>
+            <li>Щелкните <b>модуль History NetBeans</b> в окне &quot;Проекты&quot; правой кнопкой мыши и выберите команду &quot;Создать&quot; &gt; &quot;Прочее&quot; для открытия диалогового окна &quot;Новый файл&quot;.</li>
+            <li>Выберите &quot;Окно&quot; в категории &quot;Разработка модулей&quot;. Нажмите кнопку &quot;Далее&quot;.</li>
+            <li>Выберите элемент <b>Редактор</b> в раскрывающемся списке &quot;Позиция окна&quot;. Нажмите кнопку &quot;Далее&quot;.</li>
+            <li>Введите текст <b>History</b> в поле &quot;Префикс имени класса&quot;. Нажмите кнопку &quot;Готово&quot;. <br />
+            Выводится список создаваемых и изменяемых файлов.</li>
+        </ol>
+
+        <h3><a name="07b"></a>Изменение оконного компонента History</h3>
+
+        <p>Теперь выполняется добавление в оконный компонент элемента текстовой области, отображающего отфильтрованные строки.</p>
+
+        <ol>
+            <li>Выберите в редакторе вкладку &quot;Проектировщик&quot; класса <tt>TextTopComponent.java</tt>.</li>
+            <li>Перетащите текстовую область из палитры в окно.</li>
+            <li>Щелкните текстовую область правой кнопкой мыши и выберите команду &quot;Изменить имя переменной&quot;, а затем введите текст <b>historyText</b> в качестве имени.</li>
+            <li>Добавьте <tt>private</tt> поле <tt>result</tt> и следующий код в конструктор объекта <tt>HistoryTopComponent</tt> для прослушивания поиска класса String текущего активного окна и отображения всех извлеченных объектов String в текстовой области.
+            <pre class="examplecode">
+      <strong>private Lookup.Result result;</strong>
+
+      public HistoryTopComponent() {
+          initComponents();
+          ...
+
+          <strong>result = org.openide.util.Utilities.actionsGlobalContext().lookupResult(String.class);
+          result.addLookupListener(new LookupListener() {
+              public void resultChanged(LookupEvent e) {
+                  historyText.setText(result.allInstances().toString());
+              }
+          });</strong>
+      }</pre>
+            </li>
+        </ol>
+    </div>
+
+    <h2><a name="02c"></a>Построение и запуск приложения</h2>
+    <p>Теперь можно протестировать приложение</p>
+    <ol>
+        <li>Щелкните правой кнопкой мыши узел проекта <strong>Приложение MavenPlatformWordApp на базе платформы NetBeans</strong> и выберите команду &quot;Очистить&quot;.</li>
+        <li>Щелкните правой кнопкой мыши узел проекта <strong>Приложение MavenPlatformWordApp на базе платформы NetBeans</strong> и выберите команду &quot;Построить вместе с зависимостями&quot;.</li>
+        <li>Щелкните правой кнопкой мыши узел проекта <strong>Приложение MavenPlatformWordApp на базе платформы NetBeans </strong> и выберите команду &quot;Выполнить&quot;.</li>
+    </ol>
+
+    <p>При выборе команды &quot;Выполнить&quot; среда IDE запускает приложение платформы NetBeans. Окна &quot;History&quot; и &quot;Text&quot; можно открыть в меню &quot;Окно&quot;.<br/>
+
+    <img src="../images/tutorials/maven-quickstart/maven-final-app.png" alt="Снимок экрана: готовое приложение платформы NetBeans" title="Снимок экрана: готовое приложение платформы NetBeans" class="margin-around b-all"  />
+</p>
+    <p>При вводе текста в окно &quot;Text&quot; и нажатии кнопки &quot;Filter!&quot; буквы текста преобразуются в прописные и текст добавляется в содержимое окна &quot;History&quot;.</p>
+
+    <p>Данное краткое руководство демонстрирует незначительность различий между способами создания приложения платформы NetBeans с использованием Maven и способами создания приложения с использованием Ant. Главным отличием является принцип управления сборкой приложения при помощи Maven POM. Дополнительные примеры построения приложений и модулей на платформе NetBeans приведены в учебных курсах <a href="https://netbeans.org/kb/trails/platform_ru.html">Учебной карты по платформе NetBeans</a>.</p>
+
+
+<!-- ======================================================================================== -->
+
+
+    <h2><a name="nextsteps"></a>Дополнительные сведения</h2>
+
+    <p>Дополнительные сведения о создании и разработке приложений приведены в следующих ресурсах.</p>
+    <ul>
+        <li><a href="https://netbeans.org/kb/trails/platform_ru.html">Учебная карта по платформе NetBeans</a></li>
+        <li><a href="http://bits.netbeans.org/dev/javadoc/">Документация Javadoc по интерфейсам API в среде NetBeans</a></li>
+    </ul>
+    <p>При возникновении вопросов о платформе NetBeans обратитесь к списку рассылки dev@platform.netbeans.org или к <a href="https://netbeans.org/projects/platform/lists/dev/archive">архиву списка рассылки по платформе NetBeans</a>.</p>
+
+
+    <!-- ======================================================================================== -->
+
+
+
+</body>
+
+</html>

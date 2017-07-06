@@ -1,0 +1,1649 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>NetBeans Manifest File Syntax Highlighting Module Tutorial</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="gwielenga@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A short guide to using the Nodes API.">
+<!--      Copyright (c) 2005 Sun Microsystems, Inc. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>NetBeans Manifest File Syntax Highlighting Module Tutorial</h1>
+
+<p>
+<div style="border: 1px solid rgb(14, 27, 85); padding: 10px 30px; background-color: rgb(231, 231, 231); margin-left: 60px; margin-right: 40px;">
+    Please note that <b>not all the APIs described in this tutorial are currently final</b>. Use them at
+ your own risk. There is no guarantee that APIs used in this tutorial will be compatible with the final
+ or next release of NetBeans.
+</div>
+
+<p>This tutorial shows you how to enhance the IDE by adding syntax highlighting for Manifest files. At the end of this tutorial,
+ you will have a NetBeans plug-in module file (NBM) that you can share with others. When it is installed
+ via the NetBeans Update Center, the 'name', 'colon', and 'value'
+ of manifest entries will have distinct colors, as illustrated below:
+
+<p><img src="../images/tutorials/mf_syntax/result1.png" alt="Highlighted manifest file">
+
+<p>In addition, you will be able to use the Options window to modify the colors.
+
+<p>The following topics are covered in this tutorial:</p>
+<ul>
+  <li><a href="#gettingtoknowthesample">Getting to Know the Sample</a></li>
+  <ul>
+  <li><a href="#installing-software">Installing the Software</a></li>
+<li><a href="#installing-sample">Installing the Sample</a></li>
+  <li><a href="#introducing-sample">Introducing the Sample</a></li>	
+  <li><a href="#introducing-sources">Introducing the Sources</a></li>
+  </ul>
+  <li><a href="#settingupthemoduleproject">Setting Up the Module Project</a></li>
+  <ul>
+  <li><a href="#creatingthemoduleproject">Creating the Module Project</a></li>
+  <li><a href="#specifying">Specifying the Module's Dependencies</a></li>
+  </ul>
+  <li><a href="#creatingthemainfiles">Creating the Main Files</a></li>
+  <ul>
+    <li><a href="#tokenizing">Creating Tokens</a>
+    <li><a href="#syntaxing">Creating Syntax</a>
+   <li><a href="#testing">Giving the IDE a Reading Test</a>
+   <li><a href="#editorkitting">Creating the Editor Kit</a>
+    <li><a href="#syntaxcoloring">Creating the Syntax Coloring</a>
+ <li><a href="#colorrestoring">Creating the Color Restorer</a></ul>
+ <li><a href="#creatingthemainfiles">Creating the Supporting Files</a></li>
+  <ul>
+    <li><a href="#creatingoptions">Creating Options</a>
+    <li><a href="#dipslayingoptionsinoptionswindow">Displaying the Options in the Options Window</a>
+   <li><a href="#instantiating">Instantiating the Options</a>
+ <li><a href="#registeringoptions">Registering the Options in the NetBeans System Filesystem</a>
+</ul>
+  <li><a href="#building">Building and Installing the Module</a></li>
+ <li><a href="#explore">Exploring Further</a></li>
+  
+
+</ul>
+<p><a name="top"></a>Once the software is installed, this tutorial can be completed in 60 minutes.
+
+<p>For more information on creating NetBeans plug-in modules, see the <a href="https://platform.netbeans.org/index.html">
+NetBeans Development Project home</a> on the NetBeans website. If you have questions, visit the 
+ <a href="http://wiki.netbeans.org/wiki/view/NetBeansDeveloperFAQ">NetBeans Developer FAQ</a> or use the feedback link
+ at the top of this page.</p>
+
+<br />
+
+<!-- ===================================================================================== -->
+<h2><a name="gettingtoknowthesample"></a>Getting to Know the Sample</h2>
+<p>Before you start writing the module, you have to make sure you have all of the necessary software.
+ In addition, you might want to play with the sample before building it yourself.</p>
+<div class="indent">
+
+ <h3 class="tutorial"><a name="installing-software"></a>Installing the Software</h3>
+   
+    
+      <p>Before you begin, you need to install the following software on your 
+        computer:</p>
+<ul>
+     <li>NetBeans IDE 5.x (<a href="http://www.netbeans.info/downloads/download.php?a=n&p=1">download</a>)</li>
+    <li>Java Standard Development Kit (JDK&trade;) version 
+      1.4.2 (<a href="http://java.sun.com/j2se/1.4.2/download.html">download</a>) 
+      or 5.0 (<a href="http://java.sun.com/j2se/1.5.0/download.jsp">download</a>)</li>
+  </ul>   
+
+    <h3 class="tutorial"><a name="installing-sample"></a>Installing the Sample</h3>
+<p>Take the following steps to install the sample:
+<ol><p><li>Unzip the <a href="https://netbeans.org/files/documents/4/583/ManifestSupport.zip">attached file</a>.
+<p><li>In the IDE, choose File > Open Project and browse to the folder that contains the unzipped file.
+ Open the module project. It should look as follows:
+<p><img src="../images/tutorials/mf_syntax/final_projects_window.png" alt="Final Projects window">
+<p><li>Right-click the project node and choose Install/Reload in Target Platform. The target
+ platform opens and the module is installed.</ol>
+
+ <h3 class="tutorial"><a name="introducing-sample"></a>Introducing the Sample</h3>
+<ol>
+<p><li>Use the New project wizard (Ctrl-Shift-N) to create a new Java application 
+ project or NetBeans plug-in module project and notice
+ that the project's manifest file has syntax highlighting, as shown in the introduction of this tutorial.
+<p><li>Choose Tools &gt; Options. In the Options window, click Fonts & Colors in the left sidebar
+ and notice that there is an entry called 'Manifest' in the Language drop-down list, as shown below:
+
+<p><img src="../images/tutorials/mf_syntax/fonts-and-colors-1.png" alt="Fonts and Colors 1">
+
+<p><li>Select City Lights in the Profile drop-down list at the top of the Fonts & Colors page,
+ and notice that the syntax changes, as shown below:
+
+<p><img src="../images/tutorials/mf_syntax/fonts-and-colors-4.png" alt="Fonts and Colors 4">
+
+<p><li>Click Editor in the left sidebar
+ and notice that there is an entry called 'Manifest' in the Language drop-down list, as shown below:
+
+<p><img src="../images/tutorials/mf_syntax/fonts-and-colors-2.png" alt="Fonts and Colors 2">
+
+
+<p><li>Click Advanced Options in the lower left corner of the Options window. In the Editor Settings node, notice that there is a new entry
+ for the Manifest Editor, as shown below:
+
+<p><img src="../images/tutorials/mf_syntax/fonts-and-colors-3.png" alt="Fonts and Colors 3">
+
+</ol>
+
+<p>Now that you know what the user interface of the Manifest Support plug-in module looks like,
+ let's have a quick look at what each of the source files does.
+
+<p><h3 class="tutorial"><a name="introducing-sources"></a>Introducing the Sources</h3>
+
+<p>The Manifest Support sample consists of main files and supporting files.</p>
+
+
+<ul><li><p><b>Main Files.</b> The module's main files are in the <tt>org.netbeans.modules.manifestsupport</tt> package:
+<p><img src="../images/tutorials/mf_syntax/final_projects_window1.png" alt="Main files.">
+
+  <p><table width="76%" border="1">
+
+    <tbody><tr>
+      <td>
+	<div align="left"><b>File</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Description</b></div>
+
+      </td>
+    </tr>
+ <tr>
+      <td align="left" valign="top"><tt>Bundle.properties</tt></td>
+      <td>
+Localization information.
+
+</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><a href="#editorkitting"><tt>ManifestEditorKit.java</tt></a></td>
+      <td>
+
+Extends the <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor/org/netbeans/modules/editor/NbEditorKit.html">NbEditorKit</a> class. 
+
+
+</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><a href="#syntaxcoloring"><tt>ManifestSettingsInitializer.java</tt></a></td>
+
+      <td>
+
+	      Extends the <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/editor/Settings.AbstractInitializer.html">Settings.AbstractInitializer</a> class. Includes an inner class than extends the <a href="http://www.netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/editor/SettingsUtil.TokenColoringInitializer.html">SettingsUtil.TokenColoringInitializer</a> class.
+
+
+
+      </td>
+    </tr>
+
+    <tr>
+      <td align="left" valign="top"><a href="#syntaxing"><tt>ManifestSyntax.java</tt></a></td>
+      <td>
+
+Extends the <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/editor/Syntax.html">Syntax</a> class.
+
+
+
+</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><a href="#tokenizing"><tt>ManifestTokenContext.java</tt></a></td>
+      <td>
+Extends the <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/editor/TokenContext.html">TokenContext</a> class.
+</td>
+    </tr>
+ <tr>
+      <td align="left" valign="top"><a href="#colorrestoring"><tt>RestoreColoring.java</tt></a></td>
+      <td>
+Extends the <a href="https://netbeans.org/download/dev/javadoc/org-openide-modules/org/openide/modules/ModuleInstall.html">ModuleInstall</a> class.
+
+
+
+</td>
+
+    </tr>
+ <tr>
+      <td align="left" valign="top"><tt>layer.xml</tt></td>
+      <td>
+This is the NetBeans System Filesystem configuration file. It registers the
+ following information in the NetBeans System Filesystem:
+  <ul>
+<li>Ability to distinguish Manifest file data objects (via the <tt>.mf</tt> file extension and <tt>text/x-java-jar-manifest</tt> MIME Type).
+<li>Actions that appear in the right-click pop-up menu.
+<li>A dummy template for creating new Manifest files is registered in the New File wizard.
+<li>Editor kit, containing syntax highlighting information.
+<li>Options settings file for instantiation of the relevant information in the Options window.
+<li>Coloring information for the Options window, one set for the NetBeans profile and another set for the City Lights profile.
+
+</ul>
+
+
+
+</td>
+
+    </tr>
+    </tbody>
+  </table>
+<li><p><b>Supporting Files.</b>
+
+
+<ul><li><p><b>Data Object Files.</b> The module's files that distinguish Manifest files from other files
+ are in the <tt>org.netbeans.modules.manifestsupport.dataobject</tt> package:
+<p><img src="../images/tutorials/mf_syntax/final_projects_window2.png" alt="Data object files.">
+<p>For information on these files, see the <a href="https://platform.netbeans.org/tutorials/nbm-filetype.html">NetBeans DataLoader Module Tutorial</a>.
+<li><p><b>Options Window Files.</b> The module's files that install information in the Options window
+ are in the <tt>org.netbeans.modules.manifestsupport.options</tt> package:
+<p><img src="../images/tutorials/mf_syntax/final_projects_window3.png" alt="Options window files.">
+<p><table width="76%" border="1">
+    <tbody><tr>
+      <td>
+	<div align="left"><b>File</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Description</b></div>
+
+      </td>
+    </tr>
+ <tr>
+      <td align="left" valign="top"><tt>Bundle.properties</tt></td>
+      <td>
+Localization information.
+
+</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt>ManifestOptions.java</tt></td>
+      <td>
+
+Extends the <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor/org/netbeans/modules/editor/options/BaseOptions.html">BaseOptions</a> class. 
+
+
+</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt>ManifestOptions.settings</tt></td>
+
+      <td>
+Instantiation data for the Options window.
+
+
+
+      </td>
+    </tr>
+
+    <tr>
+      <td align="left" valign="top"><tt>ManifestOptionsBeanInfo.java</tt></td>
+      <td>
+
+Extends the <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor/org/netbeans/modules/editor/options/BaseOptionsBeanInfo.html">BaseOptionsBeanInfo</a> class.
+
+
+
+</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt>mfOptions.gif</tt></td>
+      <td>GIF file displayed in the node for the Manifest Editor in the Classic View of the Options window.
+</td>
+    </tr>
+
+
+
+
+
+</td>
+
+    </tr>
+    </tbody>
+  </table>
+
+<li><p><b>Resources.</b> The module's resources
+ are in the <tt>org.netbeans.modules.manifestsupport.resources</tt> package
+ and in the Unit Test Packages node:
+<p><img src="../images/tutorials/mf_syntax/final_projects_window4.png" alt="Resources files.">
+  <p><table width="76%" border="1">
+
+    <tbody><tr>
+      <td>
+	<div align="left"><b>File</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Description</b></div>
+
+      </td>
+    </tr>
+ <tr>
+      <td align="left" valign="top"><tt>CityLights-Properties-fontsColors.xml</tt></td>
+      <td>
+Colors for the CityLights profile in the Fonts & Colors page of the Options window.
+
+</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt>ManifestExample</tt></td>
+      <td>
+
+Example used in the Fonts & Colors page of the Options window.
+
+
+
+</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt>NetBeans-Manifest-fontsColors.xml</tt></td>
+
+      <td>
+Colors for the NetBeans profile in the Fonts & Colors page of the Options window.
+
+
+
+      </td>
+    </tr>
+
+    <tr>
+      <td align="left" valign="top"><tt>ManifestSyntaxTest.java</tt></td>
+      <td>
+
+JUnit test for testing the Manifest file's tokens.
+
+
+
+</td>
+    </tr>
+
+</td>
+
+    </tr>
+    </tbody>
+  </table>
+<li><p><b>Important Files.</b> The Projects window is typically used to display a project's packages. However,
+ to simplify working with some of the more important files in the project, you can access them through the
+ Important Files node:
+<p><img src="../images/tutorials/mf_syntax/final_projects_window5.png" alt="Important files.">
+
+<p>For basic information each of the Important Files, see the 
+ <a href="https://netbeans.org/kb/articles/quickstart-nbm.html">Introduction to NetBeans Module Development</a>.</ul></ul>
+
+</div>
+<br />
+
+
+
+<!-- ===================================================================================== -->
+<h2><a name="settingupthemoduleproject"></a>Setting Up the Module Project</h2>
+<p>Before you start writing the module, you have to make sure you
+  that your project is set up correctly. <a href="http://www.netbeans.info/downloads/download.php?a=n&p=1">NetBeans IDE 5.x</a> provides a wizard that sets up all the basic files
+ needed for a module.</p>
+<div class="indent">
+
+<h3 class="tutorial"><a name="creatingthemoduleproject"></a>Creating the Module Project</h3>
+      <ol>
+	<p><li>Choose File &gt; New Project. Under Categories, select NetBeans Plug-in Modules. Under projects, 
+ select Module Project and click Next.</li>
+	<p><li>In the Name and Location panel, type <tt>ManifestSupport</tt> in Project Name.
+ Change the
+Project Location to any directory on your computer, such as <tt>c:\mymodules</tt>. Leave the Standalone Module radiobutton
+and the Set as Main Project checkbox selected.
+ Click Next.
+
+ <p><li>In the Basic Module Configuration panel, replace <tt>yourorghere</tt> in Code Name Base with <tt>netbeans.modules</tt>
+  so that the whole name is <tt>org.netbeans.modules.manifestsupport</tt>. Leave <tt>ManifestSupport</tt> as the Module Display Name.
+ Leave the location of the localizing bundle and XML layer, so that they will be stored in a
+ package with the name <tt>org.netbeans.modules.manifestsupport</tt>. Click Finish.</ol>
+
+<p> The IDE creates the <tt>ManifestSupport</tt>
+project. The project contains all of your sources and
+project metadata, such as the project's Ant build script. The project
+opens in the IDE. You can view its logical structure in the Projects window (Ctrl-1) and its
+file structure in the Files window (Ctrl-2). 
+<p><h3 class="tutorial"><a name="specifying"></a>Specifying the Module's Dependencies</h3>
+
+<p>You will need to subclass several classes that belong to <a href="https://netbeans.org/download/dev/javadoc/">NetBeans APIs</a>. 
+ Each has to be declared as a Module dependency. Use the Project Properties dialog box for this purpose.
+  <ol>
+	  <li>In the Projects window, right-click the <tt>ManifestSupport</tt> project node and choose Properties.
+ In the Project Properties dialog box, click Libraries.</li>
+	
+ <p><li>For each of the following APIs that is not already present in the Libraries panel, click "Add...", 
+ select the name from the Module list, and then click OK to confirm it:
+<p><ul>
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-loaders/org/openide/loaders/doc-files/api.html">Datasystems API</a></tt>
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-text/overview-summary.html">Editor API</a></tt>
+<li><tt>Editor Library API</tt>
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-filesystems/overview-summary.html">File System API</a></tt>
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-modules/overview-summary.html">Module System API</a></tt>
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/overview-summary.html">Nodes API</a></tt>
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-options/org/openide/options/doc-files/api.html">Settings Options API</a></tt>
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-text/overview-summary.html">Text API</a></tt>
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-util/overview-summary.html">Utilities API</a></tt>
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-windows/overview-summary.html">Window System API</a></tt>
+</ul>
+<p>You should now see the following:
+<p><img src="../images/tutorials/mf_syntax/proj-props1.png" alt="Project Properties dialog box.">
+<p><li>Click OK to exit the Project Properties dialog box.
+<p><li>In the Projects window, expand the Important Files node, double-click the Project Metadata node, and note that the APIs you selected have been
+ declared as Module dependencies:</li>
+
+<pre class=examplecode>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project xmlns="https://netbeans.org/ns/project/1"&gt;
+    &lt;type&gt;org.netbeans.modules.apisupport.project&lt;/type&gt;
+    &lt;configuration&gt;
+        &lt;data xmlns="https://netbeans.org/ns/nb-module-project/2"&gt;
+            &lt;code-name-base&gt;org.netbeans.modules.manifestsupport&lt;/code-name-base&gt;
+            &lt;standalone/&gt;
+            &lt;module-dependencies&gt;
+                &lt;dependency&gt;
+                    &lt;code-name-base&gt;org.netbeans.modules.editor&lt;/code-name-base&gt;
+                    &lt;build-prerequisite/&gt;
+                    &lt;compile-dependency/&gt;
+                    &lt;run-dependency&gt;
+                        &lt;release-version&gt;3&lt;/release-version&gt;
+                        &lt;specification-version&gt;1.25.0.1&lt;/specification-version&gt;
+                    &lt;/run-dependency&gt;
+                &lt;/dependency&gt;
+                &lt;dependency&gt;
+                    &lt;code-name-base&gt;org.netbeans.modules.editor.lib&lt;/code-name-base&gt;
+                    &lt;build-prerequisite/&gt;
+                    &lt;compile-dependency/&gt;
+                    &lt;run-dependency&gt;
+                        &lt;release-version&gt;1&lt;/release-version&gt;
+                        &lt;specification-version&gt;1.8.0.1&lt;/specification-version&gt;
+                    &lt;/run-dependency&gt;
+                &lt;/dependency&gt;
+                &lt;dependency&gt;
+                    &lt;code-name-base&gt;org.openide.modules&lt;/code-name-base&gt;
+                    &lt;build-prerequisite/&gt;
+                    &lt;compile-dependency/&gt;
+                    &lt;run-dependency&gt;
+                        &lt;specification-version&gt;6.4&lt;/specification-version&gt;
+                    &lt;/run-dependency&gt;
+                &lt;/dependency&gt;
+                &lt;dependency&gt;
+                    &lt;code-name-base&gt;org.openide.options&lt;/code-name-base&gt;
+                    &lt;build-prerequisite/&gt;
+                    &lt;compile-dependency/&gt;
+                    &lt;run-dependency&gt;
+                        &lt;specification-version&gt;6.3&lt;/specification-version&gt;
+                    &lt;/run-dependency&gt;
+                &lt;/dependency&gt;
+                &lt;dependency&gt;
+                    &lt;code-name-base&gt;org.openide.util&lt;/code-name-base&gt;
+                    &lt;build-prerequisite/&gt;
+                    &lt;compile-dependency/&gt;
+                    &lt;run-dependency&gt;
+                        &lt;specification-version&gt;6.5&lt;/specification-version&gt;
+                    &lt;/run-dependency&gt;
+                &lt;/dependency&gt;
+                &lt;dependency&gt;
+                    &lt;code-name-base&gt;org.openide.filesystems&lt;/code-name-base&gt;
+                    &lt;build-prerequisite/&gt;
+                    &lt;compile-dependency/&gt;
+                    &lt;run-dependency&gt;
+                        &lt;specification-version&gt;6.3&lt;/specification-version&gt;
+                    &lt;/run-dependency&gt;
+                &lt;/dependency&gt;
+                &lt;dependency&gt;
+                    &lt;code-name-base&gt;org.openide.loaders&lt;/code-name-base&gt;
+                    &lt;build-prerequisite/&gt;
+                    &lt;compile-dependency/&gt;
+                    &lt;run-dependency&gt;
+                        &lt;specification-version&gt;5.7&lt;/specification-version&gt;
+                    &lt;/run-dependency&gt;
+                &lt;/dependency&gt;
+                &lt;dependency&gt;
+                    &lt;code-name-base&gt;org.openide.nodes&lt;/code-name-base&gt;
+                    &lt;build-prerequisite/&gt;
+                    &lt;compile-dependency/&gt;
+                    &lt;run-dependency&gt;
+                        &lt;specification-version&gt;6.6&lt;/specification-version&gt;
+                    &lt;/run-dependency&gt;
+                &lt;/dependency&gt;
+                &lt;dependency&gt;
+                    &lt;code-name-base&gt;org.openide.text&lt;/code-name-base&gt;
+                    &lt;build-prerequisite/&gt;
+                    &lt;compile-dependency/&gt;
+                    &lt;run-dependency&gt;
+                        &lt;specification-version&gt;6.7&lt;/specification-version&gt;
+                    &lt;/run-dependency&gt;
+                &lt;/dependency&gt;
+                &lt;dependency&gt;
+                    &lt;code-name-base&gt;org.openide.windows&lt;/code-name-base&gt;
+                    &lt;build-prerequisite/&gt;
+                    &lt;compile-dependency/&gt;
+                    &lt;run-dependency&gt;
+                        &lt;specification-version&gt;6.3&lt;/specification-version&gt;
+                    &lt;/run-dependency&gt;
+                &lt;/dependency&gt;
+            &lt;/module-dependencies&gt;
+            &lt;public-packages/&gt;
+        &lt;/data&gt;
+    &lt;/configuration&gt;
+&lt;/project&gt;</pre>
+
+ 
+  </ol>
+
+<!-- ===================================================================================== -->
+  
+<h2><a name="creatingthemodule"></a>Creating the Main Files</h2>
+<p>Creating the module starts with ensuring that the IDE recognizes Manifest files. By default, it does not
+ recognize them and, therefore, treats them as text files. Work through the <a href="https://platform.netbeans.org/tutorials/nbm-filetype.html">NetBeans DataLoader Module Tutorial</a>
+ before going further&#8212;make sure that you put the files you create in a package
+ called <tt>org.netbeans.modules.manifestsupport.dataobject</tt>. Before you go further with this tutorial,
+  the IDE should be able to recognize Manifest files. At the end of the NetBeans DataLoader Module Tutorial, you should
+ have a new MIME Type, too: <tt>text/x-java-jar-manifest</tt>. This MIME Type is used throughout this tutorial.
+<p>Once you have a dataloader specifically for Manifest files, you need to identify items in the Manifest file that you want the IDE to be able to distinguish
+from each other. Each distinct item is called a <i>token</i>. Once you have created tokens, you need to tell the IDE
+ how to interpret the text it finds&#8212;it needs to be told which piece of text constitutes which token.
+  In other words, you need to create a <i>syntax</i>. Next, you associate the tokens
+with colors. In the process, you create an editor specifically for Manifest files. 
+<div class="indent">
+	<p><h3 class="tutorial"><a name="tokenizing"></a>Creating Tokens</h3>
+
+<p>Do the following:
+<ol>
+<p><li><b>Create the file.</b> Right-click the <tt>ManifestSupport</tt> project node, choose New &gt; Java Class,
+ and type <tt>ManifestTokenContext</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+ Replace the default code with the following:
+
+<pre class=examplecode>package org.netbeans.modules.manifestsupport;
+
+import org.netbeans.editor.BaseTokenID;
+import org.netbeans.editor.TokenContext;
+import org.netbeans.editor.TokenContextPath;
+import org.netbeans.editor.Utilities;
+
+public class ManifestTokenContext extends <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/editor/TokenContext.html">TokenContext</a> {
+       
+    // Numeric-ids for token categories
+    public static final int NAME_ID = 1;
+    public static final int COLON_ID = 2;
+    public static final int VALUE_ID = 3;
+    public static final int END_OF_LINE_ID = 4;
+    
+    // Token-ids
+    public static final BaseTokenID NAME = new BaseTokenID("name", NAME_ID);
+    public static final BaseTokenID COLON = new BaseTokenID("colon", COLON_ID);
+    public static final BaseTokenID VALUE = new BaseTokenID("value", VALUE_ID);
+    public static final BaseTokenID END_OF_LINE =
+            new BaseTokenID("end-of-line", END_OF_LINE_ID);
+   
+    // Context instance declaration
+    public static final ManifestTokenContext context = new ManifestTokenContext();
+    public static final TokenContextPath contextPath = context.getContextPath();
+    
+    /**
+     * Construct a new ManifestTokenContext
+     */
+    private ManifestTokenContext() {
+        super("mf-");
+        
+        try {
+            addDeclaredTokenIDs();
+        } catch (Exception e) {
+            Utilities.annotateLoggable(e);
+        }
+    }
+}</pre></li>
+
+<p><li><b>Understand the file.</b> This Java class specifies a token for each item in the Manifest file with which we want to
+ work. Each distinct item in a Manifest file is a token:
+ 'name', 'colon', and 'value'. In addition, there is also a token for the end of the line, because we need to
+ work with the end of the line&#8212;the end of the line
+ determines where a value ends and the next name begins. The constructor above specifies that all tokens will
+ be prefaced by 'mf-'. So, we've now created tokens called 'mf-name', 'mf-colon', 'mf-value', and 'mf-end-of-line'.
+</ol>
+<h3 class="tutorial"><a name="syntaxing"></a>Creating Syntax</h3>
+<p>Do the following:
+<ol>
+<p><li><b>Create the file.</b> Right-click the <tt>ManifestSupport</tt> project node, choose New &gt; Java Class,
+ and type <tt>ManifestSyntax</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+ Replace the default code with the following:
+
+<pre class=examplecode>package org.netbeans.modules.manifestsupport;
+
+import org.netbeans.editor.Syntax;
+import org.netbeans.editor.TokenID;
+import org.openide.ErrorManager;
+
+public class ManifestSyntax extends Syntax {
+    
+    /**
+     * The logger for this class. It can be used for tracing the class activity, 
+     * logging debug messages, etc.
+     */
+    private static final ErrorManager LOGGER = 
+            ErrorManager.getDefault().getInstance("org.netbeans.modules." +
+            "manifestsupport.ManifestSyntax");
+    
+    /**
+     * Used to avoing calling the log() or notify() method if the message 
+     * wouldn't be loggable anyway.
+     */
+    private static final boolean LOG = 
+            LOGGER.isLoggable(ErrorManager.INFORMATIONAL);
+    
+    // The states for the lexical analyzer
+    
+    private static final int ISI_NAME = 1; // inside the name part
+    private static final int ISA_AFTER_NAME = ISI_NAME + 1; // immediately after the name part
+    private static final int ISA_AFTER_COLON = ISA_AFTER_NAME + 1; // immediately after the 
+                                                                   // colon between the name 
+                                                                   // and the value
+    private static final int ISI_VALUE = ISA_AFTER_COLON + 1; // inside the value part
+    
+    protected TokenID parseToken() {
+        TokenID result = doParseToken();
+        if (LOG) {
+            LOGGER.log(ErrorManager.INFORMATIONAL, "parseToken: " + result);
+        }
+        return result;
+    }
+    
+    private TokenID doParseToken() {
+        char actChar;
+        
+        while (offset < stopOffset) {
+            actChar = buffer[offset];
+            
+            switch (state) {
+                case INIT:
+                    switch (actChar) {
+                        case ':':
+                            state = ISA_AFTER_COLON;
+                            offset++;
+                            return ManifestTokenContext.COLON;
+                        case '\n':
+                            state = INIT;
+                            offset++;
+                            return ManifestTokenContext.END_OF_LINE;
+                        default:
+                            state = ISI_NAME;
+                    }
+                    break;
+                    
+                case ISI_NAME:
+                    switch (actChar) {
+                        case ':':
+                        case '\n':
+                            state = ISA_AFTER_NAME;
+                            return ManifestTokenContext.NAME;
+                    }
+                    break;
+                    
+                case ISA_AFTER_NAME:
+                    switch (actChar) {
+                        case ':':
+                            state = ISA_AFTER_COLON;
+                            offset++;
+                            return ManifestTokenContext.COLON;
+                        case '\n':
+                            state = INIT;
+                            offset++;
+                            return ManifestTokenContext.END_OF_LINE;
+                        default:
+                            assert false;
+                    }
+                    break;
+                    
+                case ISA_AFTER_COLON:
+                    switch (actChar) {
+                        case '\n':
+                            state = INIT;
+                            offset++;
+                            return ManifestTokenContext.END_OF_LINE;
+                        default:
+                            state = ISI_VALUE;
+                    }
+                    break;
+                    
+                case ISI_VALUE:
+                    switch (actChar) {
+                        case '\n':
+                            state = INIT;
+                            return ManifestTokenContext.VALUE;
+                    }
+                    break;
+            }
+            
+            offset++;
+        }
+        
+        /*
+         * At this stage there's no more text in the scanned buffer.
+         * It is valid to return a token here only if this is the last
+         * buffer (otherwise the token could continue in the next buffer).
+         */
+        if (lastBuffer) {
+            switch (state) {
+                case ISI_NAME:
+                    state = INIT;
+                    return ManifestTokenContext.NAME;
+                case ISI_VALUE:
+                    state = INIT;
+                    return ManifestTokenContext.VALUE;
+            }
+        }
+        
+        return null;
+    }
+    
+}</pre></li>
+
+<p><li><b>Understand the file.</b> This Java class tells the IDE which part of the text is which token.
+It does this by starting in an initial state and sequentially looking at each character in the text 
+and deciding if it stays in that state, moves to another state, or announces that a token was found. 
+<p>For example, for names the IDE starts in the initial state and the first time it encounters a valid character 
+for a name, it enters the <tt>ISI_NAME</tt> state. It stays in this state until it encounters a <tt>\r</tt>, <tt>\n</tt> or <tt>:</tt>
+character, which cannot be part of a name. When it encounters such a character, the IDE knows that 
+the characters it just traversed make up a name token. The code runs within a while loop. At the end there is 
+a break statement, which increases the offset
+in the text. The return statement in the code avoids increasing the offset and ensures that the parsing 
+of the next token, after a name, will start with this character (it will likely be a colon, which is a 
+ meaningful token itself). 
+ The break statement, on the other hand, ensures that offset is increased. When all the characters 
+ up to the colon are tested, the IDE knows whether the cursor is inside a name or not.
+</ol>
+
+<h3 class="tutorial"><a name="testing"></a>Giving the IDE a Reading Test</h3>
+
+<p>Do the following:
+<ol>
+<p><li><b>Create the file.</b> Right-click the Unit Test Packages node, choose New &gt; Java Class,
+ type <tt>ManifestSyntaxTest</tt> in Class Name, and type <tt>org.netbeans.modules.manifestsupport</tt> in Package.
+  Click Finish. The new Java class opens in the Source Editor.
+ Replace the default code with the following:
+
+<pre class=examplecode>import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import junit.framework.TestCase;
+import org.netbeans.editor.Syntax;
+import org.netbeans.editor.TokenID;
+import org.netbeans.modules.manifestsupport.*;
+import junit.framework.TestCase;
+
+public class ManifestSyntaxTest extends TestCase {
+    
+    public ManifestSyntaxTest(String testName) {
+        super(testName);
+    }
+    
+    public void testNextToken() {
+	doParse("Manifest-Version: 1.0", new TokenID[] {
+            ManifestTokenContext.NAME,
+            ManifestTokenContext.COLON,
+            ManifestTokenContext.VALUE,
+        });
+        doParse("Manifest-Version: 1.0\n\n" + 
+                 "OpenIDE-Module: org.netbeans.modules.manifestsupport\n", 
+                 new TokenID[] {
+           ManifestTokenContext.NAME,
+           ManifestTokenContext.COLON,
+           ManifestTokenContext.VALUE,
+           ManifestTokenContext.END_OF_LINE,
+           ManifestTokenContext.END_OF_LINE,
+           ManifestTokenContext.NAME,
+   	   ManifestTokenContext.COLON,
+           ManifestTokenContext.VALUE,
+           ManifestTokenContext.END_OF_LINE,
+        });
+    }
+        
+    public void doParse(String m, TokenID[] expected) {
+        Syntax s = new ManifestSyntax();
+        s.load(null, m.toCharArray(), 0, m.length(), true, m.length());
+        
+        TokenID token = null;
+        Iterator i = Arrays.asList(expected).iterator();
+        do {
+            token = s.nextToken();
+            if (token != null) {
+                if (!i.hasNext()) {
+                    fail("More tokens returned than expected.");
+                } else {
+                    assertSame("Tokens differ", i.next(), token);
+                }
+            } else {
+                assertFalse("More tokens expected than returned.", i.hasNext());
+            }
+            System.out.println(token);
+        } while (token != null);
+    }
+}</pre></li>
+
+<p><li><b>Understand the file.</b> This Java class checks that the IDE is able to correctly convert text to tokens.
+ To run the test, right-click the project node and choose Run Unit Tests. The test should succeed, returning the
+ following result in the JUnit Test Results window:
+
+<p><img src="../images/tutorials/mf_syntax/junit-success.png" alt="error result from JUnit test.">
+
+<p>You can play with the <tt>testNextToken()</tt> method to see what the IDE does when the entered
+ text does not comply with the specified tokens. For example, change the method by deleting one of the token IDs (<tt>ManifestTokenContext.VALUE</tt>),
+ so that the method looks as follows:
+
+<p><pre class="examplecode">public void testNextToken() {
+   doParse("Manifest-Version: 1.0", new TokenID[] {
+        ManifestTokenContext.NAME,
+        ManifestTokenContext.COLON,
+   });
+}</pre>
+
+<p>Now there are more tokens than token IDs. (There are two token IDs here&#8212;<tt>ManifestTokenContext.NAME</tt> and <tt>ManifestTokenContext.COLON</tt>.)  When you run the JUnit test, the message 'More tokens returned than expected.' is returned:
+
+<p><img src="../images/tutorials/mf_syntax/junit-more-tokens-than-expected.png" alt="error result from JUnit test.">
+
+<p>Now change the method by deleting the colon between <tt>Manifest-Version</tt> and <tt>1.0</tt>, as shown below:
+
+<p><pre class="examplecode">public void testNextToken() {
+   doParse("Manifest-Version 1.0", new TokenID[] {
+        ManifestTokenContext.NAME,
+        ManifestTokenContext.COLON,
+        ManifestTokenContext.VALUE,
+   });
+}</pre>
+
+<p>Now there are too few tokens. When you run the JUnit test, the message 'More tokens expected than returned.' is returned:
+
+<p><img src="../images/tutorials/mf_syntax/junit-more-tokens-than-returned.png" alt="error result from JUnit test.">
+
+<p>Finally, let's test to see that the IDE understands more than just when there are too many or
+ too few tokens&#8212;it should also know when a token is in the wrong place. Add the token
+ that specifies the end-of-line. For example, here <tt>\n</tt> is added right after the name and
+ before the colon:
+
+<p><pre class="examplecode">public void testNextToken() {
+  doParse("Manifest-Version\n:1.0", new TokenID[] {
+       ManifestTokenContext.NAME,
+       ManifestTokenContext.COLON,
+       ManifestTokenContext.VALUE,
+  });
+}</pre>
+
+<p>When you run the test, the following error is returned:
+
+<p><img src="../images/tutorials/mf_syntax/junit-wrong-token.png" alt="error result from JUnit test.">
+
+<p>Now that we know that the IDE correctly converts manifest entries into tokens, lets create an editor
+ to work with Manifest files and associate colors with tokens.
+
+</ol>
+
+
+<h3 class="tutorial"><a name="editorkitting"></a>Creating the EditorKit</h3>
+
+<p>Do the following:
+<ol>
+<p><li><b>Create the file.</b> Right-click the <tt>ManifestSupport</tt> project node, choose New &gt; Java Class,
+ and type <tt>ManifestEditorKit</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+ Replace the default code with the following:
+
+<pre class=examplecode>package org.netbeans.modules.manifestsupport;
+
+import javax.swing.text.Document;
+import org.netbeans.editor.BaseDocument;
+import org.netbeans.editor.Syntax;
+import org.netbeans.editor.SyntaxSupport;
+import org.netbeans.modules.editor.NbEditorKit;
+import org.openide.ErrorManager;
+
+public class ManifestEditorKit extends <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor/org/netbeans/modules/editor/NbEditorKit.html">NbEditorKit</a> {
+   
+    public static final String MIME_TYPE = "text/x-java-jar-manifest"; // NOI18N
+    
+    /** 
+     * Creates a new instance of ManifestEditorKit 
+     */
+    public ManifestEditorKit() { 
+    }
+    
+    /**
+     * Create a syntax object suitable for highlighting Manifest file syntax
+     */
+    public Syntax createSyntax(Document doc) {  
+        return new ManifestSyntax();
+    }
+    
+    /**
+     * Retrieves the content type for this editor kit
+     */
+    public String getContentType() {
+        return MIME_TYPE;
+    }
+}</pre></li>
+
+<p><li><b>Understand the file.</b> This Java class specifies an <a href="http://java.sun.com/j2se/1.4.2/docs/api/javax/swing/text/EditorKit.html">EditorKit</a> specifically for a NetBeans editor. Therefore, it extends the <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor/org/netbeans/modules/editor/NbEditorKit.html">NBEditorKit</a> class. An editor kit establishes the set of things needed by a text
+component to be a reasonably functioning editor for some type  of text content. In this case, the editor is for
+content that uses the <tt>text/x-java-jar-manifest</tt> MIME Type.
+</ol>
+
+
+<h3 class="tutorial"><a name="syntaxcoloring"></a>Creating the Syntax Coloring</h3>
+
+<p>Do the following:
+<ol>
+<p><li><b>Create the file.</b> Right-click the <tt>ManifestSupport</tt> project node, choose New &gt; Java Class,
+ and type <tt>ManifestSettingsInitializer</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+ Replace the default code with the following:
+
+<pre class=examplecode>package org.netbeans.modules.manifestsupport;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.util.Map;
+import org.netbeans.editor.BaseKit;
+import org.netbeans.editor.Coloring;
+import org.netbeans.editor.Settings;
+import org.netbeans.editor.SettingsDefaults;
+import org.netbeans.editor.SettingsNames;
+import org.netbeans.editor.SettingsUtil;
+import org.netbeans.editor.TokenCategory;
+import org.netbeans.editor.TokenContext;
+import org.netbeans.editor.TokenContextPath;
+
+public class ManifestSettingsInitializer 
+        extends Settings.AbstractInitializer {
+    
+    public static final String NAME = 
+            "manifest-settings-initializer"; // NOI18N
+    
+    /**
+     * Constructor
+     */
+    public ManifestSettingsInitializer() {
+        super(NAME);
+    }
+    
+    /**
+     * Update map filled with the settings.
+     * @param kitClass kit class for which the settings are being updated.
+     *   It is always non-null value.
+     * @param settingsMap map holding [setting-name, setting-value] pairs.
+     *   The map can be empty if this is the first initializer
+     *   that updates it or if no previous initializers updated it.
+     */
+    public void updateSettingsMap(Class kitClass, Map settingsMap) {
+        if (kitClass == BaseKit.class) {
+            new ManifestTokenColoringInitializer().
+                    updateSettingsMap(kitClass, settingsMap);
+        }
+        
+        if (kitClass == ManifestEditorKit.class) {
+            SettingsUtil.updateListSetting(
+                    settingsMap,
+                    SettingsNames.TOKEN_CONTEXT_LIST,
+                    new TokenContext[] 
+            { ManifestTokenContext.context }
+            );
+        }
+    }
+    
+    /**
+     * Class for adding syntax coloring to the editor
+     */
+    /** Properties token coloring initializer. */
+    private static class ManifestTokenColoringInitializer 
+            extends SettingsUtil.TokenColoringInitializer {
+        
+        /** Bold font. */
+        private static final Font boldFont = 
+                SettingsDefaults.defaultFont.deriveFont(Font.BOLD);
+        /** Italic font. */
+        private static final Font italicFont = 
+                SettingsDefaults.defaultFont.deriveFont(Font.ITALIC);
+        
+        /** Key coloring. */
+        private static final Coloring keyColoring = 
+                new Coloring(boldFont, Coloring.FONT_MODE_APPLY_STYLE, 
+                Color.blue, null);
+        /** Value coloring. */
+        private static final Coloring valueColoring = 
+                new Coloring(null, Color.magenta, null);
+        /** Colon coloring. */
+        private static final Coloring colonColoring = 
+                new Coloring(null, Color.DARK_GRAY, null);
+        /** Empty coloring. */
+        private static final Coloring emptyColoring = 
+                new Coloring(null, null, null);
+        
+        
+        /** Constructs <code>PropertiesTokenColoringInitializer</code>. */
+        public ManifestTokenColoringInitializer() {
+            super(ManifestTokenContext.context);
+        }
+        
+        
+        /** Gets token coloring. */
+        public Object getTokenColoring(TokenContextPath tokenContextPath,
+                TokenCategory tokenIDOrCategory, boolean printingSet) {
+            
+            if(!printingSet) {
+                int tokenID = tokenIDOrCategory.getNumericID();
+                
+                if(tokenID == ManifestTokenContext.NAME_ID) {
+                    return keyColoring;
+                } else if(tokenID == ManifestTokenContext.VALUE_ID) {
+                    return valueColoring;
+                } else if(tokenID == ManifestTokenContext.COLON_ID) {
+                    return colonColoring;
+                    
+                }
+            } else { // printing set
+                return SettingsUtil.defaultPrintColoringEvaluator;
+            }
+            
+            return null;
+        }
+        
+    } // End of class ManifestTokenColoringInitializer.
+    
+}</pre></li>
+
+<p><li><b>Understand the file.</b> This Java class sets the default colors for our tokens. Thanks to the supporting files
+ described in the following sections, the user will be able to
+ use the Options window to change the defaults.
+</ol>
+
+<h3 class="tutorial"><a name="colorrestoring"></a>Creating the Color Restorer</h3>
+
+<p>Do the following:
+<ol>
+<p><li><b>Create the file.</b> Right-click the <tt>ManifestSupport</tt> project node, choose New &gt; Java Class,
+ and type <tt>RestoreColoring </tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+ Replace the default code with the following:
+
+<pre class=examplecode>package org.netbeans.modules.manifestsupport;
+
+import org.netbeans.editor.LocaleSupport;
+import org.netbeans.editor.Settings;
+import org.openide.modules.ModuleInstall;
+import org.openide.util.NbBundle;
+
+public class RestoreColoring extends <a href="https://netbeans.org/download/dev/javadoc/org-openide-modules/org/openide/modules/ModuleInstall.html">ModuleInstall</a> {
+    
+    /**
+     * <code>Localizer</code> passed to editor.
+     */
+    private static LocaleSupport.Localizer localizer;
+    
+    /**
+     * Registers properties editor, installs options and copies settings.
+     * Overrides superclass method.
+     */
+    public void restored() {
+        addInitializer();
+        installOptions();
+    }
+    
+    /**
+     * Uninstalls properties options.
+     * And cleans up editor settings copy.
+     * Overrides superclass method.
+     */
+    public void uninstalled() {
+        uninstallOptions();
+    }
+    
+    /**
+     * Adds initializer and registers editor kit.
+     */
+    public void addInitializer() {
+        Settings.addInitializer(new ManifestSettingsInitializer());
+    }
+    
+    /**
+     * Installs properties editor and print options.
+     */
+    public void installOptions() {
+        // Adds localizer.
+        LocaleSupport.addLocalizer(localizer = new LocaleSupport.Localizer() {
+            public String getString(String key) {
+                return NbBundle.getMessage(RestoreColoring.class, key);
+            }
+        });
+    }
+    
+    /** Uninstalls properties editor and print options. */
+    public void uninstallOptions() {
+        // remove localizer
+        LocaleSupport.removeLocalizer(localizer);
+    }
+    
+}</pre></li>
+
+<p><li><b>Understand the file.</b> This Java class is used to install the module and maintain its state. In addition to creating it,
+you must specify this class in the module's manifest file, by adding the following line:
+<p><pre class="examplecode">OpenIDE-Module-Install: org/netbeans/modules/manifestsupport/RestoreColoring.class</pre><p>
+
+<p>Note that the <tt>OpenIDE-Module-Install</tt> key belongs at the end of the first section (it is highlighted in bold below):
+
+<p><pre class="examplecode">Manifest-Version: 1.0
+OpenIDE-Module: org.netbeans.modules.manifestsupport
+OpenIDE-Module-Layer: org/netbeans/modules/manifestsupport/layer.xml
+OpenIDE-Module-Localizing-Bundle: org/netbeans/modules/manifestsupport/Bundle.properties
+OpenIDE-Module-Specification-Version: 1.0
+<b>OpenIDE-Module-Install: org/netbeans/modules/manifestsupport/RestoreColoring.class</b>
+
+Name: org/netbeans/modules/manifestsupport/dataobject/ManifestDataLoader.class
+OpenIDE-Module-Class: Loader</pre>
+
+
+</ol>
+
+
+
+
+<h2><a name="creatingthemodule"></a>Creating the Supporting Files</h2>
+<p>In this section, you update the 
+ Options window to allow the user to customize the way the tokens are presented
+ in the IDE. Not only the colors, but also the font type and style, and the Manifest editor itself, can then
+  be modified by the user in the Options window.
+<div class="indent">
+
+<p><h3 class="tutorial"><a name="creatingoptions"></a>Creating the Options</h3>
+
+<p>Do the following:
+<ol>
+<p><li><b>Create the file.</b> Right-click the <tt>ManifestSupport</tt> project node, choose New &gt; Java Class,
+ type <tt>ManifestOptions</tt> in Class Name, and type <tt>org.netbeans.modules.manifestsupport.options</tt>
+ in Package. Click Finish. The new Java class opens in the Source Editor.
+ Replace the default code with the following:
+
+<pre class=examplecode>package org.netbeans.modules.manifestsupport.options;
+
+import java.util.MissingResourceException;
+import org.netbeans.modules.editor.options.BaseOptions;
+import org.netbeans.modules.manifestsupport.ManifestEditorKit;
+import org.openide.util.HelpCtx;
+import org.openide.util.NbBundle;
+
+public class ManifestOptions extends BaseOptions {
+    
+    public static String MANIFEST = "Manifest"; // NOI18N
+    
+    /** Name of property. */
+    private static final String HELP_ID = "editing.editor.mf"; // NOI18N
+    
+    //no manifest specific options at this time
+    static final String[] MF_PROP_NAMES = new String[] {};
+    
+    public ManifestOptions() {
+        super(ManifestEditorKit.class, MANIFEST);
+    }
+    
+    /**
+     * Gets the help ID
+     */
+    public HelpCtx getHelpCtx() {
+        return new HelpCtx(HELP_ID);
+    }
+    
+    /**
+     * Look up a resource bundle message, if it is not found locally defer to
+     * the super implementation
+     */
+    protected String getString(String key) {
+        try {
+            return NbBundle.getMessage(ManifestOptions.class, key);
+        } catch (MissingResourceException e) {
+            return super.getString(key);
+        }
+    }
+    
+}</pre></li>
+
+<p><li><b>Understand the file.</b> This Java class registers the <tt>ManifestEditorKit</tt> in the
+Options window. If there were properties specific to the Manifest Editor, they would be added in
+ the <tt>static final String[] MF_PROP_NAMES = new String[] {};</tt> declaration. However, in this 
+ implementation, only the default options will be supported. In addition, this file adds the string 'Manifest' to the drop-down list in the Code Templates
+ page of the Editor section, as shown below:
+
+<p><img src="../images/tutorials/mf_syntax/fonts-and-colors-2.png" alt="Fonts and Colors 2">
+
+</ol>
+
+<h3 class="tutorial"><a name="dipslayingoptionsinoptionswindow"></a>Displaying the Options in the Options Window</h3>
+
+<p>Do the following:
+<ol>
+<p><li><b>Create the file.</b> Create the <tt>ManifestOptionsBeanInfo</tt> file and add it
+ to the <tt>org.netbeans.modules.manifestsupport.options</tt> package.
+ Replace the default code with the following:
+
+<pre class=examplecode>package org.netbeans.modules.manifestsupport.options;
+
+import java.util.MissingResourceException;
+import org.netbeans.modules.editor.options.BaseOptionsBeanInfo;
+import org.netbeans.modules.editor.options.OptionSupport;
+import org.openide.util.NbBundle;
+
+public class ManifestOptionsBeanInfo extends BaseOptionsBeanInfo {
+    
+    /**
+     * Constructor. The parameter in the superclass constructor is the
+     * icon prefix. 
+     */
+    public ManifestOptionsBeanInfo() {
+        super("/org/netbeans/modules/manifestsupport/options/mfOptions"); // NOI18N
+    }
+    
+    /*
+     * Gets the property names after merging it with the set of properties
+     * available from the BaseOptions from the editor module.
+     */
+    protected String[] getPropNames() {
+        return OptionSupport.mergeStringArrays(
+                super.getPropNames(),
+                ManifestOptions.MF_PROP_NAMES);
+    }
+    
+    /**
+     * Get the class described by this bean info
+     */
+    protected Class getBeanClass() {
+        return ManifestOptions.class;
+    }
+    
+    /**
+     * Look up a resource bundle message, if it is not found locally defer to
+     * the super implementation
+     */
+    protected String getString(String key) {
+        try {
+            return NbBundle.getMessage(ManifestOptionsBeanInfo.class, key);
+        } catch (MissingResourceException e) {
+            return super.getString(key);
+        }
+    }
+}</pre></li>
+
+<p><li><b>Understand the file.</b> This Java class displays the options specified
+in <tt>ManifestOptions</tt> in the Options window. The file referenced in the constructor
+ can be any 16x16 pixel file. If you do not have one, you can get it from the downloadable
+ ZIP file at the top of the page or you can right-click and save it here: <img src="../images/tutorials/mf_syntax/mfOptions.gif" alt="mfOptions">
+
+<p>Add a <tt>Bundle.properties</tt> file to the <tt>org.netbeans.modules.manifestsupport.options</tt>
+  package and add this line to it:
+
+  <p><pre class="examplecode">OPTIONS_Manifest=Manifest Editor</pre>
+
+<p>The string after the "OPTIONS_" above <b>must</b> match the String declaration in the
+ <tt>ManifestOptions</tt> class. For example, in this tutorial, the following string is declared in
+ <tt>ManifestOptions.java</tt>:
+
+<p><pre class="examplecode">public static String MANIFEST = "Manifest";</pre>
+
+<p>However, if this line was as follows:
+
+<p><pre class="examplecode">public static String MANIFEST = "MF";</pre>
+
+Then the <tt>Bundle.properties</tt> file would specify this string instead:
+
+<p><pre class="examplecode">OPTIONS_MF=Manifest Editor</pre>
+
+<p>Note also that the string is case-sensitive.
+
+<p>Now this is the label that will be displayed in the Classic View of the Options window, to
+ distinguish the Manifest Editor section from the other editors displayed in the Classic View of the Options window, as shown below:
+
+<p><img src="../images/tutorials/mf_syntax/fonts-and-colors-3.png" alt="Fonts and Colors 3">
+<p>Notice that there is an icon to the left of the label 'Manifest Editor' in the screenshot above. This is
+ the <tt>mfOptions.gif</tt> file specified in the <tt>ManifestOptionsBeanInfo </tt> class.
+</ol>
+
+<h3 class="tutorial"><a name="instantiating"></a>Instantiating the Options</h3>
+
+<p>Do the following:
+<ol>
+<p><li><b>Create the file.</b> Create an XML file called <tt>ManifestOptions.settings</tt> 
+ and place it in the <tt>org.netbeans.modules.manifestsupport.options</tt> package.
+ Replace the default code with the following:
+
+<pre class=examplecode>&lt;?xml version="1.0"?&gt;
+&lt;!DOCTYPE settings PUBLIC "-//NetBeans//DTD Session settings 1.0//EN" 
+ "https://netbeans.org/dtds/sessionsettings-1_0.dtd"&gt;
+&lt;settings version="1.0"&gt;
+    &lt;module name="org.netbeans.modules.manifestsupport"/&gt;
+    &lt;instanceof class="java.io.Externalizable"/&gt;
+    &lt;instanceof class="org.openide.util.SharedClassObject"/&gt;
+    &lt;instanceof class="java.beans.beancontext.BeanContextProxy"/&gt;
+    &lt;instanceof class="java.io.Serializable"/&gt;
+    &lt;instanceof class="org.openide.options.SystemOption"/&gt;
+    &lt;instanceof class="org.netbeans.modules.editor.options.OptionSupport"/&gt;
+    &lt;instanceof class="org.netbeans.modules.editor.options.BaseOptions"/&gt;
+    &lt;instance class="org.netbeans.modules.manifestsupport.options.ManifestOptions"/&gt;
+&lt;/settings&gt;</pre></li>
+
+<p><li><b>Understand the file.</b> This file lets the IDE quickly instantiate the <tt>ManifestOptions.java</tt>
+ file, whenever called upon to do so. The next section shows you how to register the settings file in the
+ NetBeans System Filesystem.
+
+</ol>
+
+<h3 class="tutorial"><a name="registeringoptions"></a>Registering the Options in the NetBeans System Filesystem</h3>
+
+<p>To register the module in the Options window, you
+ must do the following in the <tt>layer.xml</tt> file:
+
+<ul>
+<li>Create default colors for each profile that the IDE supports. Currently, the IDE supports a profile
+ called 'NetBeans' and a profile called 'City Lights'. They can be selected from the Profile drop-down list
+ at the top of the Fonts & Colors section.
+<li>Register the <tt>ManifestEditorKit.java</tt> class.
+<li>Register the <tt>ManifestOptions.settings</tt> file.
+<li>Create a file containing a text that will be shown in the Preview window,
+ at the bottom of the Fonts & Colors section of the Options window.
+<li>Localize the strings in the <tt>layer.xml</tt> file.
+</ul>
+
+<p>The screenshot on the left shows the NetBeans profile; on the right you see the City Lights profile:
+
+<p><img src="../images/tutorials/mf_syntax/fonts-and-colors-1.png" alt="Fonts and Colors 1">
+<img src="../images/tutorials/mf_syntax/fonts-and-colors-4.png" alt="Fonts and Colors 4">
+
+<p>Do the following:
+<ol>
+<p><li><b>Update the <tt>layer.xml</tt> file.</b> Add the following entries to the <tt>layer.xml</tt> file:
+
+<pre class=examplecode>&lt;folder name="Editors"&gt;
+    &lt;folder name="text"&gt;
+        &lt;folder name="x-java-jar-manifest"&gt;
+            &lt;attr name="SystemFileSystem.localizingBundle" 
+            stringvalue="org.netbeans.modules.manifestsupport.Bundle"/&gt;
+            &lt;folder name="NetBeans"&gt;
+                &lt;folder name="Defaults"&gt;
+                    &lt;file name="coloring.xml" 
+                        url="resources/NetBeans-Manifest-fontsColors.xml"&gt;
+                        &lt;attr name="SystemFileSystem.localizingBundle" 
+                        stringvalue="org.netbeans.modules.manifestsupport.Bundle"/&gt;
+                    &lt;/file&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt; 
+            &lt;folder name="CityLights"&gt;
+                &lt;folder name="Defaults"&gt;
+                    &lt;file name="coloring.xml" 
+                        url="resources/CityLights-Properties-fontsColors.xml"&gt;
+                        &lt;attr name="SystemFileSystem.localizingBundle" 
+                        stringvalue="org.netbeans.modules.manifestsupport.Bundle"/&gt;
+                    &lt;/file&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt;
+            &lt;file name="Settings.settings" 
+            url="options/ManifestOptions.settings"/&gt;
+            &lt;file name="EditorKit.instance"&gt;
+                &lt;attr name="instanceClass" 
+                stringvalue="org.netbeans.modules.manifestsupport.ManifestEditorKit"/&gt;
+            &lt;/file&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;
+
+&lt;folder name="OptionsDialog"&gt;
+    &lt;folder name="PreviewExamples"&gt;
+        &lt;folder name="text"&gt;
+            &lt;file name="x-java-jar-manifest" url="resources/ManifestExample"/&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre></li>
+
+<p><li><b>Localize the Fonts & Colors page.</b> In the package where the <tt>layer.xml</tt> file
+is found (i.e., in <tt>org.netbeans.modules.manifestsupport</tt>), add the following entries
+ to the <tt>Bundle.properties</tt> file:
+
+<p><pre class="examplecode">text/x-java-jar-manifest=Manifest
+NetBeans=NetBeans
+mf-name=Name
+mf-value=Value
+mf-colon=Colon</pre>
+
+<p><li><b>Create a color file for each profile.</b> Create a package called <tt>org.netbeans.modules.manifestsupport.resources</tt>
+and add two files, <tt>NetBeans-Manifest-fontsColors.xml</tt> and <tt>CityLights-Properties-fontsColors.xml</tt>:
+
+<ul><p><li><tt>NetBeans-Manifest-fontsColors.xml</tt> has the following content:
+<p><pre class="examplecode">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;fontscolors&gt;
+    &lt;fontcolor name="mf-name" foreColor="blue" default="default"/&gt;
+    &lt;fontcolor name="mf-value" foreColor="magenta" default="default"/&gt;
+    &lt;fontcolor name="mf-colon" default="default"/&gt;
+&lt;/fontscolors&gt;</pre>
+
+<p><li><tt>CityLights-Properties-fontsColors.xml</tt> has the following content:
+<pre class="examplecode">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;fontscolors&gt;
+    &lt;fontcolor name="mf-name" default="default"/&gt;
+    &lt;fontcolor name="mf-value" default="default"/&gt;
+    &lt;fontcolor name="mf-colon" default="default"/&gt;
+&lt;/fontscolors&gt;</pre></ul>
+
+<p><li><b>Create the Preview file.</b> At the bottom of the Fonts & Colors section in the Options window,
+ the user can preview changes made to the way the Manifest file's entries are displayed in the editor.
+ To specify the text that is displayed in the preview window, you need to create a file, as
+ specified in the <tt>OptionsDialog</tt> folder of the <tt>layer.xml</tt> file above.
+  In the <tt>org.netbeans.modules.manifestsupport.resources</tt> package,
+add a file called <tt>ManifestExample</tt> (note that this file has no extension), with the following content:
+
+<p><pre class="examplecode">Manifest-Version: 1.0</pre>
+
+</ol>
+
+<h2><a name="building"></a>Building and Installing the Module</h2>
+<p>The IDE uses an Ant build script to build and install your module. The build script is created for you
+when you create the module project.</p>
+<div class="indent">
+
+	<h3 class="tutorial">Installing and Testing the NetBeans Module</h3>
+	<p>
+      <ol>
+	      <li>In the Projects window, right-click the <tt>ManifestSupport</tt> project and choose Install/Reload
+	      in Target Platform. 
+	      <p>The module is built and installed in the target IDE or Platform. The target IDE or Platform opens so that you
+	      can try out your new module. The default target IDE or Platform is the 
+	      installation used by the current instance of the development IDE. Note that when you run your module, you will be using 
+ a temporary test user directory, not the development IDE's user directory. 
+ <li>Choose File &gt; New Project (Ctrl-Shift-N). Create a new Java application project
+ or a new Plug-in Module project. Open the project's Manifest file in the Source Editor
+ and notice the syntax highlighting. <p>For other aspects of this module, see the <a href="#introducing-sample">Introducing the Sample</a> section.
+</ol>	<p>
+<h3 class="tutorial">Creating a Shareable Module Binary (NBM File)</h3>
+ <p>An NBM file is a NetBeans module packaged for delivery via the web. 
+       The principal differences between NBM files and module JAR files are:
+       <ul><li>An NBM file is compressed.
+	       <li>An NBM file can contain more than one JAR file&#8212;modules can package any libraries they use into their NBM file.
+	       <li>An NBM file contains metadata that NetBeans will use to display information about it in the Update Center, such as the manifest contents, the license, etc.
+	       <li>An NBM file is typically signed for security purposes.</ul>
+       <p>NBM files are just ZIP files with a special extension. They use the JDK's mechanism for 
+       signing JAR files. Unless you are doing something unusual, you will not need to worry about the 
+       contents of an NBM file&#8212;just let the standard Ant build script for NBM creation take care of 
+       it for you. The IDE generates the build script based on the options you enter in the project's 
+       Project Properties dialog box. You can set the module's dependencies, versioning, and packaging 
+       information in the Project Properties dialog box. You can further customize program execution 
+       by editing the Ant script and Ant properties for the project.
+      <ol>
+	      <li>In the Projects window, right-click the <tt>ManifestSupport</tt> project node and choose Create NBM.
+
+	      <p>The NBM file is created and you can view it in the Files window (Ctrl-2):
+	      <p align="left"><img src="../images/tutorials/mf_syntax/create-nbm.png" alt="Shareable NBM.">
+	      <li>Make it available to others via, for example, e-mail. 
+	      <p><li>Use the Update Center to install the NBM file.
+       </ol>
+ 
+<h2><a name="explore"></a>Exploring Further</h2> <div class="indent">
+
+<p>Below are some other avenues that you might want to explore.</p>
+
+<h3 class="tutorial">Associating the EditorKit with a JEditorPane</h3>
+
+<p>Instead of using the EditorKit in the Source Editor, you can associate it
+with a <a href="http://java.sun.com/j2se/1.4.2/docs/api/javax/swing/JEditorPane.html">JEditorPane</a>.
+<p>Do the following:
+<ol>
+	<p><li>Select the <tt>JEditorPane</tt>, click the <tt>editorKit</tt> property,
+	 and make the following selections:
+<p align="left"><img src="../images/tutorials/mf_syntax/editorPane.png" alt="editorPane.">
+
+<p><li>Select the <tt>JEditorPane</tt>, click the <tt>contentType</tt> property,
+and type the Manifest file's MIME Type (<tt>text/x-java-jar-manifest</tt>):
+<p align="left"><img src="../images/tutorials/mf_syntax/editorPane2.png" alt="editorPane2.">
+
+<p><li>When you deploy the module, syntax highlighting will be enabled in the JEditorPane:
+<p align="left"><img src="../images/tutorials/mf_syntax/editorPane3.png" alt="editorPane3.">
+<p>In effect, the JEditorPane is now your editor. You can use the Options window to
+ modify fonts and colors, just as if you were using the Source Editor.
+</ol>
+	<h3 class="tutorial">Code Folding</h3>
+
+	<p>To come.</p>
+
+  <h3 class="tutorial">Indentation Engine</h3>
+
+<p>To come.</p>
+
+ <h3 class="tutorial">Other Options</h3>
+ <p>To come.</p>
+
+
+
+ 
+</div>
+      <br />
+
+<h2><a name="explore"></a>Applying What You Have Learned</h2> <div class="indent">
+
+	<p>Once you are comfortable with the principles outlined in this tutorial,
+	you can begin applying them to your own scenarios. For example, here is
+	NetBeans user Valentin Buergel's Wiki syntax highlighting:</p>
+
+<p align="left"><img src="../images/tutorials/mf_syntax/wiki-screenshot.png" alt="wiki-screenshot">
+
+
+
+ 
+</div>
+      <br />
+
+      
+<!-- ===================================================================================== -->
+<br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Manifest%20Highlighting%20Module%20Tutorial">Send Us Your Feedback</a></div>
+<br style="clear:both;" />
+
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Next Steps</h2>
+
+<p>For more information about creating and developing NetBeans Module, see the following resources: 
+  <ul>
+	  <p><li><a href="https://platform.netbeans.org/index.html">Module Developer's Resources</a></li>
+	  <p><li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API List (Current Development Version)</a></li>
+	  <p><li><a href="http://apisupport.netbeans.org/new-apisupport.html">New API Support-Proposal</a></li></ul>
+  </p>
+  
+  <hr>
+<!-- ======================================================================================== -->
+
+<h2><a name="version"></a>Versioning </h2>
+  
+<p>
+
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+ <tr>
+      <td>
+	 1
+      </td>
+      <td>
+         23 October 2005
+      </td>
+      <td><ul>
+	      <li>Initial version.
+	     
+	      
+	    
+      </td>
+  </tr>
+ <tr>
+      <td>
+	 2
+      </td>
+      <td>
+         30 November 2005
+      </td>
+      <td><ul>
+		      <li>Added Valentin's screenshot at the end.
+		      <li>Fixed some smaller issues:
+		      <ul><li><a href="https://netbeans.org/issues/show_bug.cgi?id=69568">issue 69568</a>
+			      <li>Wrong closing tag in one of the coloring XML files.
+			      <li><tt>NbEditorKit</tt> was mistakenly <tt>NBEditorkit</tt> before
+		      </ul>
+		      <li>Need to fix several larger issues (from Andrei Badea and one or two people from openide mailing list)
+		       soon.
+
+	     
+	      
+	    
+      </td>
+  </tr>
+ <tr>
+      <td>
+	 3
+      </td>
+      <td>
+         5 March 2006
+      </td>
+      <td><ul>
+		      <li>Several fixes:
+		      <ul><li>Successfully worked through the whole tutorial, using NetBeans IDE 5.x (final version).
+			      <li>Added new test (from Andrei Badea) to assert new line parsing is working.
+			      <li>Fixed layer.xml error relating to new way of registering the preview file.
+			      <li>Tried to use Andrei Badea (and Vladimir) fixes for manifestSyntax,java, but that broke other things.
+			       Need to check that with him.
+			      
+		      </ul>
+		      	    
+      </td>
+  </tr>
+  <tr>
+      <td>
+	 4
+      </td>
+      <td>
+         13 June 2006
+      </td>
+      <td><ul>
+		 <li>Took the ZIP attached to this tutorial, installed the NBM in 5.5 dev. No
+		 problems, worked as expected, except JUnit test had problems -- no junit.framework.test
+		 found in JUnit module.</li>
+                 <li>Following suggestion by Tim B., shortened many lines of code to ensure that
+                 people don't need to scroll to the right too much, but some instances of this problem
+                 remain.</li>
+                 <li>Need to go back to the code snippets and put back links to Javadoc, which
+                 were removed when I replaced the code, straight from the Source Editor, which I
+                 did to make sure that the shortened lines wouldn't cause errors.</li>
+		 <li>Need to change the ZIP file to match the changes made in previous versions of the
+		 tutorial.</li>
+                 <li>Need to integrate the Module Installer wizard, no need to manually create
+                 one (plus automatic manifest.mf and project.xml change).</li>
+		 </ul>     	    
+      </td>
+  </tr>
+  
+  </tbody>
+  </table>
+  <p>Many thanks to Andrei Badea, Tom Ball, and Martin Adamek for help and inspiration.
+</body>
+</html>

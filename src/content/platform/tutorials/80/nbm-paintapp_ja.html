@@ -1,0 +1,754 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <!-- -*- xhtml -*- -->
+    <title>NetBeans プラットフォーム 6.8: NetBeans プラットフォームペイントアプリケーションのチュートリアル</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="AUDIENCE" content="NBUSER"/>
+    <meta name="TYPE" content="ARTICLE"/>
+    <meta name="EXPIRES" content="N"/>
+    <meta name="developer" content="gwielenga@netbeans.org"/>
+    <meta name="indexed" content="y"/>
+    <meta name="description"
+          content="A guide to creating a Paint application."/>
+   <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+<body>
+
+<h1>NetBeans プラットフォームペイントアプリケーションのチュートリアル</h1>
+
+<p>このチュートリアルでは、NetBeans プラットフォーム上でリッチクライアントアプリケーションを開発するための、NetBeans IDE の基本的な使用方法を学習します。NetBeans プラットフォーム上でアプリケーションを開発する場合は、NetBeans IDE のコア上で開発します。IDE に属するモジュールでアプリケーションに関係ないものはすべて除外されますが、役に立つものは保持されます。IDE のコアですでに利用できる機能を再利用することで、多くの時間と労力を節約できます。 </p>
+
+  <p><strong class="notes">注:</strong> このドキュメントでは NetBeans IDE 6.5 リリースを使用します。NetBeans IDE 6.0.x を使用している場合、<a href="60/nbm-paintapp_ja.html">このドキュメントの 6.0/6.1 バージョン</a>を参照してください。</p>
+   
+    <p><b>目次</b></p>
+   
+   <p><img src="../images/articles/69/netbeans-stamp7-8-9.png" class="stamp" width="114" height="114" alt="このページの内容は NetBeans IDE 6.5、6.7、および 6.8 が対象です" title="このページの内容は NetBeans IDE 6.5、6.7、および 6.8 が対象です" /></p>
+      <ul class="toc">
+     <li><a href="#intro">ペイントアプリケーションについて</a></li>
+     <li><a href="#setup">ペイントアプリケーションの設定</a>
+     <ul>
+         <li><a href="#creatingModuleSuite">アプリケーションスケルトンの作成</a></li>
+         <li><a href="#creatingLibWrapModule">ライブラリラッパーモジュールの作成</a></li>
+         <li><a href="#creatingModProj">モジュールの作成</a></li>
+         <li><a href="#specifyingModProjDep">モジュールの依存関係の指定</a></li>
+     </ul></li>
+     <li><a href="#impMod">ペイントキャンバスの作成と埋め込み</a>
+     <ul>
+         <li><a href="#creatingCanv">キャンバスの作成</a></li>
+         <li><a href="#prepTopComp">TopComponent クラスの準備</a></li>
+         <li><a href="#initTopComp">TopComponent クラスの初期化</a></li>
+         <li><a href="#fillSkelMeth">スケルトンメソッドの記入</a></li>
+         <li><a href="#savingImage">ディスクへの画像の保存</a></li>
+     </ul></li>
+     <li><a href="#defNew">「New Canvas」メニュー項目の作成</a></li>
+     <li><a href="#defSave">「Save Canvas」メニュー項目の作成</a></li>
+     <li><a href="#wrappingUp">最後の仕上げ</a></li>
+     <li><a href="#creatingDist">配布用の作成</a></li>
+       </ul>
+         
+<p><b>このチュートリアルを行うには、次の表に示すソフトウェアおよびリソースが必要です。</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                <th class="tblheader" scope="col">必須バージョン</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.7 以上</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">version 6 または<br/>version 5</td>
+            </tr>
+        </tbody>
+    </table>
+
+ <h2>ペイントアプリケーションについて</h2><p><a name="intro"></a></p>
+
+<p>このチュートリアルは、できるだけすばやく作業を進められるように作られています。NetBeans プラットフォームで簡単なアプリケーションを作成してインストールします。このアプリケーションを使用することによって、画面にペイントし、その結果を保存できます。</p>
+
+ <p><img src="../images/tutorials/paintapp/result-without-menus-60.png" alt="コンポーネントアプリケーションの画像" /></p>
+
+<p>この初期バージョンは決して本格的なペイントアプリケーションではありませんが、NetBeans プラットフォーム上でアプリケーションを作成する非常に簡単な例を紹介します。</p>
+
+<p><b class="notes">注:</b> リッチクライアントアプリケーションではなく、NetBeans モジュールについて学習する場合は、<a href="nbm-google_ja.html">NetBeans プラグインクイックスタート</a>のチュートリアルを参照してください。 </p>
+
+ <p>このチュートリアルでは、IDE に付属しているサンプルのアプリケーションを再作成します。最終的な成果物を確認するため、またはこのチュートリアルを作業する間に発生する問題をトラブルシューティングするために、次の場所にある「新規プロジェクト」ウィザードからサンプルを取得します。</p>
+  
+  <p><img src="../images/tutorials/paintapp/sample-in-new-project-60.png" alt="名前と場所パネル" /></p>
+
+ 
+ <h2>ペイントアプリケーションの設定</h2><p><a name="setup"/></p>
+
+<p>この節では、アプリケーションの構造を作成します。まず、ウィザードでアプリケーションスケルトンを作成する必要があります。アプリケーションはライブラリに依存するため、ライブラリの JAR ファイルを格納するライブラリラッパーモジュールも作成します。最後に、コードを格納するモジュールを作成します。</p>
+ 
+<div class="indent">
+    
+<p><a name="creatingModuleSuite"></a></p><h3 class="tutorial">アプリケーションスケルトンの作成</h3>
+
+<p>「NetBeans プラットフォームアプリケーション」テンプレートでアプリケーションのスケルトンを作成します。スケルトンは、アプリケーションの基礎を形成するために一緒になって機能する一連のモジュールで構成されます。「プロジェクトプロパティー」ダイアログを使用し、アプリケーションのスプラッシュ画面、アプリケーション名、および使用する NetBeans モジュールの種類と数の割り当てを行います。配布用 ZIP の作成や Java WebStart (JNLP) アプリケーションの構築などのアクションを利用することもできます。これらのアクションは、アプリケーションをほかのユーザーが利用できるようにするための重要なツールです。</p>
+
+<ol>
+	<li>「ファイル」&gt;「新規プロジェクト」を選択します。「カテゴリ」で「NetBeans モジュール」を選択します。プロジェクトで「NetBeans プラットフォームアプリケーション」を選択します。
+ <p><img src="../images/tutorials/paintapp/paintapp-proj-wiz.png" alt="プロジェクトテンプレート" /></p>
+ <p>「次へ」をクリックします。</p></li>
+	<li>「名前と場所」パネルで、「プロジェクト名」に「<tt>PaintApp</tt>」と入力します。「プロジェクトの場所」を使用コンピュータ上の任意のフォルダに変更します。「主プロジェクトとして設定」チェックボックスがすでに選択されていることを確認します。「完了」をクリックします。</li>
+
+      </ol>
+
+<p>新規アプリケーションスケルトンが IDE で開きます。「プロジェクト」ウィンドウには、2 つのノードが含まれています。1 つ目の「モジュール」ノードは、アプリケーションに、モジュールおよびライブラリラッパーモジュールを手動で追加するためのものです。また、「モジュール」ウィザードまたは「ライブラリラッパーモジュール」ウィザードを使用すると、作成するモジュールを自動的にアプリケーションに追加できます。</p>
+
+<h3 class="tutorial"><a name="creatingLibWrapModule"></a>ライブラリラッパーモジュールの作成</h3>
+
+<p>ライブラリラッパーモジュールは、JAR ファイルにコードが含まれないモジュールで、ライブラリへの単なるポインタです。これによってライブラリが NetBeans モジュールに変換されると、元の JAR ファイルを変更しなくても、NetBeans クラスローダーシステムのすべての保護が適用されます。その結果、アプリケーションは別の NetBeans モジュールに依存する場合と同じように、そのライブラリに依存することができます。また、このライブラリの新しいバージョンが利用できるようになった場合、ラッパーライブラリ用の NetBeans モジュール (NBM) ファイルを 1 つ配布するだけで、新しいバージョンの配布が可能になります。</p>
+
+<p><b class="notes">注:</b> NetBeans プラットフォーム上で構築を行う利点の 1 つは、ユーザーインタフェースが、Java の標準ユーザーインタフェースツールキットである Swing に基づいていることです。Swing  は長い間使用されてきたので、アプリケーションに再利用できる Swing コンポーネントが数多くあります。このチュートリアルでは、既存のカラーチューザ (ソースは <tt>contrib/coloreditor</tt> の下の NetBeans CVS 内にある) を再利用します。JAR ファイルは <tt>ColorChooser.jar</tt> という名前です。ライブラリは<a href="https://colorchooser.dev.java.net/">ここ</a>からダウンロードできます。それをファイルシステム内の任意の場所に保存します。 </p>
+
+ <p>次の手順に従って、<tt>ColorChooser.jar</tt> ファイルのためのライブラリラッパーモジュールを作成します。</p>
+
+  <ol>
+<li>「ファイル」&gt;「新規プロジェクト」を選択します。「カテゴリ」で「NetBeans モジュール」を選択します。プロジェクトで、「ライブラリラッパーモジュール」を選択し、「次へ」をクリックします。</li>
+      <li>「ライブラリを選択」パネルで、「ライブラリ」テキストボックスに <tt>ColorChooser.jar</tt> のパスを入力するか、その場所を参照します。</li>
+<li>「ライセンス」テキストフィールドは空のままにしておきます。最終成果物の配布を予定している場合は、外部ライブラリのライセンスファイルを含めるようにします。「次へ」をクリックします。</li>
+ <li>「名前と場所」パネルで「プロジェクト名」を入力し、「プロジェクトの場所」を設定します。次に、「モジュールスイートに追加」ドロップダウンに、モジュールがアプリケーションに追加されることが示されていることを確認します。「次へ」をクリックします。</li>
+ <li>「基本モジュール構成」パネルで、次のように「コード名ベース」に一意の名前を入力し、モジュール表示名とモジュールのローカライズ版バンドルの場所を指定します。
+
+<p><img src="../images/tutorials/paintapp/lib-wrap-1.png" alt="名前と場所パネル" /></p>
+
+<p>「完了」をクリックします。</p></li></ol>
+
+<p>選択した <tt>colorchooser.jar</tt> をラップするモジュールが IDE で作成されます。新しいモジュールの構造は、「プロジェクト」ウィンドウに表示されます。アプリケーションの構造にある「モジュール」ノードは、モジュールがアプリケーションの一部であることを示します。</p>
+
+<h3 class="tutorial"><a name="creatingModProj"></a>モジュールの作成</h3>
+ <p>ここでは、作成する実際のコードを含めるモジュールが必要になります。</p>
+     <ol>
+	<li>「ファイル」&gt;「新規プロジェクト」を選択します。「カテゴリ」で「NetBeans モジュール」を選択します。「プロジェクト」で「モジュール」を選択し、「次へ」をクリックします。</li>
+	<li>「名前と場所」パネルで、「プロジェクト名」に「<tt>Paint</tt>」と入力します。「プロジェクトの場所」を使用コンピュータ上の任意のフォルダに変更します。「モジュールスイートに追加」ラジオボタンが選択され、「モジュールスイート」ドロップダウンリストで <tt>PaintApp</tt> アプリケーションが選択されていることを確認します。「主プロジェクトとして設定」チェックボックスを選択します。「次へ」をクリックします。</li>
+
+ <li>「基本モジュール構成」パネルで、「<tt>org.netbeans.paint</tt>」と入力します。「モジュール表示名」は <tt>Paint</tt> のままにしておきます。「ローカライズ版バンドル」の場所はそのままにします。「XML レイヤーを生成」を選択し、提案された場所を変更しないと、ローカライズ版バンドルと XML レイヤーファイルは <tt>org.netbeans.paint</tt> という名前のパッケージに格納されます。 
+ <p>これらのファイルには、次の役割があります。</p>
+ <ul>
+ <li><b>ローカライズ版バンドル。</b>国際化のための言語固有の文字列を指定します。</li>
+ <li><b>XML レイヤー。</b>NeｔBeans プラットフォームアプリケーションにメニューやツールバーボタンなどの項目を登録します。 
+</li>
+ </ul>
+
+
+<p>「完了」をクリックします。</p></li></ol>
+
+<p> IDE によって <tt>Paint</tt> プロジェクトが作成されます。このプロジェクトには、ソースや、プロジェクトの Ant 構築スクリプトなどのプロジェクトメタデータがすべて含まれます。IDE でプロジェクトが開きます。「プロジェクト」ウィンドウ (Ctrl-1) で、プロジェクトの論理構造を表示できます。また、「ファイル」ウィンドウ (Ctrl-2) で、プロジェクトのファイル構造を表示できます。たとえば、「プロジェクト」ウィンドウは次のように表示されます。</p>
+
+<p><img src="../images/tutorials/paintapp/paintapp-start-1.png" alt="ペイントアプリケーション" /></p>
+
+
+<p>プロジェクトには、ローカライズ版バンドルおよび XML レイヤーのほかに、次の重要なファイルも含まれます。</p>
+ <ul>
+ <li><b>モジュールのマニフェスト。</b>プロジェクトがモジュールであることを宣言します。また、XML レイヤーの場所、ローカライズ版バンドルの場所、モジュールのバージョンなどの、モジュール固有の設定も行います。</li>
+ <li><b>構築スクリプト。</b><tt>nbproject/build-impl.xml</tt> 内の指定よりも優先される、独自の Ant ターゲットをここに作成できます。</li>
+ <li><b>プロジェクトメタデータ。</b>プロジェクトの種類、内容、プラットフォーム、クラスパス、依存関係、プロジェクトのコマンドと Ant スクリプト内のターゲットのマッピングなどの情報が含まれます。</li>
+
+</ul>
+<p>このチュートリアルでは、これらの情報を変更する必要はありません。</p>
+
+
+
+<h3 class="tutorial"><a name="specifyingModProjDep"></a>モジュールの依存関係の指定</h3>
+
+
+
+<p><a href="http://bits.netbeans.org/dev/javadoc/index.html">NetBeans API</a> に属するいくつかのクラスをサブクラス化する必要があります。また、そのプロジェクトは <tt>ColorChooser.jar</tt> ファイルに依存します。すべての NetBeans API はモジュールによって実装されます。そのため、これらの作業の両方を完成することは、モジュールの実行に必要なモジュールの一覧にいくつかのモジュールを追加することを意味します。</p>
+
+  <ol>
+	  <li>「プロジェクト」ウィンドウで、<tt>Paint</tt> プロジェクトノードを右クリックし、「プロパティー」を選択します。「プロジェクトプロパティー」ダイアログが開きます。「カテゴリ」で「ライブラリ」をクリックします。</li>
+	
+ <li>次の表に表示されている API のそれぞれについて、「依存関係を追加...」をクリックし、「フィルタ」テキストボックスにサブクラス化するクラスの名前の入力を開始します。
+ 
+ <table width="76%" border="1">
+ <tbody>
+   <tr>
+ <td>
+	<div><b>クラス</b></div>
+      </td>
+      <td>
+        <div><b>API</b></div>
+      </td>
+     
+      <td>
+	<div><b>目的</b></div>
+      </td>
+  </tr>
+    <tr>
+<td><tt>ColorChooser</tt></td>
+		<td><tt>ColorChooser</tt></td>
+
+                <td>作成したカラーチューザコンポーネントのライブラリラッパーモジュール</td>
+            </tr>
+            <tr>
+<td><tt>DataObject</tt></td>
+		<td><tt>データシステム API</tt></td>
+
+                <td>DataObject クラスを含む NetBeans モジュール</td>
+            </tr>
+            <tr>
+<td><tt>DialogDisplayer</tt></td>
+		<td><tt>ダイアログ API</tt></td>
+ 
+                <td>ユーザー通知の作成、ダイアログの説明、およびその表示を可能にします</td>
+            </tr>
+            <tr>
+ <td><tt>AbstractFile</tt></td>
+		<td><tt>ファイルシステム API</tt></td>
+
+                <td>一定の方法でファイルにアクセスする共通の API を提供します</td>
+            </tr>
+            <tr>
+<td><tt>AbstractNode</tt></td>
+		<td><tt>ノード API</tt></td>
+
+                <td>NetBeans 内のオブジェクトを視覚化する主機構として機能します</td>
+            </tr>
+            <tr>
+<td><tt>StatusDisplayer</tt></td>
+		<td><tt>UI ユーティリティー API</tt></td>
+
+                <td>メインウィンドウのステータスバーの作成に使用される StatusDisplayer クラス</td>
+            </tr>
+            <tr>
+<td><tt>WeakListeners</tt></td>
+		<td><tt>ユーティリティー API</tt></td>
+
+                <td>WeakListeners クラスを含みます</td>
+            </tr>
+            <tr>
+<td><tt>TopComponent</tt></td>
+		<td><tt>ウィンドウシステム API</tt></td>
+
+                <td>TopComponent JPanel クラスを含みます</td>
+            </tr>
+  
+  </tbody>
+</table>
+ 
+ <p>上記の表の最初の列には、このチュートリアルでサブクラス化するすべてのクラスが一覧表示されています。それぞれについて、「フィルタ」にクラス名を入力し始めると、「モジュール」リストの表示が絞り込まれます。表の 2 番目の列を使用して、絞り込まれた「モジュール」リストから適切な API (または <tt>ColorChooser</tt> の場合はライブラリ) を選択し、「了解」をクリックして選択を確認します。</p>
+
+<p><img src="../images/tutorials/paintapp/libfilter-60.png" alt="initial-proj-window" /></p>
+</li>
+<li>「了解」をクリックして、「プロジェクトプロパティー」ダイアログを終了します。</li>
+<li>「プロジェクト」ウィンドウで、Paint モジュールのプロジェクトノードが展開されていない場合は展開します。次に「重要なファイル」ノードを展開し、「プロジェクトメタデータ」ノードをダブルクリックします。選択した API はモジュールの依存関係として宣言されています。</li>
+
+
+    </ol>
+    </div>
+    <h2><a name="impMod"></a>ペイントキャンバスの作成と埋め込み</h2> 
+       
+
+ <div class="indent">
+   <h3 class="tutorial"><a name="creatingCanv"></a>キャンバスの作成</h3>
+    <p>次の手順では、ユーザーがペイントする実際のコンポーネントを作成します。ここでは、純粋な Swing コンポーネントを使用するため、その実装の詳細は省略し、最終バージョンのみを提供します。ライブラリラッパーモジュールを作成したカラーチューザ Bean が、このパネルのソースコードに使用されます。完成したアプリケーションを実行すると、画像編集用パネルのツールバーでこのカラーチューザ Bean を確認できます。</p>
+    <ol>
+	<li>「プロジェクト」ウィンドウで、「<tt>Paint</tt>」ノード、「ソースパッケージ」ノードを順に展開し、「<tt>org.netbeans.paint</tt>」ノードを右クリックします。「新規」&gt;「Java クラス」を選択します。</li>
+	<li>クラス名として「<tt>PaintCanvas</tt>」と入力します。パッケージの一覧に <tt>org.netbeans.paint</tt> があることを確認します。「完了」をクリックします。ソースエディタに <tt>PaintCanvas.java</tt> が表示されます。</li>
+	<li>このファイルのデフォルトの内容を<a href="https://platform.netbeans.org/guide/tutorials/paintTutorial/PaintCanvas.java">ここ</a>に示す内容で置き換えます。パッケージに <tt>org.netbeans.paint</tt> 以外の名前を付けた場合は、ソースエディタでパッケージ名を修正します。</li> 
+    </ol>
+  
+    <h3 class="tutorial"><a name="prepTopComp"></a>TopComponent クラスの準備</h3>
+
+<p>ここでは、<a href="http://bits.netbeans.org/dev/javadoc/index.html">NetBeans API</a> を利用する最初のクラスを作成します。それは <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/org/openide/windows/TopComponent.html">TopComponent</a></tt> クラスです。<tt>TopComponent</tt> クラスは、NetBeans のウィンドウシステムで操作可能な <tt>JPanel</tt> クラスであり、メインウィンドウのタブ付きコンテナ内に配置できます。</p>
+
+ <ol>
+		<li>「プロジェクト」ウィンドウで、「<tt>Paint</tt>」ノード、「ソースパッケージ」ノードを順に展開し、「<tt>org.netbeans.paint</tt>」ノードを右クリックします。「新規」&gt;「Java クラス」を選択します。クラス名として「<tt>PaintTopComponent</tt>」と入力します。パッケージの一覧に <tt>org.netbeans.paint</tt> があることを確認します。「完了」をクリックします。ソースエディタに <tt>PaintTopComponent.java</tt> が表示されます。</li>
+        <li>ファイルの最上部近くにあるクラス宣言を次のように変更します。
+            <pre class="examplecode">public class PaintTopComponent extends TopComponent implements ActionListener, ChangeListener {</pre></li>
+        <li>Ctrl-Shift-I キーを押してインポートを修正し、ダイアログで「了解」をクリックします。このファイルの最上部にある、必要なインポートパッケージの宣言は IDE によって行われます。
+	<p>入力したクラス宣言の下に赤い線が表示されます。その行にカーソルを置くと、左側の余白に電球が表示されます。次に示すように、電球をクリックするか、Alt-Enter キーを押します。</p>
+
+<p><img src="../images/tutorials/paintapp/lightbulb-60.png" alt="電球。" /></p>
+
+「すべての抽象メソッドの実装」を選択します。IDE によって、2 つのメソッド <tt>actionPerformed()</tt> と <tt>stateChanged()</tt> のスケルトンが生成されます。このチュートリアルでは、あとでこれらの記述を行います。</li>
+	<li>次の 3 つの変数の宣言を <tt>PaintTopComponent</tt> クラスの最上部に追加し、インポート文を修正します (Ctrl-Shift-I)。
+        <pre class="examplecode">    private PaintCanvas canvas = new PaintCanvas(); //ユーザーが描画するコンポーネント
+    private JComponent preview; //ペイントブラシサイズを示すツールバーのコンポーネント
+    private static int ct = 0; //新しい画像の名前を用意するために使用するカウンタ</pre></li>
+        <li>今度は、2 つのボイラープレートメソッドを実装する必要があります。1 つはアプリケーションの停止時に、開いているウィンドウを無視するようにウィンドウシステムに指示するものです。もう 1 つは、コンポーネントの一意の文字列 ID 用のベース文字列を提供するものです。各 <tt>TopComponent</tt> には、<tt>TopComponent</tt> を保存するときに使用される一意の文字列 ID があります。次の 2 つのメソッドを <tt>PaintTopComponent</tt> クラスに挿入します。
+<pre class="examplecode">    @Override
+    public int getPersistenceType() {
+        return PERSISTENCE_NEVER;
+    }
+
+    @Override
+    public String preferredID() {
+        return &quot;Image&quot;;
+    }</pre></li>
+    </ol>
+
+    <p>クラスは次のようになります。</p>
+
+<pre class="examplecode">public class PaintTopComponent extends TopComponent implements ActionListener, ChangeListener {
+    
+    private PaintCanvas canvas = new PaintCanvas(); //ユーザーが描画するコンポーネント
+    private JComponent preview; //ペイントブラシサイズを示すツールバーのコンポーネント
+    private static int ct = 0; //新しい画像の名前を用意するために使用するカウンタ
+    
+    public PaintTopComponent() {
+    }
+    
+    @Override
+    public void actionPerformed(ActionEvent arg0) {
+        throw new UnsupportedOperationException(&quot;Not supported yet.&quot;);
+    }
+    
+    @Override
+    public void stateChanged(ChangeEvent arg0) {
+        throw new UnsupportedOperationException(&quot;Not supported yet.&quot;);
+    }
+    
+    @Override
+    public int getPersistenceType() {
+        return PERSISTENCE_NEVER;
+    }
+    
+    @Override
+    public String preferredID() {
+        return &quot;Image&quot;;
+    }
+    
+}</pre>
+        
+    <h3 class="tutorial"><a name="initTopComp"></a>TopComponent クラスの初期化</h3>
+  
+<p>この節では、ユーザーインタフェースを初期化するコードを追加します。</p>
+ 
+<ol>
+    <li>コンストラクタを定義し、次のインポート文を修正します (Ctrl-Shift-I)。
+       
+<pre class="examplecode">    public PaintTopComponent() {
+
+        initComponents();
+
+        String displayName = NbBundle.getMessage(
+                PaintTopComponent.class,
+                &quot;UnsavedImageNameFormat&quot;,
+                new Object[] { new Integer(ct++) }
+        );
+
+        setDisplayName(displayName);
+
+    }</pre>
+
+<p>このコードは非常に簡潔です。最初の呼び出しは、まだ作成されていない <tt>initComponents()</tt> メソッドに対するものです。このメソッドは、ツールバーおよび PaintCanvas を <tt>TopComponent</tt> に追加します。このメソッドはまだ作成されていないので、その下に赤い線が表示されています。前と同じように電球をクリックするか Alt-Enter キーを押して、提案を受け入れます。</p>
+
+        <p><img src="../images/tutorials/paintapp/lightbulb-initcomponents-60.png" alt="電球。" /></p>
+
+        <p><tt>initComponents()</tt> メソッドのスケルトンが生成されます。</p></li>
+
+
+	<li>「プロジェクト」ウィンドウで <tt>org.netbeans.paint</tt> パッケージを展開します。<tt>Bundle.properties</tt> ファイルをダブルクリックして、ソースエディタで開きます。最後の部分に、次の行を追加します。 
+    <pre class="examplecode">    UnsavedImageNameFormat=Image {0}</pre>
+<p>これは、アプリケーションの新しい画像ファイルを、ユーザーが保存する前に識別するために使用されるテキストを指定します。たとえば、完成したアプリケーションではじめて「New Canvas」をクリックすると、ソースエディタ上に「Image 0」というラベルのタブが表示されます。次に進む前に、このファイルを必ず保存します。</p>
+</li></ol>
+
+
+<h3 class="tutorial"><a name="fillSkelMeth"></a>スケルトンメソッドの記入</h3>
+
+<p>この節では、アプリケーションのユーザーインタフェースをコーディングします。レイアウトを視覚的にデザインするために、IDE の GUI ビルダーを使用することもできます。</p>
+
+   <ol>
+
+<li><tt>initComponents()</tt> メソッドでコンポーネントをパネルにインストールすると、ユーザーが対話できます。<tt>PaintTopComponent.java</tt> クラスの前の節で、そのスケルトンメソッドを作成しました。そこに、次のように記述します。
+
+<pre class="examplecode">    private void initComponents() {
+
+        setLayout(new BorderLayout());
+        JToolBar bar = new JToolBar();
+
+        ColorChooser fg = new ColorChooser();
+        preview = canvas.createBrushSizeView();
+
+        //ツールバーを構築
+
+        //コンポーネントがつぶれないようにする
+        Dimension min = new Dimension(32, 32);
+        preview.setMaximumSize(min);
+        fg.setPreferredSize(new Dimension(16, 16));
+        fg.setMinimumSize(min);
+        fg.setMaximumSize(min);
+
+        JButton clear = new JButton(
+          	    NbBundle.getMessage(PaintTopComponent.class, &quot;LBL_Clear&quot;));
+
+        JLabel fore = new JLabel(
+         	    NbBundle.getMessage(PaintTopComponent.class, &quot;LBL_Foreground&quot;));
+
+        fg.addActionListener(this);
+        clear.addActionListener(this);
+
+        JSlider js = new JSlider();
+        js.setMinimum(1);
+        js.setMaximum(24);
+        js.setValue(canvas.getDiam());
+        js.addChangeListener(this);
+
+        fg.setColor(canvas.getColor());
+
+        bar.add(clear);
+        bar.add(fore);
+        bar.add(fg);
+        JLabel bsize = new JLabel(
+     	    NbBundle.getMessage(PaintTopComponent.class, &quot;LBL_BrushSize&quot;));
+
+        bar.add(bsize);
+        bar.add(js);
+        bar.add(preview);
+
+        JLabel spacer = new JLabel(&quot;   &quot;); //ブラシプレビューが
+        //ツールバーの端まで広がらない
+        //ようにするスペーサ
+
+        spacer.setPreferredSize(new Dimension(400, 24));
+        bar.add(spacer);
+
+        //ツールバーおよび描画処理コンポーネントを配置
+        add(bar, BorderLayout.NORTH);
+        add(canvas, BorderLayout.CENTER);
+        
+    }</pre>
+    <p>Ctrl-Shift-I キーを押して、必要なインポート文を生成します。 </p></li>
+
+<li>生成したほかの 2 つのメソッドにも記述します。これらのメソッドは、<tt>PaintTopComponent</tt> クラスの監視に使用されます。 
+<pre class="examplecode">    public void actionPerformed(ActionEvent e) {
+
+        if (e.getSource() instanceof JButton) {
+           canvas.clear();
+        } else if (e.getSource() instanceof ColorChooser) {
+           ColorChooser cc = (ColorChooser) e.getSource();
+           canvas.setPaint (cc.getColor());
+        }
+        
+        preview.paintImmediately(0, 0, preview.getWidth(), preview.getHeight());
+        
+    }</pre>
+
+<pre class="examplecode">    public void stateChanged(ChangeEvent e) {
+
+        JSlider js = (JSlider) e.getSource();
+        canvas.setDiam (js.getValue());
+        preview.paintImmediately(0, 0, preview.getWidth(), preview.getHeight());
+        
+    }</pre>
+</li>
+        <li><tt>Bundle.properties</tt> ファイルの最後に、次のキーと値のペアを追加します。
+<pre class="examplecode">
+    LBL_Clear = Clear
+    LBL_Foreground = Foreground 
+    LBL_BrushSize = Brush Size
+</pre>
+            <p>次に進む前に、このファイルを必ず保存します。</p>
+
+</li>
+</ol>
+    
+<h3 class="tutorial"><a name="savingImage"></a>ディスクへの画像の保存</h3>
+
+<p>新しいアプリケーションで、作成した画像を保存できるようにします。次のコードを <tt>PaintTopComponent</tt> クラスに含めると、この機能が有効になります。</p>
+
+ <ol>
+    <li>次のコードを <tt>PaintTopComponent</tt> クラスに挿入します。
+
+<pre class="examplecode">    public void save() throws IOException {
+
+        if (getDisplayName().endsWith(&quot;.png&quot;)) {
+	    doSave(new File(getDisplayName()));
+        } else {
+	    saveAs();
+        }
+        
+    }
+
+    public void saveAs() throws IOException {
+
+        JFileChooser ch = new JFileChooser();
+        if (ch.showSaveDialog(this) == JFileChooser.APPROVE_OPTION &amp;&amp; ch.getSelectedFile() != null) {
+
+	    File f = ch.getSelectedFile();
+            
+	    if (!f.getPath().endsWith(&quot;.png&quot;)) {
+	        f = new File(f.getPath() + &quot;.png&quot;);
+	    }
+            
+	    if (!f.exists()) {
+            
+	        if (!f.createNewFile()) {
+		    String failMsg = NbBundle.getMessage(
+		             PaintTopComponent.class,
+			    &quot;MSG_SaveFailed&quot;, new Object[] { f.getPath() }
+	            );
+		    JOptionPane.showMessageDialog(this, failMsg);
+		    return;
+	        }
+                
+	    } else {
+	        String overwriteMsg = NbBundle.getMessage(
+		    PaintTopComponent.class,
+                    &quot;MSG_Overwrite&quot;, new Object[] { f.getPath() }
+	        );
+                
+	        if (JOptionPane.showConfirmDialog(this, overwriteMsg)
+	        != JOptionPane.OK_OPTION) {
+		    return;
+	        }
+                
+	    }
+            
+	    doSave(f);
+            
+        }
+        
+    }
+
+    private void doSave(File f) throws IOException {
+
+        BufferedImage img = canvas.getImage();
+        ImageIO.write(img, &quot;png&quot;, f);
+        String statusMsg = NbBundle.getMessage(PaintTopComponent.class,
+            &quot;MSG_Saved&quot;, new Object[] { f.getPath() });
+        StatusDisplayer.getDefault().setStatusText(statusMsg);
+        setDisplayName(f.getName());
+        
+    }</pre></li>
+
+    <li><tt>Bundle.properties</tt> ファイルに次の行を追加します。
+<pre class="examplecode">    MSG_SaveFailed = Could not write to file {0}
+    MSG_Overwrite = {0} exists.  Overwrite?
+    MSG_Saved = Saved image to {0}</pre>
+
+<p>次に進む前に、このファイルを必ず保存します。</p>
+
+</li>
+
+    <li>Ctrl-Shift-I キーを押して、インポート文を修正します。<tt>File</tt> クラスに 2 つの完全修飾名があることがわかります。<tt>java.io.File</tt> オプションを選択します。</li>
+</ol>
+
+</div>
+<h2><a name="defNew"></a>「New Canvas」メニュー項目の作成</h2>
+
+<p>「モジュールの開発」ファイルテンプレートを使用して、モジュールの機能の基礎を作成します。ファイルテンプレートを使用すると、IDE は作成した項目を <tt>layer.xml</tt> ファイルに登録します。ファイルテンプレートを作成するウィザードを使用したあと、<a href="https://netbeans.org/download/dev/javadoc/">NetBeans API</a> を使用してモジュールの開発を継続します。</p>
+
+      <ol>
+	<li>「プロジェクト」ウィンドウで Paint モジュールのプロジェクトノードを右クリックし、「新規」&gt;「その他」を選択します。「新規ファイル」ウィザードで、「カテゴリ」から「モジュールの開発」を選択し、「ファイルの種類」から「アクション」を選択します。「次へ」をクリックします。</li>
+
+          <li>「アクションの種類」パネルで、デフォルトを受け入れます。「次へ」をクリックします。</li>
+<li>「GUI 登録」パネルで、「大域メニュー項目」と「大域ツールバーボタン」を選択します。次の値を設定します。
+<ul><li><b>カテゴリ:</b> 編集</li>
+<li><b>メニュー:</b> ファイル</li>
+<li><b>位置:</b> 任意の場所 </li>
+<li><b>ツールバー:</b> ファイル</li>
+<li><b>位置:</b> 任意の場所 </li>
+</ul>
+ <p><b class="notes">注:</b> ファイルのメニュー内およびファイルのツールバー内であれば、アクションはどこに置いてもかまいません。</p>
+ <p>画面は次のようになります。</p>
+ <p><img src="../images/tutorials/paintapp/newcanvasaction-60.png" alt="「GUI 登録」パネル。" /></p>
+
+<p>「次へ」をクリックします。</p></li>
+<li>「名前、アイコン、および場所」パネルで、「クラス名」に「<tt>NewCanvasAction</tt>」、「表示名」に「<tt>New Canvas</tt>」と入力します。 
+
+<p>「アイコン」で、アイコン <img src="../images/tutorials/paintapp/new_icon.png" alt="新規キャンバスのアイコン。" /> を参照します (右クリックして <tt>org.netbeans.paint</tt> フォルダに保存)。</p></li>
+
+  <li><p>「完了」をクリックします。</p>
+
+<p>IDE によって <tt>org.netbeans.paint</tt> に <tt>NewCanvasAction.java</tt> が作成され、ソースエディタに表示されます。次が表示されます。</p>
+
+<pre class="examplecode">/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package org.netbeans.paint;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public final class NewCanvasAction implements ActionListener {
+
+    public void actionPerformed(ActionEvent e) {
+        // TODO implement action body
+    }
+    
+}</pre>
+
+
+
+<p>「GUI 登録」パネルで指定したように、アクションのクラスが IDE によってメニュー項目およびツールバーボタンとして、アイコンおよび表示名に関する情報とともに <tt>layer.xml</tt> ファイルに登録されます。</p></li>
+
+
+<li>ソースエディタで <tt>NewCanvasAction.java</tt> を開き、<tt>actionPerformed()</tt> メソッドに次のように記述します。
+ 
+
+<pre class="examplecode">    public void actionPerformed(ActionEvent e) {
+        PaintTopComponent tc = new PaintTopComponent();
+        tc.open();
+        tc.requestActive();       
+    }</pre>
+   <p>これを実行すると、単純に画像編集コンポーネントの新しいインスタンスが作成され、メインウィンドウに表示されます。さらに、キーボードフォーカスが移動されてそのタブが選択され、有効化されます。</p></li>
+  </ol>
+
+  <h2 class="tutorial"><a name="defSave"></a>「Save Canvas」メニュー項目の作成</h2>
+
+  <p>前の節では「新規アクション」ウィザードを使用してメニュー項目を作成しました。ここでは画像を保存します。</p>
+   
+ <ol>
+	<li>「プロジェクト」ウィンドウで Paint モジュールのプロジェクトノードを右クリックし、「新規」&gt;「その他」を選択します。「新規ファイル」ウィザードで、「カテゴリ」から「モジュールの開発」を選択し、「ファイルの種類」から「アクション」を選択します。「次へ」をクリックします。</li>
+
+<li>「アクションの種類」パネルで、デフォルトを受け入れます。「次へ」をクリックします。</li>
+<li>「GUI 登録」パネルで、「大域メニュー項目」と「大域ツールバーボタン」を選択します。次の値を設定します。
+
+ <ul><li><b>カテゴリ:</b> 編集</li>
+<li><b>メニュー:</b> ファイル</li>
+<li><b>位置:</b> 任意の場所 </li>
+<li><b>ツールバー:</b> ファイル</li>
+<li><b>位置:</b> 任意の場所</li>
+</ul>
+<p><b class="notes">注:</b> ファイルのメニュー内およびファイルのツールバー内であれば、アクションはどこに置いてもかまいません。</p>
+
+
+「次へ」をクリックします。</li>
+<li>「名前、アイコン、および場所」パネルで、「クラス名」に「<tt>SaveCanvasAction</tt>」、「表示名」に「<tt>Save Canvas</tt>」と入力します。
+
+<p>「アイコン」に、このアイコンをペーストします (ここを右クリックして <tt>org.netbeans.paint</tt> フォルダに保存)。</p>
+    <img src="../images/tutorials/paintapp/save_icon.png" alt="「Save Canvas」アイコン。" /></li>
+
+  <li>「完了」をクリックします。
+
+<p>IDE によって <tt>org.netbeans.paint</tt> に <tt>SaveCanvasAction.java</tt> が作成され、ソースエディタに表示されます。 </p></li>
+ 
+ <li><tt>CallableSystemAction</tt> が拡張され、<tt>PropertyChangeListener</tt> が実装されるように、クラスの署名を変更します。
+  
+  <pre class="examplecode">public final class SaveCanvasAction extends CallableSystemAction implements PropertyChangeListener</pre></li>
+
+<li>ソースエディタで、<tt>SaveCanvasAction.java</tt> が開いていることを確認し、<tt>actionPerformed()</tt> メソッドに次のように記述します。
+
+<pre class="examplecode">    @Override
+    public void actionPerformed(ActionEvent e) {
+        TopComponent tc = TopComponent.getRegistry().getActivated();
+
+        if (tc instanceof PaintTopComponent) {
+
+            try {
+                ((PaintTopComponent) tc).saveAs();
+            } catch (IOException ioe) {
+                ErrorManager.getDefault().notify(ioe);
+            }
+
+        } else {
+
+            //メニュー項目またはツールバーボタンを押してから
+            //アクションが呼び出されるまでの間に、アクティブな
+            //コンポーネントは変わることがある。可能性は低いが、
+            //理論上は可能
+            Toolkit.getDefaultToolkit().beep();
+            
+        }               
+        
+    }</pre>
+    <p>Ctrl-Shift-I キーを押して、必要なインポート文を生成します。 </p>
+  <img src="../images/tutorials/paintapp/fiximports-60.png" alt="インポートを修正。" /></li>
+
+<li><tt>CallableSystemAction</tt> クラスで次のようにメソッドを記述します。
+
+<pre class="examplecode">    @Override
+    public String getName() {
+        return &quot;Save Canvas&quot;;
+    }
+
+    @Override
+    public HelpCtx getHelpCtx() {
+        return null;
+    }
+</pre>   </li>
+
+<li><tt>PropertyChangeListener</tt> で次のように <tt>propertyChange()</tt> メソッドを記述します。
+
+<pre class="examplecode">    @Override    
+    public void propertyChange(PropertyChangeEvent evt) {
+
+        if (TopComponent.Registry.PROP_ACTIVATED.equals(evt.getPropertyName())){
+	    updateEnablement();
+        }
+        
+    }</pre>
+        
+    <p>赤い線が表示されたら、Alt-Enter キーを押して、IDE が <tt>SaveCanvasAction</tt> クラスに <tt>updateEnablement()</tt> メソッドを作成できるようにします。</p></li>
+
+<li>次に、<tt>updateEnablement()</tt> メソッドを次のように定義します。
+
+<pre class="examplecode">    private void updateEnablement() {
+
+        setEnabled(TopComponent.getRegistry().getActivated()
+        instanceof PaintTopComponent);
+
+    }</pre></li>
+
+<li>最後に、コンストラクタを次のように定義します。
+
+<pre class="examplecode">    public SaveCanvasAction() {  
+
+        TopComponent.getRegistry().addPropertyChangeListener (
+	    WeakListeners.propertyChange(this,
+	    TopComponent.getRegistry()));
+       
+        updateEnablement();
+        
+    }</pre>
+    
+    <p>赤い線が表示されたら、Alt-Enter キーを押して、IDE が <tt>org.openide.util.WeakListeners</tt> をインポートできるようにします。</p>
+
+<p>特に興味深いのは、プロパティー変更リスナーを追加するコードです。<tt>TopComponent.Registry</tt> は、システムで開かれているすべての <tt>TopComponents</tt> のレジストリ、つまり開かれているすべてのタブのレジストリです。ここで行いたいことは、その変更の待機と、フォーカスのある対象に応じた、アクションの有効化または無効化です。</p>
+
+<b class="notes">注:</b> プロパティー変更リスナーを直接接続するのではなく、<tt>WeakListeners.propertyChange()</tt> を呼び出します。これを実行すると、アクションを弱参照するプロパティー変更リスナーが生成されます。実際には、アプリケーションが開かれているかぎりこのアクションは存続します。リスナーを接続していて、切り離すコードが存在しない場合は、弱参照リスナーを使用するほうが良く、また将来の保証があります。そうでない場合、メモリーリークが発生する可能性があります。レジストリがリスナーのリスト内にアクションの参照を保持しているため、アクションに対するガベージコレクションが行われません。
+ </li>
+  </ol>
+
+  <p>「プロジェクト」ウィンドウには、次のように表示されます。</p>
+
+  <p><img src="../images/tutorials/paintapp/final-paint-module.png" alt="「プロジェクト」ウィンドウの最終ビュー" /></p>
+
+ <h2><a name="wrappingUp"></a>最後の仕上げ</h2>
+ <p>もちろん、作成するのはよく微調整されたアプリケーションです。そのために実行できる最終手順がいくつかあります。まず、アプリケーション用のスプラッシュ画面を作成し、配布用 ZIP および JNLP アプリケーションを作成します。</p>
+
+<ol>
+	<li><tt>PaintApp</tt> プロジェクトを実行します。アプリケーションが起動したら、メイン画面のサイズをかなり小さくして、スプラッシュ画面を描画します。「保存」ボタンを使用して、スプラッシュ画面を保存します。 </li>
+    <li>元のプロジェクトで、<tt>PaintApp</tt> ノードを右クリックして「プロパティー」を選択し、「プロジェクトプロパティー」ダイアログで「構築」をクリックします。</li> 
+
+    <li>「スタンドアロンアプリケーションを作成」を選択します。「ブランド名」(IDE によって生成される起動ツール名になる) および「アプリケーションタイトル」(アプリケーションのタイトルバーに表示される) を指定できます。デフォルトでは、次のように表示されます。
+
+<p><img src="../images/tutorials/paintapp/splashscreen1-60.png" alt="スプラッシュ画面" /></p></li>
+     
+       <li>「スプラッシュ画面」をクリックします。スプラッシュ画面を参照します。スプラッシュ画面がない場合は、<a href="https://platform.netbeans.org/images/tutorials/paintapp/splash.gif">これ</a>を使用できます。「了解」をクリックし、アプリケーションに接続します。
+<p><img src="../images/tutorials/paintapp/splashscreen-60.png" alt="スプラッシュ画面" /></p></li>
+
+<li>Paint モジュールの <tt>layer.xml</tt> ファイルで、「メニュー」フォルダ内の次のタグを追加します。これらのタグによって、Paint アプリケーションには不要な「移動」および「表示」のメニューが削除されます。
+
+ <pre class="examplecode">&lt;file name=&quot;GoTo_hidden&quot;/&gt;
+&lt;file name=&quot;View_hidden&quot;/&gt;</pre>
+
+<p>また、前述のタグを手動で追加する代わりに、<tt>layer.xml</tt> ファイルの「<tt>&lt;コンテキスト内のこのレイヤー&gt;</tt>」ノード内にあるフォルダを削除できます。これを行うには、「<tt>&lt;コンテキスト内のこのレイヤー&gt;</tt>」を展開し、「メニューバー」ノードを展開します。「移動」および「表示」ノードの右クリックメニューから「削除」を選択します。</p></li>
+
+<li>最後に、もう一度アプリケーションを実行し、スプラッシュ画面を確認します。アプリケーションが起動したら、タイトルバーに指定したタイトルが表示されていることを確認します。また、次のように、メニュー項目、ツールバーボタン、およびその他の機能も少なくなっています。<img src="../images/tutorials/paintapp/result-without-menus-60.png" alt="メニューのない結果" />
+</li>
+</ol>
+
+<h2 class="tutorial"><a name="creatingDist"/>配布用の作成</h2>
+ 
+<p>
+ここで、配布用メディアを選択します。<tt>PaintApp</tt> ノードを右クリックして「配布用 ZIP を作成」を選択し、必要なモジュールとファイルをすべて含むアプリケーション全体を zip ファイルとしてパッケージ化します。また、「JNLP アプリケーションを構築」を選択し、Web サーバーに配置して Web ページから直接リンクできる、アプリケーションの JavaWebStart バージョンを作成することもできます。これには正しい URL を設定する必要があります。生成された記述子は file: プロトコルを使用するため、ローカルで Web から起動できる配布版をテストできます。</p>
+   
+   
+<p>以上でチュートリアルは終了です。NetBeans プラットフォーム上に構築されたペイントアプリケーションが完成しました。次は、<a href="https://platform.netbeans.org/tutorials/nbm-feedreader.html">NetBeans プラットフォームフィードリーダーのチュートリアル</a>です。</p>
+
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback: NetBeans Platform Paint Application Tutorial">ご意見をお寄せください</a></div>
+
+</body>
+</html>

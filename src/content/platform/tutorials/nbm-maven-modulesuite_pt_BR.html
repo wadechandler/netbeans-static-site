@@ -1,0 +1,589 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Trabalhando com o su&iacute;te de m&oacute;dulo NetBeans utilizando o Maven</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="AUDIENCE" content="NBUSER"/>
+    <meta name="TYPE" content="ARTICLE"/>
+    <meta name="EXPIRES" content="N"/>
+    <meta name="indexed" content="y"/>
+    <meta name="description" content="A short demonstration of how to use Maven to create and run a NetBeans Platform Module Suite."/>
+    <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+<body>
+
+    <h1>Trabalhando com o su&iacute;te de m&oacute;dulos NetBeans utilizando o Maven</h1>
+
+    <p>Este documento demonstra como criar uma su&iacute;te de m&oacute;dulos da plataforma NetBeans de um arquetipo Maven e como construir e instalar a su&iacute;te em sua instala&ccedil;&atilde;o do IDE. Neste tutorial, ser&aacute; poss&iacute;vel criar um projeto de su&iacute;te de m&oacute;dulos que cont&eacute;m tr&ecirc;s m&oacute;dulos NetBeans como subprojetos. O projeto Maven que cont&eacute;m os subprojetos &eacute; um projeto POM simples que declara como o su&iacute;te &eacute; compilado no destino da instala&ccedil;&atilde;o.
+
+    </p>
+
+    <p>Este documento tem base no <a href="https://platform.netbeans.org/tutorials/nbm-selection-1.html">Tutorial de gerenciamento de sele&ccedil;&atilde;o do NetBeans</a> com base no Ant e ilustra algumas das diferen&ccedil;as entre a utiliza&ccedil;&atilde;o do Ant e do Maven para desenvolver uma su&iacute;te de m&oacute;dulos da plataforma NetBeans. Ap&oacute;s compreender algumas das diferen&ccedil;as, &eacute; poss&iacute;vel prosseguir com facilidade atrav&eacute;s dos outros tutoriais na <a href="https://netbeans.org/kb/trails/platform_pt_BR.html">Trilha de aprendizado da plataforma NetBeans</a>.</p>
+
+    <p class="tips">Caso seja novo na plataforma NetBeans, recomenda-se com &ecirc;nfase que voc&ecirc; assista &agrave; s&eacute;rie de screencasts <a href="https://platform.netbeans.org/tutorials/nbm-10-top-apis.html">As 10 principais APIs do NetBeans</a>.</p>
+
+    <p><b>Conte&uacute;do</b></p>
+    <p><img src="../images/articles/81/netbeans-stamp.png" class="stamp" width="114" height="114" alt="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.5, 6.7, 6.8" title="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.5, 6.7, 6.8" /></p>
+
+    <ul class="toc">
+        <li><a href="#config">Utilizando Maven com o IDE</a>
+            <ul>
+            <li><a href="#config1">Configurando as op&ccedil;&otilde;es do Maven</a></li>
+            <li><a href="#config2">Visualizando os reposit&oacute;rios Maven</a></li>
+            </ul></li>
+        <li><a href="#01">Criando a su&iacute;te de m&oacute;dulos da plataforma NetBeans</a></li>
+        <li><a href="#02">Modificando m&oacute;dulo MyAPI</a>
+            <ul>
+            <li><a href="#02a">Criando uma Classe</a></li>
+            <li><a href="#02b">Especificando os pacotes p&uacute;blicos</a></li>
+            </ul>
+        </li>
+        <li><a href="#03">Criando o m&oacute;dulo MyViewer</a>
+            <ul>
+            <li><a href="#03b">Criando o componente de janela</a></li>
+            </ul>
+        </li>
+        <li><a href="#04">Criando o m&oacute;dulo MyEditor</a>
+            <ul>
+            <li><a href="#04b">Adicionando uma a&ccedil;&atilde;o</a></li>
+            <li><a href="#04c">Adicionando o componente do editor</a></li>
+            </ul>
+        </li>
+        <li><a href="#05">Construindo e executando a su&iacute;te de m&oacute;dulos</a>
+        <ul>
+            <li><a href="#05a">Declarando depend&ecirc;ncias diretas</a></li>
+            <li><a href="#05b">Especificando a localiza&ccedil;&atilde;o da instala&ccedil;&atilde;o do NetBeans</a></li>
+            <li><a href="#05c">Executando a aplica&ccedil;&atilde;o</a></li>
+            </ul>
+        </li>
+        <li><a href="#06">Modificando a pesquisa dinamicamente</a></li>
+      </ul>
+
+<p><b>Para seguir este tutorial, s&atilde;o necess&aacute;rios os softwares e recursos listados na tabela a seguir.</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software ou recurso</th>
+                <th class="tblheader" scope="col">Vers&atilde;o necess&aacute;ria</th>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://download.netbeans.org/netbeans/6.9/beta/">NetBeans IDE</a></td>
+                <td class="tbltd1">vers&atilde;o 6.9</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Vers&atilde;o 6</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://maven.apache.org/">Maven</a></td>
+                <td class="tbltd1">Vers&atilde;o 2.0.9 ou superior</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><strong class="notes">Nota:</strong> n&atilde;o &eacute; necess&aacute;rio baixar uma vers&atilde;o avulsa da plataforma NetBeans para desenvolver os aplicativos para a plataforma NetBeans. Normalmente, se desenvolve os aplicativos e m&oacute;dulos no NetBeans IDE e, em seguida, inclui-se somente os m&oacute;dulos necess&aacute;rios para executar a plataforma NetBeans e seu aplicativo.</p>
+
+    <p>Antes de come&ccedil;ar este tutorial, talvez voc&ecirc; queira se familiarizar com a documenta&ccedil;&atilde;o a seguir.</p>
+    <ul>
+        <li><a href="http://wiki.netbeans.org/NetBeansDeveloperFAQ">FAQ Desenvolvedor NetBeans</a></li>
+        <li><a href="http://wiki.netbeans.org/MavenBestPractices">Melhores pr&aacute;ticas para o Apache Maven no NetBeans 6.x</a></li>
+        <li><a href="http://www.sonatype.com/books/maven-book/reference/introduction.html">Cap&iacute;tulo 1. Introdu&ccedil;&atilde;o ao Apache Maven</a> (do <a href="http://www.sonatype.com/books/maven-book/reference/public-book.html">Maven: o guia definitivo</a>)</li>
+        <li><a href="https://netbeans.org/kb/docs/java/gui-functionality_pt_BR.html">Introdu&ccedil;&atilde;o &agrave; constru&ccedil;&atilde;o de GUI</a></li>
+    </ul>
+
+
+
+
+
+
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++ Configuring Maven +++++++++++++++++++++++++++++++++ -->
+
+    <h2><a name="config"></a>Utilizando Maven com o IDE</h2>
+    <p>Se este for seu primeiro projeto Maven, talvez queira se familiarizar com as defini&ccedil;&otilde;es de configura&ccedil;&otilde;es e com o navegador do reposit&oacute;rio Maven.</p>
+
+    <div class="indent">
+        <a name="config1"></a>
+        <h3>Configurando as op&ccedil;&otilde;es do Maven</h3>
+        <p>&Eacute; poss&iacute;vel utilizar a aba Maven na janela Op&ccedil;&otilde;es para configurar o comportamento do Maven no IDE e verificar se sua configura&ccedil;&atilde;o est&aacute; correta.</p>
+
+        <ol>
+            <li>Selecione a categoria Miscel&acirc;neos na janela Op&ccedil;&otilde;es e clique na aba Maven.</li>
+            <li>Especifique a localiza&ccedil;&atilde;o da instala&ccedil;&atilde;o local do Maven (requer 2.0.9 ou mais recente).</li>
+            <li>Verifique se a localiza&ccedil;&atilde;o do reposit&oacute;rio local do Maven est&aacute; correta.</li>
+            <li>Clique em OK.</li>
+        </ol>
+        <p>Na maioria dos casos, se a configura&ccedil;&atilde;o do Maven for t&iacute;pica a informa&ccedil;&atilde;o na janela Op&ccedil;&otilde;es j&aacute; deve estar correta.</p>
+
+        <p class="notes"><strong>Nota.</strong> O suporte ao Maven &eacute; ativado como parte do conjunto de recursos do Java SE. Se a aba Maven n&atilde;o estiver dispon&iacute;vel na janela Op&ccedil;&otilde;es, confirme se o Java SE est&aacute; ativado ao criar um aplicativo Java.</p>
+
+        <h3><a name="config2"></a>Visualizando reposit&oacute;rios Maven</h3>
+        <p>Os artefatos que s&atilde;o utilizados pelo Maven para construir todos os seus projetos s&atilde;o armazenados em seu reposit&oacute;rio local Maven. Quando um artefato &eacute; declarado como uma depend&ecirc;ncia do projeto, o artefato &eacute; baixado para o reposit&oacute;rio local a partir de um dos reposit&oacute;rios remotos registrados se n&atilde;o estiver instalado.</p>
+
+        <p>O reposit&oacute;rio NetBeans e v&aacute;rios outros reposit&oacute;rios conhecidos Maven indexados s&atilde;o registrados e listados, por padr&atilde;o, na janela Navegador do reposit&oacute;rio. O reposit&oacute;rio NetBeans cont&eacute;m a maioria dos artefatos p&uacute;blicos necess&aacute;rios para a constru&ccedil;&atilde;o do seu projeto. &Eacute; poss&iacute;vel utilizar o navegador do reposit&oacute;rio Maven para visualizar o conte&uacute;do dos reposit&oacute;rios locais e remotos. Voc&ecirc; expande o n&oacute; Reposit&oacute;rio local para ver os artefatos que est&atilde;o presentes localmente. Os artefatos listados sob os n&oacute;s reposit&oacute;rio NetBeans podem ser adicionados como depend&ecirc;ncias de projeto, mas nem todos eles est&atilde;o presentes no local. Eles s&atilde;o adicionados ao reposit&oacute;rio local somente quando s&atilde;o declarados como depend&ecirc;ncias do projeto.</p>
+
+        <p>Para abrir o navegador do reposit&oacute;rio Maven:</p>
+        <ul>
+            <li>Escolha Janela &gt; Outro &gt; Navegador do reposit&oacute;rio Maven no menu principal.<br/>
+            <img src="../images/tutorials/maven-quickstart68/maven-nbm-netbeans-repo.png" alt="Captura de tela do navegador do reposit&oacute;rio Maven" title="Captura de tela do navegador do reposit&oacute;rio Maven" class="margin-around b-all"  />
+
+            </li>
+        </ul>
+    </div>
+
+
+    
+    <!-- =================================================================== -->
+    <!-- +++++++++++++++++++ Creating the Module Suite +++++++++++++++++++++ -->
+
+    <h2><a name="01"></a>Criando a su&iacute;te de m&oacute;dulos da plataforma NetBeans</h2>
+    <p>Nesta se&ccedil;&atilde;o, ser&aacute; utilizado o assistente Novo projeto para criar um aplicativo da su&iacute;te de m&oacute;dulos da plataforma NetBeans a partir de um arquetipo Maven. O assistente criar&aacute; um projeto POM que conter&aacute; os projetos do m&oacute;dulo. Nesse assistente, ser&aacute; criado um m&oacute;dulo como subprojeto da su&iacute;te.
+    </p>
+
+    <ol>
+        <li>Abra o assistente Novo projeto e escolha su&iacute;te de m&oacute;dulos do NetBeans Maven na categoria Maven. Clique em Pr&oacute;ximo.</li>
+        <li>Digite <strong>MavenSelectionSuite</strong> como o nome do projeto. Clique em Pr&oacute;ximo.</li>
+        <li>Selecione Criar projeto de m&oacute;dulo e digite <strong>MyAPI</strong> para o nome do m&oacute;dulo. Clique em Terminar.</li>
+    </ol>
+
+    <p>Ao clicar em Terminar, o IDE cria o projeto MavenSelectioneSuite e o subprojeto m&oacute;dulo MyAPI NetBeans.<br/>
+    <img src="../images/tutorials/maven-suite/maven-suite-projectswindow.png" alt="Captura de tela da janela Projetos" title="Captura de tela da janela Projetos" class="margin-around b-all"  />
+    </p>
+
+    <p>MavenSelectionSuite &eacute; um projeto POM que &eacute; um cont&ecirc;iner para subprojetos, nesse caso projetos de m&oacute;dulo NetBeans. O projeto POM n&atilde;o cont&eacute;m nenhum arquivo de c&oacute;digo-fonte. O projeto POM cont&eacute;m instru&ccedil;&otilde;es para compilar a su&iacute;te, e se observar o POM para o projeto &eacute; poss&iacute;vel visualizar que <tt>pom</tt> &eacute; espec&iacute;fico para o pacote.</p>
+    <pre class="examplecode">     &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+    &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+    &lt;artifactId&gt;MavenSelectionSuite&lt;/artifactId&gt;
+    <strong>&lt;packaging&gt;pom&lt;/packaging&gt;</strong>
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+    &lt;name&gt;MavenSelectionSuite Netbeans Module Suite&lt;/name&gt;
+    ...
+        &lt;properties&gt;
+            &lt;netbeans.version&gt;RELEASE69&lt;/netbeans.version&gt;
+        &lt;/properties&gt;
+    <strong>&lt;modules&gt;
+        &lt;module&gt;MyAPI&lt;/module&gt;
+    &lt;/modules&gt;</strong>
+&lt;/project&gt;</pre>
+    <p>O POM tamb&eacute;m cont&eacute;m uma lista de m&oacute;dulos que ser&atilde;o inclu&iacute;dos ao construir o projeto POM. &Eacute; poss&iacute;vel visualizar que o projeto MyAPI est&aacute; listado como m&oacute;dulo.</p>
+
+    <p>Se expandir o n&oacute; m&oacute;dulo na janela Projetos, ser&aacute; poss&iacute;vel visualizar que o projeto MyAPI est&aacute; listado como um m&oacute;dulo. Na janela Arquivos, &eacute; poss&iacute;vel visualizar que o diret&oacute;rio do projetoMyAPI est&aacute; localizado no diret&oacute;rio <tt>MavenSelectionSuite</tt>. Ao criar um novo projeto no diret&oacute;rio de um projeto POM, o IDE adiciona automaticamente o projeto na lista de m&oacute;dulos no POM que est&atilde;o inclu&iacute;dos ao construir e executar o projeto POM.</p>
+
+    <!--<p>The project also contains other XML files containing metadata about the project such as <tt>profiles.xml</tt>.
+    The <tt>profiles.xml</tt> file specifies the path to the NetBeans installation and is used by the IDE when running the project.
+    -->
+    
+    <p class="tips">Ao criar uma su&iacute;te de m&oacute;dulos da plataforma NetBeans do arquetipo Maven, n&atilde;o &eacute; necess&aacute;rio especificar o destino da instala&ccedil;&atilde;o da plataforma NetBeans no assistente Novo projeto, assim como ao utilizar o Ant. Para visualizar a instala&ccedil;&atilde;o da plataforma NetBeans &eacute; necess&aacute;rio modificar o elemento <tt>&lt;netbeans.installation&gt;</tt> no arquivo de projeto POM <tt>profiles.xml</tt> e especificar explicitamente o caminho para a instala&ccedil;&atilde;o da plataforma NetBeans. Para mais, consulte a se&ccedil;&atilde;o <a href="#05b">Especificando a localiza&ccedil;&atilde;o da instala&ccedil;&atilde;o do NetBeans</a> neste tutorial.</p>
+    <!--see https://netbeans.org/bugzilla/show_bug.cgi?id=185941.-->
+
+
+
+<!-- =================================================================== -->
+<!-- ++++++++++++++++++ Adding Class to MyAPI Module +++++++++++++++++++ -->
+    
+    <h2><a name="02"></a>Modificando o m&oacute;dulo MyAPI</h2>
+    <p>O m&oacute;dulo MyAPI foi criado ao criar a su&iacute;te de m&oacute;dulos, mas n&atilde;o &eacute; necess&aacute;rio criar uma classe no m&oacute;dulo e expor a classe para outros m&oacute;dulos.</p>
+    
+    <div class="indent">
+        <a name="02a"></a>
+        <h3>Criando uma classe no m&oacute;dulo MyAPI</h3>
+        <p>Neste exerc&iacute;cio, ser&aacute; criada uma classe simples nomeada <tt>APIObject</tt>. Cada inst&acirc;ncia do <tt>APIObject</tt> ser&aacute; &uacute;nico, porque o campo <tt>&iacute;ndice</tt> foi incrementado por 1 cada vez que uma nova inst&acirc;ncia de <tt>APIObject</tt> &eacute; criada.</p>
+        <ol>
+            <li>Expanda o pacote MyAPI na janela Projetos.</li>
+            <li>Clique com o bot&atilde;o direito do mouse no n&oacute; Pacotes de fontes e escolha Novo &gt; Classe Java.</li>
+            <li>Digite <strong>APIObject</strong> como nome da classe e selecione <tt>com.mycompany.mavenselectionsuite</tt> da lista suspensa Pacote. Clique em Terminar.</li>
+            <li>Modifique a classe para declarar alguns campos e adicione os m&eacute;todos simples a seguir.
+            <pre class="examplecode">
+public final class APIObject {
+
+   private final Date date = new Date();
+   private static int count = 0;
+   private final int index;
+
+   public APIObject() {
+      index = count++;
+   }
+
+   public Date getDate() {
+      return date;
+   }
+
+   public int getIndex() {
+      return index;
+   }
+
+   public String toString() {
+       return index + &quot; - &quot; + date;
+   }
+
+}</pre>
+            </li>
+            <li>Corrija as importa&ccedil;&otilde;es e salve as altera&ccedil;&otilde;es.</li>
+        </ol>
+
+        <a name="02b"></a>
+        <h3>Especificando os pacotes p&uacute;blicos</h3>
+        <p>Neste tutorial, ser&atilde;o criados m&oacute;dulos adicionais que necessitar&atilde;o acessar os m&eacute;todos no <tt>APIObject</tt>. Neste exerc&iacute;cio, os conte&uacute;dos do m&oacute;dulo p&uacute;blico MyAPI ser&atilde;o criados para que outros m&oacute;dulos possam acessar os m&eacute;todos. Para declarar o pacote <tt>com.mycompany.mavenselectionsuite</tt> como p&uacute;blico, &eacute; necess&aacute;rio modificar o elemento <tt>configura&ccedil;&atilde;o</tt> do <tt>nbm-maven-plugin</tt> no POM a fim de especificar os pacotes que s&atilde;o exportados como p&uacute;blicos. &Eacute; poss&iacute;vel efetuar as altera&ccedil;&otilde;es ao POM no editor ao selecionar os pacotes para tornar p&uacute;blico na janela Propriedades do projeto.</p>
+
+        <ol>
+            <li>Clique com o bot&atilde;o direito do mouse no n&oacute; do projeto e escolha Propriedades para abrir a janela Propriedades.</li>
+            <li>Selecione o pacote <strong>com.mycompany.mavenselectionsuite</strong> na categoria <strong>Pacotes p&uacute;blicos</strong>. Clique em OK. <img src="../images/tutorials/maven-suite/maven-suite-publicpackages.png" alt="Captura de tela de pacotes p&uacute;blicos na janela Propriedades" title="Pacotes p&uacute;blicos na janela Propriedades" class="margin-around b-all"  />
+            <p>Ao selecionar um pacote para exportar, o IDE modifica o elemento <tt>nbm-maven-plugin</tt> no POM para especificar o pacote.</p>
+            <pre class="examplecode">&lt;plugin&gt;
+    &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+    &lt;artifactId&gt;nbm-maven-plugin&lt;/artifactId&gt;
+    &lt;extensions&gt;true&lt;/extensions&gt;
+    &lt;configuration&gt;
+        &lt;publicPackages&gt;
+            <strong>&lt;publicPackage&gt;com.mycompany.mavenselectionsuite&lt;/publicPackage&gt;</strong>
+        &lt;/publicPackages&gt;
+    &lt;/configuration&gt;
+&lt;/plugin&gt;</pre></li>
+            <li>Clique com o bot&atilde;o direito do mouse no projeto e escolha Construir.</li>
+        </ol>
+
+        <p>Ao construir o projeto, o <tt>nbm-maven-plugin</tt> gerar&aacute; um cabe&ccedil;alho de manifesto no <tt>MANIFEST.MF</tt> do JAR, que especifica os pacotes p&uacute;blicos.</p>
+
+        <p class="tips">Para mais informa&ccedil;&otilde;es, consulte o <a href="http://mojo.codehaus.org/nbm-maven-plugin/manifest-mojo.html#publicPackages">manifesto de documenta&ccedil;&atilde;o nbm-maven-plugin</a>.</p>
+    </div>
+    
+<!-- =================================================================== -->
+<!-- ++++++++++++++++++ Creating the MyViewer Module +++++++++++++++++++ -->
+
+    <h2><a name="03"></a>Criando o m&oacute;dulo MyViewer</h2>
+    <p>Nesta se&ccedil;&atilde;o, um novo m&oacute;dulo nomeado MyViewer ser&aacute; criado e um componente de janela ser&aacute; adicionado em dois campos de texto. O componente implementar&aacute; <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util-lookup/org/openide/util/LookupListener.html">LookupListener</a></tt> para alertar as altera&ccedil;&otilde;es no<a href="http://wiki.netbeans.org/DevFaqLookup">Lookup</a>.</p>
+
+    <div class="indent">
+        <h3><a name="03a"></a>Criando o m&oacute;dulo</h3>
+        <p>Neste exerc&iacute;cio, ser&aacute; criado o m&oacute;dulo MyViewer no diret&oacute;rio <tt>MavenSelectionSuite</tt>.</p>
+
+        <ol>
+            <li>Escolha Arquivo &gt; Novo projeto do menu principal (Ctrl-Shift-N).</li>
+            <li>Selecione o m&oacute;dulo NetBeans Maven da categoria Maven. Clique em Pr&oacute;ximo.</li>
+            <li>Digite <strong>MyViewer</strong> como o nome do projeto.</li>
+            <li>Confirme se a localiza&ccedil;&atilde;o do projeto &eacute; o diret&oacute;rio <tt>MavenSelectionSuite</tt>. Clique em Terminar.</li>
+            <li>Clique com o bot&atilde;o direito do mouse no n&oacute; Bibliotecas na janela Projetos e escolha Adicionar depend&ecirc;ncia.</li>
+            <li>Selecione o m&oacute;dulo NetBeans MyAPI na aba Abrir projetos. Clique em OK.<br/>
+            <img src="../images/tutorials/maven-suite/maven-suite-addapi.png" alt="Captura de tela de pacotes p&uacute;blicos na janela Propriedades" title="Pacotes p&uacute;blicos na janela Propriedades" class="margin-around b-all"  />
+            </li>
+        </ol>
+
+        <p>Ao clicar em OK, o IDE adiciona artefatos para a lista de depend&ecirc;ncias no POM e exibe o artefato abaixo do n&oacute; Bibliotecas.</p>
+
+        <p>Ao observar o POM do m&oacute;dulo MyViewer, &eacute; poss&iacute;vel perceber que o projeto principal para o m&oacute;dulo &eacute; MavenSelectionSuite, que <tt>nbm</tt> e especificado para <tt>empacotamento</tt> e que o <strong>nbm-maven-plugin</strong> ser&aacute; utilizado para construir o projeto como m&oacute;dulo NetBeans.</p>
+
+        <pre class="examplecode">
+&lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+<strong>&lt;parent&gt;
+    &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+    &lt;artifactId&gt;MavenSelectionSuite&lt;/artifactId&gt;
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+&lt;/parent&gt;</strong>
+&lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+&lt;artifactId&gt;MyViewer&lt;/artifactId&gt;
+<strong>&lt;packaging&gt;nbm&lt;/packaging&gt;</strong>
+&lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+&lt;name&gt;MyViewer NetBeans Module&lt;/name&gt;
+</pre>
+
+        
+        <a name="03b"></a>
+        <h3>Criando o componente de janela</h3>
+        <p>Neste exerc&iacute;cio, um componente de janela ser&aacute; criado e dois campos de texto adicionados.</p>
+        <ol>
+            <li>Clique com o bot&atilde;o direito do mouse no projeto MyViewer e escolha Nova &gt; Janela.</li>
+            <li>Selecione <strong>navegador</strong> da lista suspensa e selecione Abrir em Iniciar aplicativo. Clique em Pr&oacute;ximo.</li>
+            <li>Digite <strong>MyViewer</strong> como prefixo do nome da classe. Clique em Terminar.</li>
+            <li>Arraste dois r&oacute;tulos da Paleta para o componente e altere o texto do topo do r&oacute;tulo para <tt>&quot;[nothing selected]&quot;</tt>.<br/>
+            <img src="../images/tutorials/maven-suite/maven-suite-myviewertopcomponent.png" alt="Captura de tela do componente de janela" title="Campos de texto no componente Janela" class="margin-around b-all"  />
+
+            </li>
+            <li>Clique na aba C&oacute;digo-fonte e modifique a assinatura de classe para implementar <tt>LookupListener</tt>.
+                <pre class="examplecode">classe p&uacute;blica MyViewerTopComponent estende TopComponent <strong>implemente LookupListener</strong> {</pre></li>
+            <li>Implemente os m&eacute;todos abstratos ao colocar o cursor de inser&ccedil;&atilde;o na linha e pressionar as teclas Alt-Enter.</li>
+            <li>Adicione o campo <tt>privado</tt> <tt>resultado</tt> e defina o valor inicial como nulo.
+            <pre class="examplecode">private Lookup.Result result = null;</pre></li>
+            <li>Efetue as mudan&ccedil;as a seguir para os m&eacute;todos <tt>componentOpened()</tt>, <tt>componentClosed()</tt> e <tt>resultChanged()</tt>.
+            <pre class="examplecode">
+public void componentOpened() {
+    <strong>result = Utilities.actionsGlobalContext().lookupResult(APIObject.class);
+    result.addLookupListener(this);</strong>
+}
+
+public void componentClosed() {
+    <strong>result.removeLookupListener (this);
+    result = null;</strong>
+}
+
+public void resultChanged(LookupEvent le) {
+    <strong>Lookup.Result r = (Lookup.Result) le.getSource();
+    Collection c = r.allInstances();
+    if (!c.isEmpty()) {
+        APIObject o = (APIObject) c.iterator().next();
+        jLabel1.setText (Integer.toString(o.getIndex()));
+        jLabel2.setText (o.getDate().toString());
+    } else {
+        jLabel1.setText(&quot;[no selection]&quot;);
+        jLabel2.setText (&quot;&quot;);
+    }</strong>
+}</pre>
+            <p>Ao utilizar <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/util/Utilities.html#actionsGlobalContext%28%29">Utilities.actionsGlobalContext()</a></tt>, toda vez que o componente &eacute; aberto a classe &eacute; capaz de alertar globalmente para o objeto de Pesquisa do componente que tem o foco. A Pesquisa &eacute; removida quando o componente &eacute; finalizado. O m&eacute;todo <tt>resultChanged()</tt> implementa o <tt>LookupListener</tt> de forma que o JLabels do formul&aacute;rio seja atualizado de acordo com o <tt>APIObject</tt> que possui o foco.</p>
+            </li>
+            <li>Corrija as importa&ccedil;&otilde;es e assegure-se de adicionar <strong><tt>org.openide.util.Utilities</tt></strong>. Salve as altera&ccedil;&otilde;es.</li>
+        </ol>
+    </div>
+
+
+
+<!-- =================================================================== -->
+<!-- ++++++++++++++++++ Creating the MyEditor Module +++++++++++++++++++ -->
+
+    <h2><a name="04"></a>Criando o m&oacute;dulo MyEditor</h2>
+
+    <p>Nesta se&ccedil;&atilde;o, um novo m&oacute;dulo chamado MyEditor ser&aacute; criado. O m&oacute;dulo conter&aacute; um <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/org/openide/windows/TopComponent.html">TopComponent</a></tt> que oferecer&aacute; inst&acirc;ncias de <tt>APIObject</tt> atrav&eacute;s da Pesquisa. Tamb&eacute;m ser&aacute; criada uma a&ccedil;&atilde;o que abrir&aacute; novas inst&acirc;ncias do componente MyEditor.</p>
+
+    <div class="indent">
+        <a name="04a"></a>
+        <h3>Criando o m&oacute;dulo</h3>
+        <p>Neste exerc&iacute;cio, um m&oacute;dulo NetBeans ser&aacute; criado no diret&oacute;rio <tt>MavenSelectionSuite</tt> e uma depend&ecirc;ncia ser&aacute; adicionada no m&oacute;dulo API.</p>
+        <ol>
+            <li>Escolha Arquivo &gt; Novo projeto no menu principal.</li>
+            <li>Selecione o m&oacute;dulo NetBeans Maven da categoria Maven. Clique em Pr&oacute;ximo.</li>
+            <li>Digite <strong>MyEditor</strong> como nome do projeto.</li>
+            <li>Confirme se a localiza&ccedil;&atilde;o do projeto &eacute; o diret&oacute;rio <tt>MavenSelectionSuite</tt>. Clique em Terminar.</li>
+            <li>Clique com o bot&atilde;o direito do mouse no n&oacute; Bibliotecas na janela Projetos e escolha Adicionar depend&ecirc;ncia.</li>
+            <li>Selecione o m&oacute;dulo NetBeans MyAPI na aba Abrir projetos. Clique em OK.</li>
+        </ol>
+
+        <a name="04b"></a>
+        <h3>Adicionando uma a&ccedil;&atilde;o</h3>
+        <p>Neste exerc&iacute;cio, ser&aacute; criada uma classe para adicionar um item de menu ao menu Arquivo para abrir um componente nomeado MyEditor. O componente ser&aacute; criado no pr&oacute;ximo exerc&iacute;cio.</p>
+            <!-- issue: https://netbeans.org/bugzilla/show_bug.cgi?id=186876
+            In this section you need to create the action first, then the component.
+            If the component is created first, the New Action wizard will choke on what looks like
+            a lockedFile exception on the bundle.properties and the entries for the action are not generated in layer.xml.-->
+
+        <ol>
+            <li>Clique com o bot&atilde;o direito do mouse no projeto MyEditor e escolha Novo &gt; A&ccedil;&atilde;o para abrir a caixa de di&aacute;logo Nova a&ccedil;&atilde;o.</li>
+            <li>Selecione sempre habilitado. Clique em Pr&oacute;ximo.</li>
+            <li>Mantenha os padr&otilde;es na p&aacute;gina Registro de GUI. Clique em Pr&oacute;ximo.</li>
+            <li>Digite <strong>OpenEditorAction</strong> para o nome da classe.</li>
+            <li>Digite <strong>Open Editor</strong> para o nome de exibi&ccedil;&atilde;o. Clique em Terminar.
+    
+            <p>O IDE abre a classe <tt>OpenEditorAction</tt> no editor e adiciona o seguinte no arquivo <tt>layer.xml</tt>.</p>
+            <pre class="examplecode">
+&lt;filesystem&gt;
+    &lt;folder name=&quot;Actions&quot;&gt;
+        &lt;folder name=&quot;Build&quot;&gt;
+            &lt;file name=&quot;com-mycompany-myeditor-OpenEditorAction.instance&quot;&gt;
+                &lt;attr name=&quot;delegate&quot; newvalue=&quot;com.mycompany.myeditor.OpenEditorAction&quot;/&gt;
+                &lt;attr name=&quot;displayName&quot; bundlevalue=&quot;com.mycompany.myeditor.Bundle#CTL_OpenEditorAction&quot;/&gt;
+                &lt;attr name=&quot;instanceCreate&quot; methodvalue=&quot;org.openide.awt.Actions.alwaysEnabled&quot;/&gt;
+                &lt;attr name=&quot;noIconInMenu&quot; boolvalue=&quot;false&quot;/&gt;
+            &lt;/file&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+    &lt;folder name=&quot;Menu&quot;&gt;
+        &lt;folder name=&quot;File&quot;&gt;
+            &lt;file name=&quot;com-mycompany-myeditor-OpenEditorAction.shadow&quot;&gt;
+                &lt;attr name=&quot;originalFile&quot; stringvalue=&quot;Actions/Build/com-mycompany-myeditor-OpenEditorAction.instance&quot;/&gt;
+                &lt;attr name=&quot;position&quot; intvalue=&quot;0&quot;/&gt;
+            &lt;/file&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/filesystem&gt;</pre></li>
+            <li>Modifique a classe <tt>OpenEditorAction</tt> para modificar o m&eacute;todo <tt>actionPerformed</tt>.
+            <pre class="examplecode">public void actionPerformed(ActionEvent e) {
+    MyEditor editor = new MyEditor();
+    editor.open();
+    editor.requestActive();
+}</pre></li>
+        </ol>
+
+
+        <a name="04c"></a>
+        <h3>Adicionando o componente de editor</h3>
+        <p>Neste exerc&iacute;cio, ser&aacute; criado um componente MyEditor que abre na &aacute;rea do editor quando invocado pelo <tt>OpenEditorAction</tt>. Um modelo de componente de janela n&atilde;o ser&aacute; utilizado porque voc&ecirc; desejar&aacute; v&aacute;rias inst&acirc;ncias do componente e o componente da janela &eacute; utilizado para criar componentes singleton. Em vez disso, ser&aacute; utilizado um modelo de forma JPanel e, em seguida, a classe ser&aacute; modificada para estender <tt>TopComponent</tt>.</p>
+
+
+        <ol>
+            <li>Clique com o bot&atilde;o direito do mouse em Pacotes de c&oacute;digo-fonte e escolha Novo &gt; Outro e selecione Formul&aacute;rio JPanel na categoria Formul&aacute;rios Swing de GUI. Clique em Pr&oacute;ximo.</li>
+            <li>Digite <strong>MyEditor</strong> para nome de classe e selecione o pacote <tt>com.mycompany.myeditor</tt>. Clique em Terminar.</li>
+            <li>Arraste dois campos de texto para o componente.</li>
+            <li>Torne os campos de texto em somente leitura ao desmarcar a propriedade <tt>edit&aacute;vel</tt> para cada campo de texto.<br/>
+            <img src="../images/tutorials/maven-suite/maven-suite-editableprop.png" alt="Captura de tela da propriedade Edit&aacute;vel para r&oacute;tulos" title="Propriedade Edit&aacute;vel para r&oacute;tulos" class="margin-around b-all"  />
+
+            </li>
+            <li>Clique na aba C&oacute;digo-fonte e modifique a assinatura de classe para estender <tt>TopComponent</tt> no lugar de <tt>javax.swing.JPanel</tt>.
+            <pre class="examplecode">classe p&uacute;blica MyEditor estende <strong>TopComponent</strong></pre></li>
+            <li>Coloque o cursor de inser&ccedil;&atilde;o na assinatura e pressione Alt-Enter para consertar o erro no c&oacute;digo, localizando o reposit&oacute;rio Maven e adicionando uma depend&ecirc;ncia no artefato <tt>org.openide.windows</tt>. Corrija suas importa&ccedil;&otilde;es.<br/>
+            <img src="../images/tutorials/maven-suite/maven-suite-add-topcomponent.png" alt="Captura de tela da propriedade Edit&aacute;vel para r&oacute;tulos" title="Propriedade Edit&aacute;vel para r&oacute;tulos" class="margin-around b-all"  />
+
+            </li>
+            <li>Modifique o construtor para criar uma nova inst&acirc;ncia de <tt>APIObject</tt> toda vez que a classe &eacute; invocada.
+            <pre class="examplecode">
+public MyEditor() {
+    initComponents();
+    <strong>APIObject obj = new APIObject();
+    associateLookup(Lookups.singleton(obj));
+    jTextField1.setText(&quot;APIObject #&quot; + obj.getIndex());
+    jTextField2.setText(&quot;Created: &quot; + obj.getDate());
+    setDisplayName(&quot;MyEditor &quot; + obj.getIndex());</strong>
+
+}</pre>
+            <p>A linha <tt>associateLookup(Lookups.singleton(obj));</tt> no construtor criar&aacute; uma Pesquisa que cont&eacute;m a nova inst&acirc;ncia de <tt>APIObject</tt>.</p></li>
+            <li>Corrija suas importa&ccedil;&otilde;es e salve as altera&ccedil;&otilde;es.</li>
+        </ol>
+        <p>Os campos de texto no componente exibem somente o valor do &iacute;ndice e a data do <tt>APIObject</tt>. Isso possibilitar&aacute; que voc&ecirc; perceba que cada componente MyEditor &eacute; &uacute;nico e que o MyViewer est&aacute; exibindo os detalhes do componente MyEditor que possui o foco.</p>
+
+        <p class="notes"><strong>Nota.</strong> Os erros no <tt>OpenEditorAction</tt> ser&atilde;o resolvidos ap&oacute;s salvar as altera&ccedil;&otilde;es no <tt>MyEditor</tt>. </p>
+    </div>
+
+
+
+    <!-- =================================================================== -->
+    <!-- ++++++++++++++++ Building and Running the  Module +++++++++++++++++ -->
+
+    <h2><a name="05"></a>Construindo e executando a su&iacute;te de m&oacute;dulos</h2>
+    <p>Nesse momento, voc&ecirc; est&aacute; quase pronto para executar a su&iacute;te para verificar se ela constroi, instala e se comporta corretamente.</p>
+    <div class="indent">
+
+
+        <a name="05a"></a>
+        <h3>Declarando depend&ecirc;ncias diretas</h3>
+        <p>Antes de poder construir e executar a su&iacute;te necess&aacute;ria para modificar uma das depend&ecirc;ncias do projeto MyEditor. Se tentar construir a su&iacute;te de m&oacute;dulos agora, a sa&iacute;da de constru&ccedil;&atilde;o na janela Sa&iacute;da informar&aacute; que a su&iacute;te n&atilde;o pode compilar porque o m&oacute;dulo MyEditor requer que o artefato <tt>org.openide.util-lookup</tt> esteja dispon&iacute;vel no tempo de execu&ccedil;&atilde;o.</p>
+
+        <p>Se clicar com o bot&atilde;o direito do mouse no n&oacute; do projeto e escolher Mostrar gr&aacute;fico de depend&ecirc;ncia, o visualizador gr&aacute;fico da depend&ecirc;ncia poder&aacute; lhe ajudar a visualizar as depend&ecirc;ncias de m&oacute;dulo.</p>
+        <img src="../images/tutorials/maven-suite/maven-suite-dependency-graph.png" alt="Captura de tela do gr&aacute;fico de depend&ecirc;ncia do artefato" title="gr&aacute;fico de depend&ecirc;ncia do artefato" class="margin-around b-all"  />
+
+        <p>&Eacute; poss&iacute;vel visualizar que o MyEditor n&atilde;o tem uma depend&ecirc;ncia direta no <tt>org.openide.util-lookup</tt>. A depend&ecirc;ncia &eacute; transitiva e o artefato est&aacute; dispon&iacute;vel para o projeto no momento da compila&ccedil;&atilde;o, mas as depend&ecirc;ncias necessitam ser diretas se o artefato estiver dispon&iacute;vel no tempo de execu&ccedil;&atilde;o. &Eacute; necess&aacute;rio modificar o POM para declarar o artefato como depend&ecirc;ncia direta.</p>
+        
+        <p>&Eacute; poss&iacute;vel transformar o artefato em uma depend&ecirc;ncia direta editando manualmente o POM ou utilizando o item de menu pop-up na janela Projetos.</p>
+
+        <ol>
+            <li>Expanda o n&oacute; Bibliotecas do m&oacute;dulo MyEditor.</li>
+            <li>Clique com o bot&atilde;o direito do mouse no artefato <tt>org.openide.util-lookup</tt> e escolha Declarar como depend&ecirc;ncia direta.
+            <p>Ao escolher Declarar como depend&ecirc;ncia direta, o IDE modifica o POM para adicionar o artefato como uma depend&ecirc;ncia.</p>
+            </li>
+        </ol>
+        <p class="notes"><strong>Nota.</strong> O artefato <tt>org.openide.util-lookup</tt> j&aacute; &eacute; uma depend&ecirc;ncia direta do m&oacute;dulo MyViewer.</p>
+
+
+        <a name="05b"></a>
+        <h3>Especificando a localiza&ccedil;&atilde;o da instala&ccedil;&atilde;o do NetBeans</h3>
+        <p>Como padr&atilde;o, nenhum destino de instala&ccedil;&atilde;o do NetBeans &eacute; especificado quando o arquetipo Maven &eacute; utilizado para criar uma plataforma de su&iacute;te de m&oacute;dulos NetBeans. Para instalar e executar a su&iacute;te de m&oacute;dulo em uma instala&ccedil;&atilde;o do IDE, &eacute; necess&aacute;rio especificar o caminho para a instala&ccedil;&atilde;o do diret&oacute;rio, editando o arquivo <tt>profiles.xml</tt> no projeto POM.</p>
+        <ol>
+            <li>Expanda o n&oacute; Arquivos de projeto no aplicativo MavenSelectionSuite e clique duas vezes em <tt>profiles.xml</tt> para abrir o arquivo no editor.</li>
+            <li>Modificando o elemento <tt>&lt;netbeans.installation&gt;</tt> para especificar o caminho para a plataforma NetBeans de destino e salve as altera&ccedil;&otilde;es.
+                <pre class="examplecode">
+&lt;profile&gt;
+   &lt;id&gt;netbeans-ide&lt;/id&gt;
+   &lt;properties&gt;
+       &lt;netbeans.installation&gt;/home/me/netbeans-6.9&lt;/netbeans.installation&gt;
+   &lt;/properties&gt;
+&lt;/profile&gt;</pre>
+                <p class="notes"><strong>Nota.</strong> O caminho necessita especificar o diret&oacute;rio que cont&eacute;m o diret&oacute;rio <tt>bin</tt> contendo o arquivo execut&aacute;vel.</p>
+                <p>Por exemplo, no sistema operacional X, o caminho pode se assemelhar ao seguinte.</p>
+            <pre class="examplecode">&lt;netbeans.installation&gt;/Applications/NetBeans/NetBeans6.9.app/Contents/Resources/NetBeans&lt;/netbeans.installation&gt;</pre>
+            </li>
+        </ol>
+
+
+
+        <a name="05c"></a>
+        <h3>Executando o aplicativo</h3>
+        <p>Agora que o destino da instala&ccedil;&atilde;o do IDE foi especificado, &eacute; poss&iacute;vel utilizar o comando Executar no projeto su&iacute;te.</p>
+
+        <ol>
+            <li>Clique com o bot&atilde;o direito do mouse em MavenSelectionSuite e escolha Executar.</li>
+        </ol>
+        <p>Ao escolher Executar, uma inst&acirc;ncia do IDE ser&aacute; iniciada com a su&iacute;te de m&oacute;dulos instalada.</p>
+        <img src="../images/tutorials/maven-suite/maven-suite-run1.png" alt="Captura de tela das janelas MyViewer e MyEditor" title="Janelas MyViewer e MyEditor" class="margin-around b-all"  />
+        <p>A janela MyEditor abrir&aacute; quando o aplicativo for iniciado e exibir&aacute; os dois r&oacute;tulos de texto. Para abrir um componente MyEditor na &aacute;rea do editor, &eacute; poss&iacute;vel escolher Abrir editor no menu Arquivo. A janela MyViewer exibir&aacute; os detalhes do componente MyEditor que possui o foco.</p>
+        <p>A a&ccedil;&atilde;o Executar para o projeto su&iacute;te de m&oacute;dulos &eacute; configurado, como padr&atilde;o, para utilizar o plug-in Reator, a fim de construir recursivamente e empacotar os m&oacute;dulos que est&atilde;o especificados como parte da su&iacute;te. &Eacute; poss&iacute;vel abrir a janela Propriedades do projeto para visualizar as metas do Maven, que s&atilde;o mapeadas para a&ccedil;&otilde;es no IDE.
+        </p>
+        <img src="../images/tutorials/maven-suite/maven-suite-run-action.png" alt="Captura de tela das janelas MyViewer e MyEditor" title="Janelas MyViewer e MyEditor" class="margin-around b-all"  />
+        <p>Na categoria A&ccedil;&otilde;es, na janela Propriedades, &eacute; poss&iacute;vel visualizar as metas que s&atilde;o mapeadas para a a&ccedil;&atilde;o Executar.</p>
+    </div>
+
+
+
+
+    <!-- =================================================================== -->
+    <!-- ++++++++++++++++ Modifying the Lookup with Button +++++++++++++++++ -->
+
+    <h2><a name="06"></a>Modificando a Pesquisa dinamicamente</h2>
+    <p>Atualmente, um novo <tt>APIObject</tt> &eacute; criado toda vez que um novo componente MyEditor &eacute; aberto. Nesta se&ccedil;&atilde;o, um bot&atilde;o ser&aacute; adicionado ao componente MyEditor, que substituir&aacute; o atual <tt>APIObject</tt> do componente com um novo. Ser&aacute; modificado o c&oacute;digo para utilizar <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util-lookup/org/openide/util/lookup/InstanceContent.html">InstanceContent</a></tt> a fim de manipular dinamicamente altera&ccedil;&otilde;es ao conte&uacute;do de Pesquisa.</p>
+    <ol>
+        <li>Expanda o projeto MyEditor e abra o formul&aacute;rio <tt>MyEditor</tt> na visualiza&ccedil;&atilde;o Desenho do editor.</li>
+        <li>Arraste um bot&atilde;o para o formul&aacute;rio e defina o texto do bot&atilde;o como &quot;Substituir&quot;.</li>
+        <li>Clique com o bot&atilde;o direito do mouse e escolha Eventos &gt; A&ccedil;&otilde;es &gt; actionPerformed para criar um m&eacute;todo do manipulador de eventos para o bot&atilde;o e abrir o formul&aacute;rio no editor de c&oacute;digo-fonte.</li>
+        <li>Adicione o campo <tt>final</tt> a seguir para a classe.
+        <pre class="examplecode">public class MyEditor extends TopComponent {
+    <strong>private final InstanceContent content = new InstanceContent();</strong></pre>
+
+        <p>Para obter benef&iacute;cios do <tt>InstanceContent</tt> ser&aacute; necess&aacute;rio utilizar <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util-lookup/org/openide/util/lookup/AbstractLookup.html#AbstractLookup%28org.openide.util.lookup.AbstractLookup.Content%29">AbstractLookup</a></tt> em vez de <tt>Lookup</tt> no construtor.</p>
+        </li>
+        <li>Modifique o corpo do m&eacute;todo do manipulador de eventos <tt>jButton1ActionPerformed</tt> para ter a seguinte apar&ecirc;ncia ao copiar as linhas do construtor de classe e adicionar a chamada para <tt>content.set</tt>.
+        <pre class="examplecode">private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {
+    <strong>APIObject obj = new APIObject();
+    jTextField1.setText (&quot;APIObject #&quot; + obj.getIndex());
+    jTextField2.setText (&quot;Created: &quot; + obj.getDate());
+    setDisplayName (&quot;MyEditor &quot; + obj.getIndex());
+    content.set(Collections.singleton (obj), null);</strong>
+}</pre>
+        </li>
+        <li>Modifique o construtor para remover as linhas que foram copiadas para o manipulador de eventos, altere <tt>associateLookup</tt> para utilizar <tt>AbstractLookup</tt> e adicione <tt>jButton1ActionPerformed(null);</tt>. O construtor deveria ter a seguinte apar&ecirc;ncia.
+        <pre class="examplecode">public MyEditor() {
+    initComponents();
+    <strong>associateLookup(new AbstractLookup(content));
+    jButton1ActionPerformed(null);</strong>
+}</pre>
+        <p>Foi adicionado <tt>jButton1ActionPerformed(null);</tt> ao construtor para assegurar que o componente ser&aacute; inicializado quando criado.</p></li>
+        <li>Corrija as importa&ccedil;&otilde;es e salve as altera&ccedil;&otilde;es.</li>
+    </ol>
+
+    
+    <p>Ao executar o projeto da su&iacute;te de m&oacute;dulos novamente, ser&aacute; poss&iacute;vel visualizar o novo bot&atilde;o em cada componente MyEditor. Ao clicar no bot&atilde;o, o n&uacute;mero do &iacute;ndice no texto ser&aacute; aumentado. O r&oacute;tulo na janela MyViewer tamb&eacute;m ser&aacute; atualizada para corresponder ao novo valor.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <p>Este tutorial demonstrou como criar e executar uma su&iacute;te de m&oacute;dulos da plataforma NetBeans, que voc&ecirc; criou a partir de um arquetipo Maven. Voc&ecirc; viu como a su&iacute;te de m&oacute;dulos s&atilde;o estruturadas e como configurar um m&oacute;dulo POM para especificar os pacotes p&uacute;blicos. Tamb&eacute;m aprendeu como modificar o projeto POM principal para especificar o destino da instala&ccedil;&atilde;o do NetBeans, para que o comando Executar no IDE instale a su&iacute;te e inicie uma nova inst&acirc;ncia da Plataforma. Para mais exemplos sobre como construir aplicativos e m&oacute;dulos na Plataforma NetBeans, consulte os tutoriais listados na <a href="https://netbeans.org/kb/trails/platform_pt_BR.html">Trilha do aprendizado do NetBeans</a>.</p>
+
+
+<!-- ======================================================================================== -->
+
+
+    <h2><a name="nextsteps"></a>Consulte tamb&eacute;m</h2>
+
+    <p>Para mais informa&ccedil;&otilde;es sobre como criar e desenvolver na Plataforma NetBeans, consulte os recursos a seguir.</p>
+    <ul>
+        <li><a href="https://netbeans.org/kb/trails/platform_pt_BR.html">Trilha do aprendizado da plataforma NetBeans</a></li>
+        <li><a href="http://wiki.netbeans.org/NetBeansDeveloperFAQ">FAQ Desenvolvedor NetBeans</a></li>
+        <li><a href="http://bits.netbeans.org/dev/javadoc/">Javadoc da API da NetBeans </a></li>
+    </ul>
+    <p>Se voc&ecirc; tiver qualquer d&uacute;vida sobre a Plataforma NetBeans, sinta-se a vontade para escrever para a lista de correspond&ecirc;ncia, dev@platform.netbeans.org, ou consulte o <a href="https://netbeans.org/projects/platform/lists/dev/archive">arquivo de lista de correspond&ecirc;ncia NetBeans</a>.</p>
+
+
+    <!-- ======================================================================================== -->
+
+
+
+</body>
+
+</html>

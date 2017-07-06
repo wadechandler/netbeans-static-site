@@ -1,0 +1,267 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+
+<HTML>
+<HEAD>
+<TITLE>Componentes personalizados do Visual Mobile Designer: Criando um Navegador de arquivo de dispositivo m&oacute;vel  - Tutorial do NetBeans Java ME</TITLE>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+<link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+<meta name="author" content="Karol Harelzak">
+</HEAD>
+
+<BODY>
+<a name="top"></a>
+<H1>Componentes personalizados do Visual Mobile Designer: Criando um navegador de arquivo de dispositivo m&oacute;vel</H1>
+<p>O Visual Mobile Designer (VMD) &eacute; uma interface gr&aacute;fica do NetBeans Mobility que permite criar aplicativos m&oacute;veis usando componentes de arrastar e soltar. O VMD permite definir o fluxo do aplicativo e criar a GUI usando os componentes fornecidos pelo IDE ou componentes que voc&ecirc; mesmo criar. O VMD cont&eacute;m muitos componentes de Interface de usu&aacute;rio (IU) padr&atilde;o que voc&ecirc; pode usar para criar aplicativos como Listas, Alertas, Formul&aacute;rios e Imagens. Ele tamb&eacute;m inclui componentes personalizados que simplificam a cria&ccedil;&atilde;o de recursos mais complexos, tais como Telas de espera, Telas de abertura, Itens de tabela, etc.</p>
+<p>O navegador de arquivo &eacute; um componente personalizado que fornece uma interface do usu&aacute;rio que funciona com o sistema de arquivos do dispositivo. 
+ Ele oferece funcionalidade b&aacute;sica para navegar o conte&uacute;do da mem&oacute;ria de armazenamento dos dispositivos. Esse componente utiliza a API
+FileConnection que &eacute; parte da <a href="http://jcp.org/en/jsr/detail?id=75">especifica&ccedil;&atilde;o JSR-75</a> 
+para pacotes opcionais de PDA da Plataforma Java ME. JSR-75 n&atilde;o &eacute; uma parte da especifica&ccedil;&atilde;o MIDP 2.0 e &eacute; por isso que o componente 
+personalizado pode ser usado somente com dispositivos ativados por JSR-75.</p>
+<P>Este tutorial mostra como usar o componente Navegador de arquivo em um aplicativo m&oacute;vel para dispositivos compat&iacute;veis com JSR-75. Voc&ecirc; aprender&aacute; sobre os recursos b&aacute;sicos dos componentes e como navegar no conte&uacute;do do armazenamento de mem&oacute;ria do dispositivo e exibir o conte&uacute;do dos arquivos de texto escolhidos. Al&eacute;m do componente personalizado Navegador do arquivo, usaremos outros dois componentes MIDP: Tela de abertura e Caixa de texto. 
+</P>
+
+
+<p><b>Conte&uacute;do</b></p>
+ <img  src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" class="stamp" alt="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.9 ou posterior" title="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.9 ou posterior" >
+  <ul class="class">
+   <li><a href="#sample-app">Instalando e executando o aplicativo de amostra</a></li>
+   <li><a href="#create-app">Criando um aplicativo com o componente personalizado Navegador de arquivo</a><div>
+<ul>
+	<LI><A HREF="#create">Criando o projeto FileBrowserExample</A> 
+	</LI>
+	<LI><A HREF="#add">Adicionando pacotes e um MIDlet visual ao projeto FileBrowserExample</A> 
+	</LI>
+	<LI><A HREF="#addcomponent">Adicionando componentes ao FileBrowserExample</A> 
+	</LI>
+	<LI><A HREF="#addcommands">Adicionando comandos ao FileBrowserExample</A> 
+	</LI>
+	<LI><A HREF="#connect">Conectando os componentes para criar um fluxo de aplicativo</A> 
+	</LI>
+	<LI><A HREF="#insert">Inserindo uma pr&eacute;-a&ccedil;&atilde;o no c&oacute;digo-fonte</A> 
+	</LI>
+	<LI><A HREF="#run">Executando o projeto</A> 
+	</LI>
+</ul></div></li>
+   <li><a href="#javadoc-filebrowser">Java doc para o componente Navegador de arquivo</a></li>
+   <li><a href="#see-also">Consulte tamb&eacute;m</a></li>
+  </ul>
+<p><b>Para acompanhar este tutorial, s&atilde;o necess&aacute;rios os recursos e softwares listados abaixo.</b></p>
+
+<table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software ou recurso</th>
+                <th class="tblheader" scope="col">Vers&atilde;o necess&aacute;ria</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE com Java ME</a></td>
+                <td class="tbltd1">Vers&atilde;o 6.9 ou posterior</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit</a> (JDK)</td>
+                <td class="tbltd1">Vers&atilde;o 6 ou vers&atilde;o 7</td>
+            </tr>      
+        </tbody>
+</table>
+
+<a name="sample-app"></a>
+<H2>Instalando e executando o aplicativo de amostra</H2>
+<P>Antes de come&ccedil;ar, talvez voc&ecirc; queira ver o resultado final do 
+tutorial. 
+</P>
+<P>Siga as etapas seguintes para instalar o aplicativo FileBrowserExample:</P>
+<OL>
+	<LI>Baixe <A HREF="https://netbeans.org/projects/samples/downloads/download/Samples/Mobile/filebrowserexample.zip">filebrowserexample.zip.
+	</A>
+	</LI>
+	<LI>Descompacte o arquivo. 
+	</LI>
+	<LI>No IDE, escolha <tt> Arquivo</tt> &gt; <tt>Abrir projeto</tt>e navegue at&eacute; a pasta que cont&eacute;m os arquivos descompactados com o projeto <tt>FlieBrowserExample</tt>.</LI>
+	<li>Clique em Abrir projeto.<br>	
+	A janela Projetos deve ter uma apar&ecirc;ncia semelhante a esta: 
+	<p class="align-center"><IMG SRC="../../../images_www/articles/71/mobility/filebrowser/projects.png" NAME="graphics1" ALT="Janela Projetos com o FileBrowserExample aberto" BORDER=1>
+  </p></li>
+	<LI>Na janela Projetos, clique com o bot&atilde;o direito do mouse no n&oacute; do projeto e escolha <tt>Executar projeto</tt> (ou pressione a tecla F6). Conforme o aplicativo &eacute; executado, uma janela do emulador se abre e exibe o aplicativo que est&aacute; sendo executado no emulador do dispositivo padr&atilde;o. 
+	</LI>
+	<LI>Na janela Emulador, clique no bot&atilde;o abaixo de
+	&quot;Iniciar.&quot;<BR>O emulador exibe um componente Tela de abertura,
+	em seguida, Navegador de arquivo, como mostrado: 
+	<p class="align-center"><IMG SRC="../../../images_www/articles/71/mobility/filebrowser/file-browser_wtk.png" NAME="graphics2" ALT="Emulador WTK 2.5 exibindo o aplicativo Navegador de arquivo de amostra" BORDER=1>
+  </p></li>
+</OL>
+<UL>
+	<LI>Mova o cursor para cima e para baixo para
+	navegar pelos arquivos e pastas dispon&iacute;veis. 
+	</LI>
+	<LI>Clique no bot&atilde;o abaixo de 
+	&quot;Selecionar&quot; para abrir a pasta ou o arquivo. 
+	</LI>
+	<LI>Clique no bot&atilde;o abaixo de &quot;Sair&quot; para fechar o aplicativo. 
+	</LI>
+</UL>
+<p class="align-center"><a href="#top">in&iacute;cio</a></p>
+<a name="create-app"></a>
+<H2>Criando um aplicativo com o componente personalizado Navegador de arquivo 
+</H2>
+<P>Agora que voc&ecirc; viu o componente Navegador de arquivo em a&ccedil;&atilde;o, vamos
+voltar para o in&iacute;cio e criar essa aplica&ccedil;&atilde;o. Para criar o aplicativo, fa&ccedil;a o seguinte: 
+</P>
+<OL>
+	<LI><A HREF="#create">Crie o projeto
+	FileBrowserExample</A> 
+	</LI>
+	<LI><A HREF="#add">Adicione pacotes e um
+	MIDlet visual ao projeto FileBrowserExample</A> 
+	</LI>
+	<LI><A HREF="#addcomponent">Adicione
+	componentes ao FileBrowserExample</A> 
+	</LI>
+	<LI><A HREF="#addcommands">Adicione
+	comandos aos componentes Caixa de texto e Navegador de arquivo</A> 
+	</LI>
+	<LI><A HREF="#connect">Conecte os
+	componentes para criar um fluxo de aplicativo</A> 
+	</LI>
+	<LI><A HREF="#insert">Insira o m&eacute;todo
+	loadTextFile no c&oacute;digo-fonte</A> 
+	</LI>
+	<LI><A HREF="#run">Executar o projeto</A> 
+	</LI>
+</OL>
+<H3><A NAME="create"></A>Criando o projeto
+FileBrowserExample</H3>
+<OL>
+	<LI>Escolha <tt>Arquivo</tt> &gt; <tt>Novo projeto (Ctrl-Shift-N)</tt>. Em Categorias, selecione JavaME. Em Projetos, selecione Aplicativo m&oacute;vel e clique em Pr&oacute;ximo. 
+	</LI>
+	<LI>Indique <CODE>FileBrowserExample</CODE>
+	no campo Nome do projeto. Altere a Localiza&ccedil;&atilde;o do projeto para um diret&oacute;rio em seu sistema. A partir de agora, vamos chamar esse diret&oacute;rio de <tt>$PROJECTHOME</tt>. 
+	</LI>
+	<LI>Desmarque a caixa de verifica&ccedil;&atilde;o Criar Hello MIDlet. Clique em Pr&oacute;ximo. 
+	</LI>
+	<LI>Deixe o Sun Java Wireless Toolkit como a Plataforma do emulador selecionada. Clique em Pr&oacute;ximo. 
+	</LI>
+	<LI>Clique em Terminar. 
+	<p class="notes"><b>Observa&ccedil;&atilde;o:</b> a pasta do projeto cont&eacute;m todos os c&oacute;digos-fonte e metadados do projeto, como o script Ant do projeto. A pr&oacute;pria aplica&ccedil;&atilde;o &eacute; exibida na janela Design de fluxo do Visual Mobile Designer. </p></LI>
+	
+</OL>
+<H3><A NAME="add"></A>Adicionando pacotes e um 
+MIDlet visual ao projeto FileBrowserExample</H3>
+<OL>
+	<LI>Escolha o projeto <CODE>FileBrowserExample</CODE> na janela Projeto e, a seguir, escolha <tt>Arquivo</tt> &gt; <tt>Novo arquivo (Ctrl-N)</tt> . Em Categorias, selecione Classes Java. Em Tipos de arquivo,
+	selecione Pacote Java. Clique em Pr&oacute;ximo. 
+	</LI>
+	<LI>Indique <CODE>filebrowserexample</CODE>
+	no campo Nome do pacote. Clique em Terminar. 
+	</LI>
+	<LI>Escolha o pacote <CODE>filebrowserexample</CODE> na janela Projeto e, a seguir, escolha <tt>Arquivo</tt> &gt; <tt>Novo arquivo (Ctrl-N)</tt>. Em Categorias, selecione MIDP. Em Tipos de arquivo, selecione
+	MIDlet visual. Clique em Pr&oacute;ximo. 
+	</LI>
+	<LI>Indique <CODE>FileBrowserExample</CODE> nos campos Nome do MIDlet e Nome da classe MIDP. Clique em Terminar. 
+	</LI>
+
+
+</OL>
+<H3><A NAME="addcomponent"></A>Adicionando componentes ao 
+FileBrowserExample</H3>
+<OL>
+	<LI>Alterne seu Visual MIDlet para a janela
+	Designer de fluxo. Arraste os seguintes componentes da Paleta de componentes e solte-os no Designer de fluxo: 
+	
+	<UL>
+		<LI>Tela de splash</LI>
+		<LI>Caixa de texto</LI>
+		<LI>Navegador de arquivo</LI>
+	</UL></LI>
+	<LI>Clique em splashScreen e, na janela Propriedades, altere o valor da propriedade Texto de <tt>null</tt> (nulo) para o <tt>FileBrowserExample</tt>. 
+	</LI>
+</OL>
+<H3><A NAME="addcommands"></A>Adicionando comandos ao 
+FileBrowserExample</H3>
+<OL>
+	<LI>Abra a janela Designer de fluxo. 
+	</LI>
+	<LI>Escolha o comando Sair na se&ccedil;&atilde;o
+	Comandos da Paleta do componente. Arraste-o e solte na janela
+	Designer de fluxo (componente Navegador de arquivo). 
+	</LI>
+	<LI>Escolha o comando Voltar na se&ccedil;&atilde;o Comandos da
+	Paleta do componente e arraste-o e solte no componente Caixa de texto. 
+	</LI>
+</OL>
+<H3><A NAME="connect"></A>Conectando os componentes para criar um fluxo de aplicativo</H3>
+<div>
+	<p>Na janela Design de fluxo, clique em Ponto de in&iacute;cio no
+	Dispositivo m&oacute;vel e arraste-o para o componente Tela de abertura. Da mesma forma, conecte os componentes como mostrado no gr&aacute;fico seguinte.</p>
+	<p class="align-center"><IMG SRC="../../../images_www/articles/71/mobility/filebrowser/file-flow.png" NAME="graphics3" ALT="Mostra o Designer de fluxo com componentes conectados por linhas de comando"  BORDER=1>
+  </p>
+</div>
+<H3><A NAME="insert"></A>Inserindo uma pr&eacute;-a&ccedil;&atilde;o no
+c&oacute;digo-fonte</H3>
+<OL>
+	<LI>Alterne para a janela C&oacute;digo-fonte. 
+	</LI>
+	<LI>
+	  Insira o c&oacute;digo seguinte no fim do c&oacute;digo-fonte. Esse
+	m&eacute;todo &eacute; respons&aacute;vel por ler os arquivos selecionados: 
+	<br>
+	<PRE>    /** 
+    * Read file
+    */ 
+    private void readFile() {
+        try {
+            FileConnection textFile = fileBrowser.getSelectedFile();
+            getTextBox().setString(&quot;&quot;);
+            InputStream fis = textFile.openInputStream();
+            byte[] b = new byte[1024];
+            int length = fis.read(b, 0, 1024);
+            fis.close();
+            if (length &gt; 0) {
+                textBox.setString(new String(b, 0, length));
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+    </PRE></LI>
+	<LI><P>Localize o m&eacute;todo <tt>commandAction</tt> no c&oacute;digo-fonte:<BR>
+	Insira <CODE>readFile();</CODE> na se&ccedil;&atilde;o de pr&eacute;-a&ccedil;&atilde;o do <CODE>FileBrowser.SELECT_FILE_COMMAND</CODE> (logo ap&oacute;s: <CODE>if (command == FileBrowser.SELECT_FILE_COMMAND)</CODE>, onde diz <CODE>//insira a pr&aacute;-a&ccedil;&atilde;o aqui)</CODE>: </p>
+	</LI>
+</OL>
+<H3><A NAME="run"></A>Executando o projeto</H3>
+<div>
+	<p>
+	  Pressione &lt;F6&gt; para executar o projeto principal ou selecione <tt>Executar</tt> &gt; <tt>Executar projeto principal</tt>.
+	</p>
+</div>
+<p class="align-center"><a href="#top">in&iacute;cio</a></p>
+<a name="javadoc-filebrowser"></a>
+<H2>Javadoc para o componente Navegador de arquivo</H2>
+
+<P>O NetBeans IDE oferece Javadocs de API do componente Navegador de arquivo, assim como outros componentes que voc&ecirc; pode usar no VMD. Para ler os Javadocs do componente Navegador de arquivo, realize as etapas abaixo:</P>
+<OL>
+<li>Coloque o cursor no componente <tt>FileBrowser</tt> no c&oacute;digo-fonte e pressione Ctr-Shift-Espa&ccedil;o (ou selecione <tt>C&oacute;digo-fonte</tt> &gt; <tt>Exibir documenta&ccedil;&atilde;o</tt>).<br>
+O Javadoc deste elemento &eacute; exibido em uma janela pop-up. </li>
+<li>Clique em Exibir documenta&ccedil;&atilde;o no &iacute;cone de navegador da Web externo (<img src="../../../images_www/articles/71/mobility/filebrowser/show-doc-button.png" alt="Exibir documenta&ccedil;&atilde;o no navegador da Web externo">) na janela pop-up para obter informa&ccedil;&otilde;es detalhadas sobre o componente <tt>FileBrowser</tt> em seu navegador.</li>
+
+	
+</OL>
+<p class="align-center"><a href="#top">in&iacute;cio</a></p>
+
+<div class="feedback-box"><a href="/about/contact_form.html?to=6&subject=NetBeans%20Java%20ME%20Custom%20Component:%20File%20Browser">Envie-nos seus coment&aacute;rios</a></div><br style="clear:both;" >
+<a name="see-also"></a>
+<h2>Consulte tamb&eacute;m</h2>
+<UL>
+ <li><a href="smscomposer.html">Componentes padr&atilde;o do Visual Mobile Designer: criando um aplicativo SMS Composer</a></li>
+ <li><a href="loginscreen.html">Componentes padr&atilde;o do Visual Mobile Designer: criando telas de logon no dispositivo m&oacute;vel</a></li>
+ <li><a href="pimbrowser.html">Componentes padr&atilde;o do Visual Mobile Designer: criando um aplicativo de gerenciador de informa&ccedil;&otilde;es pessoais</a></li>
+ <li><a href="splashscreen.html">Componentes padr&atilde;o do Visual Mobile Designer: usando telas de splash em aplicativos Java ME</a></li>
+ <li><a href="waitscreen.html">Componentes personalizados do Visual Mobile Designer: Criando telas de espera para aplicativos m&oacute;veis</a></li>
+<li><a href="tableitem.html">Componentes padr&atilde;o do Visual Mobile Designer: usando itens de tabela em aplicativos Java ME</a></li> <li><a href="http://wiki.netbeans.org/VisualMobileDesignerPalatteReference">Reference: Visual Mobile Designer Palette Guide</a></li>
+</UL>
+<p class="align-center"><a href="#top">in&iacute;cio</a></p>
+</BODY>
+</HTML>

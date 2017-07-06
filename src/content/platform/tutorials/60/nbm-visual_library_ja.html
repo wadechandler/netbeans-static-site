@@ -1,0 +1,469 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<!-- -*- xhtml -*- -->
+<title>NetBeans プラットフォーム 6.0: NetBeans ビジュアルライブラリのチュートリアル</title>
+    <link rel="stylesheet" type="text/css" href="../../../netbeans.css"> 
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="geertjan.wielenga@sun.com">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A walk-through of the basic features of the Visual Library API.">
+<!--      Copyright (c) 2006 Sun Microsystems, Inc. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>NetBeans ビジュアルライブラリのチュートリアル</h1>
+
+<p>このチュートリアルでは、NetBeans ビジュアルライブラリ API の主な機能の使い方について学習します。ビジュアルライブラリ API は、視覚化のための API で、たとえばモデリングやグラフ化などを行う場合に役立ちます。
+   
+     </p><p><b>目次</b></p>
+   
+      <img  src="../../images/articles/60/netbeans-stamp60-61.gif" class="stamp" width="114" height="114" alt="このページの内容は NetBeans IDE 6.1 が対象です" title="このページの内容は NetBeans IDE 6.1 が対象です"> </p>
+      <ul class="toc">
+<li><a href="#getting-started">モジュールの設定</a>
+</li><li><a href="#creating-the-scene">シーンの作成</a>
+</li><li><a href="#creating-a-palette">シーン用のコンポーネントパレットの作成</a>
+</li><li><a href="#adding-a-layer-widget">LayerWidget の追加</a>
+</li><li><a href="#adding-an-icon-widget">ドラッグ＆ドロップ機能による IconNodeWidget の追加</a>
+</li><li><a href="#adding-to-scene">シーンへの機能の追加</a>
+</li><li><a href="#adding-to-widget">IconNodeWidget への機能の追加</a>
+       </li></ul>
+         
+<p><b>このチュートリアルを行うには、次の表に示すソフトウェアおよびリソースが必要です。</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                <th class="tblheader" scope="col">必須バージョン</th>
+            </tr> 
+             <tr>
+                <td class="tbltd1">NetBeans IDE</td>
+                <td class="tbltd1"><a href="http://download.netbeans.org/netbeans/6.1/final/">version 6.1</a> または<br>
+                version 6.0</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">Java Developer Kit (JDK)</td>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">version 6</a> または<br>
+                version 5</td>
+            </tr>
+        </tbody>
+    </table>
+
+   <p class="tips">トラブルシューティングのために、<a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=2701">完了したサンプルをダウンロード</a>してソースを調べることもできます (任意)。
+
+  </p><p>また、このチュートリアルでは、3 つのアイコンを使用します。ここでそれらのアイコンを右クリックしてローカルに保存し、このチュートリアルでモジュールプロジェクトを作成したあとで、そのモジュールプロジェクトの場所にこれらのアイコンをコピーして使用してもかまいません。その 3 つのアイコンを次に示します。
+  
+   </p><p><img border="1" src="../../images/tutorials/vislib/image1.png"/>
+    <img border="1" src="../../images/tutorials/vislib/image2.png"/>
+    <img border="1" src="../../images/tutorials/vislib/image3.png"/>
+
+  
+</p><p>ビジュアルライブラリ API を使用するために必要な情報は、すべて次の 2 つの場所にまとめられています。
+  
+ </p><ul>
+     <li><a href="http://graph.netbeans.org/">ビジュアルライブラリプロジェクトページ</a>
+     </li><li><a href="http://graph.netbeans.org/documentation.html">ビジュアルライブラリ 2.0 - ドキュメント</a>
+ </li></ul>
+ 
+ <p>また、Javalobby の <a href="http://www.javalobby.org/eps/netbeans_visual_library/">Roman Strobl's Visual Library Screencast</a> も参照してください。
+ 
+<!-- ===================================================================================== -->
+
+</p><p></p><h2><a name="getting-started"></a>モジュールの設定</h2>
+
+<p>この節では、ウィザードを使用して、モジュールプロジェクトおよびカスタムウィンドウコンポーネントを作成します。 
+
+</p><ol>
+
+<li>「ファイル」&gt;「新規プロジェクト」を選択します。「新規プロジェクト」ウィザードで、「カテゴリ」の下にある「NetBeans モジュール」と「プロジェクト」の下にある「モジュール」を選択します。「次へ」をクリックします。「プロジェクト名」に「<tt>ShapeSample</tt>」と入力し、「プロジェクトの場所」をディスク上の適切なフォルダに設定します。「スタンドアロンモジュール」および「主プロジェクトとして設定」が選択されていない場合は、それらを選択します。「次へ」をクリックします。
+  
+   <p></p></li><li>「コード名ベース」に「<tt>org.netbeans.shapesample</tt>」、「モジュール表示名」に「<tt>Shape Sample</tt>」と入力します。「完了」をクリックします。
+
+    
+ <p></p></li><li>プロジェクトを右クリックして「プロパティー」を選択し、「プロジェクトプロパティー」ダイアログで「ライブラリ」をクリックして次の API との依存関係を宣言します。
+ 
+<p></p><ul>
+    <li>ビジュアルライブラリ API
+    </li><li>ユーティリティー API
+</li></ul>
+
+
+  <p>「了解」をクリックします。
+  
+</p><p></p></li><li>モジュールプロジェクトを右クリックし、「新規」&gt;「ファイル/フォルダ」を選択して「NetBeans モジュールの開発」カテゴリから「ウィンドウコンポーネント」を選択します。「次へ」をクリックします。ドロップダウンリストから <tt>editor</tt> を選択し、「アプリケーションの起動時に開く」を選択します。「次へ」をクリックします。
+ 
+ <p></p></li><li>「クラス名の接頭辞」に「<tt>Shape</tt>」と入力します。任意で 16 &times; 16 ピクセルのアイコンを追加します。「完了」をクリックします。</p> 
+ 
+ <p>複数のファイルが生成されます。そのうちの 1 つは <tt>ShapeTopComponent</tt> です。このファイルをデザインモードで開きます。次のような表示になります。
+ 
+ </p><p><img border="1" src="../../images/tutorials/vislib/shapetopcomponent.png"/>
+
+ 
+</p><p></p></li><li>デザインモードの TopComponent を右クリックし、「レイアウトを設定」を選択して「BorderLayout」を選択します。 
+
+</li></ol>
+  
+
+<p></p><h2><a name="creating-the-scene"></a>シーンの作成</h2>
+
+<p>ビジュアルライブラリ API を使用して行うプログラミングは、Swing でのプログラミングに似ています。ウィジェットと呼ばれる可視の要素のツリーを構築、変更します。ツリーの元はシーンクラスによって表され、シーンの可視データをすべて保持します。シーンはウィジェットです。シーンのビューを作成する必要があり、それは JComponent です。そして、この JComponent を JScrollPane に追加します。
+
+ </p><p>この節では、TopComponent に JScrollPane を追加します。そのあとで、新しいシーンを作成します。次に、シーンビューを TopComponent に渡し、TopComponent の JScrollPane に表示されるようにします。そうしたら、モジュールプロジェクトをインストールし、最初のシーンを表示します。</p>
+
+<ol>
+  
+<li>パレット (Ctrl-Shift-8) を使用して、TopComponent に <tt>JScrollPane</tt> をドロップします。インスペクタで、<tt>JScrollPane</tt> を右クリックし、「変数名を変更」を選択して「<tt>shapePane</tt>」と入力します。 
+ 
+  <p></p></li><li><tt>org.netbeans.shapesample</tt> パッケージに、<tt>GraphSceneImpl</tt> と呼ばれる Java クラスを作成します。クラスで <tt>GraphScene</tt> を拡張します。</p>
+
+<p>エラーを示す赤い下線と電球が表示されます。IDE でインポート文を生成します。
+
+</p><p>エラーを示す赤い下線と電球がふたたび表示されます。IDE でクラスの抽象メソッドを生成します。
+
+</p><p></p></li><li>有効な識別子を追加して、必要に応じて <tt>null</tt> が返されるように設定することによって、クラスの模擬的な実装を作成します。これによって、すべてのクラスの必要条件が満たされます。
+
+  
+<pre class="examplecode">public class GraphSceneImpl extends GraphScene {
+    
+    public GraphSceneImpl() {
+    }
+    
+    protected Widget attachNodeWidget(Object node) {
+        return null;
+    }
+    
+    protected Widget attachEdgeWidget(Object edge) {
+        return null;
+    }
+    
+    protected void attachEdgeSourceAnchor(Object edge, Object oldSourceNode, Object newSourceNode) {
+    
+    }
+    
+    protected void attachEdgeTargetAnchor(Object edge, Object oldTargetNode, Object newTargetNode) {
+            
+    }
+    
+}</pre>
+
+<p></p></li><li>ここで、TopComponent のコンストラクタを使用して、<tt>GraphSceneImpl</tt> クラスのインスタンスを保持します。そのために、<tt>ShapeTopComponent</tt> クラスのコンストラクタの最後に次の内容を追加します。
+
+<pre class="examplecode">GraphSceneImpl scene = new GraphSceneImpl();
+myView = scene.createView();
+
+shapePane.setViewportView(myView);
+add(scene.createSatelliteView(), BorderLayout.WEST);</pre>
+
+<p>ここでは 2 つのビューを作成しています。1 つ目は、グラフやモデルなどを視覚化するための大きなビューです。2 つ目はサテライトビューで、TopComponent の WEST (左側) に置いています。これによって、ユーザーはビュー間ですばやくナビゲートできるようになり、また、シーン全体の概要を確認できます。</p>
+ 
+<p>次のように、ビューの JComponent を宣言します。
+
+</p><pre class="examplecode">private JComponent myView;</pre>
+
+ 
+<p></p></li><li>IDE が再起動するときに、TopComponent を持続する必要はありません。実際に、この場合そうするとエラーが発生します。したがって、次に示すように PERSISTENCE_ALWAYS を PERSISTENCE_NEVER に変更します。
+
+<pre class="examplecode">public int getPersistenceType() {
+   return TopComponent.PERSISTENCE_NEVER;
+}</pre>
+
+ 
+<p></p></li><li>プロジェクトノードを右クリックし、「開発中 IDE でのインストール/再読み込み」を選択します。警告のメッセージが表示された場合は、「了解」をクリックします。</p>
+ 
+<p>モジュールのインストール時に「ウィンドウ」メニューの下を見ると、メニュー項目のリストの一番上に、「shape」という新しいメニュー項目があります。それを選択すると、ビジュアルライブラリ API 実装が起動することがわかります。
+
+ </p><p><img border="1" src="../../images/tutorials/vislib/firstscene.png"/>
+ 
+ 
+
+
+</p></li>
+
+<!-- ===================================================================================== -->
+<p></p><h2><a name="creating-a-palette"></a>シーン用のコンポーネントパレットの作成</h2>
+
+<p>ビジュアルライブラリ API を便利に使用するには、<a href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/overview-summary.html">パレット API</a> を実装して、このチュートリアルの冒頭に示した形状を含むコンポーネントパレットにします。あとで、ビジュアルライブラリ API のドラッグ＆ドロップ機能を追加して、シーンに形状をドラッグ＆ドロップできるようにします。そのあとで、シーンに拡大/縮小機能や手のひらツール機能などを追加してシーンを充実させることができます。
+ 
+     </p><ol>
+         <li>このチュートリアルは、パレット API ではなくビジュアルライブラリ API に主眼を置いているため、ここではパレット API の機能については説明していません。この題材については多くのチュートリアルがほかにあります (<a href="https://netbeans.org/kb/trails/platform.html">ここを参照</a>)。したがって、単に、<tt>org.netbeans.shapesample.palette</tt> と呼ばれる新しいパッケージに次のファイルをコピー＆ペーストします。
+         
+         <ul>
+             <li><a href="../../images/tutorials/vislib/Category.java">Category.java</a>
+             </li><li><a href="../../images/tutorials/vislib/CategoryChildren.java">CategoryChildren.java</a>  
+             </li><li><a href="../../images/tutorials/vislib/CategoryNode.java">CategoryNode.java</a>
+             </li><li><a href="../../images/tutorials/vislib/PaletteSupport.java">PaletteSupport.java</a>
+             </li><li><a href="../../images/tutorials/vislib/Shape.java">Shape.java</a>
+             </li><li><a href="../../images/tutorials/vislib/ShapeChildren.java">ShapeChildren.java</a>
+             </li><li><a href="../../images/tutorials/vislib/ShapeNode.java">ShapeNode.java</a>
+         </li></ul>
+
+                  
+         <p></p></li><li>このチュートリアルの「モジュールの設定」節の手順 3 で説明されているのと同じ手順で、アクション API、ノード API、および共通パレット API との依存関係を追加します。</p>
+
+         
+         <p></p></li><li>次に、この行を TopComponent のコンストラクタの最後に追加して、TopComponent のルックアップにパレットを追加します。
+         
+         <pre class="examplecode">associateLookup( Lookups.fixed( new Object[] { PaletteSupport.createPalette() } ) );</pre>
+         
+         <p></p></li><li>IDE によって <tt>org.openide.util.lookup.Lookups</tt> および <tt>org.netbeans.shapesample.palette.PaletteSupport</tt> 用のインポート文を挿入するよう求められます。要求を受け入れて、IDE にインポート文を生成させます。
+         
+         <p></p></li><li>このチュートリアルの冒頭にある画像を <tt>org.netbeans.shapesample.palette</tt> に置きます。</p>
+
+         <p>「プロジェクト」ウィンドウは次のようになります。</p>
+     
+     <p><img border="1" src="../../images/tutorials/vislib/proj-window.png"/>
+     
+     </p><p></p></li><li>モジュールをもう一度インストールします。メニュー項目から TopComponent を開くと、シーンの右に新しいコンポーネントパレットが表示されます。</p>
+ 
+  <p><img border="1" src="../../images/tutorials/vislib/firstpalette.png"/>
+ 
+ 
+ 
+</p></li>
+  
+<!-- ===================================================================================== -->
+<p></p><h2><a name="adding-a-layer-widget"></a>LayerWidget の追加</h2>
+
+<p><a href="http://graph.netbeans.org/documentation.html#LayerWidget">LayerWidget</a> は、Swing の JGlassPane に似たガラス区画として表されます。これはデフォルトで透過です。したがって、先へ進む前に、シーンに LayerWidget を追加して、シーン上の任意の場所に可視ウィジェットをドラッグ＆ドロップして配置できるようにします。
+   
+   </p><ol><li>次のように、<tt>GraphSceneImpl</tt> クラスで LayerWidget を宣言します。
+   
+<pre class="examplecode">private LayerWidget mainLayer;</pre>
+
+<p></p></li><li><tt>GraphSceneImpl</tt> クラスのコンストラクタで、次のようにシーンの子として LayerWidget を追加します。
+
+<pre class="examplecode">mainLayer = new LayerWidget (this);
+addChild (mainLayer);</pre></li></ol>
+
+<p>これで、シーンにウィジェットとしてパレットから項目をドラッグ＆ドロップするときに、LayerWidget の子としてそれらを追加することになります。LayerWidget はデフォルトで透過であるため、LayerWidget を透過的に重ね合わせることで、たとえばシーンに背景画像を追加するなどが可能です。
+   
+   </p><p>詳細は、Javadoc の <a href="http://graph.netbeans.org/documentation.html#LayerWidget">LayerWidget</a> を参照してください。
+
+<!-- ===================================================================================== -->
+</p><p></p><h2><a name="adding-an-icon-widget"></a>ドラッグ＆ドロップ機能による IconNodeWidget の追加</h2>
+
+<p>前に、TopComponent の JScrollPane にシーンを渡すために <tt>GraphSceneImpl</tt> クラスのコンストラクタを使用しました。今のところ、シーンは存在しますが動作は何もありません。動作は、アクションを通じて追加されます。この節で確認するアクションは、<tt><a href="http://graph.netbeans.org/documentation.html#AcceptAction">AcceptAction</a></tt> と呼ばれます。このアクションによってドラッグ＆ドロップ機能が可能になります。ドラッグ＆ドロップ機能はウィジェットにも適用できますが、ここではシーンそのものに適用します。
+      
+</p><p><tt>createAcceptAction</tt> を使用して、パレットからシーンに項目をドラッグしたときの動作を指定します。ここでは、2 つのメソッドが必要になります。1 つめは <tt>isAcceptable()</tt> で、項目をシーンに配置できるかどうかを決定します。ここで transferrable を使用して項目をテストできます。ドラッグの画像を設定することもできます。これは、あとに示す実装で実行します。<tt>true</tt> が返された場合は、<tt>accept</tt> メソッドが呼び出されます。前と同じヘルパーメソッドを使用して、transferrable から画像を取得します。それから <tt>addNode</tt> メソッドを呼び出して、新しい <a href="http://graph.netbeans.org/documentation.html#IconNodeWidget">IconNodeWidget</a> をインスタンス化し、transferable から取得した画像を渡します。
+        
+        </p><p>このセクションのコードはすべて相互に関係があります。そのため、このあとのメソッドをすべて追加し終えるまでは、エラーを示す赤い下線が表示されますが、とにかく論理的な順序ですべてを追加していきます。
+
+</p><ol>
+<li>まず、<tt>createAcceptAction</tt> を、その 2 つのメソッドとともに <tt>GraphSceneImpl</tt> クラスのコンストラクタに追加します。
+
+<pre class="examplecode">getActions().addAction(ActionFactory.createAcceptAction(new AcceptProvider() {
+
+    public ConnectorState isAcceptable(Widget widget, Point point, Transferable transferable) {
+        Image dragImage = getImageFromTransferable(transferable);
+        JComponent view = getView();
+        Graphics2D g2 = (Graphics2D) view.getGraphics();
+        Rectangle visRect = view.getVisibleRect();
+        view.paintImmediately(visRect.x, visRect.y, visRect.width, visRect.height);
+        g2.drawImage(dragImage,
+                AffineTransform.getTranslateInstance(point.getLocation().getX(),
+                point.getLocation().getY()),
+                null);
+        return ConnectorState.ACCEPT;
+    }
+
+    public void accept(Widget widget, Point point, Transferable transferable) {
+        Image image = getImageFromTransferable(transferable);
+        Widget w = GraphSceneImpl.this.addNode(new MyNode(image));
+        w.setPreferredLocation(widget.convertLocalToScene(point));
+    }
+
+}));</pre>
+
+<p><b>注: </b>先のコードを追加したあとは、赤い下線の一部はまだ残っています。これらはエラーを示しています。これらのエラーは、このコードが、まだ作成していないメソッドおよびクラスを参照しているために発生します。それらは次の手順で作成します。
+
+</p><p></p></li><li>次に、<tt>GraphSceneImpl</tt> クラスで、transferable から画像を取得するために、次に示すヘルパーメソッドを追加します。
+
+<pre class="examplecode">private Image getImageFromTransferable(Transferable transferable) {
+    Object o = null;
+    try {
+        o = transferable.getTransferData(DataFlavor.imageFlavor);
+    } catch (IOException ex) {
+        ex.printStackTrace();
+    } catch (UnsupportedFlavorException ex) {
+        ex.printStackTrace();
+    }
+    return o instanceof Image ? (Image) o : Utilities.loadImage(&quot;org/netbeans/shapesample/palette/shape1.png&quot;);
+}</pre>
+
+<p>このヘルパーメソッドから画像が正常に返されない場合は、画像の種類を定義できます。ここでは、代わりに画像 <tt>shape1.png</tt> を使用します。</p>
+
+<p></p></li><li><tt>MyNode</tt> という名前の新しいクラスを作成します。このクラスは、グラフ指向のモデルにあるノードを表します。各ノードはモデル内で一意 (「equals」メソッドでチェックされる) でなければならないため、これは直接の画像ではありません。画像を直接使用する場合は、シーンに 3 つのノード (1 つの画像ごとに 1 つ) しか持つことができません。MyNode クラスを使用すると、複数のノードを持つことが可能になり、各ノードは画像のインスタンスを占有または共有できます。
+
+<pre class="examplecode">public class MyNode {
+    
+    private Image image;
+    
+    public MyNode(Image image) {
+        this.image = image;
+    }
+    
+    public Image getImage() {
+        return image;
+    }
+}</pre>
+
+<p></p></li><li><tt>GraphSceneImpl</tt> クラスの署名を次のように変更し、ビジュアルライブラリの実装クラスがノードを受け取るようにします。</li>
+
+<pre class="examplecode">extends GraphScene&lt;MyNode, String&gt;</pre>
+
+<p>IDE に抽象クラス用の新しいスタブを生成させてください。
+ 
+ </p><p>また、ここでは総称を使用しているため、IDE が JDK 1.5 を使用するようにします。1.6 を使用しているかどうかわからないときは、プロジェクトを右クリックして「プロパティー」を選択し、「ソース」ページに移動します。「ソースレベル」ドロップダウンで 1.5 に変更します。
+
+ </p><p></p><li>最後に、<tt>GraphSceneImpl</tt> クラスの新しいウィジェットを定義します。このメソッドは、<tt>accept</tt> メソッドによって自動的に呼び出されます。パレットの項目がドロップされたときにビジュアルライブラリウィジェットを定義するために使用します。
+ 
+<pre class="examplecode">protected Widget attachNodeWidget(MyNode node) {
+    IconNodeWidget widget = new IconNodeWidget(this);
+    widget.setImage(node.getImage());
+    widget.setLabel(Long.toString(node.hashCode()));
+    widget.getActions().addAction(ActionFactory.createMoveAction());
+    mainLayer.addChild(widget);
+    return widget;
+}</pre>
+
+<p>画像をノードから取得するように設定しています。また、ラベル用の乱数も生成するようにしています。デフォルトでは、ウィジェットは存在しますが動作は何もありません。ここで、移動アクションを作成し、シーンでウィジェットを移動できるようにしています。最後に、シーンにウィジェットを返す前に、前の節で作成した LayerWidget に、それを子として追加しています。</p>
+
+ <p></p></li><li>モジュールを再読み込みして「shape」ウィンドウをふたたび開きます。</p>
+
+<p>これで、パレットの項目をドラッグ＆ドロップできるようになりました。シーンに項目をドラッグすると、ドラッグ画像を確認できます。項目をドロップするときに、それはウィジェットとなり、サテライトビュー内と同じようにシーン内に次のように表示されます。
+
+</p><p><img border="1" src="../../images/tutorials/vislib/finishedscene.png"/></p>
+
+ 
+</li></ol>
+
+
+<!-- ===================================================================================== -->
+<p></p><h2><a name="adding-to-scene"></a>シーンへの機能の追加</h2>
+
+<p>前の節では、シーンに <tt><a href="http://graph.netbeans.org/documentation.html#AcceptAction">AcceptAction</a></tt> を追加しました。その項目をドロップするかどうかを指定し、その項目を変換するために 2 つのメソッドを定義しなければなりませんでした。この節では、<tt><a href="http://graph.netbeans.org/documentation.html#ZoomAction">ZoomAction</a></tt> を使用して、シーンに拡大/縮小機能を追加します。
+
+</p><ol>
+    <li><tt>GraphSceneImpl</tt> クラスのコンストラクタの最後に次の行を追加します。
+    
+<pre class="examplecode">getActions().addAction(ActionFactory.createZoomAction());</pre>   
+    
+<p></p></li><li>モジュールをもう一度インストールします。
+
+<p></p></li><li>CTRL キーを押しながら、マウスのホイールを使用してシーンを拡大、縮小します。</p>
+
+<p><img border="1" src="../../images/tutorials/vislib/zoom.png"/></p>
+
+<p><img border="1" src="../../images/tutorials/vislib/unzoom.png"/></p>
+
+</li></ol>
+
+<p><b>注: </b>形状は画像として描画されます。現在のところ SVG はサポートされていません。 
+
+</p><p>前述の説明と同じように、次の行を使用して、シーンに手のひらツールの機能を追加できます。
+ 
+ </p><pre class="examplecode">getActions().addAction(ActionFactory.createPanAction());</pre>
+ 
+ <p>この行を追加すると、ユーザーはマウスホイールを押してシーン内のどの方向にもスクロールできるようになります。
+
+<!-- ===================================================================================== -->
+</p><p></p><h2><a name="adding-to-widget"></a>IconNodeWidget への機能の追加</h2>
+
+<p>前に IconNodeWidget に <tt><a href="http://graph.netbeans.org/documentation.html#MoveAction">MoveAction</a></tt> を追加し、ウィジェットの移動動作を使用可能にしました。これと同じ方法で、ほかの多くの動作をウィジェットに追加できます。この節では、<tt><a href="http://graph.netbeans.org/documentation.html#HoverAction">HoverAction</a></tt>、<tt><a href="http://graph.netbeans.org/documentation.html#SelectAction">SelectAction</a></tt>、および <tt><a href="http://graph.netbeans.org/documentation.html#InplaceEditorAction">InplaceEditorAction</a></tt> を追加します。
+
+     </p><p><tt>InplaceEditorAction</tt> は、ユーザーがラベルを変更できるようにします。
+   
+  </p><p><img border="1" src="../../images/tutorials/vislib/editable.png"/></p>
+  
+  <p><tt>SelectAction</tt> はウィジェットが選択されたときに、<tt>HoverAction</tt> はウィジェット上にマウスを置いているときに、ラベルの色を変更します。
+   
+   </p><p><img border="1" src="../../images/tutorials/vislib/selectable-hoverable.png"/></p>
+     
+     
+<ol>
+    <p></p><li>まず、次のように IconNodeWidget に追加するエディタアクションを定義します。
+    
+<pre class="examplecode">private WidgetAction editorAction = ActionFactory.createInplaceEditorAction(new LabelTextFieldEditor());</pre>   
+    
+<p></p></li><li>ここで、次のように <tt>LabelTextFieldEditor</tt> を定義します。
+
+<pre class="examplecode">private class LabelTextFieldEditor implements TextFieldInplaceEditor {
+
+    public boolean isEnabled(Widget widget) {
+        return true;
+    }
+
+    public String getText(Widget widget) {
+        return ((LabelWidget) widget).getLabel();
+    }
+
+    public void setText(Widget widget, String text) {
+        ((LabelWidget) widget).setLabel(text);
+    }
+
+}</pre>
+
+<p></p></li><li>最後に、IconNodeWidget にエディタアクションを割り当てます。方法は、前に行なった移動アクションと同じです。
+
+<pre class="examplecode">widget.getLabelWidget().getActions().addAction(editorAction);</pre>   
+ 
+<p>これで、まず IconNodeWidget の LabelWidget を取得します。それから LabelWidget にエディタアクションを追加します。</p>
+
+ <p></p></li><li>IDE によっていくつかのインポート文を追加するよう求められます。それぞれについて、IDE の提案を受け入れます。
+
+<p></p></li><li>次に、<tt>SelectAction</tt> および <tt>HoverAction</tt> の場合、次に示すように、IconNodeWidget にこれらのアクションを割り当てるだけです。
+ 
+<pre class="examplecode">widget.getActions().addAction(createSelectAction());
+widget.getActions().addAction(createObjectHoverAction());</pre>
+
+<p></p></li><li>次に、作成したアクションの順序について検討する必要があります。詳細は、ドキュメントの<a href="http://graph.netbeans.org/documentation.html#OrderOfActions">アクションの順序</a>の節を参照してください。アクションの順序を変更すると、<tt>attachNodeWidget</tt> は次のようになります。
+
+<pre class="examplecode">protected Widget attachNodeWidget(MyNode node) {
+    IconNodeWidget widget = new IconNodeWidget(this);
+    widget.setImage(node.getImage());
+    widget.setLabel(Long.toString(node.hashCode()));
+
+    //ダブルクリック、ダブルクリック時にのみイベントが使用される:
+    widget.getLabelWidget().getActions().addAction(editorAction);
+
+    //シングルクリック、イベントは使用されない:
+    widget.getActions().addAction(createSelectAction()); 
+
+    //マウスをドラッグ、マウスのドラッグ時にイベントが使用される:
+    widget.getActions().addAction(ActionFactory.createMoveAction()); 
+
+    //マウスを置く、マウスをウィジェットに置くときにイベントが使用される:
+    widget.getActions().addAction(createObjectHoverAction()); 
+
+    mainLayer.addChild(widget);
+    return widget;
+}</pre>
+
+<p></p></li><li>モジュールをふたたびインストールして実際に使用してみます。この節の最初に説明したように、ウィジェットのラベルにマウスを置いたときや選択したときに、その色が変わります。また、ラベルをクリックするとその内容を編集できます。
+
+</li></ol>
+
+<p>これで NetBeans 6.0 のビジュアルライブラリ 2.0 のチュートリアルは終了です。</p>
+
+<br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Visual%20Library%20API%20Tutorial%20NetBeans%206.0">ご意見をお寄せください</a></div>
+<br style="clear:both;" />
+
+      
+        <a name="next_steps"></a><h2>次の手順</h2>
+        <p>ビジュアルライブラリ API の使用方法の詳細については、次のドキュメントを参照してください。</p> 
+  
+ <ul>
+      <li>Javalobby の <a href="http://www.javalobby.org/eps/netbeans_visual_library/">Roman Strobl's Visual Library Screencast</a>
+     </li><li><a href="http://graph.netbeans.org/">ビジュアルライブラリプロジェクトページ</a>
+     </li><li><a href="http://graph.netbeans.org/documentation.html">ビジュアルライブラリ 2.0 - ドキュメント</a>
+ </li></ul>
+ 
+
+    </ol></ol></body>
+</html>

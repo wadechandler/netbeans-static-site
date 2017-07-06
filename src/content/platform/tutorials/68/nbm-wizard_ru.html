@@ -1,0 +1,589 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+<title>Курс по использованию модуля &quot;Мастер&quot; в NetBeans на платформе NetBeans 6.5</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="geertjan.wielenga@sun.com">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A walk-through of the 
+ basic features of the Wizard API classes.">
+</head>
+
+<body>
+
+<h1>Курс по использованию модуля &quot;Мастер&quot;</h1>
+
+<p>В этом учебном курсе вы узнаете, как использовать основные функциональные возможности, предлагаемые классами &quot;Мастер&quot; <a href="http://bits.netbeans.org/dev/javadoc/org-openide-dialogs/org/openide/package-summary.html">интерфейса API NetBeans </a>.</p>
+
+     <p><b>Содержимое</b></p>
+   
+   <img  src="../images/articles/68/netbeans-stamp-65-67-68.gif" class="stamp" width="114" height="114" alt="Содержимое на этой странице относится к среде NetBeans IDE 6.5, 6.7, 6.8" title="Содержимое на этой странице относится к среде NetBeans IDE 6.5, 6.7, 6.8"> </p>
+
+      <ul class="toc">
+<li><a href="#set">Создание модуля проекта</a>
+<li><a href="#wiz">Создание инфраструктуры мастера</a>
+<li><a href="#action">Регистрация класса действия мастера</a>
+<li><a href="#design">Проектирование содержимого мастера</a>
+<li><a href="#process">Обработка данных пользователя</a>
+<li><a href="#validate">Проверка данных пользователя</a>
+<li><a href="#persist">Сохранение данных при перезапуске</a>
+<li><a href="#brand">Брэндинг мастера</a>
+<li><a href="#further">Дополнительные сведения</a>
+       </ul>
+
+
+<p class="tips"> В приложениях платформы NetBeans существует возможность создания различных мастеров. Если необходимо создать мастер, который отображается в диалоговом окне создания проекта, см. <a href="https://platform.netbeans.org/tutorials/nbm-projectsamples.html">Учебный курс по модулю добавления примера проекта</a>. Если необходимо создать мастер, который отображается в диалоговом окне создания файла, см. <a href="http://platform.netbeans.org/tutorials/nbm-filetemplates.html">Учебный курс по созданию модулей шаблонов файлов</a>. В этом учебном курсе будет рассмотрено создание общего мастера, который появляется при щелчке кнопки на панели инструментов.
+
+
+<p><b>Для работы с этим учебным курсом требуется программное обеспечение и ресурсы, перечисленные в следующей таблице.</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Программное обеспечение или ресурс</th>
+                <th class="tblheader" scope="col">Требуемая версия</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">Среда IDE NetBeans</a></td>
+                <td class="tbltd1">версия 6.5 или выше </td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Комплект для разработчика на языке Java (JDK)</a></td>
+                <td class="tbltd1">версия 6 или<br/>версия 5</td>
+            </tr>
+        </tbody>
+    </table>
+
+<!-- ===================================================================================== -->
+
+    <h2 class="tutorial"><a name="set"></a>Создание модуля проекта</h2>
+
+    <p>Сначала используется мастер Новый модуль проекта.  В конце его работы создается структура основных источников с некоторыми файлами по умолчанию, которые необходимы для любого модуля среды NetBeans.
+
+         <ol>
+    <li>Выберите &quot;Файл&quot; &gt; &quot;Новый проект&quot; (Ctrl+Shift+N). В разделе &quot;Категории&quot; выберите параметр &quot;Модули NetBeans&quot;. В области &quot;Проекты&quot; выберите &quot;Модуль&quot;. Нажмите кнопку &quot;Далее&quot;.</li>
+    <li>На панели &quot;Имя и расположение&quot; введите текст <tt>DemoWizard</tt> в поле &quot;Имя проекта&quot;. В поле &quot;Расположение проекта&quot; укажите любой каталог на компьютере. Оставьте выбор &quot;Отдельный модуль&quot; и не снимайте флажок &quot;Установить как главный проект&quot;. Нажмите кнопку &quot;Далее&quot;.</li>
+    <li>На панели &quot;Основные настройки модуля&quot; введите текст <tt>org.demo.wizard</tt> в поле &quot;Основа кодового имени&quot;.</li>
+      <li>Выберите &quot;Создать слой XML&quot;. Не меняйте места расположения пакета локализации и файла слоя XML. Таким образом они будут сохранены с именем <tt>org/demo/wizard</tt>. Нажмите кнопку &quot;Готово&quot;. </li>
+</ol>
+
+    <p> В среде IDE будет создан проект <tt>DemoWizard</tt>. Проект содержит все источники и метаданные проекта, например, сценарий построения проекта Ant. Проект откроется в среде IDE. Логическую структуру проекта можно просмотреть в окне &quot;Проекты&quot; (Ctrl+1), а его файловую структуру &ndash; в окне &quot;Файлы&quot; (Ctrl+2).</p>
+
+
+    <br />
+
+ <!-- ===================================================================================== -->
+
+<p><h2><a name="wiz"></a>Создание инфраструктуры мастера</h2>
+
+<p>В этом разделе рассмотрено использование мастера &quot;Мастер&quot; для добавления к модулю заглушек мастера.
+
+<ol>
+    <li><p>В окне &quot;Проекты&quot; щелкните правой кнопкой мыши узел проекта DemoWizard и выберите &quot;Создать | Прочее&quot;, а затем &quot;Разработка Модуля | Мастер&quot;:</p>
+    <p><img border="1" src="../images/tutorials/wizard/wizard-wizard.png"/>
+    <p>Нажмите кнопку &quot;Далее&quot;.</p>
+    </li>
+    <li><p>На панели &quot;Тип мастера&quot;, в поле &quot;Количество панелей мастера&quot; введите 2, а другие значения оставьте без изменений:</p>
+    <p><img border="1" src="../images/tutorials/wizard/wizard-wizard-3.png"/>
+    <p>На вышеописанной панели используются следующие поля:
+    <ul>
+        <li><b>Тип регистрации.</b> Определяет место, из которого осуществляется доступ к мастеру. При выборе &quot;Особый&quot;, с помощью мастера &quot;Мастер&quot; будет создан новый класс действия, который используется для открытия и инициализации данного мастера. При выборе &quot;Создать файл&quot; мастер &quot;Мастер&quot; зарегистрирует созданный мастер в файле <tt>layer.xml</tt> модуля.
+        <li><b>Последовательность этапов Мастера.</b> Определяет, будет ли мастер иметь линейный характер и будет ли у пользователя возможность пропустить какие-либо этапы мастера, в зависимости от выбранных на предыдущих этапах параметров. По умолчанию мастер линейный, &quot;Статический&quot;, в то время как мастер с этапами, которые могут быть пропущены, требует наличия специального класса итерации, который создается при выборе варианта &quot;Динамический&quot;.
+        <li><b>Количество панелей мастера.</b> Определяет количество панелей в создаваемом мастере. Для каждого этапа мастера будет создано два файла Java: представление и контроллер.
+    </ul>
+    <p>Нажмите кнопку &quot;Далее&quot;.</p>
+    </li>
+    <li><p>На панели &quot;Имя и расположение&quot; введите текст <tt>Demo</tt> в поле &quot;Префикс имени класса&quot; и выберите основной пакет из выпадающего меню &quot;Пакет&quot;.</p>
+    <p><img border="1" src="../images/tutorials/wizard/wizard-wizard-4.png"/>
+    <p>Нажмите кнопку &quot;Готово&quot;. </p>
+    </li>
+</ol>
+
+<p>В окне &quot;Проекты&quot; должно отображаться следующее:
+<p><img border="1" src="../images/tutorials/wizard/projects-window.png"/>
+
+<p><h2><a name="action"></a>Регистрация класса действия мастера</h2>
+
+<p>В этом разделе описывается изменение класса действия и его регистрация в файле <tt>layer.xml</tt>. 
+
+<ol>
+    <li>Откройте файл <tt>DemoWizardAction.java</tt> и замените весь код следующим:
+
+<pre class=examplecode>
+package org.demo.wizard;
+
+import java.awt.Component;
+import java.awt.Dialog;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.text.MessageFormat;
+import javax.swing.JComponent;
+import org.openide.DialogDisplayer;
+import org.openide.WizardDescriptor;
+
+public final class DemoWizardAction implements ActionListener {
+
+    private WizardDescriptor.Panel[] panels;
+
+    public void actionPerformed(ActionEvent e) {
+        WizardDescriptor wizardDescriptor = new WizardDescriptor(getPanels());
+        // {0} заменяется на WizardDesriptor.Panel.getComponent().getName()
+        wizardDescriptor.setTitleFormat(new MessageFormat(&quot;{0}&quot;));
+        wizardDescriptor.setTitle(&quot;Заголовок диалогового окна мастера&quot;);
+        Dialog dialog = DialogDisplayer.getDefault().createDialog(wizardDescriptor);
+        dialog.setVisible(true);
+        dialog.toFront();
+        boolean cancelled = wizardDescriptor.getValue() != WizardDescriptor.FINISH_OPTION;
+        if (!cancelled) {
+            // любые действия
+        }
+    }
+
+    /**
+     * Инициализация панелей, соответствующих отдельным этапам мастера
+     * и установка различных свойств, регулирующих внешний вид мастера.
+     */
+    private WizardDescriptor.Panel[] getPanels() {
+        if (panels == null) {
+            panels = new WizardDescriptor.Panel[]{
+                        new DemoWizardPanel1(),
+                        new DemoWizardPanel2()
+                    };
+            String[] steps = new String[panels.length];
+            for (int i = 0; i &lt; panels.length; i++) {
+                Component c = panels[i].getComponent();
+                // Название этапа по умолчанию для имени компонента панели. Обычно используется
+                // для получения имени выбора цели, которое появляется 
+                // в перечне этапов.
+                steps[i] = c.getName();
+                if (c instanceof JComponent) { // assume Swing components
+                    JComponent jc = (JComponent) c;
+                    // Задает номер этапа для компонента
+                    // TODO использует org.openide.dialogs &gt;= 7.8, может использовать WizardDescriptor.PROP_*:
+                    jc.putClientProperty(&quot;WizardPanel_contentSelectedIndex&quot;, new Integer(i));
+                    // Задание имени этапа для панели
+                    jc.putClientProperty(&quot;WizardPanel_contentData&quot;, steps);
+                    // Включение создания субтитров на каждом этапе
+                    jc.putClientProperty(&quot;WizardPanel_autoWizardStyle&quot;, Boolean.TRUE);
+                    // Отображает этапы на левой стороне с изображением на заднем фоне
+                    jc.putClientProperty(&quot;WizardPanel_contentDisplayed&quot;, Boolean.TRUE);
+                    // Включение нумерации для всех этапов
+                    jc.putClientProperty(&quot;WizardPanel_contentNumbered&quot;, Boolean.TRUE);
+                }
+            }
+        }
+        return panels;
+    }
+
+    public String getName() {
+        return &quot;Start Sample Wizard&quot;;
+    }
+
+}
+</pre>
+
+    </li>
+
+<p class="tips"> Используется тот же код, что и сгенерированный, за исключением реализации <tt>ActionListener</tt>вместо <tt>CallableSystemAction</tt>. Это сделано потому, что <tt>ActionListener</tt> является стандартным классом JDK, а <tt>CallableSystemAction</tt> - нет. Поскольку используется платформа NetBeans 6.5, можно использовать стандартный класс JDK, что более удобно и требует меньше кода.
+
+    <li>Регистрация класса действий в файле <tt>layer.xml</tt> осуществляется следующим образом:
+
+<pre class=examplecode>
+&lt;filesystem&gt;
+    &lt;folder name=&quot;Actions&quot;&gt;
+        &lt;folder name=&quot;File&quot;&gt;
+            &lt;file name=&quot;org-demo-wizard-DemoWizardAction.instance&quot;&gt;
+                &lt;attr name=&quot;delegate&quot; newvalue=&quot;org.demo.wizard.DemoWizardAction&quot;/&gt;
+                &lt;attr name=&quot;iconBase&quot; stringvalue=&quot;org/demo/wizard/icon.png&quot;/&gt;
+                &lt;attr name=&quot;instanceCreate&quot; methodvalue=&quot;org.openide.awt.Actions.alwaysEnabled&quot;/&gt;
+                &lt;attr name=&quot;noIconInMenu&quot; stringvalue=&quot;false&quot;/&gt;
+            &lt;/file&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+    &lt;folder name=&quot;Toolbars&quot;&gt;
+        &lt;folder name=&quot;File&quot;&gt;
+            &lt;file name=&quot;org-demo-wizard-DemoWizardAction.shadow&quot;&gt;
+                &lt;attr name=&quot;originalFile&quot; stringvalue=&quot;Actions/File/org-demo-wizard-DemoWizardAction.instance&quot;/&gt;
+                &lt;attr name=&quot;position&quot; intvalue=&quot;0&quot;/&gt;
+            &lt;/file&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/filesystem&gt;
+</pre>
+
+<p class="tips"> Элемент &quot;iconBase&quot; указывает на изображение с именем &quot;icon.png&quot; в основном пакете. Если используется собственное изображение, оно должно быть размером 16x16 пикселей, или же необходимо сделать следующее: <img border="1" src="../images/tutorials/wizard/icon.png"/>
+
+<li>Запустите модуль. Запустится приложение, и на панели инструментов, в месте, которое задано в файле <tt>layer.xml</tt>, будут отображены кнопки:
+
+<p><img border="1" src="../images/tutorials/wizard/result-1.png"/>
+
+<p>Нажмите кнопку для открытия мастера:
+<p><img border="1" src="../images/tutorials/wizard/result-2.png"/>
+<p>Нажмите кнопку &quot;Далее&quot; и обратите внимание на то, что на последней панели кнопка &quot;Готово&quot; станет активной.
+<p><img border="1" src="../images/tutorials/wizard/result-3.png"/>
+
+     </li>
+
+</ol>
+
+<p>Теперь, когда структура мастера работает, добавим дополнительное содержимое.
+
+<p><h2><a name="design"></a>Проектирование содержимого мастера</h2>
+
+<p>В этом разделе описывается добавление содержимого к мастеру и настройка основных функций.
+
+<ol>
+    <li><p>Откройте файл <tt>DemoWizardAction.java</tt>. Обратите внимание, существует возможность настройки различных свойств мастера:</p>
+     <p><img border="1" src="../images/tutorials/wizard/wizard-tweaking.png"/></p>
+     <p>Описание этих свойств приведено <a href="http://ui.netbeans.org/docs/ui_apis/wide/index.html">здесь</a>.
+    </li>
+    <li><p>В <tt>DemoWizardAction.java</tt> измените текст <tt>wizardDescriptor.setTitle</tt> на следующий:
+<pre class=examplecode>
+wizardDescriptor.setTitle(&quot;Выбор музыки&quot;);
+</pre>
+    <li><p>Откройте файл<tt>DemoVisualPanel1.java</tt> и файл<tt>DemoVisualPanel2.java</tt> и используйте конструктор графического интерфейса пользователя &quot;Matisse&quot; для добавления компонентов Swing например, следующих:</p>
+     <p><img border="1" src="../images/tutorials/wizard/panel-1-design.png"/></p>
+     <p><img border="1" src="../images/tutorials/wizard/panel-2-design.png"/></p>
+     <p>Выше показаны файлы <tt>DemoVisualPanel1.java</tt> и <tt>DemoVisualPanel2.java</tt>, с компонентами Swing.
+    </li>
+    <li>Откройте две панели в представлении Источник и измените их методы <tt>getName()</tt> на &quot;Имя и адрес&quot; и &quot;Информация о музыканте&quot;, соответственно.
+    <li><p>Запустите модуль еще раз. При открытии мастера, в зависимости от добавленных компонентов Swing и использованных настроек, внешний вид мастера будет аналогичен следующему:</p>
+<p><img border="1" src="../images/tutorials/wizard/result-4.png"/></p>
+
+<p class="tips"> Вышеприведенное изображение на левой панели мастера устанавливается в файле<tt>DemoWizardAction.java</tt> следующим образом:
+
+<pre class=examplecode>
+wizardDescriptor.putProperty(&quot;WizardPanel_image&quot;, ImageUtilities.loadImage(&quot;org/demo/wizard/banner.png&quot;, true));
+</pre>
+     
+</ol>
+
+<p>После того, как создано содержимое мастера, необходимо добавить программный код для обработки данных, которые вводятся пользователем.
+
+ <!-- ===================================================================================== -->
+
+    <h2 class="tutorial"><a name="process"></a>Обработка данных пользователя</h2>
+
+    <p>В этом разделе описана процедура передачи данных пользователя от одной панели к другой, а также как отображение результатов для пользователя после нажатия клавиши &quot;Готово&quot;.
+
+         <ol>
+    <li><p>В классе <tt>WizardPanel</tt> для получения набора данных из визуальных средств поддержки используется метод <tt>storeSettings</tt>. Например, создадим модуль получения данных в файле <tt>DemoVisualPanel1.java</tt>, а затем получим к нему доступ из файла <tt>DemoWizardPanel1.java</tt>:</p>
+
+<pre class=examplecode>
+public void storeSettings(Object settings) {
+    ((WizardDescriptor) settings).putProperty(&quot;name&quot;, ((DemoVisualPanel1)getComponent()).getNameField());
+    ((WizardDescriptor) settings).putProperty(&quot;address&quot;, ((DemoVisualPanel1)getComponent()).getAddressField());
+}
+</pre>
+
+    </li>
+    <li><p>Затем, с помощью файла <tt>DemoWizardAction.java</tt> получим введенные параметры и обработаем их:</p>
+
+<pre class=examplecode>
+public void actionPerformed(ActionEvent e) {
+    WizardDescriptor wizardDescriptor = new WizardDescriptor(getPanels());
+    // {0} будет заменен на WizardDesriptor.Panel.getComponent().getName()
+    wizardDescriptor.setTitleFormat(new MessageFormat(&quot;{0}&quot;));
+    wizardDescriptor.setTitle(&quot;Music Selection&quot;);
+    Dialog dialog = DialogDisplayer.getDefault().createDialog(wizardDescriptor);
+    dialog.setVisible(true);
+    dialog.toFront();
+    boolean cancelled = wizardDescriptor.getValue() != WizardDescriptor.FINISH_OPTION;
+    if (!cancelled) {
+        <b>String name = (String) wizardDescriptor.getProperty(&quot;name&quot;);
+        String address = (String) wizardDescriptor.getProperty(&quot;address&quot;);
+        DialogDisplayer.getDefault().notify(new NotifyDescriptor.Message(name + &quot; &quot; + address));</b>
+    }
+}
+</pre>
+
+<p class="tips"> <tt>NotifyDescriptor</tt> также можно использовать другими способами, например в окне завершения кода:
+
+<p><img border="1" src="../images/tutorials/wizard/notifydescriptor.png"/></p>
+
+
+         </ol>
+
+<p>Итак, была рассмотрена обработка данных, вводимых пользователем.
+
+    <br />
+
+ <!-- ===================================================================================== -->
+
+    <h2 class="tutorial"><a name="validate"></a>Проверка данных пользователя</h2>
+
+    <p>В этом разделе описана процедура проверки данных, введенных пользователем, при нажатии клавиши &quot;Далее&quot;.
+
+         <ol>
+    <li><p>В <tt>DemoWizardPanel1</tt> измените сигнатуру класса, реализовав <tt>WizardDescriptor.ValidatingPanel</tt> вместо <tt>WizardDescriptor.Panel</tt>:</p>
+
+<pre class=examplecode>
+public class DemoWizardPanel1 implements WizardDescriptor.ValidatingPanel
+</pre>
+
+<li>В начале класса следует изменить объявление <tt>JComponent</tt> на объявление
+
+<pre class=examplecode>
+private DemoVisualPanel1 component;
+</pre>
+
+<li>При реализации необходимо использовать абстрактный метод, например:
+
+<pre class=examplecode>
+@Override
+public void validate() throws WizardValidationException {
+
+    String name = component.getNameTextField().getText();
+    if (name.equals(&quot;&quot;)){
+        throw new WizardValidationException(null, &quot;Invalid Name&quot;, null);
+    }
+
+}
+</pre>
+
+<li><p>Запустите модуль. Нажмите кнопку &quot;Далее&quot;, не вводя ничего в поле &quot;Name&quot;. Должен появится нижеприведенный результат. Обратите внимание, что если данные не прошли проверку, то переход к следующей панели невозможен:</p>
+
+<p><img border="1" src="../images/tutorials/wizard/validation1.png"/></p>
+
+<li>Также, если поле было оставлено пустым, можно сделать кнопку &quot;Далее&quot; неактивной. Сначала необходимо объявить вверху класса логические переменные:
+
+<pre class=examplecode>
+private boolean isValid = true;
+</pre>
+
+<p>Затем переопределить <tt>isValid()</tt> следующим образом:
+
+<pre class=examplecode>
+@Override
+public boolean isValid() {
+    return isValid;
+}
+</pre>
+
+<p>Тогда, при вызове <tt>validate()</tt>, который происходит при нажатии кнопки &quot;Далее&quot;, возвращается значение &quot;false&quot;:
+
+<pre class=examplecode>
+@Override
+public void validate() throws WizardValidationException {
+
+    String name = component.getNameTextField().getText();
+    if (name.equals(&quot;&quot;)) {
+        <b>isValid = false;</b>
+        throw new WizardValidationException(null, &quot;Недопустимое имя&quot;, null);
+    }
+
+}
+</pre>
+
+<p>Другой вариант заключается в первоначальном задании значения логической переменной &quot;false&quot;. Затем реализуется <tt>DocumentListener</tt>, который добавляет слушатель для поля и, при вводе пользователем в этом поле текста, изменяет значения логической переменной на &quot;true&quot; и вызывает метод <tt>isValid()</tt>.
+         </ol>
+
+<p>Итак, была рассмотрена проверка данных, вводимых пользователем.
+
+  <p class="tips"> Для получения дополнительных сведений о проверке данных, введенных пользователем, см. пример Тома Вилера в конце данного учебного курса.
+
+    <br />
+
+ <!-- ===================================================================================== -->
+
+    <h2 class="tutorial"><a name="persist"></a>Сохранение данных при перезапуске</h2>
+
+    <p>В этом разделе описана процедура сохранения данных при закрытии приложения, и их дальнейшее получение мастером при повторном запуске.
+
+         <ol>
+
+    <li><p>В <tt>DemoWizardPanel1.java</tt> переопределите методы <tt>readSettings</tt> и <tt>storeSettings</tt> следующим образом:</p>
+
+<pre class=examplecode>
+<b>JTextField nameField = ((DemoVisualPanel1) getComponent()).getNameTextField();
+JTextField addressField = ((DemoVisualPanel1) getComponent()).getAddressTextField();</b>
+
+@Override
+public void readSettings(Object settings) {
+    <b>nameField.setText(NbPreferences.forModule(DemoWizardPanel1.class).get(&quot;namePreference&quot;, &quot;&quot;));
+    addressField.setText(NbPreferences.forModule(DemoWizardPanel1.class).get(&quot;addressPreference&quot;, &quot;&quot;));</b>
+}
+
+@Override
+public void storeSettings(Object settings) {
+    ((WizardDescriptor) settings).putProperty(&quot;name&quot;, nameField.getText());
+    ((WizardDescriptor) settings).putProperty(&quot;address&quot;, addressField.getText());
+    <b>NbPreferences.forModule(DemoWizardPanel1.class).put(&quot;namePreference&quot;, nameField.getText());
+    NbPreferences.forModule(DemoWizardPanel1.class).put(&quot;addressPreference&quot;, addressField.getText());</b>
+}
+</pre>
+
+     </li>
+
+    <li><p>Запустите модуль еще раз и введите имя и адрес в первой панели мастера:</p>
+<p><img border="1" src="../images/tutorials/wizard/nbpref1.png"/></p>
+     </li>
+
+    <li><p>Закройте приложение, откройте меню &quot;Файлы&quot; и просмотрите свойства файла в папке <tt>build</tt>приложения. На экране должны появиться следующие настройки:</p>
+<p><img border="1" src="../images/tutorials/wizard/nbpref2.png"/></p>
+     </li>
+     
+    <li><p>Еще раз запустите приложение. При следующем открытии мастера для задания значений в полях мастера будут автоматически использованы ранее заданные настройки.</p>
+     </li>
+     
+         </ol>
+         
+<p>Итак, было рассмотрено сохранение данных при перезапуске.
+
+    <br />
+
+ <!-- ===================================================================================== -->
+
+    <h2 class="tutorial"><a name="brand"></a>Брэндинг мастера</h2>
+
+    <p>В этом разделе описана процедура изменения наименования кнопки &quot;Далее&quot; в инфраструктуре мастера на надпись &quot;Дополнительно&quot;.
+
+<p class="tips"> Под термином &quot;брэндинг&quot; подразумевается настройка, которая обычно заключается в незначительных изменениях  с сохранением языка интерфейса, в то время как под понятием &quot;интернационализация&quot; или &quot;локализация&quot; подразумевается перевод на другие языки. Сведения относительно локализации модулей NetBeans приведены <a href="http://translatedfiles.netbeans.org/index-l10n.html">здесь</a>.
+
+         <ol>
+    <li><p>В окне &quot;Файлы&quot; разверните папку <tt>branding</tt> и создайте нижеприведенную структуру файлов и папок:</p>
+
+<p><img border="1" src="../images/tutorials/wizard/branding-1.png"/></p>
+
+     </li>
+    <li>Содержимое файла задайте следующим образом:
+
+<pre class=examplecode>
+CTL_NEXT=&amp;Дополнительно &gt;
+</pre>
+
+<p>Для остальных строк можно выполнить следующий брэндинг:
+
+<pre class=examplecode>
+CTL_CANCEL
+CTL_PREVIOUS
+CTL_FINISH
+CTL_ContentName
+</pre>
+
+<p class="tips"> Клавиша &quot;CTL_ContentName&quot;по умолчанию настроена как &quot;Шаги&quot; и используется в левой панели мастера, если свойство &quot;WizardPanel_autoWizardStyle&quot; не было установлено как &quot;FALSE&quot;.
+
+
+    </li>
+    <li><p>Запустите приложение. Кнопка &quot;Далее&quot; будет подписана &quot;Дополнительно&quot;:</p>
+
+<p><img border="1" src="../images/tutorials/wizard/branding-2.png"/></p>
+
+
+
+<p class="tips"> Опционально, для удаления левой панели мастера можно использовать файл <tt>DemoWizardAction.java</tt>, как было описано ранее:
+
+</p><pre class="examplecode"> wizardDescriptor.putProperty(&quot;WizardPanel_autoWizardStyle&quot;, Boolean.FALSE);
+</pre>
+
+<p>В результате вышеописанных настроек вид мастера будет следующим:</p>
+
+    <p><img border="1" src="../images/tutorials/wizard/branding-3.png"/></p>
+
+</ol>
+
+<p>Был рассмотрен брэндинг строк, определенных в инфраструктуре мастера и создание собственной брендированной версии.
+
+    <br />
+
+ <!-- ===================================================================================== -->
+
+    <h2 class="tutorial"><a name="further"></a>Дополнительные сведения</h2>
+
+    <p>Некоторые дополнительные сведения доступны в сети:
+
+         <ul>
+            <li><p>Сайт о NetBeans Тома Вилера (щелкните на изображении внизу):</p>
+              <p><a href="http://www.tomwheeler.com/netbeans/"><img border="1" src="../images/tutorials/wizard/tom.png"/></a></p>
+
+              <p class="tips"> Вышеприведенные примеры, хотя и были написаны для среды NetBeans 5.5, были успешно опробованы в среде IDE NetBeans 6.5.1 в операционной системе Ubuntu Linux с JDK 1.6.
+
+              <p>Особенно полезны данные примеры для демонстрации проверки пользовательских данных.
+
+            <li>Блог Джирджена (Geertjan)
+              <ul>
+                  <li><a href="http://blogs.oracle.com/geertjan/entry/how_wizards_work">Как работает мастер: Часть 1&mdash;Введение</a>
+                  <li><a href="http://blogs.oracle.com/geertjan/entry/how_wizards_work_part_2">Как работает мастер: Часть 2 &mdash; Различные типы</a>
+                  <li><a href="http://blogs.oracle.com/geertjan/entry/how_wizards_work_part_3">Как работает мастер: Часть 3 &mdash; Ваш первый мастер</a>
+                  <li><a href="http://blogs.oracle.com/geertjan/entry/how_wizards_work_part_4">Как работает мастер: Часть 4 &mdash; Ваш собственный итератор</a>
+                  <li><a href="http://blogs.oracle.com/geertjan/entry/how_wizards_work_part_5">Как работает мастер: Часть 5 &mdash; Использование и внедрение существующих панелей</a>
+                  <li><a href="http://blogs.oracle.com/geertjan/entry/creating_a_better_java_class">Создание мастера Better Java Class</a>
+              </ul>
+
+         </ul>
+
+    <br />
+
+
+
+    <h2><a name="version"></a>Управление версиями </h2>
+
+    <p>
+
+    <table width="76%" border="1">
+        <tbody>
+            <tr>
+                <td>
+                    <div align="left"><b>Версия</b></div>
+                </td>
+                <td>
+                    <div align="left"><b>Дата</b></div>
+                </td>
+                <td>
+                    <div align="left"><b>Изменения</b></div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    1
+                </td>
+                <td>
+                    31 марта 2009
+                </td>
+                <td>
+                    Первоначальная версия. Выполнить:
+
+                    <p><ul>
+                        <li><strike>Добавить раздел о проверке данных, введенных пользователем.</strike>
+                        <li><strike>Добавить раздел о сохранении данных мастером и загрузке данных из мастера.</strike>
+                        <li>Добавить таблицу с перечислением всех свойств WizardDescriptor.
+                        <li>Добавить таблицу с перечислением и объяснением всех классов Wizard API.
+                        <li>Добавить ссылки на Javadoc.
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    2
+                </td>
+                <td>
+                    1 апреля 2009 г.
+                </td>
+                <td>
+                    Добавлен раздел о проверке данных с примером программного кода, который делает кнопку &quot;Далее&quot; неактивной. Также добавлен раздел о сохранении состояния.
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    3
+                </td>
+                <td>
+                    10 апреля 2009 г.
+                </td>
+                <td>
+                    Приведены комментарии Тома Вилера, переписан раздел о брэндинге, так чтобы было больше информации о самом брэндинге, добавлены ссылки на сведения о локализации.
+                </td>
+            </tr>
+
+        </tbody>
+    </table>
+
+    </body>
+
+</html>

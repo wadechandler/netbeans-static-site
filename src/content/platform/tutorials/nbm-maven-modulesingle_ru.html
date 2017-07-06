@@ -1,0 +1,434 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Создание модуля на платформе NetBeans с помощью Maven</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="AUDIENCE" content="NBUSER"/>
+    <meta name="TYPE" content="ARTICLE"/>
+    <meta name="EXPIRES" content="N"/>
+    <meta name="indexed" content="y"/>
+    <meta name="description" content="A short demonstration of how to use Maven to create and run a NetBeans Platform Module Suite."/>
+    <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+<body>
+
+    <h1>Создание модуля на платформе NetBeans с помощью Maven</h1>
+
+    <p>В этом документе описываются принципы создания проекта модуля на платформе NetBeans из архетипа Maven, принципы построения и установки этого модуля в среде IDE. В этом учебном курсе будет создан простой проект модуля, позволяющий после его установки создавать в проектах новый тип файлов. Модуль также создает действие меню, доступное при выборе нового типа файлов.
+    </p>
+
+    <p>Этот документ основан на <a href="https://platform.netbeans.org/tutorials/nbm-filetype_ru.html">Учебном курсе по типам файлов NetBeans</a> на базе Ant и описывает различия между Ant и Maven при разработке модулей на платформе NetBeans. После изучения отличий Maven от Ant можно легко пройти другие учебные курсы в <a href="https://netbeans.org/kb/trails/platform_ru.html">Учебной карте по платформе NetBeans</a>.</p>
+
+    <p class="tips">При отсутствии опыта работы с платформой NetBeans можно посмотреть серию демонстрационных роликов <a href="https://platform.netbeans.org/tutorials/nbm-10-top-apis.html">10 лучших интерфейсов API NetBeans</a>.</p>
+
+    <p><b>Содержимое</b></p>
+    <p><img src="../images/articles/81/netbeans-stamp.png" class="stamp" width="114" height="114" alt="Содержимое на этой странице относится к среде IDE NetBeans 6.5, 6.7, 6.8" title="Содержимое на этой странице относится к среде IDE NetBeans 6.5, 6.7, 6.8" /></p>
+
+    <ul class="toc">
+        <li><a href="#config">Использование Maven в среде IDE</a>
+            <ul>
+            <li><a href="#config1">Настройка параметров Maven</a></li>
+            <li><a href="#config2">Просмотр репозиториев Maven</a></li>
+            </ul></li>
+        <li><a href="#01">Создание проекта модуля на платформе NetBeans</a>
+            <ul>
+            <li><a href="#01a">Создание модуля</a></li>
+            <li><a href="#01b">Создание класса DataObject</a></li>
+            </ul>
+        </li>
+        <li><a href="#02">Сборка и запуск проекта модуля</a>
+            <ul>
+            <li><a href="#02a">Определение местоположения установки NetBeans</a></li>
+            <li><a href="#02b">Запуск модуля</a></li>
+            </ul>
+        </li>
+        <li><a href="#03">Добавление действия для типа файлов</a>
+            <ul>
+            <li><a href="#03a">Создание класса действия</a></li>
+            <li><a href="#03b">Присвоение действию поведения</a></li>
+            </ul>
+        </li>
+        <li><a href="#04">Создание окна для типа файлов</a></li>
+        <li><a href="#05">Создание окна с несколькими представлениями</a></li>
+      </ul>
+
+<p><b>Для работы с этим учебным курсом требуется программное обеспечение и ресурсы, перечисленные в следующей таблице.</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Программное обеспечение или ресурс</th>
+                <th class="tblheader" scope="col">Требуемая версия</th>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://download.netbeans.org/">Среда IDE NetBeans</a></td>
+                <td class="tbltd1">версия 6.9</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Комплект для разработчика на языке Java (JDK)</a></td>
+                <td class="tbltd1">Версия 6</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://maven.apache.org/">Maven</a></td>
+                <td class="tbltd1">Версия 2.0.9 или более поздняя версия</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><strong class="notes">Примечание.</strong> Для разработки приложений на платформе NetBeans не требуется загружать отдельную версию этой платформы. Как правило, разработка приложений и модулей осуществляется в среде IDE NetBeans, затем необходимо просто включить требуемые модули для выполнения платформы NetBeans и созданного приложения.</p>
+
+    <p>Перед изучением этого учебного курса можно ознакомиться со следующей документацией:</p>
+    <ul>
+        <li><a href="http://wiki.netbeans.org/MavenBestPractices">Практические рекомендации по Apache Maven в NetBeans 6.x</a>;</li>
+        <li><a href="http://www.sonatype.com/books/maven-book/reference/introduction.html">Глава 1. Введение в Apache Maven</a> (из книги <a href="http://www.sonatype.com/books/maven-book/reference/public-book.html">Maven: полное руководство</a>)</li>
+        <li><a href="https://netbeans.org/kb/docs/java/gui-functionality_ru.html">Введение в разработку графического интерфейса </a></li>
+    </ul>
+
+
+
+
+
+
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++ Configuring Maven +++++++++++++++++++++++++++++++++ -->
+
+    <h2><a name="config"></a>Использование Maven в среде IDE</h2>
+    <p>Если это первый опыт работы с Maven, следует проверить параметры настройки и обозреватель репозиториев Maven.</p>
+
+    <div class="indent">
+        <a name="config1"></a>
+        <h3>Настройка параметров Maven</h3>
+        <p>Для настройки поведения Maven в среде IDE и проверки корректности этой настройки перейдите на вкладку Maven в окне &quot;Параметры&quot;.</p>
+
+        <ol>
+            <li>Выберите категорию &quot;Разное&quot; в окне &quot;Параметры&quot; и перейдите на вкладку Maven.</li>
+            <li>Укажите папку установки Maven (требуется версия 2.0.9 или более поздняя).</li>
+            <li>Проверьте корректность адреса к локальному репозиторию Maven.</li>
+            <li>Нажмите кнопку &quot;ОК&quot;.</li>
+        </ol>
+        <p>В большинстве случаев при использовании типичной настройки Maven данные в окне &quot;Параметры&quot; уже корректны.</p>
+
+        <p class="notes"><strong>Примечание.</strong> Поддержка Maven активируется как часть набора функциональных возможностей Java SE. Если в окне &quot;Параметры&quot; вкладка Maven недоступна, подтвердите активацию Java SE при создании приложения Java.</p>
+
+        <h3><a name="config2"></a>Просмотр репозиториев Maven</h3>
+        <p>Артефакты, используемые Maven для создания всех проектов, сохраняются в локальном репозитории Maven. Если артефакт объявлен как зависимость проекта, он загружается в локальный репозиторий из одного из зарегистрированных удаленных репозиториев.</p>
+
+        <p>Репозиторий NetBeans и некоторые известные индексированные репозитории Maven зарегистрированы и включены в список окна &quot;Обозреватель репозитория&quot; по умолчанию. Репозиторий NetBeans содержит большинство общедоступных артефактов, требуемых для создания проекта. Обозреватель репозиториев Maven можно использовать для просмотра содержимого локальных и удаленных репозиториев. Для просмотра локальных артефактов разверните узел &quot;Локальный репозиторий&quot;. Артефакты, указанные в узлах удаленного репозитория, могут быть добавлены в качестве зависимостей проекта, однако не все из них представлены локально. Они добавляются к локальному репозиторию только в том случае, если объявляются в качестве зависимостей проекта.</p>
+
+        <p>Чтобы открыть обозреватель репозиториев Maven:</p>
+        <ul>
+            <li>выберите в главном меню &quot;Окно&quot; &gt; &quot;Прочее&quot; &gt; &quot;Обозреватель репозиториев Maven&quot;.<br/>
+            <img src="../images/tutorials/maven-quickstart68/maven-nbm-netbeans-repo.png" alt="Снимок экрана: обозреватель репозиториев Maven" title="Снимок экрана: обозреватель репозиториев Maven" class="margin-around b-all"  />
+
+            </li>
+        </ul>
+    </div>
+
+
+    <!-- =================================================================== -->
+    <!-- ++++++++++++++++++++++ Creating the Module ++++++++++++++++++++++++ -->
+
+    <h2><a name="01"></a>Создание проекта модуля на платформе NetBeans</h2>
+    <p>В этом разделе сначала будет создан проект модуля на платформе NetBeans, а затем для нового типа файлов - элемент DataObject.</p>
+    <div class="indent">
+        <h3><a name="01a"></a>Создание модуля</h3>
+        <p>В этом упражнении для построения проекта модуля на платформе NetBeans из архетипа Maven используется мастер создания проекта.</p>
+        <ol>
+            <li>Откройте мастер создания проекта и выберите в категории Maven &quot;Модуль Maven NetBeans&quot;. Нажмите кнопку &quot;Далее&quot;.</li>
+            <li>В поле &quot;Имя проекта&quot; введите <strong>AbcFileType</strong>. Нажмите кнопку &quot;Готово&quot;. </li>
+        </ol>
+        <p>При нажатии кнопки &quot;Готово&quot; в среде IDE создается проект AbcFileType. Обратите внимание на POM: Maven будет использовать элемент <tt><a href="http://maven.apache.org/plugins/maven-jar-plugin/">maven-jar-plugin</a></tt> для построения файла JAR, а элемент <tt><a href="http://mojo.codehaus.org/nbm-maven-plugin/">nbm-maven-plugin</a></tt> добавит этот файл в пакет в качестве модуля на платформе NetBeans <tt>nbm</tt>.</p>
+    
+        <pre class="examplecode">    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+    &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+    &lt;artifactId&gt;AbcFileType&lt;/artifactId&gt;
+    <strong>&lt;packaging&gt;nbm&lt;/packaging&gt;</strong>
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+    &lt;name&gt;AbcFileType NetBeans Module&lt;/name&gt;
+    ...
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+                <strong>&lt;artifactId&gt;nbm-maven-plugin&lt;/artifactId&gt;</strong>
+                &lt;extensions&gt;true&lt;/extensions&gt;
+            &lt;/plugin&gt;
+            ...
+            &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                <strong>&lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;</strong>
+                &lt;version&gt;2.2&lt;/version&gt;
+                &lt;configuration&gt;
+                    &lt;!-- to have the jar plugin pickup the nbm generated manifest --&gt;
+                    &lt;useDefaultManifestFile&gt;true&lt;/useDefaultManifestFile&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;</pre>
+
+        
+
+
+        <h3><a name="01b"></a>Создание класса DataObject</h3>
+
+        <p>В этом разделе будет использован мастер создания файла для создания и распознавания нового типа файлов с именем <tt>.abc</tt>. Мастер создаст <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/DataObject.html">DataObject</a></tt>, средство разрешения типа MIME и шаблон для файлов <tt>abc</tt>, а также изменит файл <tt>layer.xml</tt>, чтобы добавить регистрационные записи для нового типа файлов.</p>
+
+        <ol>
+            <li>В окне &quot;Проекты&quot; щелкните правой кнопкой мыши узел проекта и выберите &quot;Создать&quot; &gt; &quot;Тип файлов&quot;.</li>
+            <li>На панели &quot;Распознавание файлов&quot; введите <strong>text/x-abc</strong> в поле &quot;Тип MIME&quot; и <strong>.abc .ABC</strong> в поле &quot;Расширение файла&quot;. Нажмите кнопку &quot;Далее&quot;.<br/>
+            <img src="../images/tutorials/maven-single/maven-single-new-filetype-wizard.png" alt="Снимок экрана: мастер создания файла" title="Мастер создания файла" class="margin-around b-all"  />
+            </li>
+            <li>В качестве префикса имени класса введите <strong>Abc</strong>.</li>
+            <li>Нажмите кнопку &quot;Обзор&quot; и выберите изображение размером 16x16 пикселей в качестве значка нового типа файлов. Нажмите кнопку &quot;Готово&quot;. 
+                <p class="tips">Можно сохранить на компьютере изображение <tt><a href="../images/tutorials/maven-crud/abc16.png">abc16.png</a></tt> (<img src="../images/tutorials/maven-crud/abc16.png" alt="изображение значка размером 16x16 пикселей" title="16x16"  />) и указать его в мастере.</p>
+            </li>
+        </ol>
+
+
+        <p>При нажатии кнопки &quot;Готово&quot; среда IDE создает класс <tt>AbcDataObject</tt> и копирует этот значок типа файлов в пакет каталога <tt>src/main/resources</tt> в узле &quot;Другие источники&quot;.<br/>
+        <img src="../images/tutorials/maven-single/maven-single-projects1.png" alt="Снимок экрана: окно &quot;Проекты&quot;" title="Снимок экрана: окно &quot;Проекты&quot;" class="margin-around b-all"  />
+
+        </p>
+        <p>В окне &quot;Проекты&quot; отображается, что мастер создал средство разрешения типа MIME (<tt>AbcResolver.xml</tt>) и шаблон для файлов  (<tt>AbcTemplate.abc</tt>) в каталоге <tt>src/main/resources</tt> </p>
+
+        <p class="tips">Дополнительные сведения о файлах, создаваемых средой IDE приведены в документе <a href="http://wiki.netbeans.org/DevFaqDataObject">Что такое DataObject?</a> и в разделе <a href="nbm-filetype_ru.html#recognizing">Распознавание файлов Abc</a> <a href="nbm-filetype_ru.html">Учебного курса по типу файлов NBN</a>.</p>
+
+
+    </div>
+
+
+
+    <!-- =================================================================== -->
+    <!-- ++++++++++++++++++++++ Running the  Module ++++++++++++++++++++++++ -->
+    <h2><a name="02"></a>Сборка и запуск проекта</h2>
+
+    <p>В этом разделе будет выполнена настройка модуля для его установки в текущую версию среды IDE. Новый экземпляр среды IDE запускается при запуске модуля. </p>
+
+    <div class="indent">
+        <h3><a name="02a"></a>Определение местоположения установки NetBeans</h3>
+        <p>По умолчанию при использовании архетипа Maven для создания модуля на платформе NetBeans установка целевой платформы NetBeans не указывается. Проект можно построить, однако при попытке запустить его до указания каталога установки будет появляться сообщение в окне &quot;Вывод&quot;, подобное сообщению на рисунке ниже.<br/>
+        <img src="../images/tutorials/maven-single/output-build-error.png" alt="Снимок экрана: сообщение об ошибке построения в окне &quot;Вывод&quot;" title="Сообщение об ошибке построения в окне &quot;Вывод&quot;" class="margin-around b-all"  />
+
+        </p>
+        <p>Чтобы установить и запустить модуль IDE, необходимо изменить элемент <tt>nbm-maven-plugin</tt> в POM для указания пути к каталогу установки.</p>
+        <ol>
+            <li>Раскройте узел &quot;Файлы проекта&quot; и откройте в редакторе файл <tt>pom.xml</tt>. </li>
+            <li>Укажите путь к каталогу установки NetBeans, изменив элемент <tt>nbm-maven-plugin</tt> для добавления элемента <tt>&lt;netbeansInstallation&gt;</tt>.
+<pre class="examplecode">&lt;plugin&gt;
+    &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+    &lt;artifactId&gt;nbm-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;3.2&lt;/version&gt;
+    &lt;extensions&gt;true&lt;/extensions&gt;
+    <strong>&lt;configuration&gt;
+       &lt;netbeansInstallation&gt;/home/me/netbeans-6.9&lt;/netbeansInstallation&gt;
+    &lt;/configuration&gt;</strong>
+&lt;/plugin&gt;</pre>
+       <!-- &lt;descriptor&gt;src/main/nbm/module.xml&lt;/descriptor&gt; -->
+            <p class="notes"><strong>Примечание.</strong> Для этого пути необходимо указать каталог, содержащий каталог <tt>bin</tt> с выполняемым файлом.</p>
+            <p>Например, в OS X путь может выглядеть следующим образом: </p>
+            <pre class="examplecode">&lt;netbeansInstallation&gt;/Applications/NetBeans/NetBeans 6.9.app/Contents/Resources/NetBeans&lt;/netbeansInstallation&gt;</pre>
+            </li>
+        </ol>
+
+        <h3><a name="02b"></a>Запуск модуля</h3>
+        <p>После указания каталога установки NetBeans модуль можно построить и запустить.</p>
+        <ol>
+            <li>Щелкните правой кнопкой мыши узел проекта и выберите &quot;Построить&quot;. </li>
+            <li>Щелкните правой кнопкой мыши узел проекта и выберите &quot;Выполнить&quot;. </li>
+        </ol>
+        <p>При нажатии кнопки &quot;Выполнить&quot; среда IDE запускает новый установленный модуль. Чтобы подтвердить корректность работы нового модуля, создайте новый проект и затем с помощью мастера создайте файл <tt>abc</tt>. Например, можно создать простое приложение Java, открыть мастер создания файла и выбрать в категории &quot;Прочее&quot; тип файлов Empty Abc.</p>
+        <p class="tips">При создании нового файла укажите исходный файл, чтобы просмотреть его в окне &quot;Проекты&quot;. Мастер создания типа файлов по умолчанию создает файл на корневом уровне проекта.</p>
+        <p><img src="../images/tutorials/maven-single/wizard-new-abc-file.png" alt="Снимок экрана: мастер создания файла с типом файлов Abc" title="Мастер создания файла с типом файлов Abc" class="margin-around b-all"  />
+        <br/>
+        После создания новый файл abc отображается в окне &quot;Проекты&quot; со значком своего типа. Откройте этот файл в редакторе: его содержимое создано из шаблона файла.<br/>
+        <img src="../images/tutorials/maven-single/maven-single-projects-abcfile.png" alt="Снимок экрана: файл Abc в окне &quot;Проекты&quot; и его содержимое в редакторе" title="Файл Abc в окне &quot;Проекты&quot; и его содержимое в редакторе" class="margin-around b-all"  />
+        </p>
+    </div>
+
+
+
+    <!-- =================================================================== -->
+    <!-- +++++++++++++++++++++++ Adding an Action ++++++++++++++++++++++++++ -->
+    <h2><a name="03"></a>Добавление действия для типа файлов</h2>
+    <p>В этом разделе будет добавлено действие, вызываемое щелчком правой кнопки мыши в контекстном меню узла для нового типа файлов. </p>
+
+    <div class="indent">
+        <h3><a name="03a"></a>Создание класса действия</h3>
+        <p>В этом упражнении будет использован мастер создания действия для создания класса Java, выполняющего действие для нового типа файлов. Мастер также зарегистрирует этот класс в файле <tt>layer.xml</tt>.</p>
+        <ol>
+            <li>Щелкните узел проекта правой кнопкой мыши и выберите &quot;Создать&quot; &gt; &quot;Действие&quot;.</li>
+            <li>В панели &quot;Тип действия&quot; выберите &quot;Включено по условию&quot; и введите в поле &quot;Класс cookie&quot; <strong>com.mycompany.abcfiletype.AbcDataObject</strong>. Нажмите кнопку &quot;Далее&quot;.<br/>
+            <img src="../images/tutorials/maven-single/maven-single-newactionwizard.png" alt="Снимок экрана: мастер создания действия" title="Мастер создания действия" class="margin-around b-all"  />
+            </li>
+            <li>Выберите в контекстном меню &quot;Категория&quot; команду &quot;Изменить&quot; и снимите флажок &quot;Глобальный пункт меню&quot;.</li>
+            <li>Выберите &quot;Пункт контекстного меню типов файлов&quot; и укажите <strong>text/x-abc</strong> в контекстном меню &quot;Тип содержимого&quot;. Нажмите кнопку &quot;Далее&quot;.</li>
+            <li>Введите <strong>MyAction</strong> в поле &quot;Имя класса&quot; и <strong>My Action</strong> в поле &quot;Отображаемое имя&quot;. Нажмите кнопку &quot;Готово&quot;. </li>
+        </ol>
+        <p>При нажатии кнопки &quot;Готово&quot; создается <tt>MyAction.java</tt> в исходном файле <tt>com.mycompany.abcfiletype</tt>. Откройте в редакторе файл <tt>layer.xml</tt>: мастер добавил подробные данные о новом действии для типа файлов в элемент <tt>Edit</tt> папки <tt>Actions</tt>. </p>
+        <pre class="examplecode">
+&lt;folder name=&quot;Actions&quot;&gt;
+    &lt;folder name=&quot;Edit&quot;&gt;
+        <strong>&lt;file name=&quot;com-mycompany-abcfiletype-MyAction.instance&quot;&gt;</strong>
+            &lt;attr name=&quot;delegate&quot; methodvalue=&quot;org.openide.awt.Actions.inject&quot;/&gt;
+            &lt;attr name=&quot;displayName&quot; bundlevalue=&quot;com.mycompany.abcfiletype.Bundle#CTL_MyAction&quot;/&gt;
+            &lt;attr name=&quot;injectable&quot; stringvalue=&quot;com.mycompany.abcfiletype.MyAction&quot;/&gt;
+            &lt;attr name=&quot;instanceCreate&quot; methodvalue=&quot;org.openide.awt.Actions.context&quot;/&gt;
+            &lt;attr name=&quot;noIconInMenu&quot; boolvalue=&quot;false&quot;/&gt;
+            &lt;attr name=&quot;selectionType&quot; stringvalue=&quot;EXACTLY_ONE&quot;/&gt;
+            &lt;attr name=&quot;type&quot; stringvalue=&quot;com.mycompany.abcfiletype.AbcDataObject&quot;/&gt;
+        &lt;/file&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+        <p>Также мастер создал элементы в папках <tt>Loaders</tt> и <tt>Factories</tt>, присваиваемые новому типу файлов. Действия меню для типа файлов <tt>abc</tt> указываются в узле <tt>Actions</tt>, а элемент <tt>DataLoader</tt> &mdash; в узле <tt>Factories</tt>.</p>
+
+        <pre class="examplecode">
+ &lt;folder name=&quot;Loaders&quot;&gt;
+    &lt;folder name=&quot;text&quot;&gt;
+        <strong>&lt;folder name=&quot;x-abc&quot;&gt;
+            &lt;folder name=&quot;Actions&quot;&gt;
+                &lt;file name=&quot;com-mycompany-abcfiletype-MyAction.shadow&quot;&gt;</strong>
+                    &lt;attr name=&quot;originalFile&quot; stringvalue=&quot;Actions/Edit/com-mycompany-abcfiletype-MyAction.instance&quot;/&gt;
+                    <strong>&lt;attr name=&quot;position&quot; intvalue=&quot;0&quot;/&gt;</strong>
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-CopyAction.shadow&quot;&gt;
+                    &lt;attr name=&quot;originalFile&quot; stringvalue=&quot;Actions/Edit/org-openide-actions-CopyAction.instance&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;400&quot;/&gt;
+                &lt;/file&gt;
+                ...
+            &lt;/folder&gt;
+            <strong>&lt;folder name=&quot;Factories&quot;&gt;
+                &lt;file name=&quot;AbcDataLoader.instance&quot;&gt;</strong>
+                    &lt;attr name=&quot;SystemFileSystem.icon&quot; urlvalue=&quot;nbresloc:/com/mycompany/abcfiletype/abc16.png&quot;/&gt;
+                    &lt;attr name=&quot;dataObjectClass&quot; stringvalue=&quot;com.mycompany.abcfiletype.AbcDataObject&quot;/&gt;
+                    &lt;attr name=&quot;instanceCreate&quot; methodvalue=&quot;org.openide.loaders.DataLoaderPool.factory&quot;/&gt;
+                    &lt;attr name=&quot;mimeType&quot; stringvalue=&quot;text/x-abc&quot;/&gt;
+                &lt;/file&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+
+        <p class="tips">Позиция элемента My Action в контекстном меню определяется атрибутом <tt>position</tt> (<tt> &lt;attr name=&quot;position&quot; intvalue=&quot;0&quot;/&gt;</tt>). По умолчанию элементу <tt>intvalue</tt> атрибута нового действия присваивается значение <tt>0</tt>, что предоставляет этому действию самую верхнюю позицию в меню. Можно изменить этот порядок, изменив значение <tt>intvalue</tt>. Например, если изменить значение <tt>intvalue</tt> на <tt>200</tt>, пункт меню My Action будет находиться ниже пункта &quot;Открыть&quot; (у действия &quot;Открыть&quot; значение <tt>intvalue</tt> равно <tt>100</tt>).</p>
+
+
+        <h3><a name="03b"></a>Присвоение действию поведения</h3>
+        <p>Теперь необходимо добавить код действия. В этом примере будет добавлен код, использующий <tt>DialogDisplayer</tt> для открытия диалогового окна при выборе действия в контекстном меню. Чтобы использовать <tt>DialogDisplayer</tt>, также необходимо объявить прямую зависимость от <tt>org.openide.dialogs</tt>.</p>
+        <ol>
+            <li>Измените метод <tt>actionPerformed(ActionEvent ev)</tt> в <tt>MyAction.java</tt>, чтобы открыть диалоговое окно при выборе My Action.
+            <pre class="examplecode">@Override
+public void actionPerformed(ActionEvent ev) {
+   <strong>FileObject f = context.getPrimaryFile();
+   String displayName = FileUtil.getFileDisplayName(f);
+   String msg = &quot;This file is &quot; + displayName + &quot;.&quot;;
+   NotifyDescriptor nd = new NotifyDescriptor.Message(msg);
+   DialogDisplayer.getDefault().notify(nd);</strong>
+}</pre>
+            </li>
+            <li>Исправьте операторы импорта и подтвердите импорт <tt><strong>org.openide.filesystems.FileObject</strong></tt>. Сохраните изменения.
+            <p>После исправления был добавлен оператор импорта для <tt>org.openide.DialogDisplayer</tt>. Теперь необходимо объявить зависимость от артефакта <tt>org.openide.dialogs</tt> как прямую зависимость, а не транзитивную.</p></li>
+            <li>Щелкните правой кнопкой мыши файл JAR <tt>org.openide.dialogs</tt> в узле проекта &quot;Библиотеки&quot; и выберите команду &quot;Объявить как прямую зависимость&quot;.</li>
+        </ol>
+        <p>Теперь можно протестировать модуль, чтобы подтвердить корректность работы нового действия.</p>
+        <p class="notes"><strong>Примечание.</strong> Чтобы запустить модуль, необходимо сначала очистить его и построить.</p>
+        <p><img src="../images/tutorials/maven-single/maven-single-action-popup.png" alt="Снимок экрана: файл Abc в окне &quot;Проекты&quot; и его содержимое в редакторе" title="Файл Abc в окне &quot;Проекты&quot; и его содержимое в редакторе" class="margin-around b-all"  />
+        </p>
+        <p>Щелкните правой кнопкой мыши узел типа файлов <tt>abc</tt>: элемент My Action является одним из пунктов контекстного меню.</p>
+    
+    </div>
+
+
+    <!-- =================================================================== -->
+    <!-- +++++++++++++++++++++++ Creating a Window +++++++++++++++++++++++++ -->
+
+    <h2><a name="04"></a>Создание окна для типа файлов</h2>
+    <p>По умолчанию новый тип файлов открывается в базовом текстовом редакторе. Если для нового типа файлов не требуется использование редактора, можно создать новое окно специально для редактирования этого типа файлов. Затем можно изменить оконный компонент, чтобы предоставить другие способы редактирования файла. Например, можно создать визуальный редактор. В этом разделе будет создан новый оконный компонент специально для файлов нового типа.</p>
+
+    <ol>
+        <li>Щелкните узел проекта правой кнопкой мыши и выберите &quot;Создать&quot; &gt; &quot;Окно&quot;.</li>
+        <li>Выберите в контекстном меню значение <strong>editor</strong> и установите флажок &quot;Открывать при запуске приложения&quot;. Нажмите кнопку &quot;Далее&quot;.</li>
+        <li>В качестве префикса имени класса введите <strong>Abc</strong>. Нажмите кнопку &quot;Готово&quot;. </li>
+        <li>Откройте в редакторе <tt>AbcDataObject.java</tt> и измените конструктор класса, чтобы использовать <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/OpenSupport.html">OpenSupport</a></tt> вместо <tt>DataEditorSupport</tt>.
+        <pre class="examplecode">
+public AbcDataObject(FileObject pf, MultiFileLoader loader) throws DataObjectExistsException, IOException {
+    super(pf, loader);
+    CookieSet cookies = getCookieSet();
+    <strong>cookies.add((Node.Cookie) new AbcOpenSupport(getPrimaryEntry()));</strong>
+}</pre>
+        </li>
+        <li>Создайте класс <tt>AbcOpenSupport</tt>, вызываемый конструктором.
+        <p class="tips">Нажмите сочетание клавиш ALT+ВВОД в строке, содержащей вызов <tt>AbcOpenSupport</tt>, чтобы создать элемент <tt>AbcOpenSupport</tt> в пакете <tt>com.mycompany.abcfiletype</tt>.</p></li>
+        <li>Измените <tt>AbcOpenSupport</tt>, чтобы расширить <tt>OpenSupport</tt> и реализовать <tt>OpenCookie</tt> и <tt>CloseCookie</tt>.
+        <pre class="examplecode">
+class AbcOpenSupport <strong>extends OpenSupport implements OpenCookie, CloseCookie</strong> {</pre>
+        </li>
+        <li>Реализуйте абстрактные методы (ALT+ВВОД) и внесите в класс следующие изменения:
+        <pre class="examplecode">
+    public AbcOpenSupport(<strong>AbcDataObject.Entry entry</strong>) {
+        <strong>super(entry);</strong>
+    }
+
+    @Override
+    protected CloneableTopComponent createCloneableTopComponent() {
+        <strong>AbcDataObject dobj = (AbcDataObject) entry.getDataObject();
+        AbcTopComponent tc = new AbcTopComponent();
+        tc.setDisplayName(dobj.getName());
+        return tc;</strong>
+    }</pre>
+        </li>
+        <li>Откройте в редакторе <tt>AbcTopComponent</tt> и измените класс, чтобы расширить <tt>CloneableTopComponent</tt>вместо <tt>TopComponent</tt>.
+        <pre class="examplecode">public final class AbcTopComponent extends <strong>CloneableTopComponent</strong> {</pre>
+        </li>
+        <li>Измените значение модификатора класса с <tt>private</tt> на <tt>public</tt>. 
+        <pre class="examplecode"><strong>public</strong> static AbcTopComponent instance;</pre>
+        </li>
+        <li>Исправьте операторы импорта и сохраните измененные данные.</li>
+    </ol>
+    <p>Теперь попробуйте запустить модуль еще раз после очистки и построения проекта.<br/>
+    <img src="../images/tutorials/maven-single/maven-single-newfile-window.png" alt="Снимок экрана: файл Abc в окне &quot;Проекты&quot; и его содержимое в редакторе" title="Файл Abc в окне &quot;Проекты&quot; и его содержимое в редакторе" class="margin-around b-all"  /></p>
+    <p>Файлы abc открываются теперь в новом окне, а не в базовом редакторе.</p>
+
+
+
+
+
+
+    
+   
+    <!--<p>The project also contains other XML files containing metadata about the project such as <tt>profiles.xml</tt>.
+    The <tt>profiles.xml</tt> file specifies the path to the NetBeans installation and is used by the IDE when running the project.
+    -->
+    
+    <!--<p>Unlike the original Ant-based tutorial, you do not specify the platform installation in the wizard.
+    For Maven module suites you need to modify the <tt>&lt;netbeans.installation&gt;</tt> element in the profiles.xml file
+    and explicitly specify the path to the NetBeans platform installation. </p>
+    see https://netbeans.org/bugzilla/show_bug.cgi?id=185941.
+-->
+
+
+ 
+    <p>В данном учебном курсе были рассмотрены принципы создания модуля на платформе NetBeans с помощью архетипа Maven, а также принципы его запуска. Также был рассмотрен процесс изменения проекта POM для указания местоположения установки целевой платформы NetBeans, чтобы команда &quot;Выполнить&quot; в среде IDE устанавливала модуль и запускала новый экземпляр этой среды. Кроме того, были рассмотрены некоторые принципы работы с типами файлов и элементами <tt>DataObjects</tt>. Для получения дополнительных сведений об этом обратитесь к <a href="https://platform.netbeans.org/tutorials/nbm-filetype_ru.html">Учебному курсу по типам файлов NetBeans</a>. Дополнительные примеры построения приложений и модулей на платформе NetBeans приведены в учебных курсах <a href="https://netbeans.org/kb/trails/platform_ru.html">Учебной карты по платформе NetBeans</a>.</p>
+
+
+<!-- ======================================================================================== -->
+
+
+    <h2><a name="nextsteps"></a>Дополнительные сведения</h2>
+
+    <p>Дополнительные сведения о создании и разработке приложений приведены в следующих ресурсах:</p>
+    <ul>
+        <li><a href="https://netbeans.org/kb/trails/platform_ru.html">Учебная карта по платформе NetBeans</a></li>
+        <li><a href="http://bits.netbeans.org/dev/javadoc/">Документация Javadoc по интерфейсам API в среде NetBeans</a></li>
+    </ul>
+    <p>Если у вас возникли вопросы по платформе NetBeans, можно отправить их в список рассылки dev@platform.netbeans.org либо ознакомиться с <a href="https://netbeans.org/projects/platform/lists/dev/archive">Архивом списка рассылки по платформе NetBeans</a>.</p>
+
+
+    <!-- ======================================================================================== -->
+
+
+
+</body>
+
+</html>

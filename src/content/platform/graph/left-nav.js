@@ -1,0 +1,46 @@
+document.write('  <div class="leftmenug">');
+document.write('    <div class="leftmenuitem"><a href="/servlets/ProjectEdit">Administration</a></div>');
+document.write('  </div>');
+document.write('  <div class="leftmenug">');
+document.write('    <div class="leftmenuitem"><a href="/servlets/ProjectDownloadList">Project Files</a></div>');
+document.write('  </div>');
+document.write('  <div class="leftmenug">');
+document.write('    <div class="leftmenuitem"><a href="/servlets/ProjectIssues">Issue Tracking</a></div>');
+document.write('  </div>');
+document.write('  <div class="leftmenug">');
+document.write('    <div class="leftmenuitem"><a href="/servlets/ProjectMailingListList">Mailing Lists</a></div>');
+document.write('  </div>');
+document.write('  <div class="leftmenug">');
+document.write('    <div class="leftmenuitem"><a href="/servlets/ProjectMemberList">Members</a></div>');
+document.write('  </div>');
+document.write('  <div class="leftmenug">');
+document.write('    <div class="leftmenuitem"><a href="/servlets/ProjectNewsList">News</a></div>');
+document.write('  </div>');
+document.write('  <div class="leftmenug">');
+document.write('    <div class="leftmenuitem"><a href="/source/browse/graph/">Browse CVS Source</a></div>');
+document.write('  </div>');
+document.write('  <div class="leftmenug">');
+document.write('    <div class="leftmenuitem"><a href="http://hg.netbeans.org/main/file/">Browse Hg Main Source</a></div>');
+document.write('  </div>');
+document.write('  <div class="leftmenug">');
+document.write('    <div class="leftmenuitem"><a href="http://hg.netbeans.org/main/contrib/file/">Browse Hg Contrib Source</a></div>');
+document.write('  </div>');
+document.write('  <div class="leftmenug">');
+document.write('    <div class="leftmenuitem"><a href="/setup.html">Setup</a></div>');
+document.write('  </div>');
+document.write('  <div class="leftmenug">');
+document.write('    <div class="leftmenuitem"><a href="/documentation.html">Documentation</a></div>');
+document.write('  </div>');
+document.write('  <div class="leftmenug">');
+document.write('    <div class="leftmenuitem"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-api-visual/index.html">API JavaDoc</a></div>');
+document.write('  </div>');
+document.write('  <div class="leftmenug">');
+document.write('    <div class="leftmenuitem"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-api-visual/org/netbeans/api/visual/widget/doc-files/documentation.html">API Documentation</a></div>');
+document.write('  </div>');
+document.write('  <div class="leftmenug">');
+document.write('    <div class="leftmenuitem"><a href="/faq.html">FAQ</a></div>');
+document.write('  </div>');
+
+// document.write('<script src=local-left-nav.js type=text/javascript></script>');
+// Uncomment the line above to include a per-directory navigation file, for 'dynamic' left navigation.
+// See https://netbeans.org/community/guidelines/module-navigation.html for more info.

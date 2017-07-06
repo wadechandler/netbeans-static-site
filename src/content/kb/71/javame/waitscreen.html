@@ -1,0 +1,316 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+
+<html>
+<head>
+   <title>Visual Mobile Designer Custom Components: Creating Wait Screens for Mobile Applications - NetBeans Java ME Tutorial</title>
+   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+   <link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+   <meta name="author" content="Karol Harezlak">
+</head>
+<body>
+<a name="top"></a>
+<h1>Visual Mobile Designer Custom Components: Creating Wait Screens for Mobile Applications</h1>
+  <p> Java ME applications often require connections to a network to work properly. Unfortunately, wireless networks are still relatively slow. A background task 
+    waiting for a network connection or for data to transfer can pause your application and leaves users wondering if the screen is frozen indefinitely or if it is better for them to hang up and try again later (or not at all). So how do developers spare users this unpleasant, but all too common experience? </p>
+<p>The answer is to add a &quot;Wait Screen.&quot; Wait Screens allow users to  execute a blocking background task (for example, connecting to a network), and 
+  show the progress of the task or display a message on the screen to inform the user that the application is still working as intended. In this tutorial we show how the Visual Mobile Designer (VMD) simplifies the creation of wait screens by including a Wait Screen custom component you can customize and add into your application flow.</p>
+<p>If you are new to mobile application development in NetBeans, you should start with the<A HREF="quickstart.html"> NetBeans Java ME MIDP Quick Start Guide</A> before continuing.</p>
+<!--<p class="notes"><b>Note:</b> If you are using NetBeans IDE 6.8, refer to the <a href="../../68/javame/waitscreen.html">Creating Wait Screens for Mobile Applications in NetBeans IDE 6.8</a> tutorial.</p>-->
+<h3>Contents</h3>
+<img  src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" class="stamp" alt="Content on this page applies to NetBeans IDE 6.9 or later" title="Content on this page applies to the NetBeans IDE 6.9 or later" >
+
+<ul>
+
+<li><a href="#intro" title="How the WaitScreen Component Works">How the WaitScreen Component Works</a></li>
+<li><a href="#sample" title="Installing and Running the Sample Application">Installing and Running the Sample Application</a></li>
+<li><a href="#creating" title="Creating a Mobile Application with the Wait Screen Custom Component">Creating a Mobile Application with the Wait Screen Custom Component</a>
+<ul>
+    <li> <a href="#create">Creating the WaitScreenExample project</a> </li>
+    <li><a href="#add">Adding Packages and a Visual MIDlet to the MyWaitScreen Project</a></li>
+    <li><a href="#addcomponent">Adding Components to MyWaitScreenMIDlet</a></li>
+    <li><a href="#addimage">Adding Image Resources</a></li>
+    <li><a href="#addcomponents">Adding Ok, Back and Exit Commands to the TextBox 
+      and WaitScreen Components</a></li>
+    <li><a href="#createflow">Creating the Application Flow</a></li>
+    <li><a href="#backgroundtask">Creating a Background Task for the Wait Screen</a></li>
+    <li><a href="#run">Running the Project</a></li>
+  </ul></li>
+  <li><a href="#javadoc-waitscreen">Javadoc for the Wait Screen and SimpleCancellableTask Components</a></li>
+  <li><a href="#seealso" title="See Also">See Also</a></li>
+</ul>
+
+<p><b>To complete this tutorial, you need the following software and resources:</b></p>
+
+<table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE with Java ME</a></td>
+                <td class="tbltd1">Version 6.9 or later</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit</a> (JDK)</td>
+                <td class="tbltd1">Version 6 or version 7</td>
+            </tr>      
+        </tbody>
+</table>
+<h2><a name="intro"></a>How the WaitScreen Component Works</h2>
+<p> There are two ways to create background tasks for the Wait Screen component. You can write a class which implements the <code>CancellableTask</code> interface 
+or just use the <code>SimpleCancellableTask</code> resource. You assign background tasks to the Wait Screen using the <code>setTask()</code> method. </p>
+  <p>The WaitScreen component automatically switches to a different Displayable object when the background task is finished. If the task finishes successfully, 
+    the Wait Screen switches to a display supplied by <code>setNextDisplayable()</code>  methods. If the task fails, the Wait Screen switches to a display supplied 
+    by <code>setFailureDisplayable()</code> methods. If there is no set failure displayable default, the Wait Screen switches to a display specified by 
+    the <code>setNextDisplayable()</code> method. If there is no next displayable  screen specified, the Wait Screen switches back to the screen that was 
+previously displayed. </p>
+  <p>Note that this component is available for applications that support the MIDP 2.0 device profile only.</p>
+  <p class="align-center"><a href="#top">top</a></p>
+<h2><a name="sample"></a>Installing and Running the Sample Application</h2>
+<div class="indent"> Before we begin, you might want to see final result of the 
+  tutorial. 
+  <p>Take the following steps to install the waitscreenexample sample application:</p>
+  <ol>
+    <li> Download <a href="https://netbeans.org/projects/samples/downloads/download/Samples/Mobile/WaitScreenExample.zip"> WaitScreenExample.zip.</a></li>
+    <li> Unzip the file. </li>
+    <li> In the IDE, choose <tt>File</tt> &gt; <tt>Open Project</tt> and browse to the folder that contains the unzipped file. </li>
+    <li>Click Open Project.<br>The Project view should look like the following: 
+    <p class="align-center"><img src="../../../images_www/articles/71/mobility/waitscreen/ws-project-window.png" alt="Project Window with WaitScreenExample Files" border=1> 
+    </p> </li>
+    <li>In the Projects window, right-click the project node and choose Run (or press F6). As the application runs, an emulator window opens and 
+    displays the application running in the default device emulator. </li>
+    <li>In the Emulator window, click the button underneath &quot;Launch.&quot; The emulator displays the URL address of the NetBeans Web site: http://netbeans.org.</li>
+    <li>Click the button underneath &quot;Ok.&quot; The screen asks if it is okay to use airtime. </li>
+    <li>Click the button underneath &quot;Yes&quot; to continue. As the emulator tries to connect to the Web site, it displays the Wait Screen. 
+ <p class="align-center"> <img src="../../../images_www/articles/71/mobility/waitscreen/ws-emulator.png" alt="DefaultColorPhone emulator displaying the sample wait screen application" border=1> </p>
+    </li>
+    <li>After the emulator connects, close the application. </li>
+  </ol>
+</div>
+
+<p class="align-center"><a href="#top">top</a></p>
+<h2><a name="creating"></a>Creating a Mobile Application with the WaitScreen Custom Component </h2>
+<div class="indent"> 
+<p>Now that you have seen the WaitScreen component in action, let's go back to the beginning and create this application. To create the application do the following: </p>
+  <ol>
+    <li> <a href="#create">Create the WaitScreenExample Project</a> </li>
+    <li><a href="#add">Add Packages and a visual MIDlet to the MyWaitScreen Project</a></li>
+    <li><a href="#addcomponent">Add Components to MyWaitScreenMIDlet</a></li>
+    <li><a href="#addimage">Add Image Resources</a></li>
+    <li><a href="#addcomponents">Add Ok, Back and Exit Commands to the TextBox 
+      and WaitScreen components</a></li>
+    <li><a href="#createflow">Create the Application Flow</a></li>
+    <li><a href="#backgroundtask">Create a Background Task for the Wait Screen</a></li>
+    <li><a href="#run">Run the Project</a></li>
+  </ol>
+  <p class="notes"><strong>Note:</strong> Before you create this project, be sure to close or delete the sample WaitScreenExample project you ran in the steps above. The 
+  NetBeans IDE does not allow to identically-named projects to be opened at the same time. </p>
+</div>
+<div class="indent"> 
+  <h3 class="tutorial">Creating the WaitScreenExample Project<a name="create"></a></h3>
+  <ol>
+    <li> Choose <tt>File</tt> &gt; <tt>New Project (Ctrl-Shift-N)</tt>. Under Categories, select <tt>Java ME</tt>. Under Projects, select <tt>Mobile Application</tt> and click Next. </li>
+    <li> Enter <code>WaitScreenExample</code> in the Project Name field. Change the Project Location to a directory on your system. We refer to this directory as <tt>$PROJECTHOME</tt>. </li>
+    <li> Uncheck the Create Hello MIDlet checkbox. Click Next. </li>
+    <li> Leave the Sun Java Wireless Toolkit 2.5.2 as the selected Emulator Platform. Click Finish. </li>
+    <!--li> Click Finish. The project folder contains all of your sources and project metadata, such as the project Ant script. The application itself is displayed in the Flow Design window of the Visual Mobile Designer. </li-->
+  </ol>
+  <h3 class="tutorial">Adding Packages and a Visual MIDlet to the WaitScreenExample Project<a name="add"></a></h3>
+  <ol>
+    <li> Choose the <code> WaitScreenExample</code> project in the Project Window, then choose <tt>File</tt> &gt; <tt>New File (Ctrl-N)</tt>.  
+    Under Categories, select Java. Under File Types, select Java Package. Click Next. </li>
+    <li> Enter <code>waitscreenexample</code> in the Package Name field. Click Finish. </li>
+    <li> Choose the <code>waitscreenexample</code> package in the Project window, then choose <tt>File</tt> &gt; <tt>New File (Ctrl-N)</tt>. Under Categories, select MIDP. 
+    Under File Types, select Visual MIDlet. Click Next. </li>
+      <li> Enter <code>MyWaitScreenMidlet</code> into MIDlet Name and MIDP Class Name fields. Click Finish. </li>
+  </ol>
+  <h3 class="tutorial">Adding Components to MyWaitScreenMidlet<a name="addcomponent"></a></h3>
+  <p>Selecting the Visual MIDlet opens the Visual Mobile Designer (VMD). Clicking on the Flow view at the top of the VMD window 
+  opens the Flow Designer, where you design the application flow. </p>
+  <ol>
+    <li> Switch your Visual MIDlet to the Flow view. Drag the following Screen components from the Component Palette and drop them in the Flow Designer: 
+    
+    <ul>
+      <li> 
+        <div class="indent"> TextBox</div>
+      </li>
+      <li> 
+        <div class="indent">WaitScreen</div>
+      </li>
+      <li> 
+        <div class="indent">List</div>
+      </li>
+      <li> 
+        <div class="indent">Alert 
+        </div>
+      </li>
+    </ul></li>
+    <li>Choose <tt>textBox</tt>. In the Properties window (underneath the Component Palette), change the Title property to <code>Text Box</code>.</li>
+    <li>Use the same process to change the titles of the following components:      
+      <ul>
+        <li> 
+          <div class="indent">Change <tt>waitScreen</tt> to <code>Wait Screen</code></div>
+        </li>
+        <li> 
+          <div class="indent">Change <tt>list</tt> to <code>List</code></div>
+        </li>
+        <li> 
+          <div class="indent">Change <tt>alert</tt> to<code> Alert</code></div>
+        </li>
+      </ul>
+    </li>
+    <li>Use the values of the properties for each of the following components:  
+      <ul>
+        <li> 
+          <div class="indent">Change the <tt>textBox</tt> Text property to <code>http://netbeans.org</code></div>
+        </li>
+        <li> 
+          <div class="indent">Change the <tt>alert</tt> String property to <code>Connection Failed</code></div>
+        </li>
+		<li> 
+          <div class="indent">Change the <tt>WaitScreen</tt> Text property to <code>Please 
+        Wait...</code></div>
+        </li>
+      </ul>
+    </li>
+   
+  </ol>
+  <p>The Flow view should look like the following image: </p>
+   <p class="align-center">
+					  <a href="../../../images_www/articles/71/mobility/waitscreen/ws-flowdesigner.png" rel="lytebox"
+                       title="Flow view with component icons">
+                       <img src="../../../images_www/articles/71/mobility/waitscreen/ws-flowdesigner-small.png"
+                     alt="Flow view with component icons" border=1></a></p>
+  
+  <h3 class="tutorial">Adding Image Resources<a name="addimage" id="addimage"></a></h3>
+  <p>In this section, you add images that are used by the Wait Screen and  the Alert Screen. </p>
+  <ol>
+    <li>Download and copy the <a href="../../../images_www/articles/71/mobility/waitscreen/alert.png">alert.png</a> 
+      and <a href="../../../images_www/articles/71/mobility/waitscreen/sandglass.png">sandglass.png</a> files 
+      to <code>$PROJECTHOME/src/waitscreenexample</code> folder.</li>
+    <li>Right-click the <tt>alert</tt> component and choose Properties in the popup menu.</li>
+    <li>In the Properties dialog box, click the ellipsis button (<img src="../../../images_www/articles/71/mobility/waitscreen/ellipsis-button.png" border=1 alt="Ellipsis button"  >) against the Image property.</li>
+    <li>In the Image dialog box, click Add.<br>
+    The <tt>image1</tt> component is added.</li>
+<li>Click Browse and in the Open dialog box specify the path to the copied alert.png file.</li>
+<li>Click Open.<br>The image is added.</li>
+<li>Click OK to close the Image dialog box.</li>
+<li>Click Close to close the Properties dialog box.<br>The alert.png image is bound to the <tt>alert</tt> component.</li>
+	
+	
+    
+    <li>Repeat Steps 2 to 8 for the <tt>waitScreen</tt> component, add sandglass.png as an <tt>image2</tt>, and bind it to the component. </li>
+  </ol>
+</div> 
+<div class="indent"> 
+  <h3 class="tutorial">Adding Ok, Back and Exit Commands to the TextBox and WaitScreen Components<a name="addcommands" id="addcommands"></a></h3>
+  <ol>
+    <li>Choose <tt>Ok Command</tt> from Commands section in the  Palette. Drag it and drop it into <tt>textBox</tt>.</li>
+    <li> Choose <tt>Back Command</tt> from Commands section in the  Palette. Drag it and drop it into <tt>list</tt>.</li>
+    <li> Choose <tt>Exit Command</tt> from Commands section in the  Palette. Drag it and drop it into <tt>list</tt>.</li>
+  </ol>
+  <h3 class="tutorial">Creating the Application Flow<a name="createflow" id="createflow"></a></h3>
+  <p>Now you are ready to create the flow of the application.</p>
+  <ol>
+    <li>In the Flow view, click on  <tt>Started</tt> on the Mobile Device and drag it to the <tt>textBox</tt> component.</li>
+    <li>In the same manner, connect the components together as shown in the following graphic. 
+  
+  <p class="align-center">
+					  <a href="../../../images_www/articles/71/mobility/waitscreen/ws-flow.png" rel="lytebox"
+                       title="Flow Designer Screen connected in the following manner: Mobile Device to textBox1 to waitScreen to list to MobileDevice. A connection from the Failure command to alert, which then connects to list">
+                       <img src="../../../images_www/articles/71/mobility/waitscreen/ws-flow-small.png"
+                     alt="Flow Designer Screen connected in the following manner: Mobile Device to textBox1 to waitScreen1 to list to MobileDevice. A connection from the Failure command to alert, which then connects to list" border=1></a></p>
+  
+    </li>
+  </ol>
+  <h3 class="tutorial">Creating a Background Task for the Wait Screen<a name="backgroundtask" id="backgroundtask"></a></h3>
+  <ol>
+    <li>In the Flow view, right-click the <tt>waitScreen</tt> component and choose Properties from the popup menu.</li>
+    <li>In the Properties dialog box, choose <tt>&lt;NewCancellableTask&gt;</tt> from the  Task  drop-down menu and click Close. <br> 
+    <tt>simpleCancellableTask</tt> is now a background task of the <tt>waitScreen</tt> component.</li>
+    <li>Click the Source button at the top of the Visual Mobile Designer to switch to the source code for the application. </li>
+    <li>Add a method for the background task by pasting the the following code into the <code>MyWaitScreenMIDlet</code> source code after<code> 
+      public void destroyapp(boolean unconditional) { 
+	  }</code>:
+    <pre class="examplecode">
+      private void getServerInfo() throws IOException {
+      String url = textBox.getString();
+      list.deleteAll();
+      /**
+      * Open an HttpConnection
+      */ 
+      HttpConnection hc = (HttpConnection) Connector.open(url);
+
+      /**
+      * Gets a header field key and header field by index and
+      * insert it into list.
+      */
+      list.setTitle(hc.getURL());   
+      for (int i=0;hc.getHeaderFieldKey(i)!=null; i++){
+      list.insert(i,hc.getHeaderFieldKey(i)+&quot; :&quot;+hc.getHeaderField(i),null);       
+      }     
+      /**
+      * Closing time ...
+      */
+      hc.close();
+      } 
+</pre></li>
+    <li>Right-click in the source code and choose Fix Imports in the popup menu (alternatively, press Ctrl+Shift+I).</li>
+	<li>Find the <tt>public class MyWaitScreenMidlet extends MIDlet implements CommandListener {</tt> string (line 18) and insert <tt>final</tt> so that it reads:
+	<pre class="examplecode"> public final class MyWaitScreenMidlet extends MIDlet implements CommandListener {</pre></li>
+	<li>Find the <tt>public MyWaitScreenMidlet()</tt> method in the source code (line 38) and insert the following code after <tt>public MyWaitScreenMidlet() {</tt>:<br>
+	<pre class="examplecode"> List list1 = getList();</pre> </li>
+    <li>Click Screen to switch to the Screen view and select <tt>SimpleCancellableTask</tt>.</li>
+	<li>In the Properties window, click the ellipsis button (<img src="../../../images_www/articles/71/mobility/waitscreen/ellipsis-button.png" border=1 alt="Ellipsis button"  >) against the <tt>Executable Code</tt> property.</li>
+	<li>Click Go To source in the Executable code dialog box.</li>
+    <li>Find the <tt>getSimpleCancellableTask()</tt> method in the source code (line 328) and insert the following code after <tt>public void execute() throws Exception {</tt> where it reads <tt>// write task-execution user code here</tt>:<br>
+	<pre class="examplecode"> getServerInfo();</pre></li> 
+  </ol>
+</div>
+<div class="indent"> 
+  <h3 class="tutorial">Running the Project<a name="run"></a></h3>
+  
+      <p>Press F6 to Run the main project.</p>
+      <p> Alternatively you could select Run &gt; Run Main Project.</p>
+    
+ 
+</div>
+<p class="align-center"><a href="#top">top</a></p>
+<div class="indent"> 
+<a name="javadoc-waitscreen"></a>
+  <h2>Javadoc for the WaitScreen and SimpleCancellableTask Components</h2>
+  <P>The NetBeans IDE provides API Javadocs for the <tt>WaitScreen</tt> and <tt>SimpleCancellableTask</tt> components, as well as other components you can use in the VMD. To
+read the Javadocs for the <tt>WaitScreen</tt> and <tt>SimpleCancellableTask</tt> components, complete the steps below:</P>
+  <OL>
+<li>Place the cursor on the <tt>WaitScreen</tt> or <tt>SimpleCancellableTask</tt> component in the source code and press Ctr-Shift-Space (or choose <tt>Source</tt> &gt; <tt>Show Documentation</tt>).<br>
+The Javadoc for this element displays in a popup window. </li>
+<li>Click the Show documentation in external web browser icon (<img src="../../../images_www/articles/71/mobility/smscomposer/show-doc-button.png" alt="Show documentation in external web browser">) in the popup window to view the detailed information about the <tt>WaitScreen</tt> or <tt>SimpleCancellableTask</tt> component in your browser.</li>
+
+	
+</OL>
+</div>
+
+<p class="align-center"><a href="#top">top</a></p>
+ <div class="feedback-box"><a href="/about/contact_form.html?to=6&subject=VMD%20Custom%20Components:%20Creating%20Wait%20Screens">Send
+    Us Your Feedback</a>
+  </div>
+  <br style="clear:both;" >
+   <br>
+<h2><a name="seealso"></a>See Also</h2>
+  <ul>
+    <li><a href="smscomposer.html">Visual Mobile Designer Custom Components: Creating an SMS Composer Application</a></li>
+    <li><a href="filebrowser.html">Visual Mobile Designer Custom Components: Creating Mobile Device File Browser</a></li>
+    <li><a href="pimbrowser.html">Visual Mobile Designer Custom Components: Creating a Personal Information Manager Application</a></li>
+    <li><a href="loginscreen.html">Visual Mobile Designer Custom Components: Creating Mobile Login Screens</a></li>
+    <li><a href="splashscreen.html">Visual Mobile Designer Custom Components: Using Splash Screens in Java ME Applications</a></li>
+    <li><a href="tableitem.html">Visual Mobile Designer Custom Components: Using Table Items in Java ME Applications </a></li>
+    <li><a href="http://wiki.netbeans.org/VisualMobileDesignerPalatteReference">Reference: Visual Mobile Designer Palette Guide</a></li>
+  </ul>
+  <p class="align-center"><a href="#top">top</a></p>
+</body>
+</html>

@@ -1,0 +1,1157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <!-- -*- xhtml -*- -->
+        <title>JavaCC Parser Generator Integration Tutorial for NetBeans Platform 7.1</title>
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+        <meta name="AUDIENCE" content="NBUSER"/>
+        <meta name="TYPE" content="ARTICLE"/>
+        <meta name="EXPIRES" content="N"/>
+        <meta name="developer" content="gwielenga@netbeans.org"/>
+        <meta name="indexed" content="y"/>
+        <meta name="description"
+              content="A short guide to integrating a JavaCC Parser into the NetBeans Platform."/>
+        <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+    <body>
+        <h1>JavaCC Parser Generator Integration Tutorial for NetBeans Platform 7.1</h1>
+
+        <p>This tutorial shows you how to generate 
+            a parser with <a href="http://javacc.java.net/">JavaCC</a>
+            and use it to create features in a NetBeans editor. </p>
+
+        <p class="notes"><b>Note:</b> Prior to starting to work on this tutorial,
+            you must have completed the 
+            <a href="nbm-javacc-lexer.html">JavaCC Lexer Generator Integration Tutorial</a>,
+            since that tutorial shows how to create the module structure and file type
+            used in the instructions that follow.</p>
+
+        <p>You will learn how to create several features in a NetBeans editor,
+            based on your JavaCC parser, such as a syntax error parser, as shown below:</p>
+
+        <p><img style="border:1px solid black" src="../images/tutorials/javacc/71/result.png" alt="source."/></p>
+
+
+        <b>Contents</b>
+
+        <p><img src="../images/articles/71/netbeans-stamp.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 7.1" title="Content on this page applies to NetBeans IDE 7.1"/></p>
+        <ul class="toc">
+            <li><a href="#generating">Generating a Parser from JavaCC</a></li>
+            <li><a href="#integrating">Integrating the JavaCC Parser with NetBeans APIs</a></li>
+            <li><a href="#registering">Registering the NetBeans Parser</a></li>
+            <li>Implementing New Features
+                <ul>
+                    <li><a href="#error-feature">Error Parsing</a></li>
+                    <li><a href="#indent-feature">Indentation</a></li>
+                    <li><a href="#format-feature">Reformatting</a></li>
+                    <li><a href="#brace-feature">Brace Matching</a></li>
+                    <li><a href="#fold-feature">Code Folding</a></li>
+                </ul>
+            </li>
+        </ul>
+
+        <p><b>To follow this tutorial, you need the software and resources listed in the following 
+                table.</b></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Software or Resource</th>
+                    <th class="tblheader" scope="col">Version Required</th>
+                </tr> 
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                    <td class="tbltd1">version 7.1 or above</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                    <td class="tbltd1">version 6 or above</td>
+                </tr>
+            </tbody>
+        </table>
+        <p></p>
+        <p class="tips">This tutorial is the official version of
+            the second part of <a href="http://wiki.netbeans.org/How_to_create_support_for_a_new_language">http://wiki.netbeans.org/How_to_create_support_for_a_new_language</a>,
+            which, aside from being a rough draft, is partly
+            obsolete and out of date for NetBeans Platform 7.1.</p>
+
+        <!-- ===================================================================================== -->
+
+        <h2><a name="generating"></a>Generating a Parser from JavaCC</h2>
+        <p>Let's now use JavaCC to generate a parser, in the same way as
+            we generated a lexer in the 
+            <a href="nbm-javacc-lexer.html">JavaCC Lexer Generator Integration Tutorial</a>. We'll need
+            to edit the JavaCC grammar file less than we did in the previous tutorial, since we're
+            not going to remove the parser generator as we did last time.</p>
+        <div class="indent">
+
+            <ol>
+                <li><p>Create a new package named <tt>org.simplejava.jccparser</tt> in your project.
+                        Copy into the new package the same two files mentioned in the
+                        previous tutorial:</p>
+                    <ul>
+                        <li>/myjavacc40/examples/JavaGrammars/1.5/Java1.5.jj</li>
+                        <li>/myjavacc40/examples/JavaGrammars/1.5/Token.java</li>
+                    </ul>
+                    <p>In your project structure, you should now see your two new files:</p>
+                    <p><img src="../images/tutorials/javacc/71/parser-1.png" alt="source."/></p>
+                    <p class="notes"><b>Note:</b> As before, the <tt>Token</tt> class does not yet compile
+                        because the class it references, <tt>JavaParserConstants</tt>, does not
+                        yet exist. It will be generated at the end of this section of the tutorial
+                        by JavaCC and at that stage the <tt>Token</tt> class will compile.</p>
+                    <p>We're now going to tweak the <tt>Java1.5.jj</tt> file so that it fits our
+                        specific needs.</p>
+                </li>
+                <li><p>Firstly, we need to make sure that the classes
+                        that JavaCC will generate for us will be generated into the correct
+                        package, that is, the package where we copied the two files above.
+                        Add "package org.simplejava.jccparser;" 
+                        to <tt>Java1.5.jj</tt> file after the "PARSER_BEGIN(JavaParser)" line, so
+                        that the files will be generated in the correct package:</p>
+
+                    <pre class="examplecode">PARSER_BEGIN(JavaParser)
+
+<b>package org.simplejava.jccparser;</b>
+
+import java.io.*;</pre></li>
+
+                <li><p>The <tt>Java1.5.jj</tt> file is ready now and we can "compile" it from the command line:</p>
+
+                    <pre class="examplecode">cd /myprojects/simplejava/src/org/simplejava/jccparser /myjavacc40/bin/javacc Java1.5.jj</pre>
+                    <p>The result should be as follows:</p>
+                    <p><img src="../images/tutorials/javacc/71/parser-2.png" alt="source."/></p>
+                    <p>As you can see, JavaCC has generated
+                        the following files:</p>
+                    <ul>
+                        <li>JavaCharStream.java</li>
+                        <li>JavaParser.java</li>
+                        <li>JavaParserConstants.java</li>
+                        <li>JavaParserTokenManager.java</li>
+                        <li>ParseException.java</li>
+                        <li>TokenMgrError.java</li>
+                    </ul>
+                    <p>All the files should be compilable, that is, there should be no error
+                        marks anywhere in the module, as can be seen in the screenshot above.</p>
+                </li>
+
+            </ol>        
+
+            <p>You've now completed the JavaCC part of the tutorial. 
+                The time has come to use the generated files to extend
+                your NetBeans Lexer plugin.</p> 
+
+        </div>
+
+
+        <!-- ======================================================================================= -->
+
+        <h2><a name="integrating"></a>Integrating the JavaCC Parser with NetBeans APIs</h2>
+        <p>In this section, we take the files generated in the previous section
+            and integrate them with the <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/overview-summary.html">NetBeans Parsing API</a>.</p>
+        <div class="indent">
+            <ol>
+                <li><p>In the Projects window, right-click the Libraries node, and choose
+                        Add Module Dependency. Look for the "Parsing API" module in the list.
+                        When you click OK, you should see the "Parsing API" module is now
+                        a dependency in your module:</p>
+                    <p><img src="../images/tutorials/javacc/71/parser-4.png" alt="source."/></p>
+                </li>
+                <li><p>In your module, create a new package named <tt>org.simplejava.parser</tt>.</p>
+                </li>
+                <li><p>The first NetBeans APIclass you need to implement is <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/spi/Parser.html">org.netbeans.modules.parsing.spi.Parser</a></tt>. 
+                        Create a class named <tt>SJParser</tt> and define it as follows:</p>
+                    <pre class="examplecode">package org.simplejava.parser;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.event.ChangeListener;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/api/Snapshot.html">org.netbeans.modules.parsing.api.Snapshot</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/api/Task.html">org.netbeans.modules.parsing.api.Task</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/spi/Parser.html">org.netbeans.modules.parsing.spi.Parser</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/spi/ParserResultTask.html">org.netbeans.modules.parsing.spi.Parser.Result</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/spi/SourceModificationEvent.html">org.netbeans.modules.parsing.spi.SourceModificationEvent</a>;
+import org.simplejava.jccparser.JavaParser;
+
+public class SJParser extends <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/spi/Parser.html">Parser</a> {
+
+    private Snapshot snapshot;
+    private JavaParser javaParser;
+
+    @Override
+    public void parse (Snapshot snapshot, Task task, SourceModificationEvent event) {
+        this.snapshot = snapshot;
+        Reader reader = new StringReader(snapshot.getText().toString ());
+        javaParser = new JavaParser(reader);
+        try {
+            javaParser.CompilationUnit ();
+        } catch (org.simplejava.jccparser.ParseException ex) {
+            Logger.getLogger (SJParser.class.getName()).log (Level.WARNING, null, ex);
+        }
+    }
+
+    @Override
+    public Result getResult (Task task) {
+        return new SJParserResult (snapshot, javaParser);
+    }
+
+    @Override
+    public void cancel () {
+    }
+
+    @Override
+    public void addChangeListener (ChangeListener changeListener) {
+    }
+
+    @Override
+    public void removeChangeListener (ChangeListener changeListener) {
+    }
+
+    
+    public static class SJParserResult extends Result {
+
+        private JavaParser javaParser;
+        private boolean valid = true;
+
+        SJParserResult (Snapshot snapshot, JavaParser javaParser) {
+            super (snapshot);
+            this.javaParser = javaParser;
+        }
+
+        public JavaParser getJavaParser () throws org.netbeans.modules.parsing.spi.ParseException {
+            if (!valid) throw new org.netbeans.modules.parsing.spi.ParseException ();
+            return javaParser;
+        }
+
+        @Override
+        protected void invalidate () {
+            valid = false;
+        }
+
+    }
+    
+}</pre></li>                    
+                <li><p>The next class you need to implement is <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/spi/ParserFactory.html">org.netbeans.modules.parsing.spi.ParserFactory</a></tt>. 
+                        Create a class named <tt>SJParserFactory</tt> and define it as follows:</p>
+                    <pre class="examplecode">package org.simplejava.parser;
+
+import java.util.Collection;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/api/Snapshot.html">org.netbeans.modules.parsing.api.Snapshot</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/spi/Parser.html">org.netbeans.modules.parsing.spi.Parser</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/spi/ParserFactory.html">org.netbeans.modules.parsing.spi.ParserFactory</a>;
+
+public class SJParserFactory extends <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/spi/ParserFactory.html">ParserFactory</a> {
+
+    @Override
+    public Parser createParser (Collection&lt;Snapshot&gt; snapshots) {
+        return new SJParser ();
+    }
+
+}</pre>
+                </li>      
+
+            </ol>          
+
+            <p>You now have an implementation of the NetBeans Parsing API based
+                on a JavaCC parser generated from a JavaCC grammar definition. In
+                the next section, you register your NetBeans parser so that the
+                NetBeans Platform infrastructure can find it and load it
+                into the application.</p> 
+
+        </div>
+
+        <!-- ======================================================================================= -->
+
+        <h2><a name="registering"></a>Registering the NetBeans Parser</h2>
+        <p>You now have a NetBeans parser. We need to register it so that it can be used.
+         We also need to create a </p>
+        <div class="indent">
+            
+            <ol><li><p>Register your parser as shown below:</p>        
+            
+            <pre class="examplecode">&lt;folder name="Editors"&gt;
+    &lt;folder name="text"&gt;
+        &lt;folder name="x-sj"&gt;
+            &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.simplejava.Bundle"/&gt;
+            <b>&lt;file name="org-simplejava-parser-SJParserFactory.instance"/&gt;</b>
+            &lt;file name="language.instance"&gt;
+                &lt;attr name="instanceCreate" methodvalue="org.simplejava.lexer.SJTokenId.getLanguage"/&gt;
+                &lt;attr name="instanceOf" stringvalue="org.netbeans.api.lexer.Language"/&gt;
+            &lt;/file&gt;
+            &lt;folder name="FontsColors"&gt;
+                &lt;folder name="NetBeans"&gt;
+                    &lt;folder name="Defaults"&gt;
+                        &lt;file name="FontAndColors.xml" url="FontAndColors.xml"&gt;
+                            &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.simplejava.Bundle"/&gt;
+                        &lt;/file&gt;
+                    &lt;/folder&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre></li>
+                
+                <li><p>Create a new language class, which provides a central
+                        mechanism for registering language features, in addition
+                        to the layer mechanism above.</p>
+
+<pre class="java">package org.simplejava;
+
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-lexer/org/netbeans/api/lexer/Language.html">org.netbeans.api.lexer.Language</a>;
+import org.netbeans.modules.csl.spi.DefaultLanguageConfig;
+import org.netbeans.modules.csl.spi.LanguageRegistration;
+import org.simplejava.lexer.SJTokenId;
+
+@LanguageRegistration(mimeType = "text/x-sj")
+public class SJLanguage extends DefaultLanguageConfig {
+
+    @Override
+    public Language getLexerLanguage() {
+        return SJTokenId.getLanguage();
+    }
+
+    @Override
+    public String getDisplayName() {
+        return "SJ";
+    }
+    
+}</pre>
+                    <p class="tips"><b>Note:</b> The above class initializes
+                        language features in your plugin. If you do not have this class,
+                        certain language features will not be enabled and it will be
+                        difficult to track down the reasons for their failure.</p>
+                </li>
+                
+            </ol>
+        </div>
+
+        <p>Your parser generated by JavaCC is now registered 
+            in the NetBeans Platform. You can compile and run the module.
+            However, your parser will never be called simply because
+            you don't have code asking for the parser results. Since
+            there is no client of your parser yet, let's create one in
+            the next sections.</p> 
+        <!-- ======================================================================================= -->
+
+        <h2><a name="error-feature"></a>Implementing a New Feature: Error Parsing</h2>
+        <p>Now you will create a first client of your <tt>SJParser</tt>. 
+            This client (task) will show syntax errors in the
+            NetBeans editor sidebar, also known as its "gutter".</p> 
+        <p>Before working on the related code, we need to
+            make some modifications to the generated
+            parser. The parser throws a <tt>ParseException</tt> when it finds 
+            the first error in the source code. This is the default behavior of parsers 
+            generated by JavaCC. But in the NetBeans editor we need to detect more than 
+            just one syntax error. Therefore, we need to add some simple error recovery
+            to the parser before integrating the NetBeans error parsing code with it.</p>
+        <div class="indent">
+            <h3><a name="error-feature-1"></a>Adding Simple Error Recovery to the Parser</h3>
+        <div class="indent">
+
+            <ol>
+                <li><p>The tweaks below should both be done in <tt>Java1.5.jj</tt> file in your
+                        <tt>org.simplejava.jccparser</tt> package.</p>
+                    <ul>
+                        <li><p>Change "ERROR_REPORTING = false;" to "ERROR_REPORTING = true;":</p>
+                            <pre class="examplecode">
+options {
+  JAVA_UNICODE_ESCAPE = true;
+  <b>ERROR_REPORTING = true;</b>
+  STATIC = false;
+  JDK_VERSION = "1.5";
+}</pre>
+
+                        </li>
+                        <li><p>Add "import java.util.*;" to your Java1.5.jj file:</p>
+
+                            <pre class="examplecode">PARSER_BEGIN(JavaParser)
+
+package org.simplejava.jccparser;
+
+import java.io.*;
+<b>import java.util.*;</b></pre>                        
+
+                        </li></ul></li>
+
+                <li><p>Recompile <tt>Java1.5.jj</tt> again, the same way as 
+                        you did in the previous section:</p>
+
+                    <pre class="examplecode">cd /myprojects/simplejava/src/org/simplejava/jcclexer /myjavacc40/bin/javacc Java1.5.jj</pre></li>
+
+
+                <li><p>These additions and changes
+                        should be done in your <tt>JavaParser</tt> class.</p>
+                    <ul>
+                        <li><p>Add the following method to your <tt>JavaParser</tt> body:</p>
+                            <pre class="examplecode">public List&lt;ParseException&gt; syntaxErrors = new ArrayList&lt;ParseException&gt;();
+
+void recover (ParseException ex, int recoveryPoint) {
+    syntaxErrors.add (ex);
+    Token t;
+    do {
+        t = getNextToken ();
+    } while (t.kind != EOF && t.kind != recoveryPoint);
+}</pre>
+                        </li>
+
+
+                        <li>Catch <tt>ParseExceptions</tt> in <tt>CompilationUnit</tt>, 
+                            <tt>FieldDeclaration</tt>, <tt>MethodDeclaration</tt>, 
+                            and <tt>Statement</tt>:
+
+                            <pre class="examplecode">final public void CompilationUnit() throws ParseException {
+    <b>try {</b>
+        if (jj_2_1(2147483647)) {
+            PackageDeclaration();
+        } else {
+            ;
+        }
+        label_1:
+        while (true) {
+            switch ((jj_ntk == -1) ? jj_ntk() : jj_ntk) {
+                case IMPORT:
+                    ;
+                    break;
+                default:
+                    break label_1;
+            }
+            ImportDeclaration();
+        }
+        label_2:
+        while (true) {
+            switch ((jj_ntk == -1) ? jj_ntk() : jj_ntk) {
+                case ABSTRACT:
+                case CLASS:
+                case ENUM:
+                case FINAL:
+                case INTERFACE:
+                case NATIVE:
+                case PRIVATE:
+                case PROTECTED:
+                case PUBLIC:
+                case STATIC:
+                case STRICTFP:
+                case SYNCHRONIZED:
+                case TRANSIENT:
+                case VOLATILE:
+                case SEMICOLON:
+                case AT:
+                    ;
+                    break;
+                default:
+                    break label_2;
+            }
+            TypeDeclaration();
+        }
+        switch ((jj_ntk == -1) ? jj_ntk() : jj_ntk) {
+            case 127:
+                jj_consume_token(127);
+                break;
+            default:
+                ;
+        }
+        switch ((jj_ntk == -1) ? jj_ntk() : jj_ntk) {
+            case STUFF_TO_IGNORE:
+                jj_consume_token(STUFF_TO_IGNORE);
+                break;
+            default:
+                ;
+        }
+        jj_consume_token(0);
+    <b>} catch (ParseException ex) {
+        recover(ex, SEMICOLON);
+    }</b>
+}</pre>
+
+                            <pre class="examplecode">final public void FieldDeclaration(int modifiers) throws ParseException {
+    <b>try {</b>
+        Type();
+        VariableDeclarator();
+        label_11:
+        while (true) {
+            switch ((jj_ntk == -1) ? jj_ntk() : jj_ntk) {
+                case COMMA:
+                    ;
+                    break;
+                default:
+                    break label_11;
+            }
+            jj_consume_token(COMMA);
+            VariableDeclarator();
+        }
+        jj_consume_token(SEMICOLON);
+    <b>} catch (ParseException ex) {
+        recover(ex, SEMICOLON);
+    }</b>
+}</pre>
+
+                            <pre class="examplecode">final public void MethodDeclaration(int modifiers) throws ParseException {
+    <b>try {</b>
+        switch ((jj_ntk == -1) ? jj_ntk() : jj_ntk) {
+            case LT:
+                TypeParameters();
+                break;
+            default:
+                ;
+        }
+        ResultType();
+        MethodDeclarator();
+        switch ((jj_ntk == -1) ? jj_ntk() : jj_ntk) {
+            case THROWS:
+                jj_consume_token(THROWS);
+                NameList();
+                break;
+            default:
+                ;
+        }
+        switch ((jj_ntk == -1) ? jj_ntk() : jj_ntk) {
+            case LBRACE:
+                Block();
+                break;
+            case SEMICOLON:
+                jj_consume_token(SEMICOLON);
+                break;
+            default:
+                jj_consume_token(-1);
+                throw new ParseException();
+        }
+    <b>} catch (ParseException ex) {
+        recover(ex, SEMICOLON);
+    }</b>
+}</pre>
+
+                            <pre class="examplecode">final public void Statement() throws ParseException {
+    <b>try {</b>
+        if (jj_2_36(2)) {
+            LabeledStatement();
+        } else {
+            switch ((jj_ntk == -1) ? jj_ntk() : jj_ntk) {
+                case ASSERT:
+                    AssertStatement();
+                    break;
+                case LBRACE:
+                    Block();
+                    break;
+                case SEMICOLON:
+                    EmptyStatement();
+                    break;
+                case BOOLEAN:
+                case BYTE:
+                case CHAR:
+                case DOUBLE:
+                case FALSE:
+                case FLOAT:
+                case INT:
+                case LONG:
+                case NEW:
+                case NULL:
+                case SHORT:
+                case SUPER:
+                case THIS:
+                case TRUE:
+                case VOID:
+                case INTEGER_LITERAL:
+                case FLOATING_POINT_LITERAL:
+                case CHARACTER_LITERAL:
+                case STRING_LITERAL:
+                case IDENTIFIER:
+                case LPAREN:
+                case INCR:
+                case DECR:
+                    StatementExpression();
+                    jj_consume_token(SEMICOLON);
+                    break;
+                case SWITCH:
+                    SwitchStatement();
+                    break;
+                case IF:
+                    IfStatement();
+                    break;
+                case WHILE:
+                    WhileStatement();
+                    break;
+                case DO:
+                    DoStatement();
+                    break;
+                case FOR:
+                    ForStatement();
+                    break;
+                case BREAK:
+                    BreakStatement();
+                    break;
+                case CONTINUE:
+                    ContinueStatement();
+                    break;
+                case RETURN:
+                    ReturnStatement();
+                    break;
+                case THROW:
+                    ThrowStatement();
+                    break;
+                case SYNCHRONIZED:
+                    SynchronizedStatement();
+                    break;
+                case TRY:
+                    TryStatement();
+                    break;
+                default:
+                    jj_consume_token(-1);
+                    throw new ParseException();
+            }
+        }
+    <b>} catch (ParseException ex) {
+        recover(ex, SEMICOLON);
+    }</b>
+}</pre></li></ul></li>
+
+            </ol>
+        </div>
+            <p>We have added some very basic error recovery to our
+                parser so that we can display some
+                syntax errors in the NetBeans editor in the next section.</p>
+            <h3><a name="error-feature-2"></a>Integrating Syntax Error Reporting</h3>
+            <p>At this point, we're ready to implement our first <tt>ParserResultTask</tt>. 
+                This task consists of three standard steps:</p>
+                    <div class="indent">
+
+            <ol><li>Create a factory, i.e., <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/spi/TaskFactory.html">TaskFactory</a></tt></li>
+                <li>Create a task, i.e., <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/spi/ParserResultTask.html">ParserResultTask</a></tt></li> 
+                <li>Register the factory in the layer file</li>
+            </ol>
+                    </div>
+            <p>The above steps are standard in the sense that they are
+                common to all tasks implementing the NetBeans Parsing API.</p>
+                    <div class="indent">
+
+            <ol>
+                <li><p>Add a dependency on the NetBeans "Editor Hints" module.</p></li>
+                <li><p>Create the <tt>SJSyntaxErrorHighlightingTask</tt> class:</p>
+
+                    <pre class="examplecode">package org.simplejava.parser;
+
+import java.util.ArrayList;
+import java.util.List;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.StyledDocument;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/spi/Parser.Result.html">org.netbeans.modules.parsing.spi.Parser.Result</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/spi/ParserResultTask.html">org.netbeans.modules.parsing.spi.ParserResultTask</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/spi/Scheduler.html">org.netbeans.modules.parsing.spi.Scheduler</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/spi/SchedulerEvent.html">org.netbeans.modules.parsing.spi.SchedulerEvent</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-editor-hints/org/netbeans/spi/editor/hints/ErrorDescription.html">org.netbeans.spi.editor.hints.ErrorDescription</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-editor-hints/org/netbeans/spi/editor/hints/ErrorDescriptionFactory.html">org.netbeans.spi.editor.hints.ErrorDescriptionFactory</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-editor-hints/org/netbeans/spi/editor/hints/HintsController.html">org.netbeans.spi.editor.hints.HintsController</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-editor-hints/org/netbeans/spi/editor/hints/Severity.html">org.netbeans.spi.editor.hints.Severity</a>;
+import org.openide.text.NbDocument;
+import org.openide.util.Exceptions;
+import org.simplejava.jccparser.ParseException;
+import org.simplejava.jccparser.Token;
+import org.simplejava.parser.SJParser.SJParserResult;
+
+public class SJSyntaxErrorHighlightingTask extends <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/spi/ParserResultTask.html">ParserResultTask</a> {
+
+    @Override
+    public void run (Result result, SchedulerEvent event) {
+        try {
+            SJParserResult sjResult = (SJParserResult) result;
+            List&lt;ParseException&gt; syntaxErrors = sjResult.getJavaParser ().syntaxErrors;
+            Document document = result.getSnapshot ().getSource ().getDocument (false);
+            List&lt;ErrorDescription&gt; errors = new ArrayList&lt;ErrorDescription&gt; ();
+            for (ParseException syntaxError : syntaxErrors) {
+                Token token = syntaxError.currentToken;
+                int start = NbDocument.findLineOffset ((StyledDocument) document, token.beginLine - 1) + token.beginColumn - 1;
+                int end = NbDocument.findLineOffset ((StyledDocument) document, token.endLine - 1) + token.endColumn;
+                ErrorDescription errorDescription = ErrorDescriptionFactory.createErrorDescription(
+                    Severity.ERROR,
+                    syntaxError.getMessage (),
+                    document,
+                    document.createPosition(start),
+                    document.createPosition(end)
+                );
+                errors.add (errorDescription);
+            }
+            HintsController.setErrors (document, "simple-java", errors);
+        } catch (BadLocationException ex1) {
+            Exceptions.printStackTrace (ex1);
+        } catch (org.netbeans.modules.parsing.spi.ParseException ex1) {
+            Exceptions.printStackTrace (ex1);
+        }
+    }
+
+    @Override
+    public int getPriority () {
+        return 100;
+    }
+
+    @Override
+    public Class getSchedulerClass () {
+        return Scheduler.EDITOR_SENSITIVE_TASK_SCHEDULER;
+    }
+
+    @Override
+    public void cancel () {
+    }
+
+}</pre></li>
+
+                <li><p>Create the <tt>SJSyntaxErrorHighlightingTaskFactory</tt> class
+                        in the <tt>org.simplejava.parser</tt> package:</p>
+
+                    <pre class="examplecode">package org.simplejava.parser;
+
+import java.util.Collection;
+import java.util.Collections;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/api/Snapshot.html">org.netbeans.modules.parsing.api.Snapshot</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/spi/TaskFactory.html">org.netbeans.modules.parsing.spi.TaskFactory</a>;
+
+public class SJSyntaxErrorHighlightingTaskFactory extends <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-parsing-api/org/netbeans/modules/parsing/spi/TaskFactory.html">TaskFactory</a> {
+
+    @Override
+    public Collection create (Snapshot snapshot) {
+        return Collections.singleton (new SJSyntaxErrorHighlightingTask());
+    }
+
+}</pre></li>
+
+                <li>And register the <tt>TaskFactory</tt> in your layer file:
+                    <pre class="examplecode">&lt;folder name="Editors"&gt;
+    &lt;folder name="text"&gt;
+        &lt;folder name="x-sj"&gt;
+            &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.simplejava.Bundle"/&gt;
+            <b>&lt;file name="org-simplejava-parser-SJSyntaxErrorHighlightingTaskFactory.instance"/&gt;</b>
+            &lt;file name="org-simplejava-parser-SJParserFactory.instance"/&gt;
+            &lt;file name="language.instance"&gt;
+                &lt;attr name="instanceCreate" methodvalue="org.simplejava.lexer.SJTokenId.getLanguage"/&gt;
+                &lt;attr name="instanceOf" stringvalue="org.netbeans.api.lexer.Language"/&gt;
+            &lt;/file&gt;
+            &lt;folder name="FontsColors"&gt;
+                &lt;folder name="NetBeans"&gt;
+                    &lt;folder name="Defaults"&gt;
+                        &lt;file name="FontAndColors.xml" url="FontAndColors.xml"&gt;
+                            &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.simplejava.Bundle"/&gt;
+                        &lt;/file&gt;
+                    &lt;/folder&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+                </li>
+            </ol>   
+                    </div>
+            <p>When you install the module into your application and make a syntax error in a SJ file,
+                you should see the error highlighting in the sidebar of the
+                NetBeans editor:</p>
+
+            <p><img style="border:1px solid black" src="../images/tutorials/javacc/71/result.png" alt="source."/></p>
+
+
+        </div>
+
+        <!-- ======================================================================================= -->
+
+        <h2><a name="indent-feature"></a>Implementing a New Feature: Indentation</h2>
+        <p>Next, we'll create the skeleton of
+            an indentation task for our language.</p>
+        <div class="indent">
+
+            <ol>
+                <li>Add a dependency on the "<a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/overview-summary.html">Editor Indentation</a>" module.</li>
+                <li><p>Create a new <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/org/netbeans/modules/editor/indent/spi/IndentTask.html">IndentTask</a></tt>:</p>
+                    <pre class="examplecode">package org.simplejava.parser;
+
+import javax.swing.text.BadLocationException;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/org/netbeans/modules/editor/indent/spi/Context.html">org.netbeans.modules.editor.indent.spi.Context</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/org/netbeans/modules/editor/indent/spi/ExtraLock.html">org.netbeans.modules.editor.indent.spi.ExtraLock</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/org/netbeans/modules/editor/indent/spi/IndentTask.html">org.netbeans.modules.editor.indent.spi.IndentTask</a>;
+import org.openide.awt.StatusDisplayer;
+
+public class SJIndentTask implements <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/org/netbeans/modules/editor/indent/spi/IndentTask.html">IndentTask</a> {
+
+    private Context context;
+
+    SJIndentTask(Context context) {
+        this.context = context;
+    }
+
+    @Override
+    public void reindent() throws BadLocationException {
+        StatusDisplayer.getDefault().setStatusText("We will indent this now...");
+    }
+
+    @Override
+    public ExtraLock indentLock() {
+        return null;
+    }
+    
+}</pre>
+
+                    <p class="notes"><b>Note:</b> The indent task will 
+                        make a callback to the <tt>reindent()</tt> method
+                        when the Enter key is pressed in the NetBeans editor. 
+                        The <tt>Context</tt> object contains everything that
+                        you need, including the editor document object. 
+                        To complete the above implementation,
+                        it should be a matter of taking the text after the cursor
+                        and before the next line to indent the code as desired.</p>
+
+                </li>
+                <li><p>Create a new <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/org/netbeans/modules/editor/indent/spi/IndentTask.Factory.html">IndentTask.Factory</a></tt>:</p>  
+                    <pre class="java">package org.simplejava.parser;
+
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/org/netbeans/modules/editor/indent/spi/Context.html">org.netbeans.modules.editor.indent.spi.Context</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/org/netbeans/modules/editor/indent/spi/IndentTask.html">org.netbeans.modules.editor.indent.spi.IndentTask</a>;
+
+public class SJIndentTaskFactory implements <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/org/netbeans/modules/editor/indent/spi/IndentTask.Factory.html">IndentTask.Factory</a> {
+
+    @Override
+    public IndentTask createTask(Context context) {
+        return new SJIndentTask(context);
+    }
+
+}</pre>
+
+                </li>
+                <li><p>Register the new <tt>TaskFactory</tt> in the layer file:</p>
+                    <pre class="examplecode">&lt;folder name="Editors"&gt;
+    &lt;folder name="text"&gt;
+        &lt;folder name="x-sj"&gt;
+            &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.simplejava.Bundle"/&gt;
+            <b>&lt;file name="org-simplejava-parser-SJIndentTaskFactory.instance"/&gt;</b>
+            &lt;file name="org-simplejava-parser-SJParserFactory.instance"/&gt;
+            &lt;file name="language.instance"&gt;
+                &lt;attr name="instanceCreate" methodvalue="org.simplejava.lexer.SJTokenId.getLanguage"/&gt;
+                &lt;attr name="instanceOf" stringvalue="org.netbeans.api.lexer.Language"/&gt;
+            &lt;/file&gt;
+            &lt;folder name="FontsColors"&gt;
+                &lt;folder name="NetBeans"&gt;
+                    &lt;folder name="Defaults"&gt;
+                        &lt;file name="FontAndColors.xml" url="FontAndColors.xml"&gt;
+                            &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.simplejava.Bundle"/&gt;
+                        &lt;/file&gt;
+                    &lt;/folder&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre></li>
+        </div>
+
+        </ol>
+
+        <p>When you install the module into the application, open an SJ file,
+            and press Enter, you will see a message
+            in the status bar, showing you that the indentation integration is working
+            correctly.</p>
+
+        <!-- ======================================================================================= -->
+
+        <h2><a name="format-feature"></a>Implementing a New Feature: Reformatting</h2>
+        <p>Next, we'll create the skeleton of
+            a reformat task for our language.</p>
+        <div class="indent">
+
+            <ol>
+                <li>If you have not already done so in the previous section,
+                    add a dependency on the "<a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/overview-summary.html">Editor Indentation</a>" module.</li>
+                <li><p>Create a new <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/org/netbeans/modules/editor/indent/spi/ReformatTask.html">ReformatTask</a></tt>:</p>
+                    <pre class="examplecode">package org.simplejava.parser;
+
+import javax.swing.text.BadLocationException;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/org/netbeans/modules/editor/indent/spi/Context.html">org.netbeans.modules.editor.indent.spi.Context</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/org/netbeans/modules/editor/indent/spi/ExtraLock.html">org.netbeans.modules.editor.indent.spi.ExtraLock</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/org/netbeans/modules/editor/indent/spi/ReformatTask.html">org.netbeans.modules.editor.indent.spi.ReformatTask</a>;
+import org.openide.awt.StatusDisplayer;
+
+public class SJReformatTask implements <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/org/netbeans/modules/editor/indent/spi/ReformatTask.html">ReformatTask</a> {
+
+    private Context context;
+
+    public SJReformatTask(Context context) {
+        this.context = context;
+    }
+
+    @Override
+    public void reformat() throws BadLocationException {
+        StatusDisplayer.getDefault().setStatusText("We will format this now...");
+    }
+
+    @Override
+    public ExtraLock reformatLock() {
+        return null;
+    }
+    
+}</pre>
+
+                    <p class="notes"><b>Note:</b> The reformat task will 
+                        make a callback to the <tt>reformat()</tt> method
+                        when Alt-Shift-F is pressed in the NetBeans editor. 
+                        The <tt>Context</tt> object contains everything that
+                        you need, including the editor document object. 
+                        To complete the above reformatting,
+                        it should be a matter of taking the text after the cursor
+                        and before the next line to reformat the code as desired.</p>
+
+                </li>
+                <li><p>Create a new <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/org/netbeans/modules/editor/indent/spi/ReformatTask.Factory.html">ReformatTask.Factory</a></tt>:</p>  
+                    <pre class="java">package org.simplejava.parser;
+
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/org/netbeans/modules/editor/indent/spi/Context.html">org.netbeans.modules.editor.indent.spi.Context</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/org/netbeans/modules/editor/indent/spi/ReformatTask.Factory.html">org.netbeans.modules.editor.indent.spi.ReformatTask</a>;
+
+public class SJReformatTaskFactory implements <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-indent/org/netbeans/modules/editor/indent/spi/ReformatTask.Factory.html">ReformatTask.Factory</a> {
+
+    @Override
+    public ReformatTask createTask(Context context) {
+        return new SJReformatTask(context);
+    }
+    
+}</pre>
+
+                </li>
+                <li><p>Register the new <tt>TaskFactory</tt> in the layer file:</p>
+                    <pre class="examplecode">&lt;folder name="Editors"&gt;
+    &lt;folder name="text"&gt;
+        &lt;folder name="x-sj"&gt;
+            &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.simplejava.Bundle"/&gt;
+            <b>&lt;file name="org-simplejava-parser-SJReformatTaskFactory.instance"/&gt;</b>
+            &lt;file name="org-simplejava-parser-SJIndentTaskFactory.instance"/&gt;
+            &lt;file name="org-simplejava-parser-SJParserFactory.instance"/&gt;
+            &lt;file name="language.instance"&gt;
+                &lt;attr name="instanceCreate" methodvalue="org.simplejava.lexer.SJTokenId.getLanguage"/&gt;
+                &lt;attr name="instanceOf" stringvalue="org.netbeans.api.lexer.Language"/&gt;
+            &lt;/file&gt;
+            &lt;folder name="FontsColors"&gt;
+                &lt;folder name="NetBeans"&gt;
+                    &lt;folder name="Defaults"&gt;
+                        &lt;file name="FontAndColors.xml" url="FontAndColors.xml"&gt;
+                            &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.simplejava.Bundle"/&gt;
+                        &lt;/file&gt;
+                    &lt;/folder&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre></li>
+        </div>
+
+        </ol>
+
+        <p>When you install the module into the application, open an SJ file,
+            and choose Source | Format (Alt-Shift-F), you will see a message
+            in the status bar, showing you that the extension point is working
+            correctly.</p>
+
+        <!-- ======================================================================================= -->
+
+        <h2><a name="brace-feature"></a>Implementing a New Feature: Brace Matching</h2>
+        <p>Now, let's look at brace matching. When the user selects an opening brace,
+            the closing brace should be highlighted, and vice versa. Moreover, when Ctrl-[ is pressed
+            on the keyboard, the cursor should move back and forth between matching braces.</p>
+        <p class="tips">This feature is especially useful
+            if your language is likely to be used to create deeply nested code structures.
+        </p>
+        <p>In the first screenshot, the opening brace is selected, which results
+            in it being highlighted, together with the closing brace, so that you
+            can see where a code phrase or code block begins and ends and you can
+            toggle between them by pressing Ctrl-[:</p>
+
+        <p><img style="border:1px solid black" src="../images/tutorials/javacc/71/brace-match-1.png" alt="source."/></p>
+        <p>Similarly, here another code block is made visible by selecting
+            either the opening or closing brace, causing the matching
+            brace to also be highlighted, and enabling the cursor to be
+            toggled between the matching braces via Ctrl-[:</p>
+        <p><img style="border:1px solid black" src="../images/tutorials/javacc/71/brace-match-2.png" alt="source."/></p>
+
+
+        <div class="indent">
+
+            <ol>
+                <li>Add a dependency on the "<a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-bracesmatching/overview-summary.html">Editor Brace Matching</a>" module.</li>
+                <li><p>Create a new <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-bracesmatching/org/netbeans/spi/editor/bracesmatching/BracesMatcherFactory.html">BracesMatcherFactory</a></tt>:</p>  
+                    <pre class="java">package org.simplejava.parser;
+
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-bracesmatching/org/netbeans/spi/editor/bracesmatching/BracesMatcher.html">org.netbeans.spi.editor.bracesmatching.BracesMatcher</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-bracesmatching/org/netbeans/spi/editor/bracesmatching/BracesMatcherFactory.html">org.netbeans.spi.editor.bracesmatching.BracesMatcherFactory</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-bracesmatching/org/netbeans/spi/editor/bracesmatching/MatcherContext.html">org.netbeans.spi.editor.bracesmatching.MatcherContext</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-bracesmatching/org/netbeans/spi/editor/bracesmatching/support/BracesMatcherSupport.html">org.netbeans.spi.editor.bracesmatching.support.BracesMatcherSupport</a>;
+
+public class SJBracesMatcherFactory implements <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-bracesmatching/org/netbeans/spi/editor/bracesmatching/BracesMatcherFactory.html">BracesMatcherFactory</a> {
+
+    @Override
+    public BracesMatcher createMatcher(MatcherContext context) {
+        return BracesMatcherSupport.defaultMatcher(context, -1, -1);
+    }
+    
+}</pre>
+
+                    <p class="tips">The <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-bracesmatching/org/netbeans/spi/editor/bracesmatching/support/BracesMatcherSupport.html">BracesMatcherSupport</a></tt> package provides
+                        a number of useful implementations of <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-bracesmatching/org/netbeans/spi/editor/bracesmatching/BracesMatcher.html">BracesMatcher</a></tt>! One of these is used
+                        in the code above.</p>
+
+                </li>
+                <li><p>Register the new <tt>TaskFactory</tt> in the layer file:</p>
+                    <pre class="examplecode">&lt;folder name="Editors"&gt;
+    &lt;folder name="text"&gt;
+        &lt;folder name="x-sj"&gt;
+            &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.simplejava.Bundle"/&gt;
+            &lt;file name="org-simplejava-parser-SJReformatTaskFactory.instance"/&gt;
+            &lt;file name="org-simplejava-parser-SJIndentTaskFactory.instance"/&gt;
+            &lt;file name="org-simplejava-parser-SJSyntaxErrorHighlightingTaskFactory.instance"/&gt;
+            &lt;file name="org-simplejava-parser-SJParserFactory.instance"/&gt;
+            &lt;file name="language.instance"&gt;
+                &lt;attr name="instanceCreate" methodvalue="org.simplejava.lexer.SJTokenId.getLanguage"/&gt;
+                &lt;attr name="instanceOf" stringvalue="org.netbeans.api.lexer.Language"/&gt;
+            &lt;/file&gt;
+            <b>&lt;folder name="BracesMatchers"&gt;
+                &lt;file name="org-simplejava-parser-SJBracesMatcherFactory.instance"&gt;
+                    &lt;attr name="position" intvalue="0"/&gt;
+                &lt;/file&gt;
+            &lt;/folder&gt;</b>
+            &lt;folder name="FontsColors"&gt;
+                &lt;folder name="NetBeans"&gt;
+                    &lt;folder name="Defaults"&gt;
+                        &lt;file name="FontAndColors.xml" url="FontAndColors.xml"&gt;
+                            &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.simplejava.Bundle"/&gt;
+                        &lt;/file&gt;
+                    &lt;/folder&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre></li>
+        </div>
+
+        </ol>
+
+        <p>When you install the module into the application, open an SJ file,
+            and select a brace, you should see that the brace is highlighted,
+            together with its matching brace. Press Ctrl-[ to toggle between
+            matching braces.</p>
+
+        <!-- ======================================================================================= -->
+
+        <h2><a name="fold-feature"></a>Implementing a New Feature: Code Folding</h2>
+        <p>The "<a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-fold/overview-summary.html">Editor Code Folding</a>" module
+         provides the functionality you need to implement for creating your own code folds.</p>
+        <p>In this tutorial, we will use the custom code folding provided by
+            the NetBeans Editor Library. No dependencies on any additional modules
+            are needed. As you can see below, you will be able to type a code fold text
+            above and below a piece of code and then, automatically, the code
+            between the code fold text will be expandable/collapsible:</p>
+        <p><img style="border:1px solid black" src="../images/tutorials/javacc/71/code-fold-1.png" alt="source."/></p>
+        <p>When collapsed, the fold will look like this:</p>
+        <p><img style="border:1px solid black" src="../images/tutorials/javacc/71/code-fold-2.png" alt="source."/></p>
+
+
+        <div class="indent">
+            
+            <p>To obtain the custom code fold shown above, register the custom fold manager,
+                as shown below:</p>
+            
+<pre class="examplecode">&lt;folder name="Editors"&gt;
+    &lt;folder name="text"&gt;
+        &lt;folder name="x-sj"&gt;
+            &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.simplejava.Bundle"/&gt;
+            &lt;file name="org-simplejava-parser-SJReformatTaskFactory.instance"/&gt;
+            &lt;file name="org-simplejava-parser-SJIndentTaskFactory.instance"/&gt;
+            &lt;file name="org-simplejava-parser-SJSyntaxErrorHighlightingTaskFactory.instance"/&gt;
+            &lt;file name="org-simplejava-parser-SJParserFactory.instance"/&gt;
+            &lt;file name="language.instance"&gt;
+                &lt;attr name="instanceCreate" methodvalue="org.simplejava.lexer.SJTokenId.getLanguage"/&gt;
+                &lt;attr name="instanceOf" stringvalue="org.netbeans.api.lexer.Language"/&gt;
+            &lt;/file&gt;
+            <b>&lt;folder name="FoldManager"&gt;
+                &lt;file name="org-netbeans-editor-CustomFoldManager$Factory.instance"/&gt;
+            &lt;/folder&gt;</b>
+            &lt;folder name="BracesMatchers"&gt;
+                &lt;file name="org-simplejava-parser-SJBracesMatcherFactory.instance"&gt;
+                    &lt;attr name="position" intvalue="0"/&gt;
+                &lt;/file&gt;
+            &lt;/folder&gt;
+            &lt;folder name="FontsColors"&gt;
+                &lt;folder name="NetBeans"&gt;
+                    &lt;folder name="Defaults"&gt;
+                        &lt;file name="FontAndColors.xml" url="FontAndColors.xml"&gt;
+                            &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.simplejava.Bundle"/&gt;
+                        &lt;/file&gt;
+                    &lt;/folder&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>            
+
+        </div>
+
+        </ol>
+
+        <p>When you install the module into the application, open an SJ file,
+            and type a custom code fold text above and below a piece of code in the way
+            shown in the images above and a code fold will automatically
+            appear around the code between the code fold text.</p>
+
+
+        <!-- ======================================================================================= -->
+
+        <p></p>
+        <div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20JavaCC%20Parser%207.1%20Tutorial">Send Us Your Feedback</a></div>
+
+        <!-- ======================================================================================== -->
+
+        <h2><a name="nextsteps"></a>Next Steps</h2>
+        <p class="tips">This tutorial is the official version of
+            the second part of <a href="http://wiki.netbeans.org/How_to_create_support_for_a_new_language">http://wiki.netbeans.org/How_to_create_support_for_a_new_language</a>,
+            which, aside from being a rough draft, is partly out of date for NetBeans Platform 7.1.</p>
+        <p>For more information about creating and developing NetBeans modules, see the following resources: </p>
+        <ul>
+            <li><a href="https://platform.netbeans.org/index.html">NetBeans Platform Homepage</a></li>
+            <li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API List (Current Development Version)</a></li>
+            <li><a href="https://netbeans.org/kb/trails/platform.html">Other Related Tutorials</a></li>
+        </ul>
+
+        <!-- ======================================================================================== -->
+
+        <!--<h2><a name="version"></a>Versioning </h2>
+
+        <table width="76%" >
+            <tbody>
+                <tr>
+                    <td>
+                        <b>Version</b>
+                    </td>
+                    <td>
+                        <b>Date</b>
+                    </td>
+                    <td>
+                        <b>Changes</b>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        1
+                    </td>
+                    <td>
+                        9 January 2012
+                    </td>
+                    <td>
+                        <ul><li>Initial version.</li>
+                            <li>To do:
+                                <ul>
+                                    <li></li>
+                                    <li></li>
+                                    <li></li>
+                                    <li></li>
+                                    <li></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </td>
+                </tr>
+            </tbody>
+        </table>-->
+
+    </body>
+</html>

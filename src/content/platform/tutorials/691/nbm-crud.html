@@ -1,0 +1,1076 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+    <!-- -*- xhtml -*- -->
+    <title>NetBeans CRUD Application Tutorial for NetBeans Platform 6.5</title>
+    <meta name="AUDIENCE" content="NBUSER">
+    <meta name="TYPE" content="ARTICLE">
+    <meta name="EXPIRES" content="N">
+    <meta name="developer" content="gwielenga@netbeans.org">
+    <meta name="indexed" content="y">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">   
+    <meta name="description"
+          content="A guide describing how to create a CRUD application on
+           NetBeans Platform 6.5.">
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+   <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+
+<body>
+<h1><a name="top"></a>NetBeans Platform CRUD Application Tutorial</h1>
+
+  <p>This tutorial shows you how to integrate a Java DB database into a
+   NetBeans Platform application. We start by exploring a Java DB database,
+   from which we create entity classes. Though the starting point
+   of this tutorial is Java DB, be aware that these instructions
+   are not applicable to Java DB only. Rather, they are relevant to any
+   relational database supported by NetBeans IDE.
+   
+  <p><b class="notes">Note:</b> Though the database access part of this tutorial
+   is fine for smaller applications, there are many other factors
+   to be aware of in the context of larger real-life scenarios. It is
+   important to be aware of these factors, aspects of which are described
+   <a href="http://blog.schauderhaft.de/2008/09/28/hibernate-sessions-in-two-tier-rich-client-applications/">here</a>.</p>
+
+  <p>Once we have code for accessing the database, we wrap the entity classes
+   into a module, together with modules for the related JPA JARS. Once
+   the data access module is part of our application, we create a new
+   module that provides the user interface for our application. The
+   new module gives the user a tree hierarchy showing data from the database.
+   We then create another module that lets the user edit the data displayed
+   by the first module. By separating the viewer from the editor in distinct modules, we will enable
+   the user to install a different editor for the same viewer, since different
+   editors could be created by external vendors, some commercially and some
+   for free. It is this flexibility that the modular architecture of the
+   NetBeans Platform makes possible.
+
+  <p>Once we have an editor, we begin adding CRUD functionality. First, the
+  "R", standing for "Read", is handled by the viewer described above. Next,
+  the "U" for "Update" is handled, followed by the "C" for "Create", and the
+  "D" for "Delete".
+
+  <p>At the end of the tutorial, you will have learned about a range of NetBeans
+  Platform features that help you in creating applications of this kind. For
+  example, you will have learned about the <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/UndoRedo.Manager.html">UndoRedo.Manager</a></tt> and the <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-explorer/org/openide/explorer/ExplorerManager.html">ExplorerManager</a></tt>,
+  as well as NetBeans Platform Swing components, such as <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/org/openide/windows/TopComponent.html">TopComponent</a></tt> and <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-explorer/org/openide/explorer/view/BeanTreeView.html">BeanTreeView</a></tt>.
+
+   <p><b class="notes">Note:</b> This document uses the NetBeans IDE 6.8 Release. If you
+    are using an earlier version, see <a href="67/nbm-crud.html">the 6.7 version
+    of this document</a>.</p>
+
+   <p><b>Contents</b></p>
+         
+   <p><img src="../images/articles/69/netbeans-stamp8-9.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.5, 6.7, 6.8" title="Content on this page applies to NetBeans IDE 6.5, 6.7, 6.8"/></p>
+      <ul class="toc">
+        <li><a href="#creating-app">Setting Up the Application</a></li>
+        <li><a href="#integrating-database">Integrating the Database</a>
+        <ul>
+            <li><a href="#creating-entity">Creating Entity Classes from a Database</a></li>
+            <li><a href="#wrapping-entity">Wrapping the Entity Class JAR in a Module</a></li>
+            <li><a href="#creating-other">Creating Other Related Modules</a></li>
+            <li><a href="#designing-ui">Designing the User Interface</a></li>
+            <li><a href="#setting-dependencies">Setting Dependencies</a></li>
+            <li><a href="#running-prototype">Running the Prototype</a></li>
+        </ul>
+        <li><a href="#integrating-crud">Integrating CRUD Functionality</a>
+        <ul>
+            <li><a href="#read">Read</a></li>
+            <li><a href="#update">Update</a></li>
+            <li><a href="#create">Create</a></li>
+            <li><a href="#delete">Delete</a></li>
+        </ul>
+        </li>
+      </ul>
+         
+<p><b>To follow this tutorial, you need the software and resources listed in the following 
+table.</b></p>
+
+ <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.8</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Version 6 or<br/>version 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <p>The application you create in this tutorial will
+    look as follows:</p>
+
+<p><img alt="the final state of the application" src="http://netbeans.dzone.com/sites/all/files/customer-app-on-nb.png"/> </p>
+
+<p class="tips"> It is advisable to watch the screencast series
+ <a href="https://platform.netbeans.org/tutorials/nbm-10-top-apis.html">Top 10 NetBeans APIs</a>
+ before beginning to work on this tutorial. Many of the concepts addressed in this tutorial
+ are discussed in more detail within the screencast series.
+
+
+    <p>
+<!-- ===================================================================================== -->  
+
+<br>
+<h2 class="tutorial"><a name="creating-app"></a>Setting up the Application</h2>
+
+<p>Let's start by creating a new NetBeans Platform application.
+
+<ol>
+    <li>Choose File &gt; New Project (Ctrl+Shift+N). Under Categories, select NetBeans Modules. 
+        Under Projects, select NetBeans Platform Application. Click Next.</li>
+    <li>In the Name and Location panel, type <tt>DBManager</tt> in the Project Name field.
+         Click Finish.</li>
+</ol>
+    
+<p>The IDE creates the <tt>DBManager</tt> project. The project
+ is a container for all the other modules you will create.
+
+<p><img alt="NetBeans Platform container" src="../images/tutorials/crud/68dbmanager-1.png"/> </p>
+
+<br>
+
+<!-- ===================================================================================== -->
+
+<br>
+<h2><a name="integrating-database"></a>Integrating the Database</h2>
+
+<p>In order to integrate the database, you need to create entity classes
+ from your database and integrate those entity classes, together with
+ their related JARs, into modules that are part of your NetBeans Platform
+ application.</p>
+
+<div class="indent">
+    <h3 class="tutorial"><a name="creating-entity"></a>Creating the Entity Classes</h3>
+    <p>In this section, you generate entity classes from a selected database.
+    <ol>
+        <li>For purposes of this example, use the Services window to
+                connect to the sample database that is included with
+                NetBeans IDE:
+
+        <p><img alt="Services window" src="../images/tutorials/crud/68dbmanager-2.png"/> </p>
+
+        <p class="tips"> Alternatively, use
+        any database you like and adapt the steps that follow to your particular
+        use case. In the case of MySQL, see <a href="https://netbeans.org/kb/docs/ide/mysql.html">Connecting to a MySQL Database</a>.</p>
+        <p><li>In the IDE, choose File | New Project, followed by
+         Java | Java Class Library to create a new library project
+         named <tt>CustomerLibrary</tt>.
+        <p><li>In the Projects window, right-click the library project
+         and choose File | New File, followed by Persistence | Entity
+         Classes from Database. In the wizard, select your database and the tables you
+         need. Here we choose "Customer", and then "Discount Code" is added automatically, since
+         there is a relationship between these two tables.
+
+                 <p><img alt="adding tables" src="../images/tutorials/crud/68dbmanager-3.png"/> </p>
+
+
+                 <p><li>Specify the persistence strategy, which can
+                     be any of the available options. Here, since we need
+                     to choose something, we'll
+                     choose EclipseLink:
+
+                             <p><img alt="choosing eclipselink" src="../images/tutorials/crud/68dbmanager-4.png"/> </p>
+
+
+                            <p><li>Specify "demo" as the name of
+        the package where the entity classes will be generated.
+                             <p><img alt="name of package" src="../images/tutorials/crud/68dbmanager-5.png"/> </p>
+
+        <p><li>Click Finish. Once you have completed this step, look at the generated code and notice
+         that, among other things, you now have a <tt>persistence.xml</tt> file in a folder
+        called META-INF, as well as entity classes for each of your tables:
+
+<p><img alt="entity classes" src="../images/tutorials/crud/68dbmanager-7.png"/> </p>
+
+         <p><li>Build the Java Library and you will have a JAR file in the library
+         project's "dist" folder, which you can view in the Files window:
+
+<p><img alt="dist folder" src="../images/tutorials/crud/68dbmanager-8.png"/> </p>
+
+         </li>
+    </ol>
+    
+    <h3 class="tutorial"><a name="wrapping-entity"></a>Wrapping the Entity Class JAR in a Module</h3>
+    <p>In this section, you add your first module to your application!
+        The new NetBeans module will wrap the JAR file
+     you created in the previous section. 
+    <ol>
+        <li>Right-click the <tt>DBManager</tt>'s Modules node in the Projects window
+         and choose Add New Library.
+        <p><li>Select the JAR you created in the previous subsection
+         and complete the wizard, specifying any values you like. Let's assume
+         the application is for dealing with customers at shop.org, in which case
+         a unique identifier "org.shop.model" is appropriate for the code name base:
+
+         <p><img alt="unique id for module" src="../images/tutorials/crud/68dbmanager-9.png"/> </p>
+
+    </ol>
+        <p>You now have your first custom module in your new application,
+             wrapping the JAR containing the entity classes and
+             the persistence.xml file:</p>
+
+        <p><img alt="persistence.xml" src="../images/tutorials/crud/68dbmanager-91.png"/> </p>
+
+    <h3 class="tutorial"><a name="creating-other"></a>Creating Other Related Modules</h3>
+    <p>In this section, you create two new modules, wrapping the EclipseLink JARs,
+     as well as the database connector JAR.
+    <ol>
+        <li>Do the same as you did when creating the library wrapper for the
+        entity class JAR, but this time for the EclipseLink JARs, which are in
+        the "CustomerLibrary" Java library that you created earlier:
+
+                <p><img alt="wrapping a library" src="../images/tutorials/crud/68dbmanager-94.png"/></p>
+
+
+        <p class="tips"> In the Library Wrapper Module wizard,
+             you can use Ctrl-Click to select multiple JARs.</p>
+
+        <p><li>Next, create yet another library wrapper module, this time for the Java DB client JAR,
+        which is available in your JDK distribution, at <tt>db/lib/derbyclient.jar</tt>.
+    </ol>
+    
+    <h3 class="tutorial"><a name="designing-ui"></a>Designing the User Interface</h3>
+    <p>In this section, you create a simple prototype user interface, providing
+        a window that uses a <tt>JTextArea</tt> to display data retrieved
+        from the database.
+    <ol>
+        <li>Right-click the <tt>DBManager</tt>'s Modules node in the Projects window
+         and choose Add New. Create a new module named <tt>CustomerViewer</tt>, with
+         the code name base <tt>org.shop.ui</tt>.
+        <p><li>In the Projects window, right-click the new module and choose
+         New | Window Component. Specify that it should be created in the <tt>editor</tt>
+         position and that it should open when the application starts. Set <tt>Customer</tt>
+         as the window's class name prefix.
+        <p><li>Use the Palette (Ctrl-Shift-8) to drag
+        and drop a <tt>JTextArea</tt> on the new window:
+
+        <p><img alt="JTextArea dropped" src="../images/tutorials/crud/68dbmanager-93.png"/></p>
+
+       <p><li>Add this
+       to the end of the TopComponent constructor:
+<pre class="examplecode">EntityManager entityManager = Persistence.createEntityManagerFactory("CustomerLibraryPU").createEntityManager();
+Query query = entityManager.createQuery("SELECT c FROM Customer c");
+List&lt;Customer&gt; resultList = query.getResultList();
+for (Customer c : resultList) {
+  jTextArea1.append(c.getName() + " (" + c.getCity() + ")" + "\n");
+}</pre>
+
+<p class="tips"> Since you have not set dependencies on the modules that
+ provide the Customer object and the persistence JARs, the statements
+ above will be marked with red error underlines. These will be fixed
+in the section that follows.</p>
+
+<p>Above, you can see references to a persistence unit named "CustomerLibraryPU",
+which is the name set in the <tt>persistence.xml</tt> file. In addition,there is a reference
+to one of the entity classes, called <tt>Customer</tt>, which is in the entity classes module.
+Adapt these bits to your needs, if they are different to the above.
+
+    </ol>
+
+    <h3 class="tutorial"><a name="setting-dependencies"></a>Setting Dependencies</h3>
+    <p>In this section, you enable some of the modules to use code from
+     some of the other modules. You do this very explicitly by setting intentional
+     contracts between related modules, i.e., as opposed
+     to the accidental and chaotic reuse of code that tends to happen when
+     you do not have a strict modular architecture such as that provided by
+     the NetBeans Platform.
+    <ol>
+         <li>The entity classes module needs to have dependencies on the Derby Client
+        module as well as on the EclipseLink module. Right-click the
+        <tt>CustomerLibrary</tt> module, choose Properties, and use the
+        Libraries tab to set dependencies on the two modules that the
+        <tt>CustomerLibrary</tt> module needs.
+        <p><li>The <tt>CustomerViewer</tt> module needs a dependency
+        on the EclipseLink module as well as on the entity classes module.
+        Right-click the
+        <tt>CustomerViewer</tt> module, choose Properties, and use the
+        Libraries tab to set dependencies on the two modules that the
+        <tt>CustomerViewer</tt>  module needs.
+        <p><li>Open the <tt>CustomerTopComponent</tt> in the Source view, right-click
+        in the editor, and choose "Fix Imports". The IDE is now able to add
+        the required import statements, because the modules that provide
+        the required classes are now available to the <tt>CustomerTopComponent</tt>.
+    </ol>
+        <p>You now have set contracts between the modules
+         in your application, giving you control
+         over the dependencies between distinct pieces
+         of code.
+
+    <h3 class="tutorial"><a name="running-prototype"></a>Running the Prototype</h3>
+    <p>In this section, you run the application so that you can see
+     that you're correctly accessing your database.
+    <ol>
+        <li>Start your database server.
+        <p><li>Run the application. You should see this:
+
+        <p><img alt="running the prototype" src="../images/tutorials/crud/68dbmanager-92.png"/></p>
+    </ol>
+        <p>You now have a simple prototype, consisting of a NetBeans Platform
+            application that displays data from your database,
+            which you will extend in the next
+         section.
+
+</div>
+
+<br>
+<h2><a name="integrating-crud"></a>Integrating CRUD Functionality</h2>
+
+<p>In order to create CRUD functionality that integrates smoothly
+ with the NetBeans Platform, some very specific NetBeans Platform coding patterns need to
+ be implemented. The sections that follow describe these patterns
+ in detail.</p>
+
+<div class="indent">
+    
+    <h3 class="tutorial"><a name="read"></a>Read</h3>
+    <p>In this section, you change the <tt>JTextArea</tt>, introduced in the
+     previous section, for a NetBeans Platform explorer view. NetBeans Platform
+     explorer views are Swing components that integrate better with the
+     NetBeans Platform than standard Swing components do. Among other things,
+     they support the notion of a context, which enables them to be
+     context sensitive.
+    <p>Representing your data,
+     you will have a generic hierarchical model provided by a NetBeans Platform
+     <tt>Node</tt> class, which can be displayed by any of the NetBeans Platform
+     explorer views. This section ends with an explanation of how to synchronize
+     your explorer view with the NetBeans Platform Properties window.
+    <ol>
+        <li>In your <tt>TopComponent</tt>, delete the <tt>JTextArea</tt>
+         in the Design view and comment out its
+         related code in the Source view:
+
+<pre class="examplecode">EntityManager entityManager =  Persistence.createEntityManagerFactory("CustomerLibraryPU").createEntityManager();
+Query query = entityManager.createQuery("SELECT c FROM Customer c");
+List&lt;Customer&gt; resultList = query.getResultList();
+//for (Customer c : resultList) {
+//    jTextArea1.append(c.getName() + " (" + c.getCity() + ")" + "\n");
+//}</pre>
+
+<p><li>Right-click the <tt>CustomerViewer</tt> module, choose Properties,
+ and use the Libraries tab to set dependencies on the Nodes API and
+ the Explorer & Property Sheet API.
+
+<p><li>Next, change the class signature to implement <tt>ExplorerManager.Provider</tt>:
+
+<pre class="examplecode">final class CustomerTopComponent extends TopComponent implements ExplorerManager.Provider</pre>
+
+<p>You will need to override <tt>getExplorerManager()</tt>
+
+<pre class="examplecode">@Override
+public ExplorerManager getExplorerManager() {
+    return em;
+}</pre>
+
+<p>At the top of the class, declare and initialize the <tt>ExplorerManager</tt>:
+
+<pre class="examplecode">private static ExplorerManager em = new ExplorerManager();</pre>
+
+<p class="tips"> Watch <a href="https://platform.netbeans.org/tutorials/nbm-10-top-apis.html">Top 10 NetBeans APIs</a>
+ for details on the above code, especially the screencast dealing with the Nodes API
+ and the Explorer & Property Sheet API.
+
+<p><li>Switch to the <tt>TopComponent</tt> Design view,
+ right-click in the Palette, choose Palette Manager | Add from JAR. Then browse to
+ the <tt>org-openide-explorer.jar</tt>, which is in <tt>platform11/modules</tt> folder,
+ within the NetBeans IDE installation directory. Choose the BeanTreeView and complete
+ the wizard. You should now see <tt>BeanTreeView</tt> in the Palette. Drag it from
+ the Palette and drop it on the window.
+ 
+<p><li>Create a factory class that will create a new <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-db/org/netbeans/api/db/explorer/node/BaseNode.html">BeanNode</a>
+             for each customer in your database:
+
+<pre class="examplecode">import demo.Customer;
+import java.beans.IntrospectionException;
+import java.util.List;
+import org.openide.nodes.BeanNode;
+import org.openide.nodes.ChildFactory;
+import org.openide.nodes.Node;
+import org.openide.util.Exceptions;
+
+public class CustomerChildFactory extends ChildFactory&lt;Customer&gt; {
+
+    private List&lt;Customer&gt; resultList;
+
+    public CustomerChildFactory(List&lt;Customer&gt; resultList) {
+        this.resultList = resultList;
+    }
+
+    @Override
+    protected boolean createKeys(List&lt;Customer&gt; list) {
+        for (Customer Customer : resultList) {
+            list.add(Customer);
+        }
+        return true;
+    }
+
+    @Override
+    protected Node createNodeForKey(Customer c) {
+        try {
+            return new BeanNode(c);
+        } catch (IntrospectionException ex) {
+            Exceptions.printStackTrace(ex);
+            return null;
+        }
+    }
+
+}</pre>
+        <p><li>Back in the <tt>CustomerTopComponent</tt>,
+         use the <tt>ExplorerManager</tt> to pass the result list
+        from the JPA query in to the <tt>Node</tt>:
+
+<pre class="examplecode">EntityManager entityManager =  Persistence.createEntityManagerFactory("CustomerLibraryPU").createEntityManager();
+Query query = entityManager.createQuery("SELECT c FROM Customer c");
+List&lt;Customer&gt; resultList = query.getResultList();
+<b>em.setRootContext(new AbstractNode(Children.create(new CustomerChildFactory(resultList), true)));</b>
+//for (Customer c : resultList) {
+//    jTextArea1.append(c.getName() + " (" + c.getCity() + ")" + "\n");
+//}</pre>
+
+        <p><li>Run the application. Once the application is running,
+         open the Properties window. Notice that even though the data
+         is available, displayed in a <tt>BeanTreeView</tt>, the <tt>BeanTreeView</tt>
+         is not synchronized with the Properties window, which is available
+         via Window | Properties. In other words, nothing is displayed
+        in the Properties window when you move up and down the tree hierarchy.
+
+        <p><li>Synchronize the Properties window with the <tt>BeanTreeView</tt>
+        by adding the following to the constructor in the <tt>TopComponent</tt>:
+
+<pre class="examplecode">associateLookup(ExplorerUtils.createLookup(em, getActionMap()));</pre>
+
+<p>Here we add the <tt>TopComponent</tt>'s <tt>ActionMap</tt> and <tt>ExplorerManager</tt>
+ to the <tt>Lookup</tt> of the <tt>TopComponent</tt>. A side effect of this is
+ that the Properties window starts displaying the display name and tooltip text
+ of the selected <tt>Node</tt>.
+
+        <p><li>Run the application again and notice that the Properties window
+        is now synchronized with the explorer view:
+
+        <p><img alt="synchronization" src="../images/tutorials/crud/68dbmanager-95.png"/>
+
+    </ol>
+    <p>Now you are able to view your data in a tree hierarchy, as you would
+     be able to do with a <tt>JTree</tt>. However, you're also able to swap
+     in a different explorer view without needing to change the model at all
+     because the <tt>ExplorerManager</tt> mediates between the model and the
+     view. Finally, you are now also able to synchronize the view with the
+     Properties window.
+
+    <h3 class="tutorial"><a name="update"></a>Update</h3>
+    <p>In this section, you first create an editor. The editor will be provided
+     by a new NetBeans module. So, you will first create a new module. Then, within
+     that new module, you will create a new <tt>TopComponent</tt>, containing two <tt>JTextFields</tt>,
+     for each of the columns you want to let the user edit. You will need to
+     let the viewer module communicate with the editor module. Whenever a new
+     <tt>Node</tt> is selected in the viewer module, you will add the current <tt>Customer</tt>
+     object to the <tt>Lookup</tt>. In the editor module, you will listen to the
+     <tt>Lookup</tt> for the introduction of <tt>Customer</tt> objects. Whenever a
+     new <tt>Customer</tt> object is introduced into the <tt>Lookup</tt>, you will
+     update the <tt>JTextFields</tt> in the editor.
+    <p>Next, you will synchronize your <tt>JTextFields</tt>
+     with the NetBeans Platform's Undo, Redo, and Save functionality. In other words,
+     when the user makes changes to a <tt>JTextField</tt>, you want the
+     NetBeans Platform's existing functionality to become available so that,
+     instead of needing to create new functionality, you'll simply be able to
+     hook into the NetBeans Platform's support. To
+     this end, you will need to use the <tt>UndoRedoManager</tt>, together with the
+     <tt>SaveCookie</tt>.
+    <ol>
+        <li>Create a new module, named <tt>CustomerEditor</tt>, with <tt>org.shop.editor</tt> as
+         its code name base.
+        <p><li>Right-click the <tt>CustomerEditor</tt> module and choose New | Window Component.
+         Make sure to specify that the window should appear in the <tt>editor</tt> position and
+         that it should open when the application starts. In the final panel of the wizard,
+         set "Editor" as the class name prefix.
+        <p><li>Use the Palette (Ctrl-Shift-8) to add two <tt>JLabels</tt> and two <tt>JTextFields</tt>
+         to the new window. Set the texts of the labels to "Name" and "City" and
+         set the variable names of the two <tt>JTextFields</tt> to <tt>jTextField1</tt>
+        and <tt>jTextField2</tt>.
+
+        <p>In the GUI Builder, the window should now look something like this:</p>
+
+        <p><img alt="designing the user interface" src="../images/tutorials/crud/68dbmanager-96.png"/></p>
+
+        <p><li>Go back to the <tt>CustomerViewer</tt> module and change its <tt>layer.xml</tt>
+         file to specify that the <tt>CustomerTopComponent</tt> window will appear in the <tt>explorer</tt> mode.
+
+         <p class="tips"> Right-click the application project and choose "Clean", after
+          changing the <tt>layer.xml</tt> file. Why? Because whenever you run the
+          application and close it down, the window positions are stored in the
+          user directory. Therefore, if the <tt>CustomerViewer</tt> was initially
+          displayed in the <tt>editor</tt> mode, it will remain in the <tt>editor</tt> mode,
+          until you do a "Clean", thus resetting the user directory (i.e., thus
+          <i>deleting</i> the user directory) and enabling
+          the <tt>CustomerViewer</tt> to be displayed in the position currently set in the
+         <tt>layer.xml</tt> file.</p>
+
+
+         <p>Also check
+         that the <tt>BeanTreeView</tt> in the <tt>CustomerViewer</tt> will stretch horizontally
+         and vertically when the user resizes the application. Check this by opening the window,
+         selecting the <tt>BeanTreeView</tt>, and then clicking the arrow buttons in the
+         toolbar of the GUI Builder.
+
+         <li>Run the application and make sure that you see the following when the
+              application starts up:
+
+                      <p><img alt="running the new UI" src="../images/tutorials/crud/68dbmanager-97.png"/></p>
+
+
+        <li>Now we can start adding some code.
+         Firstly, we need to show the currently selected Customer object in the editor:
+        <ul>
+         <li>Start by tweaking the <tt>CustomerViewer</tt> module so that the current <tt>Customer</tt> object
+         is added to the viewer window's <tt>Lookup</tt> whenever a new <tt>Node</tt>
+         is selected. Do this by creating an <tt>AbstractNode</tt>, instead of a <tt>BeanNode</tt>,
+         in the <tt>CustomerChildFactory</tt> class. That enables you to add the
+         current <tt>Customer</tt> object to the <tt>Lookup</tt> of the Node,
+          as follows (note the part in bold):
+
+<pre class="examplecode">@Override
+protected Node createNodeForKey(Customer c) {
+    Node node = new AbstractNode(Children.LEAF, Lookups.singleton(c));
+    node.setDisplayName(c.getName());
+    node.setShortDescription(c.getCity());
+    return node;
+//        try {
+//            return new BeanNode(c);
+//        } catch (IntrospectionException ex) {
+//            Exceptions.printStackTrace(ex);
+//            return null;
+//        }
+}</pre>
+
+        <p>Now, whenever a new <tt>Node</tt> is created, which
+         happens when the user selects a new customer in the viewer, a new
+         <tt>Customer</tt> object is added to the <tt>Lookup</tt> of the <tt>Node</tt>.
+
+         <p><li>Let's
+         now change the editor module in such a way that its window
+         will end up listening for <tt>Customer</tt> objects being added to the <tt>Lookup</tt>. First,
+         set a dependency in the editor module on the module that provides
+         the entity class, as well as the module that provides the persistence
+         JARs. 
+
+         <p><li>Next, change the <tt>EditorTopComponent</tt> class signature
+         to implement <tt>LookupListener</tt>:
+
+<pre class="examplecode">public final class EditorTopComponent extends TopComponent implements LookupListener</pre>
+
+         <p><li>Override the
+         <tt>resultChanged</tt> so that the <tt>JTextFields</tt> are updated whenever
+         a new <tt>Customer</tt> object is introduced into the <tt>Lookup</tt>:
+
+<pre class="examplecode">@Override
+public void resultChanged(LookupEvent lookupEvent) {
+    Lookup.Result r = (Lookup.Result) lookupEvent.getSource();
+    Collection&lt;Customer&gt; coll = r.allInstances();
+    if (!coll.isEmpty()) {
+        for (Customer cust : coll) {
+            jTextField1.setText(cust.getName());
+            jTextField2.setText(cust.getCity());
+        }
+    } else {
+        jTextField1.setText("[no name]");
+        jTextField2.setText("[no city]");
+    }
+}</pre>
+
+        <p><li>Now that the <tt>LookupListener</tt> is defined,
+         we need to add it to something. Here, we add it to
+         the <tt>Lookup.Result</tt> obtained from the global context.
+         The global context proxies the context of the selected <tt>Node</tt>.
+         For example, if "Ford Motor Co" is selected in the tree hierarchy,
+         the <tt>Customer</tt> object for "Ford Motor Co" is added to the <tt>Lookup</tt>
+         of the <tt>Node</tt> which, because it is the currently selected <tt>Node</tt>,
+         means that the <tt>Customer</tt> object for "Ford Motor Co" is now available in
+         the global context. That is what is then passed to the <tt>resultChanged</tt>,
+        causing the text fields to be populated.
+
+         <p>All of the above starts happening, i.e., the <tt>LookupListener</tt>
+         becomes active, whenever the editor window is opened, as you can see below:</p>
+
+<pre class="examplecode">@Override
+public void componentOpened() {
+    result = Utilities.actionsGlobalContext().lookupResult(Customer.class);
+    result.addLookupListener(this);
+    resultChanged(new LookupEvent(result));
+}
+
+@Override
+public void componentClosed() {
+    result.removeLookupListener(this);
+    result = null;
+}</pre>
+
+<p>Since the editor window is opened when the application starts, the
+ <tt>LookupListener</tt> is available at the time that the application starts up.
+
+<p><li>Finally, declare the result variable at the top of the class, like this:
+
+<pre class="examplecode">private Lookup.Result result = null;</pre>
+
+        <p><li>Run the application again and notice that the editor window
+        is updated whenever you select a new <tt>Node</tt>:
+
+                      <p><img alt="updated editor window" src="../images/tutorials/crud/68dbmanager-98.png"/></p>
+
+
+<p>However, notice what happens when you switch the focus to the editor window:</p>
+
+                      <p><img alt="switch focus" src="../images/tutorials/crud/68dbmanager-99.png"/></p>
+
+<p>Because the <tt>Node</tt> is no longer current, the <tt>Customer</tt> object
+ is no longer in the global context. This is the case because, as pointed out
+ above, the global context proxies the <tt>Lookup</tt> of the current <tt>Node</tt>.
+ Therefore, in this case, we cannot use the global context. Instead, we will
+use the local <tt>Lookup</tt> provided by the Customer window.</p>
+
+<p>Rewrite this line:
+
+<pre class="examplecode">result = Utilities.actionsGlobalContext().lookupResult(Customer.class);</pre>
+
+<p>To this:
+
+<pre class="examplecode">result = WindowManager.getDefault().findTopComponent("CustomerTopComponent").getLookup().lookupResult(Customer.class);</pre>
+
+<p>The string "CustomerTopComponent" is the ID of the <tt>CustomerTopComponent</tt>, which
+ is a string constant that you can find in the source code of the <tt>CustomerTopComponent</tt>. One
+ drawback of the approach above is that now our <tt>EditorTopComponent</tt> only works if it
+ can find a <tt>TopComponent</tt> with the ID "CustomerTopComponent". Either this needs to
+ be explicitly documented, so that developers of alternative editors can know that they
+ need to identify the viewer <tt>TopComponent</tt> this way, or you need to rewrite the
+ selection model, <a href="http://weblogs.java.net/blog/timboudreau/archive/2007/01/how_to_replace.html">as described here</a> by Tim Boudreau.
+
+<p>If you take one of the above approaches, you will find that the context is not lost
+when you switch the focus to the <tt>EditorTopComponent</tt>, as shown below:</p>
+
+                      <p><img alt="context is not lost" src="../images/tutorials/crud/68dbmanager-991.png"/></p>
+
+<p class="tips"> Since you are now using <tt>AbstractNode</tt>, instead of <tt>BeanNode</tt>,
+     no properties are shown in the Properties window. You need to provide these yourself,
+     as described in the <a href="https://platform.netbeans.org/tutorials/nbm-nodesapi2.html">Nodes API Tutorial</a>.
+        </ul>
+        <li>Secondly, let's work on the Undo/Redo functionality. What we'd
+         like to have happen is that whenever the user makes a change to one
+         of the <tt>JTextFields</tt>, the "Undo" button and the "Redo" button,
+         as well as the related menu items in the Edit menu, become enabled. To
+         that end, the NetBeans Platform makes the <a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/UndoRedo.Manager.html">UndoRedo.Manager</a> available.
+        <ul>
+        <li>Declare and instantiate a new UndoRedoManager at the top of the
+         <tt>EditorTopComponent</tt>:
+
+<pre class="examplecode">private UndoRedo.Manager manager = new UndoRedo.Manager();</pre>
+
+        <p><li>Next, override the <tt>getUndoRedo()</tt> method in the <tt>EditorTopComponent</tt>:
+
+<pre class="examplecode">@Override
+public UndoRedo getUndoRedo() {
+    return manager;
+}</pre>
+
+        <p><li>In the constructor of the <tt>EditorTopComponent</tt>, add
+         a <tt>KeyListener</tt> to the <tt>JTextFields</tt> and, within
+         the related methods that you need to implement, add the <tt>UndoRedoListeners</tt>:
+
+<pre class="examplecode">jTextField1.getDocument().addUndoableEditListener(manager);
+jTextField2.getDocument().addUndoableEditListener(manager);
+</pre>
+
+        <p><li>Run the application and show the Undo and Redo functionality in action,
+        the buttons as well as the menu items. The functionality works exactly as you would expect. You might want to
+ change the <tt>KeyListener</tt> so that not ALL keys cause the undo/redo
+ functionality to be enabled. For example, when Enter is pressed, you probably
+ do not want the undo/redo functionality to become available. Therefore, tweak
+the code above to suit your business requirements.
+
+
+        </ul>
+        <li>Thirdly, we need to
+         integrate with the NetBeans Platform's Save functionality:
+        <ul>
+        <li>By default, the "Save All" button is available in the
+         NetBeans Platform toolbar. In our current scenario, we do not
+         want to save "all", because "all" refers to a number of different
+         documents. In our case, we only have one "document", which is the
+         editor that we are reusing for all the nodes in the tree hirerarchy.
+         Remove the "Save All" button and add the "Save" button instead, by adding
+         the following to the layer file of the <tt>CustomerEditor</tt> module:
+
+<pre class="examplecode">&lt;folder name="Toolbars"&gt;
+    &lt;folder name="File"&gt;
+        &lt;file name="org-openide-actions-SaveAction.shadow"&gt;
+            &lt;attr name="originalFile" stringvalue="Actions/System/org-openide-actions-SaveAction.instance"/&gt;
+            &lt;attr name="position" intvalue="444"/&gt;
+        &lt;/file&gt;
+        &lt;file name="org-openide-actions-SaveAllAction.shadow_hidden"/&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+
+<p>When you now run the application, you will see a different icon
+ in the toolbar. Instead of the "Save All" button, you now have
+ the "Save" button available.
+
+        <p><li>Set dependencies on the Dialogs API and the Nodes API.
+
+            <p><li>In the <tt>EditorTopComponent</tt> constructor, add a
+             call to fire a method (which will be defined in the next step)
+             whenever a change is detected:
+
+<pre class="examplecode">public EditorTopComponent() {
+
+        ...
+        ...
+        ...
+
+        jTextField1.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent arg0) {
+                fire(true);
+            }
+            public void removeUpdate(DocumentEvent arg0) {
+                fire(true);
+            }
+            public void changedUpdate(DocumentEvent arg0) {
+                fire(true);
+            }
+        });
+
+        jTextField2.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent arg0) {
+                fire(true);
+            }
+            public void removeUpdate(DocumentEvent arg0) {
+                fire(true);
+            }
+            public void changedUpdate(DocumentEvent arg0) {
+                fire(true);
+            }
+        });
+
+        //Create a new instance of our SaveCookie implementation:
+        impl = new SaveCookieImpl();
+
+        //Create a new instance of our dynamic object:
+        content = new InstanceContent();
+
+        //Add the dynamic object to the TopComponent Lookup:
+        associateLookup(new AbstractLookup(content));
+
+    }
+
+    ...
+    ...
+    ...
+</pre>
+
+             <p><li>Here are the two methods referred to above. First, the method
+             that is fired whenever a change is detected. An implementation of
+             the <tt>SaveCookie</tt> from the Nodes API is added to the <tt>InstanceContent</tt>
+             whenever a change is detected:
+
+<pre class="examplecode">    public void fire(boolean modified) {
+        if (modified) {
+            //If the text is modified,
+            //we add SaveCookie impl to Lookup:
+            content.add(impl);
+        } else {
+            //Otherwise, we remove the SaveCookie impl from the lookup:
+            content.remove(impl);
+        }
+    }
+
+    private class SaveCookieImpl implements SaveCookie {
+
+        @Override
+        public void save() throws IOException {
+
+           Confirmation message = new NotifyDescriptor.Confirmation("Do you want to save \""
+                    + jTextField1.getText() + " (" + jTextField2.getText() + ")\"?",
+                    NotifyDescriptor.OK_CANCEL_OPTION,
+                    NotifyDescriptor.QUESTION_MESSAGE);
+
+            Object result = DialogDisplayer.getDefault().notify(message);
+            //When user clicks "Yes", indicating they really want to save,
+            //we need to disable the Save action,
+            //so that it will only be usable when the next change is made
+            //to the JTextArea:
+            if (NotifyDescriptor.YES_OPTION.equals(result)) {
+                fire(false);
+                //Implement your save functionality here.
+            }
+        }
+    }
+</pre>
+        <p><li>Run the application and notice the enablement/disablement of the
+        Save button:
+
+                      <p><img alt="enabled save button" src="../images/tutorials/crud/68dbmanager-992.png"/></p>
+
+<p class="tips"> Right now, nothing happens when you click OK in the dialog
+ above. In the next step, we add some JPA code for handling persistence of
+ our changes.
+
+        <p><li>Next, we add JPA code for persisting our change.
+         Do so by replacing the comment "//Implement your save functionality here."
+         The comment should be replaced by all of the following:
+
+<pre class="examplecode">EntityManager entityManager = Persistence.createEntityManagerFactory("CustomerLibraryPU").createEntityManager();
+entityManager.getTransaction().begin();
+Customer c = entityManager.find(Customer.class, customer.getCustomerId());
+c.setName(jTextField1.getText());
+c.setCity(jTextField2.getText());
+entityManager.getTransaction().commit();</pre>
+
+<p class="tips"> The "customer" in <tt>customer.getCustomerId()()</tt> is currently undefined. Add the line
+ in bold in the <tt>resultChanged</tt> below, after declaring <tt>Customer customer;</tt> at the top
+ of the class, so that the current <tt>Customer</tt> object sets the <tt>customer</tt>,
+ which is then used in the persistence code above to obtain the ID of
+ the current <tt>Customer</tt> object.
+
+<pre class="examplecode">@Override
+public void resultChanged(LookupEvent lookupEvent) {
+    Lookup.Result r = (Lookup.Result) lookupEvent.getSource();
+    Collection&lt;Customer&gt; c = r.allInstances();
+    if (!c.isEmpty()) {
+        for (Customer customer : c) {
+            <b>customer = cust;</b>
+            jTextField1.setText(customer.getName());
+            jTextField2.setText(customer.getCity());
+        }
+    } else {
+        jTextField1.setText("[no name]");
+        jTextField2.setText("[no city]");
+    }
+}</pre>
+
+ <p><li>Run the application and change some data. Currently, we have no "Refresh"
+  functionality (that will be added in the next step) so, to see the changed data, restart the application. Here, for
+ example, the tree hierarchy shows the persisted customer name for "Toyota Motor Co":
+
+                      <p><img alt="changed database" src="../images/tutorials/crud/68dbmanager-993.png"/></p>
+
+        </ul>
+
+
+ <li>Fourthly, we need to
+  add functionality for refreshing the Customer viewer. You might want to
+  add a <tt>Timer</tt> which periodically refreshes the viewer.
+  However, in this example, we will add
+  a "Refresh" menu item to the Root node so that the user will be able
+  to manually refresh the viewer.
+<ul>
+        <li>In the main package of the <tt>CustomerViewer</tt> module,
+         create a new <tt>Node</tt>, which will replace the <tt>AbstractNode</tt>
+         that we are currently using as the root of the children in the 
+         viewer. Note that we also bind a "Refresh" action to our
+         new root node.
+
+<pre class="examplecode">public class CustomerRootNode extends AbstractNode {
+
+    public CustomerRootNode(Children kids) {
+        super(kids);
+        setDisplayName("Root");
+    }
+
+    @Override
+    public Action[] getActions(boolean context) {
+        Action[] result = new Action[]{
+            new RefreshAction()};
+        return result;
+    }
+
+    private final class RefreshAction extends AbstractAction {
+
+        public RefreshAction() {
+            putValue(Action.NAME, "Refresh");
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            CustomerTopComponent.refreshNode();
+        }
+    }
+
+}</pre>
+
+<p><li>Add this method to the <tt>CustomerTopComponent</tt>, for refreshing
+ the view:
+
+<pre class="examplecode">public static void refreshNode() {
+    EntityManager entityManager = Persistence.createEntityManagerFactory("CustomerLibraryPU").createEntityManager();
+    Query query = entityManager.createQuery("SELECT c FROM Customer c");
+    List&lt;Customer&gt; resultList = query.getResultList();
+    em.setRootContext(new <b>CustomerRootNode</b>(Children.create(new CustomerChildFactory(resultList), true)));
+} </pre>
+
+
+<p>Now replace the code above in the constructor
+ of the <tt>CustomerTopComponent</tt> with a call to the above. As
+ you can see in the highlighted part above, we are now using our <tt>CustomerRootNode</tt> instead
+ of the <tt>AbstractNode</tt>. The <tt>CustomerRootNode</tt> includes
+ the "Refresh" action, which calls the code above.
+
+<p><li>In your save functionality, add the call to the method above so that,
+             whenever data is saved, an automatic refresh takes place. You can
+             take different approaches when implementing this extension to
+             the save functionality. For example, you might want to create a
+             new module that contains the refresh action. That module would
+             then be shared between the viewer module and the editor module,
+             providing functionality that is common to both.
+
+ <p><li>Run the application again and notice that you have a new root node,
+ with a "Refresh" action:
+
+                      <p><img alt="new root node" src="../images/tutorials/crud/68dbmanager-994.png"/></p>
+
+ <p><li>Make a change to some data, save it, invoke the Refresh action, and notice
+  that the viewer is updated.
+
+        </ul>
+    </ol>
+        <p>You have now learned how to let the NetBeans Platform handle changes
+         to the <tt>JTextFields</tt>. Whenever the text changes, the NetBeans
+         Platform Undo and Redo buttons are enabled or disabled. Also, the
+         Save button is enabled and disabled correctly, letting the user
+         save changed data back to the database.
+
+    <h3 class="tutorial"><a name="create"></a>Create</h3>
+    <p>In this section, you allow the user to create a new entry in the database.
+    <ol>
+        <li>Right-click the <tt>CustomerEditor</tt>
+         module and choose "New Action".
+         Use the New Action wizard to create a new "Always Enabled" action. The new
+         action should be displayed anywhere in the toolbar and/or anywhere in
+        the menu bar. In the next step of the wizard, call the action <tt>NewAction</tt>.
+
+         <p class="tips">Make sure that
+         you have a 16x16 icon available, which the wizard forces
+         you to select if you indicate that you want the
+         action to be invoked from the toolbar.</p>
+        <P><li>In the New action, let the <tt>TopComponent</tt> be opened,
+         together with emptied <tt>JTextFields</tt>:
+
+<pre class="examplecode">import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public final class NewAction implements ActionListener {
+
+    public void actionPerformed(ActionEvent e) {
+        EditorTopComponent tc = EditorTopComponent.getDefault();
+        tc.resetFields();
+        tc.open();
+        tc.requestActive();
+    }
+
+}</pre>
+
+         <p class="tips">The action implements the <tt>ActionListener</tt> class, which
+          is bound to the application via entries in the layer file, put there
+          by the New Action wizard. Imagine how easy it will be when you
+          port your existing Swing application to the NetBeans Platform, since
+          you'll simply be able to use the same <tt>Action</tt> classes that you
+          used in your original application, without needing to rewrite them
+          to conform to <tt>Action</tt> classes provided by the NetBeans Platform!</p>
+
+
+<p>In the <tt>EditorTopComponent</tt>, add the following method for resetting
+ the <tt>JTextFields</tt> and creating a new <tt>Customer</tt> object:
+
+<pre class="examplecode">public void resetFields() {
+    customer = new Customer();
+    jTextField1.setText("");
+    jTextField2.setText("");
+}</pre>
+
+        <p><li>In the <tt>SaveCookie</tt>, ensure that a return of <tt>null</tt>
+         indicates that a new entry is saved, instead of an existing entry
+         being updated:
+
+<pre>public void save() throws IOException {
+
+    Confirmation message = new NotifyDescriptor.Confirmation("Do you want to save \""
+                    + jTextField1.getText() + " (" + jTextField2.getText() + ")\"?",
+                    NotifyDescriptor.OK_CANCEL_OPTION,
+                    NotifyDescriptor.QUESTION_MESSAGE);
+
+    Object result = DialogDisplayer.getDefault().notify(msg);
+
+    //When user clicks "Yes", indicating they really want to save,
+    //we need to disable the Save button and Save menu item,
+    //so that it will only be usable when the next change is made
+    //to the text field:
+    if (NotifyDescriptor.YES_OPTION.equals(result)) {
+        fire(false);
+        EntityManager entityManager = Persistence.createEntityManagerFactory("CustomerLibraryPU").createEntityManager();
+        entityManager.getTransaction().begin();
+        <b>if (customer.getCustomerId() != null)</b> {
+            Customer c = entityManager.find(Customer.class, cude.getCustomerId());
+            c.setName(jTextField1.getText());
+            c.setCity(jTextField2.getText());
+            entityManager.getTransaction().commit();
+        } else {
+            <b>Query query = entityManager.createQuery("SELECT c FROM Customer c");
+            List&lt;Customer&gt; resultList = query.getResultList();
+            customer.setCustomerId(resultList.size()+1);
+            customer.setName(jTextField1.getText());
+            customer.setCity(jTextField2.getText());
+            //add more fields that will populate all the other columns in the table!
+            entityManager.persist(customer);
+            entityManager.getTransaction().commit();</b>
+        }
+    }
+
+}</pre>
+
+<p><li>Run the application again and add a new customer to the database.
+
+    </ol>
+
+    <h3 class="tutorial"><a name="delete"></a>Delete</h3>
+    <p>In this section, let the user delete a selected entry in the database. Using
+     the concepts and code outlined above, implement the Delete action yourself.
+    <ol>
+        <li>Create a new action, <tt>DeleteAction</tt>. Decide whether you
+         want to bind it to a Customer node or whether you'd rather bind it
+         to the toolbar, the menu bar, keyboard shortcut, or combinations of
+         these. Depending on where you want to bind
+         it, you will need to use a different approach in your code. Read the
+         tutorial again for help, especially by looking at how the "New" action
+         was created, while comparing it to the "Refresh" action on the root
+         node.
+        <p><li>Get the current <tt>Customer</tt> object, return an 'Are you sure?' dialog,
+         and then delete the entry. For help on this point, read the tutorial
+         again, focusing on the part where the "Save" functionality is implemented.
+         Instead of saving, you now want to delete an entry from the database.
+    </ol>
+
+</div>
+
+
+
+    <!-- ======================================================================================== -->
+    
+
+    <h2><a name="nextsteps"></a>See Also</h2>
+
+    <p>This concludes the NetBeans Platform CRUD Tutorial. This document has described
+    how to create a new NetBeans Platform application with CRUD functionality for
+    a given database.
+    For more information about creating and developing applications, see the following resources:
+    <ul>
+        <li><a href="https://netbeans.org/kb/trails/platform.html">NetBeans Platform Learning Trail</a></li>
+        <li><a href="http://bits.netbeans.org/dev/javadoc/">NetBeans API Javadoc</a></li>
+    </ul>
+
+    <!-- ======================================================================================== -->
+    
+</body>
+</html>

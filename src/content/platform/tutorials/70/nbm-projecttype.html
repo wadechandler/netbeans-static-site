@@ -1,0 +1,628 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <!-- -*- xhtml -*- -->
+    <title>NetBeans Project Type Module Tutorial for NetBeans Platform 7.0</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+    <meta name="AUDIENCE" content="NBUSER"/>
+    <meta name="TYPE" content="ARTICLE"/>
+    <meta name="EXPIRES" content="N"/>
+    <meta name="developer" content="gwielenga@netbeans.org"/>
+    <meta name="indexed" content="y"/>
+    <meta name="description"
+          content="A short guide to using the Project API."/>
+    <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+    <!--     Use is subject to license terms.-->
+</head>
+<body>
+    <h1>NetBeans Project Type Module Tutorial</h1>
+    
+    <p>This tutorial demonstrates how to create a new project type in an Ant-based NetBeans Platform application.</p>
+
+      <p class="tips">Rather than creating a new project type, you might want to extend an existing
+          project type instead, in which case refer to the <a href="https://platform.netbeans.org/tutorials/nbm-projectextension.html">NetBeans Project Type Extension Module Tutorial</a>.
+          For Maven-based NetBeans Platform applications, see <a href="http://netbeans.dzone.com/how-create-maven-nb-project-type">How to Create a Custom Project Type in a Mavenized NetBeans Platform Application</a>. 
+          If the projects for which you're creating a project type (whether on Ant or Maven based NetBeans Platform applications)
+           need to use Ant as their build tool, you should
+           use the <a href="https://platform.netbeans.org/tutorials/nbm-projecttypeant.html">NetBeans Ant-Based Project Type Module Tutorial</a> instead.</p>
+
+       <p><strong class="notes">Note: </strong>This document uses the NetBeans IDE 7.0 Release or above. If you
+    are using an earlier version, see <a href="691/nbm-projecttype.html">the previous version
+    of this document</a>.</p>
+    
+     <p><b>Contents</b></p>
+   
+   <p><img src="../../images/articles/70/netbeans-stamp.gif" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 7.0" title="Content on this page applies to NetBeans IDE 7.0"/></p>
+      <ul class="toc">
+        <li><a href="#intro">Introduction to Project Types</a></li>
+        <li><a href="#creatingthemoduleproject">Creating the Module Project</a></li>
+        <li><a href="#settingdependencies">Setting Dependencies</a></li>
+        <li><a href="#creatingtheprojectfactory">Creating the Project Factory</a></li>
+        <li><a href="#creatingtheproject">Creating the Project</a></li>
+        <li><a href="#creatingthelogicalviewprovider">Creating the Logical View Provider</a></li>
+        <li><a href="#projectsample">Registering the Project Type as Project Sample</a></li>
+        <li><a href="#building">Installing the Module</a></li>
+       </ul>
+         
+<p><b>To follow this tutorial, you need the software and resources listed in the following 
+table.</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 7.0 or above</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Version 6</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p>You will also make use of these two icons, which you
+    can right-click here and download: <img alt="" src="../../images/tutorials/projecttypes/icon1.png" /> <img src="../../images/tutorials/projecttypes/icon2.png" alt="" /></p>
+
+   <p class="tips">Optionally, for troubleshooting purposes, you can <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=12170">download the
+   completed sample</a> and inspect the sources.</p>
+
+    <h2 class="tutorial"><a name="intro"></a>Introduction to Project Types</h2>
+    
+    <p>A <i>project type</i> is a NetBeans Platform term for a grouping of
+         folders and files that is treated as a single unit. Treating
+         related folders and files as a single unit makes working
+         with them easier for the end user. One way in which a project
+         type simplifies life for the user is that you are able to fill
+         the Projects window only with those folders and files that the end user
+         is most likely to work.</p> <p>For example, the Java
+         project type in NetBeans IDE helps the end user to work with the folders
+         and files belonging to a single Java application. As you can see
+         below, the folders and files the end user most needs to work with
+         are shown in the Projects window:</p>
+
+    <p><img style="border: 1px solid" src="../../images/tutorials/projecttypes/70pics/sample-3.png" alt="installed result"/></p>
+
+    <p>In this tutorial, we will create a project type that
+    will look as follows in the Projects window and Files window:</p>
+
+    <p><img src="../../images/tutorials/projecttypes/70pics/nb-sample-proj6.png" alt="installed result"/></p>
+
+    <p>Our project type will be defined by the
+        existence of a subfolder named "texts". If a folder
+        contains a subfolder with that name, the NetBeans
+        Platform will recognize it as a project type. The
+        user will be able to open the project into a
+        NetBeans Platform application and the content
+        of the "texts" folder will be displayed in
+        the Projects window. The user will also be able to
+        create new projects, via the New Projects window (Ctrl-Shift-N),
+        which is where we will register two sample projects.</p>
+
+    <p>The following are the main NetBeans API classes
+        we will be implementing in this tutorial:</p>
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Class</th>
+                <th class="tblheader" scope="col">Description</th>
+            </tr>
+            <tr>
+              <td class="tbltd1"><tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-projectapi/org/netbeans/spi/project/ProjectFactory.html">org.netbeans.spi.project.ProjectFactory</a></tt></td>
+                <td class="tbltd1">Determines when a folder or file
+                 is a valid project and then creates the implemention
+                 of <tt>org.netbeans.api.project.Project</tt>.</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-projectapi/org/netbeans/api/project/Project.html">org.netbeans.api.project.Project</a></tt></td>
+                <td class="tbltd1">Represents the project.</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-projectuiapi/org/netbeans/spi/project/ui/LogicalViewProvider.html">org.netbeans.spi.project.ui.LogicalViewProvider</a></tt></td>
+                <td class="tbltd1">Provides the logical view for the project.</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-projectapi/org/netbeans/api/project/ProjectInformation.html">org.netbeans.api.project.ProjectInformation</a></tt></td>
+                <td class="tbltd1">Provides supplemental information for the project.</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-projectapi/org/netbeans/spi/project/ActionProvider.html">org.netbeans.spi.project.ActionProvider</a></tt></td>
+                <td class="tbltd1">Provides one or more actions for the project.</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-projectapi/org/netbeans/spi/project/CopyOperationImplementation.html">org.netbeans.spi.project.CopyOperationImplementation</a></tt></td>
+                <td class="tbltd1">Provides the Copy operation for the project.</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-projectapi/org/netbeans/spi/project/DeleteOperationImplementation.html">org.netbeans.spi.project.DeleteOperationImplementation</a></tt></td>
+                <td class="tbltd1">Provides the Delete operation for the project.</td>
+            </tr>
+        </tbody>
+    </table>
+
+        <p>At the end of this tutorial, your
+         module source structure will be as follows:</p>
+    
+    <p><img src="../../images/tutorials/projecttypes/70pics/sample-2.png" alt="New Sample"/></p>
+    
+    <h2 class="tutorial"><a name="creatingthemoduleproject"></a>Creating the Module Project</h2>
+    
+        <p>We begin by working through the New Module Project
+            wizard. At the end of it, we will have a basic
+            source structure, with some default files, that
+            every NetBeans module requires.</p>
+
+            <ol>
+    <li>Choose File &gt; New Project (Ctrl+Shift+N). Under Categories, select NetBeans Modules.
+        Under Projects, select Module. Click Next.</li>
+    <li>In the Name and Location panel, type <tt>DemoProjectType</tt> in the Project Name field.
+        Change the Project Location to any directory on your computer. Leave the Standalone Module option
+        and Set as Main Project checkbox selected. Click Next.</li>
+    <li>In the Basic Module Configuration panel, type <tt>org.netbeans.demo.project</tt>
+     in Code Name Base.</li>
+    <li>Do not select "Generate XML Layer", since our module
+        will not need a <tt>layer.xml</tt> file until later in this tutorial, when the New Project Template
+        wizard will create it for us. Leave the
+        location of the localizing bundle 
+        so that it will be stored in a package with
+        the name <tt>org/netbeans/demo/project</tt>. Click Finish.</li>
+</ol>
+    
+    <p> The IDE creates the <tt>DemoProjectType</tt>
+        project. The project contains all of your sources and
+        project metadata, such as the project's Ant build script. The project
+        opens in the IDE. You can view its logical structure in the Projects window (Ctrl-1) and its
+    file structure in the Files window (Ctrl-2).</p>
+    
+    <!-- ===================================================================================== -->
+    <h2><a name="settingdependencies"></a>Setting Dependencies</h2>
+        <p>We will need to make use of several NetBeans APIs. In this
+        step, we select the modules that provide the NetBeans APIs
+        that we will need.</p>
+            
+            <ol>
+            
+            <li>Right-click the project node and 
+        choose Properties. The Project Properties dialog box opens.</li>
+        <li><p>In the Libraries panel, add dependencies on the
+        following modules:</p>
+            <p></p>
+        <ul>
+            <li>Datasystems API</li>
+            <li>Dialogs API</li>
+            <li>File System API</li>
+            <li>Lookup API</li>
+            <li>Nodes API</li>
+            <li>Project API</li>
+            <li>Project UI API</li>
+            <li>UI Utilities API</li>
+            <li>Utilities API</li>
+        </ul>
+        
+        </li>
+            </ol>
+            
+     <!-- ===================================================================================== -->
+            <h2><a name="creatingtheprojectfactory"></a>Creating the Project Factory</h2>
+            <p>We start by implementing the <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-projectapi/org/netbeans/spi/project/ProjectFactory.html">org.netbeans.spi.project.ProjectFactory</a></tt>
+            class.</p>
+                
+                <ol>
+                <li><p>Create a Java class called <tt>DemoProjectFactory</tt>.</p></li>
+                <li><p>Change the default code to the following:</p>
+        
+        <pre class=examplecode>@org.openide.util.lookup.ServiceProvider(service=ProjectFactory.class)
+public class DemoProjectFactory implements <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-projectapi/org/netbeans/spi/project/ProjectFactory.html">ProjectFactory</a> {
+
+    public static final String PROJECT_DIR = "texts";
+
+    <b>//Specifies when a project is a project, i.e.,
+    //if the project directory "texts" is present:</b>
+    @Override
+    public boolean isProject(FileObject projectDirectory) {
+        return projectDirectory.getFileObject(PROJECT_DIR) != null;
+    }
+
+    <b>//Specifies when the project will be opened, i.e.,
+    //if the project exists:</b>
+    @Override
+    public Project loadProject(FileObject dir, ProjectState state) throws IOException {
+        return isProject(dir) ? new DemoProject(dir, state) : null;
+    }
+
+    @Override
+    public void saveProject(final Project project) throws IOException, ClassCastException {
+        FileObject projectRoot = project.getProjectDirectory();
+        if (projectRoot.getFileObject(PROJECT_DIR) == null) {
+            throw new IOException("Project dir " + projectRoot.getPath() +
+                    " deleted," +
+                    " cannot save project");
+        }
+        <b>//Force creation of the texts dir if it was deleted:</b>
+        ((DemoProject) project).getTextFolder(true);
+    }
+
+}</pre>
+</li>
+        </ol>
+
+
+             <p class="tips">The @ServiceProvider annotation used in the class signature
+                 above will cause a META-INF/services file to be created when the module
+                 is compiled. Within that folder, a file named after the fully qualified
+              name of the interface will be found, containing the fully qualified name
+              of the implementing class. That is the standard JDK mechanism, since JDK 6,
+              for registering implementations of interfaces. That is how project types
+              are registered in the NetBeans Plaform.</p>
+
+    
+     <!-- ===================================================================================== -->
+            <h2><a name="creatingtheproject"></a>Creating the Project</h2>
+            <p>Next, we implement the <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-projectapi/org/netbeans/api/project/Project.html">org.netbeans.api.project.Project</a></tt>
+            class.</p>
+
+                <ol>
+                <li><p>Create a Java class called <tt>DemoProject</tt>.</p></li>
+                <li><p>Change the default code to the following:</p>
+
+        <pre class=examplecode>class DemoProject implements <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-projectapi/org/netbeans/api/project/Project.html">Project</a> {
+
+    private final FileObject projectDir;
+    private final ProjectState state;
+    private Lookup lkp;
+
+    public DemoProject(FileObject projectDir, ProjectState state) {
+        this.projectDir = projectDir;
+        this.state = state;
+    }
+
+    @Override
+    public FileObject getProjectDirectory() {
+        return projectDir;
+    }
+
+    FileObject getTextFolder(boolean create) {
+        FileObject result =
+                projectDir.getFileObject(DemoProjectFactory.PROJECT_DIR);
+        if (result == null && create) {
+            try {
+                result = projectDir.createFolder(DemoProjectFactory.PROJECT_DIR);
+            } catch (IOException ioe) {
+                Exceptions.printStackTrace(ioe);
+            }
+        }
+        return result;
+    }
+
+    <b>//The project type's capabilities are registered in the project's lookup:</b>
+    @Override
+    public Lookup getLookup() {
+        if (lkp == null) {
+            lkp = Lookups.fixed(new Object[]{
+                        state, <b>//allow outside code to mark the project as needing saving</b>
+                        new ActionProviderImpl(), <b>//Provides standard actions like Build and Clean</b>
+                        new DemoDeleteOperation(),
+                        new DemoCopyOperation(this),
+                        new Info(), <b>//Project information implementation</b>
+                        new DemoProjectLogicalView(this), <b>//Logical view of project implementation</b>
+                    });
+        }
+        return lkp;
+    }
+
+    private final class ActionProviderImpl implements <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-projectapi/org/netbeans/spi/project/ActionProvider.html">ActionProvider</a> {
+
+        private String[] supported = new String[]{
+            ActionProvider.COMMAND_DELETE,
+            ActionProvider.COMMAND_COPY,
+        };
+
+        @Override
+        public String[] getSupportedActions() {
+            return supported;
+        }
+
+        @Override
+        public void invokeAction(String string, Lookup lookup) throws IllegalArgumentException {
+            if (string.equalsIgnoreCase(ActionProvider.COMMAND_DELETE)) {
+                DefaultProjectOperations.performDefaultDeleteOperation(DemoProject.this);
+            }
+            if (string.equalsIgnoreCase(ActionProvider.COMMAND_COPY)) {
+                DefaultProjectOperations.performDefaultCopyOperation(DemoProject.this);
+            }
+        }
+
+        @Override
+        public boolean isActionEnabled(String command, Lookup lookup) throws IllegalArgumentException {
+            if ((command.equals(ActionProvider.COMMAND_DELETE))) {
+                return true;
+            } else if ((command.equals(ActionProvider.COMMAND_COPY))) {
+                return true;
+            } else {
+                throw new IllegalArgumentException(command);
+            }
+        }
+    }
+
+    private final class DemoDeleteOperation implements <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-projectapi/org/netbeans/spi/project/DeleteOperationImplementation.html">DeleteOperationImplementation</a> {
+
+        public void notifyDeleting() throws IOException {
+        }
+
+        public void notifyDeleted() throws IOException {
+        }
+
+        public List&lt;FileObject&gt; getMetadataFiles() {
+            List&lt;FileObject&gt; dataFiles = new ArrayList&lt;FileObject&gt;();
+            return dataFiles;
+        }
+
+        public List&lt;FileObject&gt; getDataFiles() {
+            List&lt;FileObject&gt; dataFiles = new ArrayList&lt;FileObject&gt;();
+            return dataFiles;
+        }
+    }
+
+    private final class DemoCopyOperation implements <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-projectapi/org/netbeans/spi/project/CopyOperationImplementation.html">CopyOperationImplementation</a> {
+
+        private final DemoProject project;
+        private final FileObject projectDir;
+
+        public DemoCopyOperation(DemoProject project) {
+            this.project = project;
+            this.projectDir = project.getProjectDirectory();
+        }
+
+        public List&lt;FileObject&gt; getMetadataFiles() {
+            return Collections.EMPTY_LIST;
+        }
+
+        public List&lt;FileObject&gt; getDataFiles() {
+            return Collections.EMPTY_LIST;
+        }
+
+        public void notifyCopying() throws IOException {
+        }
+
+        public void notifyCopied(Project arg0, File arg1, String arg2) throws IOException {
+        }
+    }
+
+    private final class Info implements <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-projectapi/org/netbeans/api/project/ProjectInformation.html">ProjectInformation</a> {
+
+        @Override
+        public Icon getIcon() {
+            return new ImageIcon(ImageUtilities.loadImage(
+                    "org/netbeans/demo/project/icon2.png"));
+        }
+
+        @Override
+        public String getName() {
+            return getProjectDirectory().getName();
+        }
+
+        @Override
+        public String getDisplayName() {
+            return getName();
+        }
+
+        @Override
+        public void addPropertyChangeListener(PropertyChangeListener pcl) {
+            //do nothing, won't change
+        }
+
+        @Override
+        public void removePropertyChangeListener(PropertyChangeListener pcl) {
+            //do nothing, won't change
+        }
+
+        @Override
+        public Project getProject() {
+            return DemoProject.this;
+        }
+    }
+}
+</pre>
+                </li>
+        </ol>
+
+     <!-- ===================================================================================== -->
+            <h2><a name="creatingthelogicalviewprovider"></a>Creating the Logical View Provider</h2>
+            <p>Finally, we implement the <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-projectuiapi/org/netbeans/spi/project/ui/LogicalViewProvider.html">org.netbeans.spi.project.ui.LogicalViewProvider</a></tt>
+            class.</p>
+                
+                <ol>
+                <li><p>Create a Java class called <tt>DemoProjectLogicalView</tt>.</p></li>
+                <li><p>Change the default code to the following:</p>
+        
+                <pre class=examplecode>class DemoProjectLogicalView implements <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-projectuiapi/org/netbeans/spi/project/ui/LogicalViewProvider.html">LogicalViewProvider</a> {
+
+    private final DemoProject project;
+
+    public DemoProjectLogicalView(DemoProject project) {
+        this.project = project;
+    }
+
+    @Override
+    public org.openide.nodes.Node createLogicalView() {
+        try {
+            <b>//Get the Text directory, creating if deleted</b>
+            FileObject text = project.getTextFolder(true);
+
+            <b>//Get the DataObject that represents it</b>
+            DataFolder textDataObject =
+                    DataFolder.findFolder(text);
+
+            <b>//Get its default node-we'll wrap our node around it to change the
+            //display name, icon, etc</b>
+            Node realTextFolderNode = textDataObject.getNodeDelegate();
+
+            <b>//This FilterNode will be our project node</b>
+            return new TextNode(realTextFolderNode, project);
+
+        } catch (DataObjectNotFoundException donfe) {
+            Exceptions.printStackTrace(donfe);
+            <b>//Fallback-the directory couldn't be created -
+            //read-only filesystem or something evil happened</b>
+            return new AbstractNode(Children.LEAF);
+        }
+    }
+
+    <b>/** This is the node you actually see in the project tab for the project */</b>
+    private static final class TextNode extends <a href="http://bits.netbeans.org/dev/javadoc/org-openide-nodes/org/openide/nodes/FilterNode.html">FilterNode</a> {
+
+        final DemoProject project;
+
+        public TextNode(Node node, DemoProject project) throws DataObjectNotFoundException {
+            super(node, new FilterNode.Children(node),
+                    <b>//The projects system wants the project in the Node's lookup.
+                    //NewAction and friends want the original Node's lookup.
+                    //Make a merge of both</b>
+                    new ProxyLookup(new Lookup[]{Lookups.singleton(project),
+                        node.getLookup()
+                    }));
+            this.project = project;
+        }
+
+        @Override
+        public Action[] getActions(boolean arg0) {
+            Action[] nodeActions = new Action[7];
+            nodeActions[0] = CommonProjectActions.newFileAction();
+            nodeActions[1] = CommonProjectActions.copyProjectAction();
+            nodeActions[2] = CommonProjectActions.deleteProjectAction();
+            nodeActions[5] = CommonProjectActions.setAsMainProjectAction();
+            nodeActions[6] = CommonProjectActions.closeProjectAction();
+            return nodeActions;
+        }
+
+        @Override
+        public Image getIcon(int type) {
+            return ImageUtilities.loadImage("org/netbeans/demo/project/icon1.png");
+        }
+
+        @Override
+        public Image getOpenedIcon(int type) {
+            return getIcon(type);
+        }
+
+        @Override
+        public String getDisplayName() {
+            return project.getProjectDirectory().getName();
+        }
+
+    }
+
+    @Override
+    public Node findPath(Node root, Object target) {
+        //leave unimplemented for now
+        return null;
+    }
+
+}
+</pre>  </li>
+
+                    </ol>
+    
+        <!-- ======================================================================================= -->
+            
+        <h2><a name="projectsample"></a>Registering the Project Type as Project Sample</h2>
+        <p>In this section, we create some project samples that make use of our
+             project type. We also register these project samples in the
+             New Project window of our application.</p>
+        <div class="indent">
+        
+        <ol>
+                <li><p>Create some folders and files on disk. The folders and files
+                     should meet the requirements for projects of the type that you
+                     have defined in your module. For example, in the case of this
+                     tutorial, make sure that you have a folder that has a subfolder
+                     named "texts".</p></li>
+                <li><p>Run the module that you created in this tutorial. A new instance
+                     of your NetBeans IDE starts up. Now your new project type is installed
+                     in NetBeans IDE. Open the sample projects you created in the previous
+                     step. </p>
+                    <p>Also open the module itself into the new instance of NetBeans IDE. Create a
+                     new subpackage, named "sample", as shown below, then right-click it
+                     and choose New | Project Template:</p>
+    <p><img style="border: 1px solid" src="../../images/tutorials/projecttypes/70pics/nb-sample-proj1.png" alt="installed result"/></p>
+                     <li><p>Use the New Project Template wizard to register your first sample project:</p>
+    <p><img src="../../images/tutorials/projecttypes/70pics/nb-sample-proj7.png" alt="installed result"/></p>
+    <p>Specify the name of the template, the display text, and the location:
+    <p><img src="../../images/tutorials/projecttypes/70pics/nb-sample-proj2.png" alt="installed result"/></p>
+    <p>Once you have completed the wizard, use it again to register your second sample project:
+    <p><img src="../../images/tutorials/projecttypes/70pics/nb-sample-proj3.png" alt="installed result"/></p>
+    <li><p>Check that the new instance of NetBeans IDE shows you the following in the Projects window:</p>
+    <p><img style="border: 1px solid" src="../../images/tutorials/projecttypes/70pics/nb-sample-proj4.png" alt="installed result"/></p>
+                    </ol>
+            <p>You have now used the New Project Template wizard to register some project samples
+                into the central registry of your application. Look in the <tt>layer.xml</tt> file
+                that the Project Template wizard created:</p>
+     
+<pre class=examplecode>&lt;folder name="Templates"&gt;
+    &lt;folder name="Project"&gt;
+        &lt;folder name="Text"&gt;
+            &lt;file name="TextProject1Project.zip" url="TextProject1Project.zip"&gt;
+                &lt;attr name="displayName" bundlevalue="org.netbeans.demo.project.Bundle#Templates/Project/Text/TextProject1Project.zip"/&gt;
+                &lt;attr name="instantiatingIterator" methodvalue="org.netbeans.demo.project.sample.project1.TextProject1WizardIterator.createIterator"/&gt;
+                &lt;attr name="instantiatingWizardURL" urlvalue="nbresloc:/org/netbeans/demo/project/sample/project1/TextProject1Description.html"/&gt;
+                &lt;attr name="template" boolvalue="true"/&gt;
+            &lt;/file&gt;
+            &lt;file name="TextProject2Project.zip" url="TextProject2Project.zip"&gt;
+                &lt;attr name="displayName" bundlevalue="org.netbeans.demo.project.Bundle#Templates/Project/Text/TextProject2Project.zip"/&gt;
+                &lt;attr name="instantiatingIterator" methodvalue="org.netbeans.demo.project.sample.project2.TextProject2WizardIterator.createIterator"/&gt;
+                &lt;attr name="instantiatingWizardURL" urlvalue="nbresloc:/org/netbeans/demo/project/sample/project2/TextProject2Description.html"/&gt;
+                &lt;attr name="template" boolvalue="true"/&gt;
+            &lt;/file&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>        
+            
+            <p class="tips">Also notice that you have some ZIP files
+                containing your sample projects,
+                created by the Project Template wizard, together with several
+                classes from the NetBeans Wizard API. For further information, refer to the
+                <a href="https://platform.netbeans.org/tutorials/nbm-projectsamples.html">NetBeans Project Sample Module Tutorial</a>.
+     </div>
+    
+        <!-- ======================================================================================= -->
+            
+        <h2><a name="building"></a>Installing the Module</h2>
+        <p>Finally, we install the module and make use of the result.</p>
+        <div class="indent">
+        
+        <ol>
+                <li><p>Right-click the module project and choose "Run".
+                     The application for which the module is
+                     being created starts up and the module
+                     installs into it.</p></li>
+                <li><p>Choose File | Open Project
+                     and browse to a folder that has a subfolder
+                     named "texts". </p>
+                     <li><p>Open the project and you should see
+                     the Projects window displaying
+                     your project. The content of the "texts"
+                     folder should be shown in the Projects window:</p>
+    <p><img style="border: 1px solid" src="../../images/tutorials/projecttypes/70pics/nb-sample-proj6.png" alt="installed result"/></p>
+                     <li><p>Alternatively, you can use the New Project wizard (Ctrl-Shift-N) to create
+                              your projects using the templates you created:</p>
+    <p><img style="border: 1px solid" src="../../images/tutorials/projecttypes/70pics/nb-sample-proj5.png" alt="installed result"/></p>
+                    </ol>
+    
+     </div>
+    
+    <div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Project%20Type%20Module%20Tutorial">Send Us Your Feedback</a></div>
+    <!-- ======================================================================================== -->
+    
+    <h2><a name="nextsteps"></a>Next Steps</h2>
+    
+    <p>For more information about creating and developing NetBeans modules, see the following resources:</p>
+    <ul>
+        <li><a href="https://netbeans.org/kb/trails/platform.html">Other Related Tutorials</a></li>
+        <li><a href="http://bits.netbeans.org/dev/javadoc/index.html">NetBeans API Javadoc</a></li>
+    </ul>
+</body>
+</html>

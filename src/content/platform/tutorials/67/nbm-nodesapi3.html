@@ -1,0 +1,898 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+<title>NetBeans Nodes, Explorer Manager, and Component Palette Tutorial</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="tboudreau@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A walk-through of enhancing Nodes with properties and other decorations.">
+<!--      Copyright (c) 2006 Sun Microsystems, Inc. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>NetBeans Nodes, Explorer Manager, and Component Palette Tutorial</h1>
+
+<p>In this tutorial, you will learn how to create a BeanTreeView with drag and drop
+ functionality. You will view the nodes in a variety of explorer views and create
+  a Component Palette containing items created from your nodes.
+
+<p>The main points of this tutorial are threefold:
+
+ <ul>
+     <li>To demonstrate how a fully functional yet simple BeanTreeView is created.
+      <p><li>To demonstrate a key feature in the NetBeans APIs, that of loosely coupled views.
+      <p><li>To demonstrate how nodes can be turned into items in a Component Palette,
+  without the intervention of a <tt>layer.xml</tt> file. 
+      
+ </ul>
+
+ <p>Once this tutorial is finished, you will have a BeanTreeView that provides
+  the following menu items, in addition to the support for dragging and dropping
+ the child nodes:
+ 
+<p><img border="1" src="../images/tutorials/nodes-3/final-result.png"/>
+
+
+
+<p>You will be shown how to change the explorer view from BeanTreeView
+ to MenuView, ListView, and several other views supported
+ by the <a href="https://netbeans.org/download/dev/javadoc/org-openide-explorer/overview-summary.html">Explorer and Property Sheet API</a>.
+
+
+<p>This is what the completed project will look like in the Projects window:
+
+
+<p><img border="1" src="../images/tutorials/nodes-3/projects-window.png"/>
+
+
+<!-- ===================================================================================== -->
+
+<h3 class="tutorial"><a name="installing-software"></a>Installing the Software</h3>
+   
+    
+      <p>Before you begin, you need to install the following software on your 
+        computer:</p>
+<ul>
+     <li>Because of <a href="https://netbeans.org/issues/show_bug.cgi?id=74984">issue 74984</a>,
+ you <i>must</i> use a NetBeans IDE 5.5 development build from <i>after</i>
+ 12 September 2006. (NetBeans IDE 5.0 or 5.5 Beta 2 will not be good enough.)
+      <a href="http://www.netbeans.info/downloads/download.php?a=n&p=1">Click here</a>
+      to get the latest build.</li>
+    <li>Java Standard Development Kit (JDK&trade;) version 
+      1.4.2 (<a href="http://java.sun.com/j2se/1.4.2/download.html">download</a>) 
+      or 5.0 (<a href="http://java.sun.com/j2se/1.5.0/download.jsp">download</a>)</li>
+  </ul>   
+  
+  <p>Also, you will use 4 icons in the tutorial. You can right-click
+   them here and save them locally, then copy them to the module project's
+   location, after you create the module project later in this tutorial. Here are
+   the 4 icons:
+  
+   <p><img border="1" src="../images/tutorials/nodes-3/down-rectangle.png"/>
+    <img border="1" src="../images/tutorials/nodes-3/right-rectangle.png"/>
+    <img border="1" src="../images/tutorials/nodes-3/marilyn.gif"/>
+   <img border="1" src="../images/tutorials/nodes-3/marilyn_category.gif"/>
+
+
+<p><h2><a name="gettingtoknowthesample"></a>Getting Started</h2>
+
+<p>In this section, we use wizards to create a module project and
+ a custom window component. We add a JScrollPane and create a new
+  <a href="https://netbeans.org/download/dev/javadoc/org-openide-explorer/org/openide/explorer/view/BeanTreeView.html">BeanTreeView</a>. 
+ We then install the module project and display
+   our view's top node.
+
+<ol>
+
+<p><li>Choose File &gt; New Project. In the New Project wizard,
+ choose NetBeans Plug-in Modules under Categories and Module Project
+ under Projects. Click Next. Type <tt>ExplorerBeanTreeView</tt> in Project Name
+  and set Project Location to an appropriate folder on your disk. If they
+ are not selected, select
+   Standalone Module and Set as Main Project. Click Next.
+  
+   <p><li>Type <tt>org.netbeans.myfirstexplorer</tt> in Code Name Base
+    and <tt>Explorer Bean Tree View</tt> in Module Display Name. Click Finish.
+
+    
+ <p><li>Right-click the project, choose Properties, click Libraries 
+in the Project Properties dialog box and declare a dependency on the following APIs:
+ 
+<p><ul>
+<li><a href="https://netbeans.org/download/dev/javadoc/org-openide-actions/overview-summary.html">Actions API</a>
+<li><a href="https://netbeans.org/download/dev/javadoc/org-openide-explorer/overview-summary.html">Explorer and Property Sheet API</a> 
+<li><a href="https://netbeans.org/download/dev/javadoc/org-openide-explorer/overview-summary.html">Nodes API</a>
+</ul>
+
+    
+<p><li>Right-click the module project, choose
+ New &gt; File/Folder and choose Window Component from the
+ NetBeans Module Development category. Click Next. Choose <tt>editor</tt>
+ in the drop-down list and select Open on Application Start. Click Next.
+ 
+<p><li>Type <tt>MyFirst</tt> in Class Name Prefix. Optionally,
+ add an icon with a dimension of 16x16 pixels. Click Finish.
+
+ 
+<p><li>Open <tt>MyFirstTopComponent.java</tt> in the Design view.
+ Right-click in the TopComponent, choose Set Layout,
+  and select BorderLayout. 
+
+<p><li>Use the Palette (Ctrl-Shift-8) to drop a 
+ <tt>JScrollPane</tt> on <tt>MyFirstTopComponent.java</tt>. Resize the
+ <tt>JScrollPane</tt> so that it covers the entire TopComponent. Right-click
+  the <tt>JScrollPane</tt>, choose Change Variable Name and type <tt>moviePane</tt>. 
+ 
+<p><li>Open the Inspector, if it isn't open. (Use the Window menu.)
+ In the Inspector, select the <tt>moviePane</tt>, open the 
+ Properties window (Ctrl-Shift-7), click the "Code" tab, and add this 
+line to the Custom Creation Code property (the very last property in the list):
+
+<p><pre class="examplecode">new <a href="https://netbeans.org/download/dev/javadoc/org-openide-explorer/org/openide/explorer/view/BeanTreeView.html">BeanTreeView()</a>;</pre>
+
+<p>Click OK.
+
+<p>BeanTreeView is one of several views provided by the Explorer and Property Sheet API.
+ We will look at the other views later in this tutorial.
+  
+<p><li>Click the Source toggle button in the GUI Builder.
+ Right-click in the Source Editor,
+ and choose Fix imports. The dependency you set on "Explorer and Property Sheet API" will 
+cause the import statement for the BeanTreeView being generated for you by the IDE.
+ 
+
+<p><li>In the <tt>Bundle.properties</tt> file, change the <tt>CTL_MyFirstTopComponent</tt> 
+ key to the value "Marilyn Explorer". 
+
+
+<p><li>Right-click the project node and choose "Install/Reload 
+ in Development IDE". If a warning message appears, click OK.
+ When the module installs, look under the Window menu and you will find a new menu item
+ called "Open MyFirst Window", at the top of the list of menu items. 
+ Choose it and you will see the start of your explorer view:
+
+ <p><img border="1" src="../images/tutorials/nodes-3/marilyn-result.png"/>
+ 
+ 
+
+<p>Without any coding, you have created the start of your BeanTreeView.
+
+</ol>
+
+<!-- ===================================================================================== -->
+<p><h2><a name="gettingtoknowthesample"></a>Using Nodes to Represent Data</h2>
+
+<p>Using nodes to represent data involves adding an Explorer Manager
+ to our TopComponent's Lookup. The Explorer Manager controls the view, especially
+  the top node of our view. Next we will create a Category object and a Movie object and display
+   each via a separate <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html">AbstractNode</a>
+  object and Children.Keys object. The <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html">AbstractNode</a> provides the
+    basic implementation of a node, allowing you to provide icons, as well
+     as actions such as Cut and Delete. With the Children.Keys object, you simplify
+   the handling of the nodes, using lightweight keys instead of the nodes themselves.
+    Further details on the specific approaches taken are explained where appropriate below.
+<br />
+<div class="indent">
+  <h3 class="tutorial"><a name="installing-sample"></a>Setting Up an Explorer Manager</h3>
+
+<p>An <a href="https://netbeans.org/download/dev/javadoc/org-openide-explorer/org/openide/explorer/ExplorerManager.html">Explorer Manager</a>
+ is the NetBeans API class that manages a view. For example, it notifies PropertyChangeListeners
+  about changes to the nodes in the view. It also controls the root node
+ in a view. For example, when you want to define a root node, you need
+ to use the Explorer Manager's <tt>setRootContext()</tt> method.
+ To provide an Explorer Manager in a TopComponent, you
+   must implement <tt>ExplorerManager.Provider</tt>, as shown in this subsection.
+   
+<ol>
+
+ 
+ 
+<p><li>Open the <tt>MyFirstTopComponent.java</tt> in the
+  Source view and add <tt>implements ExplorerManager.Provider</tt> 
+ to the signature at the top of the class. 
+
+<p><li>Next, instantiate the <tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-explorer/org/openide/explorer/ExplorerManager.html">ExplorerManager</a></tt> as a transient object:
+
+<p><pre class="examplecode">private transient ExplorerManager explorerManager = new ExplorerManager();</pre>
+
+<p><li>Place the cursor in the signature.
+ A lightbulb will prompt you to let the IDE insert an import statement and implement the abstract methods. 
+ Follow its advice, by clicking on the suggestion,
+  and then fill out the generated <tt>getExplorerManager()</tt> as follows:
+
+<p><pre class="examplecode">public ExplorerManager getExplorerManager() {
+     return explorerManager;
+}</pre>
+
+<p><li>Now go to the Constructor and add the following after the last existing line:
+
+<p><pre class="examplecode"><a href="https://netbeans.org/download/dev/javadoc/org-openide-windows/org/openide/windows/TopComponent.html#associateLookup(org.openide.util.Lookup)">associateLookup</a>(<a href="http://www.netbeans.org/download/dev/javadoc/org-openide-explorer/org/openide/explorer/ExplorerUtils.html">ExplorerUtils</a>.<a href="http://www.netbeans.org/download/dev/javadoc/org-openide-explorer/org/openide/explorer/ExplorerUtils.html#createLookup(org.openide.explorer.ExplorerManager,%20javax.swing.ActionMap)">createLookup(explorerManager, getActionMap())</a>);
+explorerManager.setRootContext(new <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html">AbstractNode(new CategoryChildren())</a>);
+explorerManager.getRootContext().setDisplayName("Marilyn Monroe's Movies");</pre>
+
+<p>Here we place the Explorer Manager in the TopComponent's Lookup.
+ We set a class called "CategoryChildren" as the root node. We will create
+  this class in the next section, and we will display it
+as the first node in our view. As display name it receives "Marilyn Monroe's Movies".
+
+<p><li>Fix imports. A red underline will remain because we have not created
+ the CategoryChildren class yet. We will do so in the next section.
+
+</ol>
+</div>
+      <br />
+
+<div class="indent">
+  <h3 class="tutorial"><a name="installing-sample"></a>Creating a Category</h3>
+
+<p>Let's first define what a "Category" is. 
+<ol>
+<p><li>Create a class 
+ called <tt>Category.java</tt> and add the following content:
+
+
+<p><pre class="examplecode">public class Category {
+    
+    private String name;
+    
+    /** Creates a new instance of Category */
+    public Category() {
+    }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public void setName(String name) {
+        this.name = name;
+    }
+    
+}</pre>
+
+<p>From the above, you can see that a category has a name, and nothing more.
+
+ 
+ 
+<p><li>Create 
+another class, this time for creating the nodes for the categories:
+
+<p><pre class="examplecode">public class CategoryChildren extends <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Children.Keys.html">Children.Keys</a> {
+    
+    private String[] Categories = new String[]{
+        "Adventure",
+        "Drama",
+        "Comedy",
+        "Romance",
+        "Thriller"};
+    
+    public CategoryChildren() {
+    }
+    
+     protected Node[] <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Children.Keys.html#createNodes%28java.lang.Object%29">createNodes(Object key)</a> {
+        Category obj = (Category) key;
+        return new Node[] { new CategoryNode( obj ) };
+    }
+    
+    protected void <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Children.html#addNotify%28%29">addNotify()</a> {
+        super.addNotify();
+        Category[] objs = new Category[Categories.length];
+        for (int i = 0; i < objs.length; i++) {
+            Category cat = new Category();
+            cat.setName(Categories[i]);
+            objs[i] = cat;
+        }
+        setKeys(objs);
+    }
+    
+}</pre>
+
+<p>In this example, a popular children implementation called <tt>Children.Keys</tt> is used. 
+ By subclassing <tt>Children.Keys</tt>, you need not explicitly keep track of the nodes. 
+ Instead, you keep track of a set of keys, which are lighter 
+ weight objects. Each key typically represents one node. You must tell the implementation how 
+ to create a node for each key. You can decide for yourself what type of keys to use.
+ 
+<p><tt>addNotify()</tt> is called the first time that a list of nodes is needed. 
+ An example of this is when a node is expanded. Here, when <tt>addNotify()</tt> is called, 
+ a new category is instantiated. When a child node needs to be constructed,
+ the <tt>createNodes()</tt> method is called. It is passed the key for which it is making a node. It returns either none, 
+ one, or more nodes corresponding to what should be displayed for the key. 
+In this example, a new instance of one category node is being created, and the
+  key is passed into its constructor.
+
+<p><li>Fix imports, choosing <tt>org.openide.nodes.Children</tt> and <tt>org.openide.nodes.Node</tt>.
+
+
+
+<p>Note that in the code above, 
+ we create a node called <tt>CategoryNode</tt>. We will create it in the next step.
+
+<p><li>Create a class called <tt>CategoryNode.java</tt> 
+ and define it as follows:
+
+
+<p><pre class="examplecode">public class CategoryNode extends <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html">AbstractNode</a> {
+    
+    /** Creates a new instance of CategoryNode */
+    public CategoryNode( Category category ) {
+        super( new MovieChildren(category), Lookups.singleton(category) );
+        <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Node.html#setDisplayName(java.lang.String)">setDisplayName(category.getName())</a>;
+        <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Node.html#setDisplayName(java.lang.String)">setIconBaseWithExtension("org/netbeans/myfirstexplorer/marilyn_category.gif")</a>;
+    }
+    
+    public PasteType <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html#getDropType(java.awt.datatransfer.Transferable,%20int,%20int)">getDropType(Transferable t, final int action, int index)</a> {
+        final Node dropNode = NodeTransfer.node( t, 
+                DnDConstants.ACTION_COPY_OR_MOVE+NodeTransfer.CLIPBOARD_CUT );
+        if( null != dropNode ) {
+            final Movie movie = (Movie)dropNode.getLookup().lookup( Movie.class );
+            if( null != movie  && !this.equals( dropNode.getParentNode() )) {
+                return new PasteType() {
+                    public Transferable paste() throws IOException {
+                        getChildren().add( new Node[] { new MovieNode(movie) } );
+                        if( (action & DnDConstants.ACTION_MOVE) != 0 ) {
+                            dropNode.getParentNode().getChildren().remove( new Node[] {dropNode} );
+                        }
+                        return null;
+                    }
+                };
+            }
+        }
+        return null;
+    }
+    
+    public Cookie <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html#getCookie(java.lang.Class)">getCookie(Class clazz)</a> {
+        Children ch = getChildren();
+        
+        if (clazz.isInstance(ch)) {
+            return (Cookie) ch;
+        }
+        
+        return super.getCookie(clazz);
+    }
+    
+    protected void <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html#createPasteTypes(java.awt.datatransfer.Transferable,%20java.util.List)">createPasteTypes(Transferable t, List s)</a> {
+        super.createPasteTypes(t, s);
+        PasteType paste = getDropType( t, DnDConstants.ACTION_COPY, -1 );
+        if( null != paste )
+            s.add( paste );
+    }
+    
+    public Action[] <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Node.html#getActions(boolean)">getActions(boolean context)</a> {
+        return new Action[] {
+            SystemAction.get( NewAction.class ),
+            SystemAction.get( PasteAction.class ) };
+    }
+    
+    public boolean <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html#canDestroy()">canDestroy()</a> {
+        return true;
+    }
+    
+}</pre>
+
+<p>An AbstractNode is a basic implementation of a node. It simplifies common
+ requirements, such as the creation of the display name and the handling of icons.
+  Other common requirements are handled as well. To understand what each of the methods 
+ in the code above does, 
+  click the method's link to jump to the related Javadoc.
+
+<p><li>Fix imports. After you fic the import statements, several red underlines
+ will remain, because we have not created <tt>Movie.java</tt>, <tt>MovieChildren.java</tt>,
+  and <tt>MovieNode.java</tt>. yet. We will do so in the next section.
+
+</ol>
+</div>
+      <br />
+      
+      <div class="indent">
+  <h3 class="tutorial"><a name="installing-sample"></a>Creating a Movie</h3>
+
+
+<p>Next, we'll work on adding the children belonging to the categories. 
+ And the children are movies. Let's begin by defining what a "movie" is. 
+
+ <ol>
+<p><li>Create a 
+ class called <tt>Movie.java</tt>, with the following content:
+
+
+
+<p><pre class="examplecode">public class Movie {
+    
+    private Integer number;
+    private String category;
+    private String title;
+    
+    /** Creates a new instance of Instrument */
+    public Movie() {
+    }
+    
+    public Integer getNumber() {
+        return number;
+    }
+    
+    public void setNumber(Integer number) {
+        this.number = number;
+    }
+    
+    public String getCategory() {
+        return category;
+    }
+    
+    public void setCategory(String category) {
+        this.category = category;
+    }
+    
+    public String getTitle() {
+        return title;
+    }
+    
+    public void setTitle(String title) {
+        this.title = title;
+    }
+    
+}</pre>
+
+<p>From the above, you can see that a movie has a number, belongs to a category, and has a title. 
+ 
+<p><li>Now let's create the category's children. The 
+ class to be created is called <tt>MovieChildren.java</tt>. We use
+   <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Index.ArrayChildren.html">Index.ArrayChildren</a>,
+ so that we can put the nodes in an array list, which is loaded as needed. Until a 
+ child node is needed, such as when the parent node is expanded, it is not created. This is the content of the class:
+
+<p><pre class="examplecode">public class MovieChildren  extends <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Index.ArrayChildren.html">Index.ArrayChildren</a> {
+    
+    private Category category;
+    
+    private String[][] items = new String[][]{
+        {"0", "Adventure", "River of No Return"},
+        {"1", "Drama", "All About Eve"},
+        {"2", "Drama", "Home Town Story"},
+        {"3", "Comedy", "We're Not Married!"},
+        {"4", "Comedy", "Love Happy"},
+        {"5", "Romance", "Some Like It Hot"},
+        {"6", "Romance", "Let's Make Love"},
+        {"7", "Romance", "How to Marry a Millionaire"},
+        {"8", "Thriller", "Don't Bother to Knock"},
+        {"9", "Thriller", "Niagara"},
+    };
+    
+    public MovieChildren(Category Category) {
+        this.category = Category;
+    }
+    
+    protected java.util.List&lt;Node&gt; <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Index.ArrayChildren.html#initCollection()">initCollection()</a> {
+        ArrayList childrenNodes = new ArrayList( items.length );
+        for( int i=0; i&lt;items.length; i++ ) {
+            if( category.getName().equals( items[i][1] ) ) {
+                Movie item = new Movie();
+                item.setNumber(new Integer(items[i][0]));
+                item.setCategory(items[i][1]);
+                item.setTitle(items[i][2]);
+                childrenNodes.add( new MovieNode( item ) );
+            }
+        }
+        return childrenNodes;
+    }
+}</pre>
+
+<p><li>Right-click the project, choose Properties, and use the Sources category
+ to change the source level from 1.4 to 1.5. Click OK.
+
+<p><li>Fix imports. A red underline will remain because we have
+ not create <tt>MovieNode.java</tt>, which we will do in the next step.
+
+<p><li>Create a class called <tt>MovieNode.java</tt> 
+ and define it as follows:
+
+<p><pre class="examplecode">public class MovieNode extends <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html">AbstractNode</a> {
+    
+    private Movie movie;
+    
+    /** Creates a new instance of InstrumentNode */
+    public MovieNode(Movie key) {
+        super(Children.LEAF, Lookups.fixed( new Object[] {key} ) );
+        this.movie = key;
+        <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Node.html#setDisplayName(java.lang.String)">setDisplayName(key.getTitle())</a>;
+        <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html#setIconBaseWithExtension(java.lang.String)">setIconBaseWithExtension("org/netbeans/myfirstexplorer/marilyn.gif")</a>;
+    }
+    
+    public boolean <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html#canCut()">canCut()</a> {
+        
+        return true;
+    }
+    
+    public boolean <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html#canDestroy()">canDestroy()</a> {
+        return true;
+    }
+    
+    public Action[] <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Node.html#getActions(boolean)">getActions(boolean popup)</a> {
+        return new Action[] {
+            SystemAction.get( CopyAction.class ),
+            SystemAction.get( CutAction.class ),
+            null,
+            SystemAction.get( DeleteAction.class ) };
+    }
+    
+}</pre>
+
+<p>Fix imports.
+
+<p>Notice that most of this class is about defining actions on 
+ the movie nodes. When you right-click a movie, you'll be 
+ able to choose "Copy" or "Cut" or "Delete". 
+ </ol>
+</div>
+      <br />
+
+      
+      <div class="indent">
+  <h3 class="tutorial"><a name="installing-sample"></a>Creating a Root Node</h3>
+
+  <p>Now we are going to install our module. When we do so, we will test
+   our module's functionality and see if everything is as we would want it to be.
+   
+   <ol>
+   <p><li>Right-click the module and choose Install/Reload in Development IDE.
+   <p><li>Examine the result:
+      
+<p><img border="1" src="../images/tutorials/nodes-3/marilyn-result2.png"/>
+
+<p><li>Notice that even though you can drag and drop movies from
+ one category to another (by dragging with your mouse, with the Ctrl
+ key held down when you want to copy a node), 
+ the menu items are greyed out. Also, notice that
+  the root node does not have an icon.
+
+  <p><li>First, we need to enable the menu items by adding the actions
+   to the TopComponent's action map. Do this by adding the following
+    snippet to the end of the TopComponent's Constructor:
+    
+<p><pre class="examplecode">ActionMap map = getActionMap();
+map.put(DefaultEditorKit.copyAction, ExplorerUtils.actionCopy(explorerManager));
+map.put(DefaultEditorKit.cutAction, ExplorerUtils.actionCut(explorerManager));
+map.put(DefaultEditorKit.pasteAction, ExplorerUtils.actionPaste(explorerManager));
+map.put("delete", ExplorerUtils.actionDelete(explorerManager, true));</pre>
+
+<p><li>Next, to be able to control the icon displayed by the root node,
+ we need to create a class for that node. Currently, we are using a default
+  <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html">AbstractNode</a>, over which we have no control.
+  
+  <p>Create a class called <tt>RootNode.java</tt>, with this content:
+  
+<p><pre class="examplecode">public class RootNode extends <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html">AbstractNode</a> {
+    
+    /** Creates a new instance of RootNode */
+    public RootNode(Children children) {
+        super(children);
+    }
+    
+    public Image getIcon(int type) {
+        return Utilities.loadImage("org/netbeans/myfirstexplorer/right-rectangle.png");
+    }
+    
+    public Image getOpenedIcon(int type) {
+        return Utilities.loadImage("org/netbeans/myfirstexplorer/down-rectangle.png");
+    }
+    
+}</pre>
+
+<p>Notice that here we set one icon for when the node is in its closed state
+ and another for when it is expanded. To use this node, we need to change this line
+  in the TopComponent:
+  
+<p><pre class="examplecode">explorerManager.setRootContext(new <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html">AbstractNode</a>(new CategoryChildren()));</pre>
+
+<p>We need to replace that line with this line:
+
+<p><pre class="examplecode">explorerManager.setRootContext(new RootNode(new CategoryChildren()));</pre>
+
+<p><li>Install the module again and notice the icons displayed for the root node's
+   collapsed and expanded states. Here, the icon for the expanded state is shown:
+   
+   
+<p><img border="1" src="../images/tutorials/nodes-3/marilyn-result3.png"/>
+
+<p>Also notice that the movie node's menu items are now enabled and functional.
+ 
+ </ol>
+</div>
+      <br />
+
+
+
+ <!-- ===================================================================================== -->
+<p><h2><a name="gettingtoknowthesample"></a>Using Explorer Views to View Data</h2>
+
+<p>The NetBeans APIs provide a variety of explorer views, which are very
+ simple to add to your TopComponent. After adding one or two lines of code,
+  the view on your data can be completely different, creating a radically
+   altered display for your end users and a wide range of choices for you
+ and your development team. 
+
+<p>However, note that only the BeanTreeView supports
+  the drag and drop functionality you added earlier in this tutorial. When you
+   change to a different explorer view, as shown below, the drag and drop functionality
+    will simply be disabled.
+
+
+      <div class="indent">
+
+ 
+<h3 class="tutorial"><a name="installing-software"></a>List View</h3>
+
+<p>List view is an explorer view that displays items in a list. It is provided by
+ the <a href="https://netbeans.org/download/dev/javadoc/org-openide-explorer/org/openide/explorer/view/ListView.html">ListView</a>
+  class, which belongs to the Explorer And Property Sheet API.
+
+<ol>
+
+    <p><li>Add this line to the end of the TopComponent's Constructor:
+    
+<p><pre class="examplecode">listView = new ListView();</pre>
+    
+    <p>Put the cursor in the line and let the IDE generate
+     an import statement for <tt>org.openide.explorer.view.ListView</tt>.
+      Also let the IDE create the <tt>listView</tt> field.
+     
+      <p><li>Below the line above, add this line, which adds the view to the TopComponent:
+      
+<p><pre class="examplecode">add(listView, BorderLayout.CENTER);</pre>      
+     
+<p>Let the IDE generate the <tt>java.awt.BorderLayout</tt> import statement for BorderLayout.
+
+<p><b>Note:</b> When you created the TopComponent earlier in this tutorial,
+ you should have set the layout manager to BorderLayout. If you did not do this,
+ make the JScrollPane smaller, right-click the TopComponent, choose Set Layout,
+  and select BorderLayout.
+  
+ <p><li>Install the module again. Notice that the view is now as follows:
+ 
+ <p><img border="1" src="../images/tutorials/nodes-3/listview1.png"/>
+ 
+ <p>When you click on a category, the movies are displayed:
+ 
+  <p><img border="1" src="../images/tutorials/nodes-3/listview2.png"/>
+  
+  
+  
+  
+  </ol>
+</div>
+      <br />
+      
+       <div class="indent">
+
+ 
+<h3 class="tutorial"><a name="installing-software"></a>Choice View</h3>
+
+<p>Choice view is an explorer view based on a combo box. It is provided by
+ the <a href="https://netbeans.org/download/dev/javadoc/org-openide-explorer/org/openide/explorer/view/ChoiceView.html">ChoiceView</a>
+  class, which belongs to the Explorer And Property Sheet API.
+
+<ol>
+    <p><li>Add this line to the end of the TopComponent's Constructor:
+    
+<p><pre class="examplecode">choiceView = new ChoiceView();</pre>
+    
+    <p>Put the cursor in the line and let the IDE generate
+     an import statement for <tt>org.openide.explorer.view.ChoiceView</tt>.
+      Also let the IDE create the <tt>choiceView</tt> field.
+     
+      <p><li>Instead of the line that
+ adds a ListView to the TopComponent, write a line that
+ adds the ChoiceView:
+      
+<p><pre class="examplecode">add(choiceView, BorderLayout.CENTER);</pre>      
+     
+
+  
+ <p><li>Install the module again. Notice that the view is now as follows:
+ 
+ <p><img border="1" src="../images/tutorials/nodes-3/choiceview1.png"/>
+ 
+  <p><b>Note:</b> If your TopComponent is very large, the combo box
+   provided by the choice view will be very large as well.
+  
+  </ol>
+</div>
+      <br />
+      
+        <div class="indent">
+
+ 
+<h3 class="tutorial"><a name="installing-software"></a>Menu View</h3>
+
+<p>Menu view is an explorer view that displays the hierarchy
+ of nodes in a popup menu. Initially, it shows a left button which 
+ opens a popup menu from the root context and a right button which 
+opens a popup menu from the currently explored context. It is provided by
+ the <a href="https://netbeans.org/download/dev/javadoc/org-openide-explorer/org/openide/explorer/view/MenuView.html">MenuView</a>
+  class, which belongs to the Explorer And Property Sheet API.
+
+
+<ol>
+    <p><li>Add this line to the end of the TopComponent's Constructor:
+    
+<p><pre class="examplecode">menuView = new MenuView();</pre>
+    
+    <p>Put the cursor in the line and let the IDE generate
+     an import statement for <tt>org.openide.explorer.view.MenuView</tt>.
+      Also let the IDE create the <tt>menuView</tt> field.
+     
+     <p><li>Instead of the line that
+ adds a ChoiceView to the TopComponent, write a line that
+ adds the MenuView:
+      
+<p><pre class="examplecode">add(menuView, BorderLayout.CENTER);</pre>      
+  
+ <p><li>Install the module again. Notice that the view is now as follows:
+ 
+ <p><img border="1" src="../images/tutorials/nodes-3/menuview1.png"/>
+ 
+ <p>When you click on the first button, the complete list of categories is displayed:
+ 
+  <p><img border="1" src="../images/tutorials/nodes-3/menuview2.png"/>
+  
+  <p>When you click with the right mouse button on the "Browse from root" button,
+   the "Browse from current point" button is enabled and you can browse
+    to movies within the selected category:
+    
+     <p><img border="1" src="../images/tutorials/nodes-3/menuview3.png"/>
+  
+  
+  </ol>
+</div>
+      <br />
+      
+        <div class="indent">
+      
+      <h3 class="tutorial"><a name="installing-software"></a>Other Views</h3>
+
+<p>The <tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-explorer/org/openide/explorer/view/package-summary.html">org.openide.explorer.view</a></tt> package provides many other
+ explorer views, in addition to those outlined above. For example, <a href="https://netbeans.org/download/dev/javadoc/org-openide-explorer/org/openide/explorer/view/IconView.html">IconView</a>
+  presents the categories and its contents as icons:
+  
+   <p><img border="1" src="../images/tutorials/nodes-3/iconview1.png"/>
+   
+   <p><img border="1" src="../images/tutorials/nodes-3/iconview2.png"/>
+   
+   <p>Other views include <a href="https://netbeans.org/download/dev/javadoc/org-openide-explorer/org/openide/explorer/view/ContextTreeView.html">ContextTreeView</a> 
+ and <a href="https://netbeans.org/download/dev/javadoc/org-openide-explorer/org/openide/explorer/view/ListTableView.html">ListTableView</a>.
+    
+ <p>Finally, a <a href="https://netbeans.org/download/dev/javadoc/org-openide-explorer/org/openide/explorer/view/TreeTableView.html">TreeTableView</a>
+  could also be used. This NetBeans API class lets you
+ create a view tree of nodes on the left and its properties in a table on the right. This is
+  an area that deserves a tutorial of its own. Similarly, creating you own explorer view is a
+   worthwhile but complex project that will be described in a separate tutorial.
+    </div>
+      <br />
+      
+ <!-- ===================================================================================== -->
+<p><h2><a name="gettingtoknowthesample"></a>Using Palette Items to Reuse Nodes</h2>
+
+<p>Alternatively, the nodes can form the basis of palette items, as shown below:
+ 
+
+<p><img border="1" src="../images/tutorials/nodes-3/comp-pal.png"/>
+
+<p>In this section,
+ you are shown how to add the items to a Component Palette and how to add some
+  simple drag and drop functionality to the items in the palette. Only a brief
+   overview will be given here, because other tutorials exist that provide
+   details on the Component Palette API.
+   
+   <p>Instead of adding an Explorer Manager to the TopComponent's Lookup,
+ you will need to add a <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/PaletteController.html">PaletteController</a>.
+  When you do this, the Component Palette opens when the TopComponent opens, displaying
+ its content, consisting of palette items. <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/PaletteController.html">PaletteController</a>
+  is provided by the Core - Component Palette API.
+   
+<ol>
+<p><li>Right-click the project, choose
+  Properties, and add a dependency on Core - Component Palette in the Libraries category
+   of the Project Properties dialog box.
+   
+<p><li>Declare a new <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/PaletteController.html">PaletteController</a>
+  and set the root node as the palette's root:
+   
+<p><pre class="examplecode">private <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/PaletteController.html">PaletteController</a> palette = null;
+private RootNode paletteRoot;</pre>
+   
+<p><li>In the TopComponent's Constructor, comment out the calls to the Explorer Manager.
+    You can also comment out the definition of the action map, since the Component
+     Palette automatically provides Copy, Cut, Paste, and Delete actions to palette items.
+     
+     <p>In the Inspector, select the <tt>moviePane</tt>, open the 
+ Properties window (Ctrl-Shift-7), click the "Code" tab, and <i>delete</i> the 
+line in the Custom Creation Code property (the very last property in the list).
+     
+<p><li>At the end of the Constructor, add this line to add the Component
+      Palette to the TopComponent's Lookup:
+      
+<p><pre class="examplecode">associateLookup( Lookups.fixed( new Object[] {getPalette()} ));</pre>
+
+<p><li>Here, we create a new instance of the <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/PaletteController.html">PaletteController</a>
+ and return it to the TopComponent's Lookup:
+   
+<p><pre class="examplecode">private <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/PaletteController.html">PaletteController</a> getPalette() {
+    if( null == palette ) {
+        paletteRoot = new RootNode(new CategoryChildren());
+        paletteRoot.setName( "Palette Root");
+
+        palette = <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/PaletteFactory.html">PaletteFactory</a>.createPalette( paletteRoot, 
+                 new MyPaletteActions(), null, new MyDragAndDropHandler() );
+    }
+    return palette;
+}</pre>
+
+<p><li>A palette consists of a root, a set of actions,
+ and a handler for drag and drop events. For purposes of this
+  simple example, we will set our palette actions to null:
+
+<p><pre class="examplecode">private static class MyPaletteActions extends <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/PaletteActions.html">PaletteActions</a> {
+    public Action[] getImportActions() {
+        return null;
+    }
+
+    public Action[] getCustomPaletteActions() {
+        return null;
+    }
+
+    public Action[] getCustomCategoryActions(Lookup lookup) {
+        return null;
+    }
+
+    public Action[] getCustomItemActions(Lookup lookup) {
+        return null;
+    }
+
+    public Action getPreferredAction(Lookup lookup) {
+        return null;
+    }
+
+}</pre>
+
+
+<p><li>And here is the definition of our drag and drop handler, using
+ the NetBeans API class <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/DragAndDropHandler.html">DragAndDropHandler</a>:
+
+<p><pre class="examplecode">public static final DataFlavor MyCustomDataFlavor 
+      = new DataFlavor( Object.class, "MyDND" );
+private static class MyDragAndDropHandler extends <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/DragAndDropHandler.html">DragAndDropHandler</a> {
+    public void <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/DragAndDropHandler.html#customize(org.openide.util.datatransfer.ExTransferable,%20org.openide.util.Lookup)">customize(ExTransferable exTransferable, Lookup lookup)</a> {
+        final MovieNode item = (MovieNode)lookup.lookup( MovieNode.class );
+        if( null != item ) {
+            exTransferable.<a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/datatransfer/ExTransferable.html#put(org.openide.util.datatransfer.ExTransferable.Single)">put</a>( new <a href="http://www.netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/datatransfer/ExTransferable.Single.html">ExTransferable.Single( MyCustomDataFlavor )</a> {
+                protected Object <a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/datatransfer/ExTransferable.Single.html#getData()">getData()</a> throws IOException, UnsupportedFlavorException {
+                    //return item.getSomeData();
+                    return null;
+                }
+            });
+        }
+    }
+}</pre>
+
+<p><li>Install the module again. When the TopComponent opens, the new 
+ Component Palette is shown. The categories you created in this tutorial
+  are now categories in the Component Palette, while the movies are items
+   within the categories. Next, you need to add drag and drop functionality
+    to the items in the palette, as described in the <a href="https://platform.netbeans.org/tutorials/nbm-palette-api4.html">NetBeans Drag and Drop Tutorial</a>.
+   
+</ol>
+  
+<br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Nodes,%20Explorer%20Manager,%20and%20Component%20Palette%20Tutorial">Send Us Your Feedback</a></div>
+<br style="clear:both;" />
+      
+
+
+<hr><p>
+ 
+</body>
+</html>

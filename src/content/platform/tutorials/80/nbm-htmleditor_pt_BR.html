@@ -1,0 +1,338 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <!-- -*- xhtml -*- -->
+    <title>Plataforma do Editor HTML NetBeans para a plataforma NetBeans 6.7</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+    <meta name="AUDIENCE" content="NBUSER"/>
+    <meta name="TYPE" content="ARTICLE"/>
+    <meta name="EXPIRES" content="N"/>
+    <meta name="developer" content="jtulach@netbeans.org"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="indexed" content="y"/>
+    <meta name="description"
+          content="A short guide to using the Nodes API."/>
+      <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+<body>
+    <h1>Plataforma do Editor HTML NetBeans</h1>
+   
+   <p>Este tutorial oferece uma introdu&ccedil;&atilde;o simples e r&aacute;pida ao fluxo de trabalho da Plataforma NetBeans, orientando voc&ecirc; na cria&ccedil;&atilde;o de um editor HTML simples. Embora simples, o Editor de HTML criado ser&aacute; muito desenvolvido porque reutilizar&aacute; a infraestrutura fornecida pela Plataforma NetBeans. Por exemplo, sem qualquer c&oacute;digo, o Editor de HTML ter&aacute; um sistema de janela desenvolvido. Ap&oacute;s concluir este tutorial, voc&ecirc; ter&aacute; adquirido um conhecimento geral sobre como criar, construir e executar aplicativos da Plataforma NetBeans.</p>
+   
+   <p>Ap&oacute;s concluir este tutorial, &eacute; poss&iacute;vel passar para a <a href="https://netbeans.org/kb/trails/platform_pt_BR.html">trilha do aprendizado da plataforma NetBeans</a>. A trilha do aprendizado fornece tutoriais abrangentes que destacam uma ampla gama de APIs do NetBeans para uma variedade de tipos de aplicativos. Se n&atilde;o desejar criar um aplicativo &quot;Hello world&quot;, ignore este tutorial e v&aacute; direito para a trilha do aprendizado.</p>
+   
+      <p><b class="notes">Nota: </b>este documento usa o NetBeans IDE 6.7. Se voc&ecirc; estiver utilizando uma vers&atilde;o anterior, veja <a href="61/nbm-htmleditor_pt_BR.html">a vers&atilde;o 6.1 deste documento</a>. Se for o seu primeiro contato com a plataforma NetBeans, recomenda-se trabalhar com o <a href="nbm-quick-start_pt_BR.html">In&iacute;cio r&aacute;pido da plataforma NetBeans</a> antes de continuar com este tutorial. Se, em vez de aprender como criar um aplicativo para a Plataforma NetBeans, voc&ecirc; quiser aprender como criar um plug-in do NetBeans, consulte <a href="nbm-google_pt_BR.html">Introdu&ccedil;&atilde;o ao plug-in do NetBeans</a>.</p>
+   
+   <p><b>Conte&uacute;do</b></p>
+         
+   <p><img src="../images/articles/69/netbeans-stamp7-8-9.png" class="stamp" width="114" height="114" alt="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.5, 6.7, 6.8" title="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.5, 6.7, 6.8" /></p>
+     <ul class="toc">
+          <li><a href="#generating">Gerando a aplica&ccedil;&atilde;o de esqueleto</a></li>
+        <li><a href="#tweakingthemenuitems">Otimizando a interface do usu&aacute;rio</a></li>
+        <li><a href="#tweakingthewindowlayout">Otimizando o layout da janela</a></li>
+        <li><a href="#tweakingthefavorites">Otimizando a janela Favoritos</a></li>
+        <li><a href="#runningtheapplication">Executando a aplica&ccedil;&atilde;o</a></li>
+        <li><a href="#distributingtheapplication">Distribuindo a aplica&ccedil;&atilde;o</a>
+        <ul>
+        <li><a href="#zip">Distribuindo o Editor de HTML atrav&eacute;s de um arquivo ZIP</a></li>
+        <li><a href="#webstart">Distribuindo o editor HTML por meio do Reposit&oacute;rio Web Start compartilhado do NetBeans</a></li>
+        </ul>
+        </li>
+      </ul>
+         
+<p><b>Para seguir este tutorial, os softwares e recursos listados na tabela seguinte s&atilde;o necess&aacute;rios.</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software ou recurso</th>
+                <th class="tblheader" scope="col">Vers&atilde;o necess&aacute;ria</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">vers&atilde;o 6.7 ou superior</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Vers&atilde;o 6 ou<br/>vers&atilde;o 5</td>
+            </tr>
+        </tbody>
+    </table>
+ 
+  <p class="tips">Opcionalmente, para fins de solu&ccedil;&atilde;o de problemas, &eacute; poss&iacute;vel <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=6635">baixar a amostra completa</a> e inspecionar os c&oacute;digos-fonte.</p>
+ 
+<p>No fim deste tutorial, voc&ecirc; ter&aacute; um Editor HTML que se parece com este:</p>
+
+   <p><img src="../images/tutorials/htmleditor/html-editor-65.png" alt="Editor de HTML final" /></p>
+  
+    <p><b class="notes">Nota:</b> embora seja um aplicativo demonstrativo muito simples, ele n&atilde;o &eacute; um brinquedo! &Eacute; um programa <i>real</i> que d&aacute; suporte &agrave; edi&ccedil;&atilde;o f&aacute;cil de p&aacute;ginas HTML, com recursos como autocompletar de c&oacute;digo, valida&ccedil;&atilde;o e fragmentos de c&oacute;digo HTML predefinidos.</p>
+    
+    <p>O Editor HTML que voc&ecirc; cria neste tutorial &eacute; uma aplica&ccedil;&atilde;o rich-client conclu&iacute;da &quot;sobre a Plataforma NetBeans&quot;. Isso significa que o n&uacute;cleo do IDE, que <i>&eacute;</i> a Plataforma NetBeans, ser&aacute; a base de seu aplicativo. Sobre a Plataforma NetBeans, adicione os m&oacute;dulos necess&aacute;rios e exclui aqueles de que o IDE precisa mas que a sua aplica&ccedil;&atilde;o n&atilde;o. Aqui voc&ecirc; v&ecirc; alguns dos m&oacute;dulos do IDE, adicionados &agrave; Plataforma NetBeans, que &eacute; a sua base:</p>
+    
+   <p><img src="../images/tutorials/htmleditor/diagram.png" alt="Estrutura dos aplicativos da Plataforma NetBeans" /></p>
+    
+    <p>Criar esse Editor HTML significa gerar um esqueleto de aplica&ccedil;&atilde;o, excluindo os m&oacute;dulos e os itens de interface do usu&aacute;rio que n&atilde;o s&atilde;o necess&aacute;rios e, em seguida, definir a janela Favoritos como a janela que ser&aacute; aberta por padr&atilde;o quando o IDE se iniciar. Todas essas atividades s&atilde;o suportadas pelos elementos de interface do usu&aacute;rio no IDE. </p>
+    
+    <p>Voc&ecirc; ver&aacute; por si mesmo como &eacute; simples e f&aacute;cil construir, ou para ser mais preciso, <em>montar</em> uma aplica&ccedil;&atilde;o completa sobre a Plataforma NetBeans. No fim, &eacute; mostrado como tornar o produto final facilmente baix&aacute;vel e inici&aacute;vel utilizando o WebStart.
+    </p>
+    
+    
+    <p><b class="notes">Nota:</b> embora seja um produto separado, n&atilde;o &eacute; necess&aacute;rio baixar a Plataforma NetBeans separadamente por causa deste tutorial. Voc&ecirc; desenvolver&aacute; a aplica&ccedil;&atilde;o rich-client no IDE e, em seguida, excluir&aacute; os m&oacute;dulos que s&atilde;o espec&iacute;ficos do IDE, mas que s&atilde;o sup&eacute;rfluos para a sua aplica&ccedil;&atilde;o.</p>
+    
+    <!-- ===================================================================================== -->
+ 
+    <h2 class="tutorial"><a name="generating"></a>Gerando a aplica&ccedil;&atilde;o de esqueleto</h2>
+    
+            <p>Ao criar um aplicativo na Plataforma NetBeans, o primeiro passo &eacute; criar um projeto de aplicativo da Plataforma NetBeans. O projeto de Aplicativo da plataforma NetBeans padr&atilde;o inclui <i>todos</i> os m&oacute;dulos inclu&iacute;dos na Plataforma NetBeans, assim como <i>todos</i> os m&oacute;dulos inclu&iacute;dos no NetBeans IDE. J&aacute; que n&atilde;o precisamos de todos esses m&oacute;dulos, excluiremos os que n&atilde;o s&atilde;o necess&aacute;rios.</p>
+                
+                
+                <ol>
+                    <li>Utilizando o assistente para Novo projeto (Ctrl-Shift-N), crie um projeto de aplicativo da Plataforma NetBeans a partir do modelo na categoria de m&oacute;dulos do NetBeans, como mostrado abaixo:
+        
+                <p><img src="../images/tutorials/htmleditor/new-nb-app-wiz-65.png" alt="Assistente para Novo projeto" /></p>
+        
+        
+            <p>Clique em Pr&oacute;ximo e nomeie o projeto de aplicativo da Plataforma NetBeans como &quot;NetBeansHTMLEditor&quot;. Clique em Terminar.</p></li>
+
+            <li>Clique com o bot&atilde;o direito do mouse no n&oacute; do projeto, escolha Propriedades e, em seguida, fa&ccedil;a algumas altera&ccedil;&otilde;es na caixa de di&aacute;logo Propriedades do projeto de aplicativo da Plataforma NetBeans:
+        <ul><li>No painel Construir, certifique-se de que o bot&atilde;o de sele&ccedil;&atilde;o &quot;Criar aplicativo independente&quot; esteja marcado para especificar que ser&aacute; um aplicativo rich-client da Plataforma NetBeans.
+            
+                 <p>Verifique se voc&ecirc; gosta do nome da marca do execut&aacute;vel e do t&iacute;tulo do aplicativo da barra de t&iacute;tulo, como mostrado abaixo:</p>
+            
+            <img src="../images/tutorials/htmleditor/html-editor-prop-1-65.png" alt="Painel do aplicativo" /></li>
+                <li>No painel Tela de abertura, observe que &eacute; poss&iacute;vel fornecer a tela de splash do aplicativo e as identifica&ccedil;&otilde;es de marca da barra de andamento, como mostrado abaixo: <img src="../images/tutorials/htmleditor/html-editor-prop-2-65.png" alt="painel Tela de abertura" />
+            
+            <p><b class="notes">Nota:</b> Se voc&ecirc; n&atilde;o tiver uma tela de splash, use <a href="../images/tutorials/htmleditor/splash.gif">esta</a></p>.
+                </li></ul></li>
+        <li>No painel Bibliotecas da caixa de di&aacute;logo Propriedades do projeto, voc&ecirc; v&ecirc; uma lista de &quot;clusters&quot;. Um cluster &eacute; uma cole&ccedil;&atilde;o de m&oacute;dulos relacionados. Os &uacute;nicos clusters que precisam ser selecionados s&atilde;o <tt>ide11</tt> e <tt>platform11</tt>, como mostrado abaixo:
+
+        <p><img src="../images/tutorials/htmleditor/libraries-cust-1.png" alt="Painel do aplicativo" /></p>
+
+         <p>A seguir, clique no bot&atilde;o &quot;Resolver&quot; e os m&oacute;dulos necess&aacute;rios ser&atilde;o adicionados ao conjunto de m&oacute;dulos necess&aacute;rio para que os m&oacute;dulos j&aacute; selecionados fa&ccedil;am parte do aplicativo. O bot&atilde;o &quot;Resolver&quot; desaparece e as mensagens de erro em vermelho n&atilde;o deveriam continuar aparecendo:</p>
+        <p><img src="../images/tutorials/htmleditor/libraries-cust-2.png" alt="Painel do aplicativo" /></p>
+        </li>
+    </ol>
+  
+    <p>Agora, voc&ecirc; possui o subconjunto de m&oacute;dulos do NetBeans que s&atilde;o relevantes ao Editor de HTML. Entretanto, embora voc&ecirc; precise dos m&oacute;dulos que possui agora, provavelmente n&atilde;o precisa de todos os elementos de interface de usu&aacute;rio que esses m&oacute;dulos fornecem. Nas pr&oacute;ximas se&ccedil;&otilde;es, voc&ecirc; gerar&aacute; ajustar a interface do usu&aacute;rio e personalizar o layout da janela especificamente para o Editor de HTML que est&aacute; criando.</p>
+<!-- ===================================================================================== -->
+    
+    <h2 class="tutorial"><a name="tweakingthemenuitems"></a>Otimizando a interface de usu&aacute;rio</h2>
+    
+        <p>&Eacute; poss&iacute;vel manter ou rejeitar o quanto desejar da interface do usu&aacute;rio que os m&oacute;dulos selecionados fornecerem. Por exemplo, seu editor HTML provavelmente n&atilde;o precisa de um ou todos os itens do menu Ferramentas. Semelhantemente, talvez haja barras de ferramentas ou bot&otilde;es da barra de ferramentas que n&atilde;o sejam necess&aacute;rios. Nesta se&ccedil;&atilde;o, voc&ecirc; remove a interface de usu&aacute;rio do IDE at&eacute; que haja um subconjunto que seja &uacute;til para o seu aplicativo rich-client.</p>
+            
+            <ol><li>Expanda o projeto de aplicativo da Plataforma NetBeans, clique com o bot&atilde;o direito do mouse no n&oacute; M&oacute;dulos e escolha Adicionar novo, como mostrado abaixo:
+        
+    <p><img src="../images/tutorials/htmleditor/add-module-61.png" alt="Esta camada no contexto" /></p>
+        
+        <p>O Assistente de novo projeto (Ctrl+Shift+N) aparece. Nomeie o projeto como <tt>BrandingModule</tt> e clique em Pr&oacute;ximo.</p></li>
+        
+                <li>No campo Nome de base de c&oacute;digo, digite <tt>org.netbeans.brandingmodule</tt>.</li>
+        <li>Clique em &quot;Gerar camada XML&quot; e, em seguida, clique em Terminar.</li>
+        <li>No m&oacute;dulo de identifica&ccedil;&atilde;o de marca, expanda o n&oacute; <tt>layer.xml</tt>. Dois subn&oacute;s s&atilde;o expostos:
+        
+            <p><img src="../images/tutorials/htmleditor/expanded-xml-layer-61.png" alt="Arquivo de camada XML expandido" /></p></li>
+        
+        <li>No n&oacute; <tt>&lt;esta camada em contexto&gt;</tt>, o IDE mostra uma visualiza&ccedil;&atilde;o mesclada de todas as pastas e arquivo que todos os m&oacute;dulos registram em suas camadas. Para excluir os itens, &eacute; poss&iacute;vel clicar com o bot&atilde;o direito do mouse neles e escolher 'Excluir', como mostrado abaixo:
+        
+        <p><img src="../images/tutorials/htmleditor/this-layer-in-context-61.png" alt="Esta camada no contexto" /></p>
+        
+        <p>O IDE adiciona marcas ao arquivo <tt>layer.xml</tt> do m&oacute;dulo que, quando o m&oacute;dulo &eacute; instalado, oculta os itens que voc&ecirc; excluiu. Por exemplo, clicando com o bot&atilde;o direito do mouse em <tt>Barra de menus/Editar</tt>, &eacute; poss&iacute;vel remover itens de menu Editar que n&atilde;o s&atilde;o necess&aacute;rios para o Editor HTML. Fazendo isso, trechos de c&oacute;digo s&atilde;o gerados como o seguinte no arquivo <tt>layer.xml</tt>:</p>
+        
+        <pre class="examplecode">&lt;folder name=&quot;Menu&quot;&gt;
+    &lt;folder name=&quot;Edit&quot;&gt;
+        &lt;file name=&quot;org-netbeans-modules-editor-MainMenuAction$StartMacroRecordingAction.instance_hidden&quot;/&gt;
+        &lt;file name=&quot;org-netbeans-modules-editor-MainMenuAction$StopMacroRecordingAction.instance_hidden&quot;/&gt;
+    &lt;/folder&gt;       
+&lt;/folder&gt;</pre>
+        
+        <p>
+        O resultado do trecho de c&oacute;digo acima &eacute; que as a&ccedil;&otilde;es <tt>Iniciar grava&ccedil;&atilde;o de macro</tt> e <tt>Parar grava&ccedil;&atilde;o de macro</tt> fornecidas por outro m&oacute;dulo s&atilde;o removidas do menu por seu m&oacute;dulo de marca. Para mostr&aacute;-las novamente, simplesmente exclua as marcas acima do arquivo <tt>layer.xml</tt>.</p></li>
+        <li>Utilize a abordagem descrita na etapa anterior para ocultar as barras de ferramentas, os bot&otilde;es da barra de ferramentas, os menus e os itens de menu que voc&ecirc; desejar. Quando este est&aacute;gio estiver conclu&iacute;do, observe o arquivo <tt>layer.xml</tt>. Quando fizer isso, ver&aacute; algo similar ao seguinte, dependendo dos itens que tenha exclu&iacute;do:
+        
+<pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE filesystem PUBLIC &quot;-//NetBeans//DTD Filesystem 1.1//EN&quot; &quot;https://netbeans.org/dtds/filesystem-1_1.dtd&quot;&gt;
+&lt;filesystem&gt;
+    &lt;folder name=&quot;Menu&quot;&gt;
+        &lt;file name=&quot;BuildProject_hidden&quot;/&gt;
+        &lt;folder name=&quot;File&quot;&gt;
+            &lt;file name=&quot;Separator2.instance_hidden&quot;/&gt;
+            &lt;file name=&quot;SeparatorNew.instance_hidden&quot;/&gt;
+            &lt;file name=&quot;SeparatorOpen.instance_hidden&quot;/&gt;
+            &lt;file name=&quot;org-netbeans-modules-project-ui-CloseProject.shadow_hidden&quot;/&gt;
+            &lt;file name=&quot;org-netbeans-modules-project-ui-CustomizeProject.shadow_hidden&quot;/&gt;
+            &lt;file name=&quot;org-netbeans-modules-project-ui-NewFile.shadow_hidden&quot;/&gt;
+            &lt;file name=&quot;org-netbeans-modules-project-ui-NewProject.shadow_hidden&quot;/&gt;
+            &lt;file name=&quot;org-netbeans-modules-project-ui-OpenProject.shadow_hidden&quot;/&gt;
+            &lt;file name=&quot;org-netbeans-modules-project-ui-RecentProjects.shadow_hidden&quot;/&gt;
+            &lt;file name=&quot;org-netbeans-modules-project-ui-SetMainProject.shadow_hidden&quot;/&gt;
+            &lt;file name=&quot;org-netbeans-modules-project-ui-groups-GroupsMenu.shadow_hidden&quot;/&gt;
+        &lt;/folder&gt;
+        &lt;file name=&quot;Refactoring_hidden&quot;/&gt;
+        &lt;file name=&quot;RunProject_hidden&quot;/&gt;
+        &lt;folder name=&quot;Window&quot;&gt;
+            &lt;file name=&quot;ViewRuntimeTabAction.shadow_hidden&quot;/&gt;
+            &lt;file name=&quot;org-netbeans-modules-project-ui-logical-tab-action.shadow_hidden&quot;/&gt;
+            &lt;file name=&quot;org-netbeans-modules-project-ui-physical-tab-action.shadow_hidden&quot;/&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/filesystem&gt;</pre>
+</li>
+        </ol>
+        
+<!-- ===================================================================================== -->        
+        
+        <h2 class="tutorial"><a name="tweakingthewindowlayout"></a>Otimizando o layout da janela</h2>
+        <p>
+            utilizando o n&oacute; <tt>&lt;esta camada em contexto&gt;</tt>, &eacute; poss&iacute;vel n&atilde;o somente excluir itens existentes, mas tamb&eacute;m alterar seus conte&uacute;do. Por exemplo, o Editor HTML trabalha em arquivos HTML, sendo assim, ao contr&aacute;rio do IDE regular que trabalha com arquivos-fonte Java e projetos, faz sentido mostrar a janela <tt>Favoritos</tt> no layout inicial.
+        </p>
+        
+        <p>
+            A defini&ccedil;&atilde;o do layout da janela tamb&eacute;m &eacute; descrita como arquivos em camadas, tudo armazenado na pasta <tt>Janelas2</tt>. Os arquivos na pasta <tt>Janelas2</tt> s&atilde;o arquivos XML pseudo-leg&iacute;veis por humanos definidos pelas <a href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/org/openide/windows/doc-files/api.html">APIs do sistema de janelas</a>. Eles s&atilde;o complexos mas a boa not&iacute;cia &eacute; que, para fins do nosso Editor HTML, n&atilde;o &eacute; necess&aacute;rio compreend&ecirc;-los completamente, como mostrado abaixo.
+        </p>
+        
+        <ol><li>No seu n&oacute; <tt>&lt;esta camada em contexto&gt;</tt> do m&oacute;dulo de marca, consulte <tt>Windows2/Components</tt> e <tt>Windows2/Modes</tt> para ver os dois arquivos real&ccedil;ados abaixo e denominados &quot;favorites.settings&quot; e &quot;favorites.wstcref&quot;:
+
+        <p><img src="../images/tutorials/htmleditor/find-favorites2-61.png" alt="Localizando a janela Favoritos" /></p>
+    
+    <p>
+        O primeiro arquivo define a apar&ecirc;ncia do componente e como ele &eacute; criado. Como o componente n&atilde;o precisa ser alterado, n&atilde;o &eacute; necess&aacute;rio modificar o arquivo. O segundo &eacute; mais interessante para os seus prop&oacute;sitos, ele cont&eacute;m o seguinte:
+    </p>
+    <pre class="examplecode">
+&lt;tc-ref version=&quot;2.0&quot;&gt;
+    &lt;module name=&quot;org.netbeans.modules.favorites/1&quot; spec=&quot;1.1&quot; /&gt;
+    &lt;tc-id id=&quot;favorites&quot; /&gt;
+    &lt;state opened=&quot;false&quot; /&gt;
+&lt;/tc-ref&gt;</pre>    
+    </li>
+    <li>Embora a maior parte do XML seja criptografada, existe uma linha que parece promissora: sem precisar ler nenhum tipo de documenta&ccedil;&atilde;o, &eacute; prov&aacute;vel que alterar <tt>false</tt> para <tt>true</tt> tornar&aacute; o componente aberto por padr&atilde;o. Fa&ccedil;a isso agora.</li>
+    
+    <li>
+    De forma semelhante, &eacute; poss&iacute;vel alterar o arquivo <tt>CommonPalette.wstcref</tt> para que a paleta de componentes se abra por padr&atilde;o.</li>
+        </ol>
+    
+     
+        <p>Agora &eacute; poss&iacute;vel ver que o seu m&oacute;dulo de marca cont&eacute;m um novo arquivo, um para cada um dos arquivos que foram alterados. De fato, esses arquivos substituem aqueles que foram encontrados nas etapas anteriores. Esses arquivos foram registrados automaticamente no arquivo <tt>layer.xml</tt> do m&oacute;dulo.</p>
+
+<!-- ===================================================================================== -->     
+     
+        <h2 class="tutorial"><a name="tweakingthefavorites"></a>Otimizando a janela Favoritos</h2>
+        <p>
+            Na subpasta de uma pasta de <tt>marca</tt> projeto de aplicativo da Plataforma NetBeans, que esteja vis&iacute;vel na janela Arquivos, &eacute; poss&iacute;vel substituir as strings definidas nos c&oacute;digos-fonte do NetBeans. Nesta se&ccedil;&atilde;o, voc&ecirc; substituir&aacute; as strings que definem os r&oacute;tulos utilizados na janela Favoritos. Por exemplo, alteraremos o r&oacute;tulo &quot;Favoritos&quot; para &quot;Arquivos HTML&quot;, pois usaremos essa janela especificamente para arquivos HTML.
+        </p>
+        
+        <ol><li>Abra a janela Arquivos e expanda a pasta de <tt>marca</tt> do projeto de aplicativo da Plataforma NetBeans.</li>
+            <li>Crie uma nova estrutura de pastas em <tt>marca/m&oacute;dulos</tt>. (No IDE, voc&ecirc; pode criar pastas clicando com o bot&atilde;o direito do mouse em uma pasta e escolhendo Nova | Outro e depois escolhendo Pasta da categoria Outro). A nova pasta deve se chamar <tt>org-netbeans-modules-favorites.jar</tt>. Dentro dessa pasta, crie uma hierarquia de pastas <tt>org/netbeans/m&oacute;dulos/favoritos</tt>. Dentro da pasta final, por exemplo, <tt>favoritos</tt>, crie um novo arquivo <tt>Bundle.properties</tt>:
+
+                <p><img src="../images/tutorials/htmleditor/favorites-branding-61a.png" alt="Marcando a janela Favoritos" /></p>
+
+                <p>Essa estrutura de pastas e arquivo de propriedades correspondem &agrave;
+estrutura de pastas nos c&oacute;digos-fonte do NetBeans relacionados &agrave; janela Favoritos.</p></li>
+            <li>Adicione as strings mostradas na captura de tela abaixo para substituir as mesmas strings definidas no arquivo de propriedades correspondentes nos c&oacute;digos-fonte da janela Favoritos:
+             
+             <p><img src="../images/tutorials/htmleditor/favorites-branding-61b.png" alt="Marcando a janela Favoritos" /></p>
+     
+                <p>Para simplificar esta etapa, copie e cole as strings definidas acima:</p>
+            
+<pre>Favorites=HTML Files
+ACT_AddOnFavoritesNode=&amp;Find HTML Files...
+ACT_Remove=&amp;Remove from HTML Files List
+ACT_View=HTML Files
+ACT_Select=HTML Files
+ACT_Select_Main_Menu=Select in HTML Files List
+
+# JFileChooser
+CTL_DialogTitle=Add to HTML Files List
+CTL_ApproveButtonText=Add
+ERR_FileDoesNotExist={0} does not exist.
+ERR_FileDoesNotExistDlgTitle=Add to HTML Files List
+MSG_NodeNotFound=The document node could not be found in the HTML Files List.</pre></li>
+            </ol>
+            
+            <p>Depois, quando voc&ecirc; iniciar o aplicativo, ver&aacute; que os textos e r&oacute;tulos na janela Favoritos foram alterados para os listados acima. Isso ilustra que &eacute; poss&iacute;vel pegar um componente da Plataforma NetBeans e marc&aacute;-lo para atender as suas necessidades.</p>
+            <!-- ===================================================================================== -->     
+     
+        <h2 class="tutorial"><a name="runningtheapplication"></a>Executando o aplicativo</h2>
+        <p>
+            Executar o seu aplicativo &eacute; t&atilde;o simples quanto clicar com o bot&atilde;o direito do mouse no n&oacute; do projeto e escolher um item de menu.
+        </p>
+        
+        <ol>
+        <li>Clique com o bot&atilde;o direito do mouse no n&oacute; do projeto do aplicativo e escolha Limpar e Construir tudo.</li>
+        <li>Clique com o bot&atilde;o direito do mouse no n&oacute; do projeto de aplicativo e escolha Executar:</li>
+            <li>Depois que a aplica&ccedil;&atilde;o &eacute; implantada, &eacute; poss&iacute;vel clicar com o bot&atilde;o direito do mouse dentro da janela Favoritos e escolher uma pasta contendo arquivos HTML e, em seguida, abrir um arquivo HTML, como mostrado abaixo:
+        
+            <p><img src="../images/tutorials/htmleditor/html-editor-65.png" alt="Abrir arquivo HTML" /></p></li>
+    </ol>
+            <p>Voc&ecirc; agora possui um Editor HTML completo, em funcionamento, que foi criado sem digitar uma &uacute;nica linha de c&oacute;digo Java.</p>
+        
+        <!-- ===================================================================================== -->     
+     
+        
+           <!-- ===================================================================================== -->     
+     
+        <h2 class="tutorial"><a name="distributingtheapplication"></a>Distribuindo o aplicativo</h2>
+        <p>
+            Escolha uma das duas abordagens para distribuir o aplicativo. Se voc&ecirc; desejar manter o m&aacute;ximo controle poss&iacute;vel sobre o aplicativo, utilize o web start (JNLP) para distribuir o aplicativo na Web. Neste cen&aacute;rio, sempre que voc&ecirc; desejar atualizar o aplicativo, gerar&aacute; fazer isso localmente e permitir que os usu&aacute;rios finais saibam sobre a atualiza&ccedil;&atilde;o, que estar&aacute; dispon&iacute;vel automaticamente para eles na pr&oacute;xima vez que iniciarem o aplicativo na Web. Alternativamente, distribua um arquivo ZIP contendo seu aplicativo. Os usu&aacute;rios finais ter&atilde;o, assim, o aplicativo completo localmente dispon&iacute;vel. Distribua ent&atilde;o as atualiza&ccedil;&otilde;es e os novos recursos atrav&eacute;s do mecanismo de atualiza&ccedil;&atilde;o, descrito abaixo.</p>
+            
+            
+        <h3 class="tutorial"><a name="zip"></a>Distribuindo o aplicativo atrav&eacute;s de um arquivo ZIP</h3>
+            <p> Para estender seu aplicativo, &eacute; necess&aacute;rio permitir que os usu&aacute;rios instalem m&oacute;dulos para aprimorar a funcionalidade do aplicativo. Para isso, seu aplicativo j&aacute; est&aacute; incorporando o Gerenciador de plug-in.
+        </p>
+        
+        
+        <ol>
+    <li>Escolha o item de menu Ferramentas | Plug-ins e instale alguns plug-ins &uacute;teis para o editor HTML. Navegue no <a href="http://plugins.netbeans.org/PluginPortal/">Portal plug-in</a> para localizar alguns que sejam adequados. &Eacute; desta mesma forma que os usu&aacute;rios finais atualizar&atilde;o sua instala&ccedil;&atilde;o local do aplicativo.</li>
+            
+            <li>Clique com o bot&atilde;o direito do mouse no n&oacute; do projeto do aplicativo e escolha Construir distribui&ccedil;&atilde;o de ZIP.</li>
+             
+
+            
+            <li>Na pasta <tt>dist</tt> (vis&iacute;vel na janela Arquivos), agora deve ser poss&iacute;vel visualizar um arquivo ZIP que pode ser expandido para exibi&ccedil;&atilde;o de seu conte&uacute;do:
+            
+            <p><img src="../images/tutorials/htmleditor/unzipped-app-61.png" alt="Arquivo ZIP gerado" /></p>
+            
+            <p><b class="notes">Nota:</b> o iniciador do aplicativo &eacute; criado na pasta <tt>bin</tt>, como mostrado acima.</p></li>
+        </ol>
+    
+  <!-- ======================================================================================== -->
+
+<h3><a name="webstart"></a>Distribuindo o editor HTML por meio do Reposit&oacute;rio Web Start compartilhado do NetBeans</h3>
+
+
+
+  <p>
+  Em vez de distribuir um arquivo ZIP, vamos nos preparar para uma distribui&ccedil;&atilde;o webstart ao efetuar o ajuste fino do arquivo <tt>master.jnlp</tt> que &eacute; gerado na primeira vez em que o aplicativo &eacute; iniciado atrav&eacute;s de &quot;Executar aplicativo JNLP&quot;. Embora ele fa&ccedil;a o trabalho, ele n&atilde;o est&aacute; pronto para distribui&ccedil;&atilde;o. &Eacute; necess&aacute;rio, pelo menos, alterar a se&ccedil;&atilde;o de informa&ccedil;&otilde;es para fornecer melhores descri&ccedil;&otilde;es e &iacute;cones.</p>
+    
+    <p>
+    Outra altera&ccedil;&atilde;o na infraestrutura JNLP padr&atilde;o &eacute; o uso de um reposit&oacute;rio JNLP compartilhado em www.netbeans.org. Como padr&atilde;o, o aplicativo JNLP gerado para um conjunto sempre cont&eacute;m todos os seus m&oacute;dulos, assim como os m&oacute;dulos do qual depende. Isso pode ser &uacute;til para uso de intranet, mas &eacute; um pouco menos pr&aacute;tico para uso amplo na Internet. Na Internet, &eacute; muito melhor se todos os aplicativos constru&iacute;dos na Plataforma NetBeans se referirem a um reposit&oacute;rio de m&oacute;dulos do NetBeans, o que significa que tais m&oacute;dulos s&atilde;o compartilhados e n&atilde;o precisam ser baixados mais de uma vez.
+    </p>
+    
+    <p>
+    Existe um reposit&oacute;rio como tal para NetBeans 6.1. Ele n&atilde;o cont&eacute;m todos os m&oacute;dulos que o NetBeans IDE possui, mas ele cont&eacute;m o suficiente para criar aplicativos n&atilde;o-IDE como o nosso editor HTML. Para utilizar o reposit&oacute;rio, &eacute; necess&aacute;rio somente modificar <tt>platform.properties</tt> adicionando a URL correta:
+    </p>
+<pre class="examplecode">
+# compartilhe as bibliotecas do reposit&oacute;rio comum no netbeans.org # este URL &eacute; para os arquivos JNLP vers&atilde;o65 JNLP:
+jnlp.platform.codebase=http://bits.netbeans.org/6.5/jnlp/
+</pre>    
+    <p>
+    Assim que o aplicativo &eacute; iniciado como um aplicativo JNLP, todos os seus m&oacute;dulos de plug-in compartilhados s&atilde;o carregados a partir de netbeans.org e compartilhados com os aplicativos que fazem o mesmo.</p>
+    
+     <!--========================================================================================-->
+     <p></p>
+    <div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20NetBeans%20Platform%20Quick%20Start%20Tutorial">Envie-nos seus coment&aacute;rios</a></div>
+      <!--========================================================================================-->
+
+    <h2><a name="nextsteps"></a>Veja tamb&eacute;m</h2>
+    
+    <p>Isto conclui o tutorial do Editor HTML do NetBeans. Para obter mais informa&ccedil;&otilde;es sobre a cria&ccedil;&atilde;o e o desenvolvimento de aplicativos na Plataforma NetBeans, consulte os seguintes recursos:</p>
+    <ul>
+        <li><a href="https://netbeans.org/kb/trails/platform_pt_BR.html">Outros tutoriais relacionados</a></li>
+        <li><a href="https://netbeans.org/download/dev/javadoc/">Javadoc da API da NetBeans </a></li>
+    </ul>
+    
+    <!-- ======================================================================================== -->
+    
+    
+</body>
+</html>

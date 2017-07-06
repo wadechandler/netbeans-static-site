@@ -1,0 +1,133 @@
+<html>
+<head>
+<title>Module Helpset Integration FAQs </title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+</head>
+<h1>Module Helpset Integration FAQs </h1>
+<ul>
+  <!--  <li><a href="#template">Is there a template for HTML help pages I can use?</a></li>-->
+  <li><a href="#csh">How do I hook up CSH for a dialog or UI element?</a> </li>
+  <li><a href="#separate">How do I link to a page in a separate helpset?</a> </li>
+  <li><a href="#merge">How do I merge helpsets?</a> </li>
+  <li><a href="#merge2">How do I merge into an existing TOC and index category?</a> 
+  </li>
+  <li><a href="#guidelines">Are there guidelines for creating TOC and Index entries?</a></li>
+  <li><a href="#guidelines">How do I create a glossary item in the help?</a></li>
+  <li><a href="#browser">How do I make a link to an external web page open in 
+    the IDE's external web browser?</a> </li>
+  <li><a href="#css">How do I link to the common CSS for the IDE?</a> </li>
+</ul>
+<!-- <h2><a name="template"></a>Is there a template for HTML help pages I can use? 
+</h2>
+<p>Sure is! Here's a few basic templates:</p>
+<ul>
+  <li> Procedure page [Coming soon] </li>
+  <li>Glossary page [Coming soon]</li>
+</ul>
+<p>NetBeans also provides the following pages for each major area of functionality:</p>
+<ul>
+  <li> Working with [Coming soon] </li>
+  <li>Task Quick Reference [Coming soon]</li>
+</ul>-->
+<h2><a name="csh"></a>How do I hook up CSH for a dialog or UI element? </h2>
+<p>See this document: <a href="https://netbeans.org/download/4_1/javadoc/JavaHelpAPI/org/netbeans/api/javahelp/doc-files/help-guide.html">http://www.netbeans.org/download/41/javadoc/JavaHelpAPI/org/netbeans/api/javahelp/doc-files/help-guide.html</a></p>
+<h2><a name="separate"></a>How do I link to a page in a separate helpset? </h2>
+<p>The best way is using the following syntax:</p>
+<pre class="examplecode"> &lt;a href=&quot;nbdocs://<i>module_name</i>/<i>path_to_page_from_javahelp_directory</i>&quot;&gt;  </pre>
+<p>Example: </p>
+<pre class="examplecode">&lt;a href=&quot;nbdocs://org.netbeans.modules.db/org/netbeans/modules/db/docs/connectdb.html&quot;&gt;Connecting
+to a Database&lt;/a&gt;&lt;br&gt;</pre>
+<p>The module name should be the name of the module containing the helpset. The 
+  name is listed in the <tt>OpenIDE-Module</tt> property of the module's JAR file. 
+  When you use this format, the IDE displays an error message if the module is 
+  not installed. Otherwise broken inter-helpset links do not do anything in the 
+  IDE.</p>
+<p>If you know that the module helpset will always be installed (i.e., usersguide 
+  helpset) you can use the simple form:</p>
+<pre class="examplecode"> &lt;a href=&quot;nbdocs:/path_from_javahelp_dir&quot;&gt; Example: &lt;a href=&quot;nbdocs:/org/netbeans/modules/db/docs/connectdb.html&quot;&gt;</pre>
+<h2><a name="merge"></a>How do I merge helpsets? </h2>
+<p>Helpsets are merged automatically by the IDE's master helpset. You don't need 
+  to specify mergetypes for the views of your helpset.</p>
+<h2><a name="merge2"></a>How do I merge into an existing TOC and index category? 
+</h2>
+<p>In your TOC file, copy the TOC category structure exactly as it exists in the 
+  usersguide module TOC file (<a href="https://netbeans.org/source/browse/usersguide/javahelp/org/netbeans/modules/usersguide/ide-toc.xml">http://www.netbeans.org/source/browse/usersguide/javahelp/org/netbeans/modules/usersguide/ide-toc.xml</a>). 
+  Then place your listing in the desired category.</p>
+<p>For example, say you wanted to list a help file under the Java Project Basics 
+  -&gt; Building Java Applications category. You would enter the following in 
+  your TOC file:</p>
+<pre><span class="examplecode">   &lt;?xml version='1.0' encoding='ISO-8859-1'  ?&gt;
+   &lt;!DOCTYPE toc PUBLIC "-//Sun Microsystems Inc.//DTD JavaHelp TOC Version 2.0//EN"
+            "http://java.sun.com/products/javahelp/toc_2_0.dtd"&gt;
+   
+   &lt;toc version="2.0"&gt;
+      &lt;tocitem text="Java Project Basics"&gt;
+          &lt;tocitem text="Building Java Applications"&gt;
+              &lt;tocitem text="My Help File" target="my_target" /&gt; 
+          &lt;/tocitem&gt;
+      &lt;/tocitem&gt;
+   &lt;/toc&gt;
+</span></pre>
+&quot;My Help File&quot; would get merged in at the end of the topics in the category. 
+<p>The same technique works for indexing. To merge into the &quot;databases&quot; 
+  index category, do the following:</p>
+<pre class="examplecode">&lt;indexitem text=&quot;databases&quot; &gt; 
+    &lt;indexitem text=&quot;MyCoolDB, connecting to&quot; target=&quot;connectMyCool&quot; /&gt;
+&lt;/indexitem&gt;</pre>
+<h2><a name="guidelines"></a>Are there guidelines for creating TOC and Index entries?</h2>
+<ul>
+  <li> If possible, try to merge your helpset into the existing TOC categories 
+    and index categories. For example, if you are developing a server plugin, 
+    merge it into the Servers and Databases &gt; Servers category. </li>
+  <li>In general, put all of your topics into a TOC category. There should never 
+    be individual topic entries as first-level entries in the TOC. </li>
+  <li>Don't have your category nodes linked to a topic. If there is a general 
+    intro topic for your section, put it as an About page underneath. 
+    <p>WRONG</p>
+    <pre class="examplecode"> &lt;tocitem text=&quot;My Cool Plug-in&quot; target=&quot;myCoolPlugin&quot;&gt;    ... &lt;/tocitem&gt;</pre>
+    <p>RIGHT:</p>
+    <pre class="examplecode"> &lt;tocitem text=&quot;My Cool Plug-in&quot; &gt; &lt;tocitem    text=&quot;About My Cool Plug-in&quot; target=&quot;myCoolPlugin&quot; /&gt;    ... &lt;/tocitem&gt;</pre>
+  </li>
+</ul>
+<h2><a name="glossary"></a>How do I create a glossary item in the help?</h2>
+<p>Create the glossary page. The page should have an <tt>&lt;h6&gt;</tt> title 
+  in lower case capitalization, for example:</p>
+<pre class="examplecode">  &lt;h6&gt;standard project&lt;/h6&gt; 
+  &lt;p&gt;A project that uses an IDE-generated Ant script to compile, run, and debug...</pre>
+<p>Note: Glossary topics shouldn't be listed in the Table of Contents.</p>
+<p>Use the following syntax to link to the glossary page:</p>
+<pre class="examplecode">      &lt;object classid="java:com.sun.java.help.impl.JHSecondaryViewer"&gt;
+         &lt;!-- Enter the link to the glossary page below--&gt;
+          &lt;param name="content" value="../project/csh/glossary_standard.html"&gt;
+          &lt;param name="viewerActivator" value="javax.help.LinkLabel"&gt;
+          &lt;param name="viewerStyle" value="javax.help.Popup"&gt;
+          &lt;param name="viewerSize" value="400,220"&gt;
+         &lt;!-- Enter the display text below--&gt;
+         &lt;param name="text" value="standard Java project"&gt;
+          &lt;param name="textFontSize" value="small"&gt;
+          &lt;param name="textFontFamily" value="SansSerif"&gt;
+          &lt;param name="textFontStyle" value="italic"&gt;
+          &lt;param name="textFontWeight" value="bold"&gt;
+          &lt;param name="textColor" value="blue"&gt;
+      &lt;/object&gt;</pre>
+<h2><a name="browser"></a>How do I make a link to an external web page open in 
+  the IDE's external web browser? </h2>
+<p>Use the following syntax:</p>
+<pre class="examplecode">      &lt;object classid="java:org.netbeans.modules.javahelp.BrowserDisplayer"&gt;
+         &lt;!-- Enter the URL below --&gt;
+          &lt;param name="content" value="https://netbeans.org/kb/41/freeform-config.html"&gt;
+          &lt;!-- Enter the display text below. The &lt;html&gt; and &lt;u&gt; make the text look like a link. --&gt;
+          &lt;param name="text" value="&lt;html&gt;&lt;u&gt;https://netbeans.org/kb/41/freeform-config.html&lt;/u&gt;&lt;/html&gt;"&gt;
+          &lt;param name="textFontSize" value="medium"&gt;
+          &lt;param name="textColor" value="blue"&gt;
+      &lt;/object&gt;</pre>
+<p>Note: When you view the page outside of NetBeans, this link will not display 
+  or will display as a <tt>???</tt></p>
+<h2><a name="css"></a>How do I link to the common CSS for the IDE? </h2>
+<p>Each helpset should use the <tt>ide.css</tt> that is included in the usersguide 
+  module. Linking to the common CSS lets vision-impaired users make changes to 
+  the help font and backgroung colors. Use the following link in your HTML pages:</p>
+<pre class="examplecode"> &lt;link rel=&quot;StyleSheet&quot; href=&quot;nbdocs:/org/netbeans/modules/usersguide/ide.css&quot; type=&quot;text/css&quot;&gt; </pre>
+</body>
+</html>

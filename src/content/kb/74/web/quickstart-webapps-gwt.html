@@ -1,0 +1,1033 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <meta name="author" content="geertjan.wielenga@sun.com, troy.giunipero@sun.com">
+        <meta name="description" content="A short guide to using the Google Web Toolkit in NetBeans IDE">
+        <meta name="keywords" content="NetBeans, IDE, integrated development environment,
+            GWT, Google Web Toolkit, framework, frameworks, web application">
+
+        <link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+        <link rel="stylesheet" type="text/css" href="../../../lytebox.css" media="screen">
+        <script type="text/javascript" src="../../../images_www/js/lytebox-compressed.js"></script>
+
+        <title>Introduction to the Google Web Toolkit Framework - NetBeans IDE Tutorial</title>
+    </head>
+
+    <body>
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+
+        <h1>Introduction to the Google Web Toolkit Framework</h1>
+
+        <p>Google Web Toolkit (GWT) is an open source web development framework that allows
+            developers to easily create high-performance AJAX applications using Java. With GWT, you
+            are able to write your front end in Java, and it compiles your source code into highly optimized,
+            browser-compliant JavaScript and HTML. &quot;Writing web apps today is a tedious and error-prone
+            process. You spend 90% of your time working around browser quirks, and JavaScript's lack
+            of modularity makes sharing, testing, and reusing AJAX components difficult and fragile.
+            It doesn't have to be that way,&quot; reads the <a href="http://code.google.com/webtoolkit/">Google
+            Web Toolkit site</a>.</p>
+
+        <p>In this tutorial, you learn how the above principles are applied to real applications. At
+            the same time, you are introduced to NetBeans IDE's support for GWT and you build a simple
+            application that makes use of some of these features.</p>
+
+        <p><strong>Contents</strong></p>
+
+        <p><img src="../../../images_www/articles/71/netbeans-stamp-71-72-73.png" class="stamp"
+            title="Content on this page applies to NetBeans IDE 6.x-7.0" width="114" height="114"
+            alt="Content on this page applies to NetBeans IDE 6.x-7.0"/></p>
+
+        <ul class="toc">
+            <li><a href="#setup">Setting Up the Environment</a>
+                <ul>
+                    <li><a href="#creating">Creating the Source Structure of a GWT Application</a>
+                    <li><a href="#examining">Examining the Source Structure of a GWT Application</a>
+                </ul></li>
+            <li><a href="#random-quote">Creating an AJAX Random Quote Generator</a>
+                <ul>
+                    <li><a href="#generating-stubs">Generating the Service Stubs</a>
+                    <li><a href="#examining-stubs">Examining the Generated Classes</a>
+                    <li><a href="#extending-stubs">Extending the Generated Classes</a>
+                    <li><a href="#customizing">Customizing the Appearance</a>
+                </ul></li>
+            <li><a href="#compile-debug">Compiling and Debugging</a></li>
+            <li><a href="#conclusion">Conclusion</a></li>
+            <li><a href="#seeAlso">See Also</a></li>
+        </ul>
+
+        <p><strong>To complete this tutorial, you need the following software and resources.</strong></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Software or Resource</th>
+                    <th class="tblheader" scope="col">Version Required</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans
+                        IDE, Java bundle</a></td>
+                    <td class="tbltd1">version 6.x</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java
+                        Development Kit (JDK)</a></td>
+                    <td class="tbltd1">version 5 or more recent</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1">GlassFish server
+                        <br><em class="indent margin-around">or</em>
+                        <br>Tomcat servlet container</td>
+                    <td class="tbltd1">v3 or Open Source Edition 3.0.1
+                        <br><em class="margin-around indent">&nbsp;</em>
+                        <br>version 6.x</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://code.google.com/webtoolkit/">Google Web Toolkit (GWT)</a></td>
+                    <td class="tbltd1">version 1.5 or more recent</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://gwt4nb.dev.java.net/">NetBeans GWT plugin</a></td>
+                    <td class="tbltd1">version 2.x</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong class="notes">Notes:</strong></p>
+
+        <ul>
+            <li>The application in this tutorial will not deploy to GlassFish 4 due to
+                an incompatibility with JavaEE 7/CDI 1.1. For more details, see
+                the following issue: <a href="http://code.google.com/p/google-web-toolkit/issues/detail?id=8590">Issue 8590: Guava 15 is incompatible with CDI</a>.</li>
+            <li>The Java download bundle enables you to optionally install the GlassFish server 
+                and the Apache Tomcat servlet container 6.0.x. You must install one of these
+                to work through this tutorial.</li>
+
+            <li>Rather than downloading the NetBeans GWT plugin from <a href="http://gwt4nb.dev.java.net/">http://gwt4nb.dev.java.net/</a>,
+                you can download and install it directly through the IDE's Plugin Manager. Choose
+                Tools &gt; Plugins from the main menu and install the plugin, as shown below:
+
+                <br>
+                <img src="../../../images_www/articles/72/web/gwt/plugin-manager.png"
+                    title="GWT plugin displayed in the Plugin Manager" class="margin-around b-all"
+                    alt="GWT plugin displayed in the Plugin Manager">
+
+                <br>
+                For more detailed instructions on how to install a framework plugin in the IDE, see:
+                <a href="../../docs/web/framework-adding-support.html">Adding Support For A Web Framework</a>.</li>
+
+            <li>You can <a href="https://netbeans.org/projects/samples/downloads/download/Samples%252FJava%2520Web%252FHelloGWT.zip">download
+                a sample working application</a> for this tutorial, as well as
+                <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=4537">other
+                applications</a> using GWT.</li>
+
+            <li>For more information on GWT, see <a href="http://code.google.com/webtoolkit/">http://code.google.com/webtoolkit/</a>.
+                For details on support for GWT in the IDE, see <a href="http://gwt4nb.dev.java.net/">http://gwt4nb.dev.java.net/</a>.
+                If you are familiar with GWT, you are welcome to contribute code to the GWT plugin project.</li>
+
+            <li>This tutorial follows some of the examples introduced in
+                &quot;<a href="http://www.packtpub.com/google-web-toolkit-GWT-Java-AJAX/book">Google Web Toolkit: GWT Java AJAX Programming</a>&quot;,
+                by Prabhakar Chaganti, published by <a href="http://www.packtpub.com/">Packt Publishing</a>, February 2007.</li>
+        </ul>
+
+
+        <br>
+        <h2 id="setup">Setting Up the Environment</h2>
+
+        <p>Begin by using the IDE to generate a basic source structure. Once you have it, you can study
+            it in some detail in order to understand the inner workings of GWT.</p>
+
+        <ul>
+            <li><a href="#creating">Creating the Source Structure of a GWT Application</a>
+            <li><a href="#examining">Examining the Source Structure of a GWT Application</a>
+        </ul>
+
+        <div class="indent">
+
+            <h3 id="creating">Creating the Source Structure of a GWT Application</h3>
+
+            <p>The source structure of the application you create must include the GWT JAR files, the
+                GWT module project configuration file, as well as some standard artifacts such as the
+                Java entry point. Since you are using an IDE, you should not need to manually create
+                all these files. Instead, let a wizard do the work for you. Specifically, the final
+                panel of the New Web Application wizard is very useful in the context of creating a
+                GWT application.</p>
+
+            <ol>
+                <li>Choose File &gt; New Project (Ctrl-Shift-N; &#8984-Shift-N on Mac). Under Categories,
+                    select Web (or Java Web). Under Projects, select Web Application. Click Next.</li>
+
+                <li>In step 2, Name and Location, type <code>HelloGWT</code> in Project Name. You can
+                    also specify the location of the project by typing in a path on your computer in
+                    Project Location field. Click Next.</li>
+
+                <li>In the Server and Settings step, select any server that you have registered in the
+                    IDE. If you included Tomcat or the GlassFish server when installing the IDE, they
+                    display in the drop-down list.
+
+                    <br><br>
+                    <span class="tips">To register a server in the IDE, click the Add button to open
+                        a wizard that guides you through the registration process.</span></li>
+
+                <li>Specify the Java version you are using. Click Next.
+
+                    <p><strong class="notes">Note: </strong>This tutorial supports GWT version 1.5 and
+                        higher. GWT 1.4 does not support Java EE 5, so if you are using this version you
+                        must also set the Java EE Version to 1.4. Otherwise, for example, Java EE 5
+                        annotations will cause compilation errors.</p></li>
+
+                <li>In the Frameworks step, select GWT.
+
+                    <br>
+                    <img src="../../../images_www/articles/72/web/gwt/frameworks-panel.png"
+                         title="GWT listed in Frameworks panel of New Project wizard"
+                         alt="GWT listed in Frameworks panel of New Project wizard"
+                         class="margin-around b-all">
+
+                    <br>
+                    When you select the GWT framework, the following fields become available:
+
+                    <ul>
+                        <li><strong>GWT Installation Folder</strong>: Specify the path to the folder where
+                            you downloaded the Google Web Toolkit at the start of this tutorial. If an incorrect
+                            path is specified, a red error message displays and you are not able to complete
+                            the wizard.</li>
+
+                        <li><strong>GWT Module</strong>: Specifies the name and location of the project module
+                            that the IDE will generate when you complete the wizard. The project module is
+                            an XML file that configures a GWT application. For example, it is used to specify
+                            the class instantiated by GWT when the module is loaded. Note that this field
+                            in the wizard also determines the main package of the application. By default,
+                            the main package is <code>org.yournamehere</code> and the project module is
+                            <code>Main</code>. For purposes of this tutorial, leave the default entries
+                            unchanged.</li>
+                    </ul></li>
+
+                <li>Click Finish. The IDE creates the <code>HelloGWT</code> project. The project contains
+                    all of your sources, libraries, and project metadata, such as the project's Ant build
+                    script. The project opens in the IDE. You can view its file structure in the Files
+                    window (Ctrl-2; &#8984-2 on Mac) and its logical structure in the Projects window
+                    (Ctrl-1; &#8984-1 on Mac).
+
+                    <br>
+                    <img src="../../../images_www/articles/72/web/gwt/projects-win-init.png"
+                        class="margin-around" alt="Projects window displaying HelloGWT project"
+                        title="Projects window displays HelloGWT project"></li>
+
+                <li>In the Projects window, right-click the project node and choose Run. The application is
+                    built and a web archive (WAR) is created. It is deployed to the server. The server starts,
+                    if it is not running already. Your computer's default browser opens and the welcome page
+                    of the application is displayed.
+
+                    <br>
+                    <img src="../../../images_www/articles/72/web/gwt/hello-gwt.png"
+                         alt="Hello GWT message displayed in browser" class="margin-around b-all"
+                         title="Hello GWT message displays in browser">
+
+                    <br>
+                    Click the button and the text below it disappears.
+
+                    <br>
+                    <img src="../../../images_www/articles/72/web/gwt/click-me.png" alt="Text below button disappears"
+                    title="Text below button disappears" class="margin-around b-all"></li>
+            </ol>
+
+            <p>In the next section, you explore each of the generated files in detail and examine how the
+                simple application above was created.</p>
+
+
+            <h3 id="examining">Examining the Source Structure of a GWT Application</h3>
+
+            <p>The IDE's New Web Application wizard created several source files. Take a look at the files
+                and see how they relate to each other within the context of a GWT application.</p>
+
+            <ul>
+                <li><strong><code>Main.gwt.xml</code></strong>: The project module XML file, contained in the project's
+                    root package, is an XML file that holds the complete application configuration needed
+                    by a GWT project. The default project module generated by the wizard looks as follows:
+
+<pre class="examplecode">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;module&gt;
+        &lt;inherits name=&quot;com.google.gwt.user.User&quot;/&gt;
+        &lt;entry-point class=&quot;org.yournamehere.client.MainEntryPoint&quot;/&gt;
+        &lt;!-- Do not define servlets here, use web.xml --&gt;
+&lt;/module&gt;</pre>
+
+                    <p>The elements in the default project module are as follows:</p>
+
+                    <ul>
+                        <li><code><strong>inherits</strong></code>: Specifies modules inherited by this module.
+                            In this simple case, we only inherit the functionality provided by the <code>User</code>
+                            module, which is built into the GWT framework. When your application becomes more
+                            complex, module inheritance lets you reuse pieces of functionality in a quick and
+                            efficient way.</li>
+                        <li><code><strong>entry-point</strong></code>: Refers to the class that will be instantiated
+                            by the GWT framework when the module is loaded.</li>
+                    </ul>
+
+                    <strong class="notes">Note: </strong>For more information, see:
+                    <a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideOrganizingProjects.html#DevGuideModuleXml">Organizing Projects: Module XML Files</a>.</li>
+
+                <li><strong><code>MainEntryPoint.java</code></strong>: The class designating the application's
+                    main entry point, as specified in <code>Main.gwt.xml</code>. It extends the
+                    <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/core/client/EntryPoint.html"><code>EntryPoint</code></a>
+                    class, and when the GWT module is loaded by the framework, this class is instantiated and
+                    its <code>onModuleLoad()</code> method is automatically called. The default entry point
+                    generated by the wizard looks as follows.
+
+<pre class="examplecode">package org.yournamehere.client;
+
+import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.ClickListener;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.Widget;
+
+public class MainEntryPoint implements EntryPoint {
+
+    /** Creates a new instance of MainEntryPoint */
+    public MainEntryPoint() {
+    }
+
+    /**
+        The entry point method, called automatically by loading a module
+        that declares an implementing class as an entry-point
+    */
+    public void onModuleLoad() {
+        final Label label = new Label(&quot;Hello, GWT!!!&quot;);
+        final Button button = new Button(&quot;Click me!&quot;);
+
+        button.addClickListener(new ClickListener(){
+            public void onClick(Widget w) {
+                label.setVisible(!label.isVisible());
+            }
+        });
+
+        RootPanel.get().add(button);
+        RootPanel.get().add(label);
+    }
+
+}</pre>
+
+                    In the above snippet, <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/core/client/EntryPoint.html"><code>EntryPoint</code></a>'s
+                    default <code>onModuleLoad()</code> method adds the following components to the application:
+
+                    <ul>
+                        <li><code><strong>Label</strong></code>: A new GWT
+                            <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/Label.html"><code>Label</code></a>
+                            is created, displaying the text, '<code>Hello, GWT!!!</code>'. The label is added to
+                            the <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/RootPanel.html"><code>RootPanel</code></a> by means
+                            of the final line of code, <code>RootPanel.get().add(label)</code>.</li>
+
+                        <li><code><strong>Button</strong></code>: A new GWT <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/Button.html"><code>Button</code></a>
+                            is created, displaying the text, '<code>Click me!</code>' together with a button listener,
+                            implemented by <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/ClickListener.html"><code>ClickListener</code></a>.
+                            The button listener specifies that when a button is clicked, the label is hidden.
+
+                            <pre class="examplecode">public void onClick(Widget w) {
+    label.setVisible(!label.isVisible());
+}</pre>
+                            The button is added to the
+                            <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/RootPanel.html"><code>RootPanel</code></a>
+                            by means of the penultimate line of code.
+
+                            <pre class="examplecode">RootPanel.get().add(button)</pre></li>
+                    </ul></li>
+
+                <li><strong><code>welcomeGWT.html</code></strong>: The generated HTML host page, which is
+                    the designated welcome file for the application. The <code>web.xml</code> file uses the
+                    <code>welcome-file</code> element to specify that the host page is the initial page
+                    displayed in the browser when the application is deployed. The host page references
+                    the path to the JavaScript source code, and can reference the application stylesheet.
+                    The default host page generated by the wizard looks as follows:
+
+<pre class="examplecode">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot;&gt;
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;meta name='gwt:module' content='org.yournamehere.Main=org.yournamehere.Main'&gt;
+        &lt;title>Main&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;script language=&quot;javascript&quot; src=&quot;org.yournamehere.Main/org.yournamehere.Main.nocache.js&quot;&gt;&lt;/script&gt;
+    &lt;/body&gt;
+&lt;/html&gt;</pre>
+
+                    The <code>meta</code> and <code>script</code> tags in the above snippet hold special
+                    significance for GWT:
+
+                    <ul>
+                        <li><code><strong>meta</strong></code>: Points to the application's project directory.
+                            This tag provides the link between the HTML page and the application.</li>
+
+                        <li><code><strong>script</strong></code>: Imports code from the GWT framework's JavaScript
+                            file. This file contains the code required to bootstrap the GWT framework. It
+                            uses the configuration in the project module and then dynamically loads the JavaScript
+                            created by compiling the entry point to present the application. The JavaScript
+                            file is generated by the GWT framework when you run the application in hosted
+                            mode or when you compile the application.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+
+        <br>
+        <h2 id="random-quote">Creating an AJAX Random Quote Generator</h2>
+
+        <p>In this section, you display a random quote on the web page. This example application familiarizes
+            you with the various components of a GWT application. The random quote is to be selected from
+            a list of quotes stored on the server. Every second the application retrieves the random quote
+            provided by the server and displays it on the web page in true AJAX style, that is, without the
+            user needing to refresh the page.</p>
+
+        <p>In the process of creating this functionality, you make use of a GWT RPC
+            (<a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideServerCommunication.html#DevGuideRemoteProcedureCalls">Remote
+            Procedure Call</a>) service.</p>
+
+        <ul>
+            <li><a href="#generating-stubs">Generating the Service Stubs</a>
+            <li><a href="#examining-stubs">Examining the Generated Classes</a>
+            <li><a href="#extending-stubs">Extending the Generated Classes</a>
+            <li><a href="#customizing">Customizing the Appearance</a>
+        </ul>
+
+        <div class="indent">
+
+            <h3 id="generating-stubs">Generating the Service Stubs</h3>
+
+            <p>The NetBeans GWT plugin provides a wizard for creating an
+                <a href="http://code.google.com/docreader/#p=google-web-toolkit-doc-1-5&s=google-web-toolkit-doc-1-5&t=DevGuideRemoteProcedureCalls">RPC</a>
+                service. The wizard generates the basic service classes for you. This subsection
+                introduces the GWT RPC Service wizard.</p>
+
+            <ol>
+                <li>Click the New File ( <img src="../../../images_www/articles/72/web/gwt/new-file-icon.png"
+                    alt="New File icon"> ) icon in the IDE's main toolbar. In the New File wizard,
+                    the Google Web Toolkit category shows a file template named GWT RPC Service.
+
+                    <br>
+                    <img src="../../../images_www/articles/72/web/gwt/gwt-service.png"
+                         alt="First panel of the GWT RPC Service wizard" class="margin-around b-all"
+                         title="First panel of the GWT RPC Service wizard">
+
+                    <br>
+                    Select GWT RPC Service and click Next.
+
+                <li>Optionally, fill in a subpackage where the files that will be generated will be stored.
+                    For purposes of this tutorial, type <code>sampleservice</code> as the Subpackage field.
+
+                    <br>
+                    <img src="../../../images_www/articles/72/web/gwt/gwt-service2.png" id="usageExample"
+                         alt="Second panel of GWT RPC Service wizard" class="margin-around b-all"
+                         title="Second panel of GWT RPC Service wizard">
+
+                    <br>
+                    <strong class="notes">Note: </strong>By leaving the Create Usage Example Class option
+                    selected in this step, you allow the IDE to generate the <a href="#GWTServiceUsageExample"><code>GWTServiceUsageExample</code></a>
+                    class, which can be used to invoke the service.
+
+                <li>Click Finish. The files listed in the New GWT RPC Service wizard (shown in the above image)
+                    are generated, and the Projects window automatically updates to reflect changes.
+
+                    <br>
+                    <img class="margin-around" src="../../../images_www/articles/72/web/gwt/projects-window.png"
+                     alt="Projects window updates containing newly-created files"
+                     title="Projects window updates containing newly-created files">
+                </li>
+            </ol>
+
+
+            <h3 id="examining-stubs">Examining the Generated Classes</h3>
+
+            <p>The GWT RPC Service wizard creates several source files. Here, look at the files and
+                see how they relate to each other within the context of a GWT service.</p>
+
+            <p class="tip">For an extended description of GWT service classes, see
+                <a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideServerCommunication.html#DevGuideCreatingServices">Creating Services</a>.</p>
+
+            <ul>
+                <li><a name="GWTService"></a><code><strong>GWTService</strong></code>: The
+                    client-side definition of the service. This interface extends the
+                    <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/rpc/RemoteService.html">RemoteService</a>
+                    tag interface.
+
+<pre class="examplecode">
+package org.yournamehere.client.sampleservice;
+
+import com.google.gwt.user.client.rpc.RemoteService;
+import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
+
+@RemoteServiceRelativePath(&quot;sampleservice/gwtservice&quot;)
+public interface GWTService extends RemoteService {
+    public String myMethod(String s);
+}</pre></li>
+
+                <li><a name="GWTServiceImpl"></a><code><strong>GWTServiceImpl</strong></code>: The servlet
+                    that implements the <code>GWTService</code> interface and provides the functionality for
+                    retrieving a random quote via RPC.
+
+<pre class="examplecode">
+package org.yournamehere.server.sampleservice;
+
+import com.google.gwt.user.server.rpc.RemoteServiceServlet;
+
+import org.yournamehere.client.sampleservice.GWTService;
+
+public class GWTServiceImpl extends RemoteServiceServlet implements GWTService {
+
+    public String myMethod(String s) {
+        // Do something interesting with 's' here on the server.
+        return &quot;Server says: &quot; + s;
+    }
+
+}</pre></li>
+
+                <li><a name="GWTServiceAsync"></a><code><strong>GWTServiceAsync</strong></code>: An
+                    asynchronous interface, which is based on the original <code>GWTService</code>
+                    interface. It provides a callback object that enables the asynchronous communication
+                    between server and client.
+
+<pre class="examplecode">
+package org.yournamehere.client.sampleservice;
+
+import com.google.gwt.user.client.rpc.AsyncCallback;
+
+public interface GWTServiceAsync {
+    public void myMethod(String s, AsyncCallback&lt;String&gt; callback);
+}</pre></li>
+
+                <li><a name="GWTServiceUsageExample"></a><code><strong>GWTServiceUsageExample</strong></code>:
+                    The sample user interface generated as a test client. It can be used to invoke the service.
+
+<pre class="examplecode">
+package org.yournamehere.client.sampleservice;
+
+import com.google.gwt.core.client.GWT;
+
+import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.rpc.ServiceDefTarget;
+
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.Widget;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.VerticalPanel;
+
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
+
+public class GWTServiceUsageExample extends VerticalPanel {
+    private Label lblServerReply = new Label();
+    private TextBox txtUserInput = new TextBox();
+    private Button btnSend = new Button(&quot;Send to server&quot;);
+
+    public GWTServiceUsageExample() {
+        add(new Label(&quot;Input your text: &quot;));
+        add(txtUserInput);
+        add(btnSend);
+        add(lblServerReply);
+
+        // Create an asynchronous callback to handle the result.
+        final AsyncCallback&lt;String&gt; callback = new AsyncCallback&lt;String&gt;() {
+            public void onSuccess(String result) {
+                lblServerReply.setText(result);
+            }
+
+            public void onFailure(Throwable caught) {
+                lblServerReply.setText(&quot;Communication failed&quot;);
+            }
+        };
+
+        // Listen for the button clicks
+        btnSend.addClickHandler(new ClickHandler(){
+            public void onClick(ClickEvent event) {
+                // Make remote call. Control flow will continue immediately and later
+                // 'callback' will be invoked when the RPC completes.
+                getService().myMethod(txtUserInput.getText(), callback);
+            }
+        });
+    }
+
+    public static GWTServiceAsync getService() {
+        // Create the client proxy. Note that although you are creating the
+        // service interface proper, you cast the result to the asynchronous
+        // version of the interface. The cast is always safe because the
+        // generated proxy implements the asynchronous interface automatically.
+
+        return GWT.create(GWTService.class);
+    }
+}</pre></li>
+            </ul>
+
+            <p>Now, modify the entry point class to invoke the service by instantiating a
+                <code>GWTServiceUsageExample</code> object. Recall from the previous subsection
+                that the <code>GWTServiceUsageExample</code> class was generated because you
+                <a href="#usageExample">selected the Create Usage Example Class option in the
+                GWT RPC wizard</a>.</p>
+
+            <ol>
+                <li>In the <code>onModuleLoad()</code> method of the application's main entry
+                    point (<code>MainEntryPoint.java</code>), remove the GWT <code>Label</code>
+                    and <code>Button</code>, and add a new instance of <code>GWTServiceUsageExample</code>
+                    to the <code>RootPanel</code>.
+
+<pre class="examplecode">
+public void onModuleLoad() {
+     RootPanel.get().add(new GWTServiceUsageExample());
+}</pre>
+
+                    <strong class="notes">Note: </strong>After modifying the <code>onModuleLoad()</code> method,
+                    you need to add an import statement to the <code>sampleservice.GWTServiceUsageExample</code>
+                    class. To do so, click on the hint that displays in the left column where the
+                    <code>GWTServiceUsageExample()</code> method appears in the editor and choose Add Import
+                    for <code>org.yournamehere.client.sampleservice.GWTServiceUsageExample</code>.
+
+                    <br>
+                    <img class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/fix-import.png"
+                        alt="Fix Import support displayed in the editor"
+                        title="Fix Import support displays in the editor"></li>
+
+                <li><a name="allYouNeed"></a>In the Projects window, right-click the project node and choose Run.
+                    The server starts, if it is not running already. The project is compiled (recompiled in this case)
+                    and deployed to the server. The browser opens to display a text field. Type in a message and
+                    click the button. A label appears with the message you sent.
+
+                    <br>
+                    <img class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/all-you-need.png"
+                        alt="Browser output displaying user message" title="Browser output displays user message">
+                </li>
+            </ol>
+
+            <p>You successfully created a GWT RPC service using the IDE's GWT RPC wizard. You then
+                added a <code>GWTServiceUsageExample</code> instance to the <code>onModuleLoad()</code>
+                method of the application's main entry point, which causes the application to invoke
+                the service when it is run. In the next section, you customize the service by extending
+                the generated classes, and attach a stylesheet to the HTML host page.</p>
+
+
+            <h3 id="extending-stubs">Extending the Generated Classes</h3>
+
+            <p>In this section, you tweak and extend the classes that were examined in the previous subsection.
+                At the end of this subsection, you will have created a functioning version of the AJAX random quote
+                generator.</p>
+
+            <ol>
+                <li>Recall that <a href="#GWTServiceImpl"><code>GWTServiceImpl</code></a> is the servlet that
+                    implements the service you are creating.
+
+                    <p class="tips">If you open your application's <code>web.xml</code> deployment
+                        descriptor, you see that a servlet declaration and mapping have already been added.</p>
+
+                    <pre class="examplecode">&lt;servlet&gt;
+    &lt;servlet-name&gt;GWTService&lt;/servlet-name&gt;
+    &lt;servlet-class&gt;org.yournamehere.server.sampleservice.GWTServiceImpl&lt;/servlet-class&gt;
+&lt;/servlet&gt;
+&lt;servlet-mapping&gt;
+    &lt;servlet-name&gt;GWTService&lt;/servlet-name&gt;
+    &lt;url-pattern&gt;/org.yournamehere.Main/sampleservice/gwtservice&lt;/url-pattern&gt;
+&lt;/servlet-mapping&gt;</pre>
+
+
+                    In the <code>GWTServiceImpl</code> class, you implement the <code>GWTService</code>
+                    interface with the logic that is
+                    specific to your service. To create a random quote generator, add the following code to
+                    <code>GWTServiceImpl</code>:
+
+<pre class="examplecode">
+public class GWTServiceImpl extends RemoteServiceServlet implements GWTService {
+
+    private Random randomizer = new Random();
+    private static final long serialVersionUID = -15020842597334403L;
+    private static List quotes = new ArrayList();
+
+    static {
+        quotes.add(&quot;No great thing is created suddenly - Epictetus&quot;);
+        quotes.add(&quot;Well done is better than well said - Ben Franklin&quot;);
+        quotes.add(&quot;No wind favors he who has no destined port - Montaigne&quot;);
+        quotes.add(&quot;Sometimes even to live is an act of courage - Seneca&quot;);
+        quotes.add(&quot;Know thyself - Socrates&quot;);
+    }
+
+    public String myMethod() {
+        return (String) quotes.get(randomizer.nextInt(5));
+    }
+
+}</pre>
+
+                    <strong class="notes">Note: </strong>Right-click anywhere in the IDE's editor and choose
+                    Fix Imports to let the IDE create the correct import statements. When you do so, make sure
+                    to select <code>java.util.Random</code> instead of
+                    <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/Random.html"><code>com.google.gwt.user.client.Random</code></a>:
+
+                    <br>
+                    <img class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/fix-all-imports.png"
+                        alt="Fix All Imports dialog" title="Fix All Imports dialog"></li>
+
+
+                <li>Instead of having the generated usage example class (<a href="#GWTServiceUsageExample"><code>GWTServiceUsageExample</code></a>)
+                    invoke the service, have it invoked directly from the application's entry point class
+                    (<code>MainEntryPoint</code>). Begin by copying <code>GWTServiceUsageExample</code>'s
+                    <code>getService()</code> method and paste it into <code>MainEntryPoint</code>.
+                    (Changes in <strong>bold</strong>.)
+
+<pre class="examplecode">public class MainEntryPoint implements EntryPoint {
+
+    /**
+     * Creates a new instance of MainEntryPoint
+     */
+    public MainEntryPoint() {
+    }
+
+    <strong>public static GWTServiceAsync getService() {
+        // Create the client proxy. Note that although you are creating the
+        // service interface proper, you cast the result to the asynchronous
+        // version of the interface. The cast is always safe because the
+        // generated proxy implements the asynchronous interface automatically.
+
+        return GWT.create(GWTService.class);
+    }</strong>
+
+    ...</pre></li>
+
+                <li>Right-click in the editor and choose Fix Imports. The following
+                    three import statements are added to <code>MainEntryPoint</code>.
+
+        <pre class="examplecode">import com.google.gwt.core.client.GWT;
+import org.yournamehere.client.sampleservice.GWTService;
+import org.yournamehere.client.sampleservice.GWTServiceAsync;</pre></li>
+
+                <li>Change the <code>onModuleLoad()</code> method in the entry point class
+                    to the following:
+
+<pre class="examplecode">/**
+ * The entry point method, called automatically by loading a module
+ * that declares an implementing class as an entry-point
+ */
+
+public void onModuleLoad() {
+
+    final Label quoteText = new Label();
+
+    Timer timer = new Timer() {
+
+        public void run() {
+            //create an async callback to handle the result:
+            AsyncCallback callback = new AsyncCallback() {
+
+                public void onFailure(Throwable arg0) {
+                    //display error text if we can't get the quote:
+                    quoteText.setText("Failed to get a quote");
+                }
+
+                public void onSuccess(Object result) {
+                    //display the retrieved quote in the label:
+                    quoteText.setText((String) result);
+                }
+            };
+            getService().myMethod(callback);
+        }
+    };
+
+    timer.scheduleRepeating(1000);
+    RootPanel.get().add(quoteText);
+
+}</pre></li>
+
+                <li>Right-click in the editor and choose Fix Imports. When you do so,
+                    make sure to select
+                    <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/Timer.html"><code>com.google.gwt.user.client.Timer</code></a>,
+                    and <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/index.html?com/google/gwt/user/client/ui/Label.html"><code>com.google.gwt.user.client.ui.Label</code></a>.
+
+                    <br>
+                    <img class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/fix-all-imports2.png"
+                        alt="Fix All Imports dialog" title="Fix All Imports dialog">
+
+                    
+                    </li>
+                <li>Delete the class <code>GWTServiceUsageExample</code>. It will
+                no longer compile. Because the application is able to
+                    call the service from its main entry point class, you no longer need the
+                    <code>GWTServiceUsageExample</code> usage example class to invoke the service.</li>
+
+                <li>Although the generated stubs for <a href="#GWTService"><code>GWTService</code></a> and
+                    <a href="#GWTServiceAsync"><code>GWTServiceAsync</code></a> provided you with a String
+                    parameter for <code>myMethod()</code>, you do not need it for the random quote generator.
+
+                    <br><br>
+                    In the <code>GWTService</code> class, remove the String parameter from <code>myMethod()</code>
+                    so that the interface is as follows.
+
+<pre class="examplecode">
+public interface GWTService extends RemoteService {
+    public String myMethod();
+}</pre></li>
+
+                <li>The method signature for the asynchronous service (<code>GWTServiceAsync</code>)
+                    must match that of <code>GWTService</code> (but include an <code>AsyncCallback</code>
+                    object as the final parameter). Therefore, remove the String parameter from
+                    <code>myMethod()</code> so that the interface is as follows.
+
+<pre class="examplecode">
+public interface GWTServiceAsync {
+    public void myMethod(AsyncCallback callback);
+}</pre>
+
+                    <span class="tips">See <a href="http://code.google.com/webtoolkit/doc/latest/tutorial/clientserver.html">Making
+                    Asynchronous Calls</a> and <a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideServerCommunication.html#DevGuideGettingUsedToAsyncCalls">Getting
+                    Used to Asynchronous Calls</a> in the official GWT documentation for more
+                    information on the asynchronous service interface.</span></li>
+
+                <li>Run the project. When the application is deployed and the browser opens, you see a
+                    new quote received from the server after every second:
+
+                    <br>
+                    <img src="../../../images_www/articles/72/web/gwt/browser-quote.png"
+                        alt="AJAX quote generator displayed in browser" class="margin-around b-all"
+                        title="AJAX quote generator is displayed in browser">
+                </li>
+            </ol>
+
+            <p>In the next section, you apply a stylesheet to change the appearance of the quotes.</p>
+
+            <a name="customizing"></a>
+            <h3>Customizing the Appearance</h3>
+
+            <p>In this section, you attach a stylesheet to the HTML host page. You also refer to it in the
+                entry point class. Specifically, you need to set the style name of the label in the entry
+                point class to the name of the style in the stylesheet. At runtime, GWT connects the style
+                to the label and displays a customized label in the browser.</p>
+
+            <ol>
+                <li>Create a stylesheet called <code>welcomeGWT.css</code>. To create the file, right-click the
+                    Web Pages node in the Projects window and choose New &gt; Other. The New File wizard
+                    displays.</li>
+
+                <li>Under Categories choose Web, then choose Cascading Style Sheet under
+                    File Types. When you complete the wizard, the new empty file opens in the
+                    editor.</li>
+
+                <li>Create the following <code>quoteLabel</code> selector for the new stylesheet.
+
+<pre class="examplecode">
+.quoteLabel {
+    color: white;
+    display: block;
+    width: 450px;
+    padding: 2px 4px;
+    text-decoration: none;
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    border: 1px solid;
+    border-color: black;
+    background-color: #704968;
+    text-decoration: none;
+}</pre>
+
+                    The stylesheet editor should now show the following.
+
+                    <br>
+                    <img src="../../../images_www/articles/72/web/gwt/css-preview.png"
+                         class="margin-around b-all" title="CSS preview displays in the editor"
+                         alt="CSS preview displayed in the editor">
+
+                    <p class="tips">To display the CSS Preview and Style Builder, choose Window
+                        &gt; Other from the main menu.</p></li>
+
+                <li>Link to the stylesheet from the application welcome page (<code>welcomeGWT.html</code>).
+                    At the same time, add some text to introduce the application to the user. The new
+                    parts of the HTML page are highlighted below in <strong>bold</strong>.
+
+<pre class="examplecode">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot;&gt;
+
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;meta name='gwt:module' content='org.yournamehere.Main=org.yournamehere.Main'&gt;
+        <strong>&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;welcomeGWT.css&quot;&gt;</strong>
+
+        &lt;title&gt;Main&lt;/title&gt;
+    &lt;/head&gt;
+
+    &lt;body&gt;
+        &lt;script language=&quot;javascript&quot; src=&quot;org.yournamehere.Main/org.yournamehere.Main.nocache.js&quot;&gt;&lt;/script&gt;
+
+        <strong>&lt;p&gt;This is an AJAX application that retrieves a random quote from
+            the Random Quote service every second. The data is retrieved
+            and the quote updated without refreshing the page!&lt;/p&gt;</strong>
+
+    &lt;/body&gt;
+&lt;/html&gt;</pre></li>
+
+                <li>Within the <code>onModuleLoad()</code> method of the entry point class (<code>MainEntryPoint.java</code>),
+                    specify that, upon success, the style defined in the stylesheet should be applied
+                    to the label. The new line is highlighted in <strong>bold</strong> below.
+
+<pre class="examplecode">public void onSuccess(Object result) {
+    //display the retrieved quote in the label:
+    quoteText.setText((String) result);
+    <strong>quoteText.setStyleName(&quot;quoteLabel&quot;);</strong>
+}</pre>
+
+                    As you type, press Ctrl-Space to enable the IDE's built-in code completion.
+                    The code completion works by triggering a pop-up window that suggests ways of
+                    completing the code, and showing you the related Javadoc.
+
+                    <br>
+                    <img src="../../../images_www/articles/72/web/gwt/code-completion.png"
+                        title="Code completion support is provided in the editor" class="margin-around b-all"
+                        alt="Code completion support provided in the editor">
+
+                    <br>
+                    <span class="tips">You can also open the IDE's Javadoc window if you want continuous
+                    access to GWT documentation when working in the IDE. To do so, choose Window &gt; Other
+                    &gt; Javadoc from the main menu. Notice that when you type in the editor, the documentation
+                    in the Javadoc window updates according to your cursor's position.</span>
+
+                    <br>
+                    <img src="../../../images_www/articles/72/web/gwt/javadoc.png"
+                         title="Documentation support is provided in the Javadoc window"
+                         class="margin-around b-all" alt="Javadoc window"></li>
+
+                <li>In the Projects window, right-click the project node and choose Run. This time, the label
+                    is shown with a custom style, using the stylesheet you created in this subsection.
+
+                    <br>
+                    <img class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/final.png"
+                        alt="Stylesheet effects displayed in browser" title="Stylesheet effects are displayed in browser">
+                </li>
+            </ol>
+        </div>
+
+        <a name="compile-debug"></a>
+        <h2>Compiling and Debugging</h2>
+
+        <p>Open the Files window (Ctrl-2; &#8984-2 on Mac) and expand the <code>build</code> folder. (If the <code>build</code>
+            folder is not present, you need to build the project again in order to have the IDE regenerate
+            the <code>build</code> folder.) You should see something like the following:
+
+            <br>
+            <img src="../../../images_www/articles/72/web/gwt/build-folder.png" class="margin-around"
+                alt="Build folder displayed in Files window"
+                title="Build folder is displayed in Files window">
+
+            <br>
+            This folder is generated automatically by GWT when the application is compiled. The folder
+            consists of a ready-to-deploy version of the client application. For an explanation of what
+            these files represent, see the <a href="http://code.google.com/support/bin/answer.py?answer=77858&topic=13006">Google
+            Code FAQ - What's with all the cache/nocache stuff and weird filenames?</a>.</p>
+
+        <p>Also, note that you can take advantage of the IDE's built-in <a href="https://netbeans.org/features/java/debugger.html">debugger</a>
+            when working with GWT applications. This enables you to <a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideCompilingAndDebugging.html">debug
+            in GWT's hosted mode</a>. The GWT and hosted mode main window and web browser open
+            automatically.</p>
+
+        <p><strong class="notes">Note for Mac OS X users: </strong>GWT's hosted mode is compiled for 32-bit
+            architecture on Mac OS X, which exists only for Java 1.5. If you are running a 64-bit version of
+            Java 1.6, you need to switch to a 32-bit version. You can do this using the Java Preferences panel
+            in OS X. After switching Java versions, you should restart the IDE.</p>
+            
+            <!--Also, if you are using the GlassFish server
+            3.0.1 (which requires Java 6 to run), you'll need to explicitly set the path to your JDK 6 executable.
+            You can do this in the IDE by opening the Servers window (Tools &gt; Servers), and selecting the
+            Java tab of your the GlassFish server 3.0.1 server. Enter the path in the Java Executable field. The default
+            location for this is:
+            <code>/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Home/bin/java</code>.</p> -->
+
+        <p>Set field, method and line breakpoints in your source files by clicking in the left
+            margin of the IDE's editor.
+
+            <br>
+            <img src="../../../images_www/articles/72/web/gwt/line-breakpoint.png" class="margin-around b-all"
+                alt="Editor displaying a line breakpoint"
+                title="Line breakpoint set in the editor">
+
+            <br>
+            Then simply choose Debug as you normally would for any web project (e.g., right-click the project
+            node and choose Debug, or click the Debug Project icon ( <img src="../../../images_www/articles/72/web/gwt/debug-icon.png"
+            alt="Debug Project icon"> ). The application freezes on any breakpoint you set, allowing you
+            to step through code and examine variable and expression values (e.g., Choose Window &gt; Debugging
+            &gt; Local Variables to view values in the Local Variables window).
+
+            <br>
+            <img src="../../../images_www/articles/72/web/gwt/line-breakpoint2.png" class="margin-around b-all"
+                alt="Debugger stopped at breakpoint"
+                title="Debugger stops at breakpoints set in source files">
+
+            <br>
+            <span class="tips">You can also hover over an expression or value in the editor, and the
+            debugger uses a pop-up to inform you of the current value (as shown in the above image).</span>
+
+            <br>
+            GWT's hosted mode main window and web browser open. The browser displays a running version of your
+            application.
+
+            <br>
+            <img src="../../../images_www/articles/72/web/gwt/hosted-mode.png"
+                alt="GWT hosted mode browser" class="margin-around b-all"
+                title="GWT hosted mode browser displays when running the IDE's debugger"></p>
+
+
+        <a name="conclusion"></a>
+        <h2>Conclusion</h2>
+
+        <p>In this tutorial, you have learned the following:</p>
+
+        <ul>
+            <li>What a typical application source structure looks like in a Google Web Toolkit application.</li>
+
+            <li>How Google Web Toolkit artifacts relate to each other.</li>
+
+            <li>How to set up the IDE to use the Google Web Toolkit.</li>
+
+            <li>What the tools are that are available to you in the IDE, specifically for using
+                the Google Web Toolkit.</li>
+        </ul>
+
+        <p>Because the GWT framework handles browser-related code generation, as well as the creation
+            of the lower-level <code>XmlHttpRequest</code> API code, you can take advantage of the
+            framework to focus on the functionality that you want your applications to provide.
+            Hence, as stated in the introduction, GWT lets you avoid the headaches associated with browser
+            compatibility while simultaneously letting you offer users the same dynamic, standards-compliant
+            experience that the Web 2.0 world typically provides. As this tutorial demonstrated, you can
+            apply the GWT framework to write your complete front end in Java, because you know that you
+            can let the GWT compiler convert Java classes to browser-compliant JavaScript and HTML.
+            And, as also demonstrated, the IDE provides a complete set of tools for making all this easy
+            and efficient, without the need to hand-code a GWT application's basic infrastructure.</p>
+
+        <div class="feedback-box">
+            <a href="/about/contact_form.html?to=3&amp;subject=Feedback: Introduction to the GWT Web Framework">Send
+            Us Your Feedback</a></div>
+
+        <br style="clear:both;">
+
+        <a name="seeAlso"></a>
+        <h2>See Also</h2>
+
+        <p>This concludes the Introduction to the Google Web Toolkit Framework tutorial. For related
+            and more advanced material, see the following resources:</p>
+
+        <h4>GWT Resources</h4>
+
+        <ul>
+            <li><a href="http://code.google.com/webtoolkit/doc/1.6/DevGuide.html">Google Web Toolkit Developer's Guide</a></li>
+            <li><a href="http://gwt4nb.dev.java.net/">NetBeans Google Web Toolkit Project Page</a></li>
+            <li><a href="http://gwt4nb.dev.java.net/manual/impl_details.html">GWT4NB under the hood</a></li>
+            <li><a href="http://googlewebtoolkit.blogspot.com/2007/12/developing-gwt-applications-with.html">NetBeans Google Web Toolkit Blog</a></li>
+        </ul>
+
+        <h4>NetBeans Documentation for Java Web Frameworks</h4>
+
+        <ul>
+            <li><a href="../../docs/web/jsf20-intro.html">Introduction to JavaServer Faces 2.0</a></li>
+            <li><a href="../../docs/web/quickstart-webapps-spring.html">Introduction to the Spring Framework</a></li>
+            <li><a href="../../docs/web/quickstart-webapps-struts.html">Introduction to the Struts Web Framework</a></li>
+            <li><a href="../../docs/web/grails-quickstart.html">Introduction to the Grails Web Framework</a></li>
+        </ul>
+
+    </body>
+</html>

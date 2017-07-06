@@ -1,0 +1,349 @@
+<html>
+<head>
+<title>NB 中的简单 MySQL 客户端</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<META NAME="AUDIENCE" CONTENT="NBUSER">
+<META NAME="TYPE" CONTENT="ARTICLE">
+<META NAME="TOPIC" CONTENT="ADVANCED">
+<META NAME="description" CONTENT="Making a simple MySQL client in NetBeans">
+<link rel="stylesheet" type="text/css" href="../../netbeans.css">
+
+</head>
+
+<body >
+<h1>在 NetBeans 中创建简单的 MySQL 客户端</h1>
+<div class="articledate" style="margin-left:0px;">撰稿人：Miki Shimizu，<a href="../../competition/win-with-netbeans.html">与 NetBeans 共赢</a>参赛作品</div></p>
+<p></p>
+<p>NetBeans 具有一个很好的数据库连接接口，但许多 SQL 命令是作为整个句子输入的，我创建了一个 Swing 应用程序以在 MySQL 数据库表中插入数据以及查看这些数据。该样例非常简单，仅有一个特定的表，并且不执行删除或更新操作。可以对其进行扩展，但文档恐怕会变得更长、更复杂。</p>
+
+<h2>索引</h2>
+<ul>
+  <li><a href="#db01">连接到 MySQL 数据库</a></li>
+
+  <li><a href="#db02">创建样例表</a></li>
+  <li><a href="#db03">插入第一行数据</a></li>
+  <li><a href="#db04">创建新的 Java 项目</a></li>
+  <li><a href="#db05">创建实用程序类以连接数据库</a></li>
+  <li><a href="#db06">创建表模型</a></li>
+  <li><a href="#db07">创建 JFrame 窗体类 - 窗体设计</a></li>
+
+  <li><a href="#db08">定制 JTable</a></li>
+  <li><a href="#db09">第一次运行 InsertTable</a></li>
+  <li><a href="#db10">精雕细琢...</a></li>
+  <li><a href="#db11">在 MySQL 中插入数据</a></li>
+</ul>
+
+<h2><a name="db01"></a>连接到 MySQL 数据库</h2>
+<p>我希望读者已具有适合的 MySQL 数据库服务器工作环境，并且为给定用户授予数据库的足够权限。在此样例中，</p>
+
+<p><b>数据库名称：nonidb<br>
+  用户：noniko<br>
+  口令：（空）</b>&lt;- 因为这仅仅是一个样例而已。如果包含一些重要数据，请设置正确的口令！</p>
+<p>此外，您还会获取一个用于 MySQL 的 JDBC 驱动程序文件。我准备了 <b>mysql-connector-java-3.1.6-bin.jar</b> 文件，可通过 <a href="http://dev.mysql.com">MySQL 开发者网站</a>获取该文件。</p>
+<p>现在，让我们转至 NetBeans。单击 &quot;Runtime&quot;（运行时）标签以切换窗口，您通常看到的可能是 &quot;Projects&quot;（项目）或 &quot;Files&quot;（文件）窗口。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/adddriver.png" width="357" height="205"></p>
+<p><b>在 &quot;Runtime&quot;（运行时）窗口中选择 &quot;Add Driver&quot;（添加驱动程序）</b></p>
+<p>将会在此处找到 &quot;Databases&quot;（数据库）节点。打开该节点以显示下面的 &quot;Driver&quot;（驱动程序）节点。如果打开其他节点以显示 &quot;Driver&quot;（驱动程序）内容，则只会找到 &quot;JDBC-ODBC&quot;。要执行的第一个操作是添加 MySQL 驱动程序。右键单击 &quot;Driver&quot;（驱动程序）节点以显示上下文菜单，然后选择&quot;Add Driver&quot;（添加驱动程序）。 </p>
+
+<p>显示设置窗口。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/selectdriver.png" width="560" height="343"></p>
+<p><b>查找 JDBC 驱动程序文件位置。</b></p>
+<p>通过单击 &quot;Add&quot;（添加）按钮，您可以按图形方式搜索驱动程序文件。对于上述情况，我准备了 D:\nonidata\nb4worksnew 文件夹以包含项目文件夹，并在 lib 子文件夹中包含库文件。</p>
+<p>如果您选择驱动程序文件的位置，则会自动设置 &quot;Driver Class&quot;（驱动程序类）和 &quot;Name&quot;（名称）。对于 MySQL JDBC 驱动程序，先设置旧类名。但在单击 &quot;Fins&quot;（查找）按钮后，下面的进度栏将变为活动状态并最终显示“已完成驱动程序类搜索”。</p>
+
+<p>接下来，打开 &quot;Driver Class&quot;（驱动程序类）设置组合框。您可以选择 JDBC 驱动程序的当前类名。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/newdrivername.png" width="355" height="109"></p>
+<p><b>将类名更改为当前版本的类名。</b></p>
+<p>单击 &quot;OK&quot;（确定），将在 &quot;Drivers&quot;（驱动程序）节点下面添加新的驱动程序节点。右键单击该节点以从上下文菜单中选择 &quot;Connect Using..&quot;（连接设置...）。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/connectusing.png" width="302" height="71"> </p>
+<p><b>从上下文菜单中选择 &quot;Connect Using..&quot;（连接设置...）</b></p>
+<p>显示设置窗口。需要在其中指定 &quot;Database URL&quot;（数据库 URL）、&quot;User Name&quot;（用户名）和 &quot;Password&quot;（口令）（此处，口令为空）。单击 &quot;OK&quot;（确定），您可能会在下面的进度栏中看到 &quot;Connection established&quot;（已建立连接）消息。页面可能会切换到 &quot;Advance&quot;（高级），但此处不需要指定高级设置。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/conestablished.png" width="419" height="266"></p>
+<p>在建立连接后，将显示此连接的节点。让我们继续执行下一步。</p>
+
+
+<h2><a name="db01"></a>创建样例表</h2>
+右键单击上面建立的连接的节点，然后选择 &quot;Create Table...&quot;（创建表...）。 
+<p><img src="../../images_www/articles/win-with-netbeans/createtable.png" width="335" height="132"></p>
+<p><b>从上下文菜单中选择 &quot;Create Table...&quot;（创建表...）</b></p>
+<p>将显示一个窗口以设置要创建的表。要显示所需的设置，可能需要手动展开该窗口。重要设置是 &quot;Key&quot;（键）、&quot;Column name&quot;（列名）、&quot;Data type&quot;（数据类型）和 &quot;Size&quot;（大小），具体取决于 &quot;Data type&quot;（数据类型）。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/cartable.png" width="740" height="281"></p>
+<p><b>在 NetBeans 中创建表</b></p>
+
+<p>此处，我创建了一个样例表 &quot;<b>cars</b>&quot;，它包含 <b>carid</b>、<b>name</b>、<b>vendor</b> 和 <b>type</b> 字段。carid 字段是主键。所有字段均具有 VARCHAR 数据类型。仅 carid 的大小为 10，所有其他字段均为 20。</p>
+<p>在创建表后，您可以在连接节点下面看到其节点。将显示 &quot;cars&quot; 表的结构。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/cartablestruct.png" width="353" height="236"></p>
+<p><b>创建的表的节点树</b></p>
+
+<h2><a name="db03"></a>插入第一行数据 </h2>
+<p>现在，让我们发送 SQL 命令以插入第一行。右键单击连接节点下面的任何节点以显示 &quot;Execute Commands...&quot;（执行命令...）菜单项。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/execommand.png" width="309" height="116"></p>
+<p>将在源代码编辑器的相同位置中显示较大的操作命令窗口。窗口太大，因此，我无法显示整个外观的屏幕快照。最重要的位置是用于输入命令的文本区域。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/firstcmd.png" width="463" height="67"></p>
+<p><b>输入整个命令语句。</b></p>
+<p>单击 &quot;Execute&quot;（执行）按钮；如果命令有效，则可以在下面看到 &quot;Command successfully excuted&quot;（已成功执行命令）消息。要显示更多数据以进行证实，请右键单击 &quot;cars&quot; 节点，然后选择 &quot;View data&quot;（查看数据）。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/viewdata.png" width="264" height="153"></p>
+<p><b>右键单击 &quot;cars&quot; 节点以查看数据。</b></p>
+<p><img src="../../images_www/articles/win-with-netbeans/firstviewdata.png" width="308" height="78"></p>
+<p><b>插入了第一行数据</b></p>
+<p>太好了！已成功插入第一行数据。但您可能会认为整个句子“insert into...”有点麻烦。我就是这样觉得的。因此，我决定构建一个应用程序以通过更多图形操作来插入数据。</p>
+
+<h2><a name="db04"></a>创建新的 Java 项目</h2>
+
+<p>让我们为应用程序创建一个新的 Java 项目。从菜单栏中选择 &quot;File&quot;（文件）-&gt; &quot;New Project&quot;（新建项目）。在新建项目向导中，选择 &quot;General&quot;（常规）-&gt; &quot;Java Application&quot;（Java 应用程序）作为项目类型。我指定的项目名称是 &quot;mysqloperation&quot;，位置是 &quot;d:\nonidata\nb4worksnew\mysqloperation&quot;。取消选中 &quot;Create main project&quot;（创建主项目）。</p>
+
+<p>在创建项目后，创建新的包。我创建的包是 &quot;mysqlop&quot;。</p>
+
+<h2><a name="db05"></a>创建实用程序类以连接数据库</h2>
+<p>Java 中的数据库操作非常复杂，需要使用连接、语句、结果集以及许多 try 和 catch。因此，我使用一个实用程序类来处理此类操作。</p>
+<p><a href="https://netbeans.org/files/documents/4/297/MyDBConnection.java" target="_blank">MyDBConnection.java</a> 中显示了完整代码。</p>
+<p><b>init()</b> 方法用于连接 MySQL 数据库。</p>
+
+<p><b>getConnection()</b> 方法在 init() 方法后面调用，用于为其他类提供建立的连接。</p>
+<p>两个 <b>close()</b> 方法和 <b>destroy()</b> 方法用于结束操作。关闭连接、语句或结果集需要使用 try 和 catch，因此，已在此处提取了它们。</p>
+<p>要使用该文件，必须为此项目设置 JDBC 驱动程序的类路径。右键单击 &quot;<b>mysqloperation</b>&quot; 项目，然后从上下文菜单中选择 &quot;Properties...&quot;（属性...）。在 &quot;Project Properties&quot;（项目属性）窗口中，选择 &quot;Build&quot;（生成）-&gt; &quot;Compiling Sources&quot;（编译源代码）。单击 &quot;Classpath for Compiling Source&quot;（用于编译源代码的类路径）设置附近的 &quot;Add JAR/Folder...&quot;（添加 JAR/文件夹...）按钮，以便搜索 JDBC Jar 文件的位置。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/addlibrary.png" width="745" height="249"></p>
+<p><b>将 JDBC Jar 文件添加到类路径中</b></p>
+
+<h2><a name="db06"></a>创建表模型</h2>
+<p>接下来，我为 JTable 准备定制表模型以在该应用程序中使用。</p>
+<p><a href="https://netbeans.org/files/documents/4/298/CarTableModel.java" target="_blank">CarTableModel.java</a> 中显示了完整代码。</p>
+<p>为了编写此代码，我使用了 NetBeans 中的一些很好的工具。 <br>
+  首先，创建一个名为 CarTableModel.java 的新 Java 类文件。它具有一个很普通的空白模板，仅包含包和类声明。 </p>
+
+<p><br>
+  手动编辑类声明以扩展 &quot;AbstractTableModel&quot; 类。随后，编辑器将显示红色波浪下划线以指示错误。出现该错误的一个原因是未导入 &quot;javax.swing.table.AbstractTableModel&quot; 类。可以右键单击代码中的某个位置，然后选择 &quot;Fix Imports&quot;（修复导入）以修复该错误。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/fiximports.png" width="483" height="139"></p>
+<p><b>使用 &quot;Fix imports&quot;（修复导入）工具</b></p>
+
+<p>您可以检查是否将声明</p>
+<p><b>import javax.swing.table.AbstractTableModel;</b></p>
+<p>插入到源代码顶部附近。</p>
+<p>但仍会出现红色下划线。出现该错误的另一个原因是未实现正确的抽象方法。<br>
+  可以按以下方式调用 &quot;Overrice Methods&quot;（覆盖方法）工具以修复该错误：</p>
+<p><img src="../../images_www/articles/win-with-netbeans/toolovmethods.png" width="455" height="267"></p>
+<p><b>使用 &quot;Overrice Methods&quot;（覆盖方法）工具</b></p>
+
+<p>选中 &quot;Show Abstract Methods Only&quot;（仅显示抽象方法）以提取所需的实现。 </p>
+<p><img src="../../images_www/articles/win-with-netbeans/overridelist.png" width="484" height="197"></p>
+<p><b>列出所需的实现</b></p>
+<p>单击节点，然后选择 &quot;OK&quot;（确定）以选择所有三种方法。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/methodimplemented.png" width="436" height="421"></p>
+<p><b>自动插入所需的实现</b></p>
+<p>现在，红线消失了！ </p>
+<p>事实上，我们还需要覆盖 <b>getColumnName</b>(int param) 方法，否则，我们无法获取定制的表标题。</p>
+
+<p>让我们填充内容。<br>
+  代码指定为访问特定的 &quot;cars&quot; 表，因此，列数固定为 4 列。 <br>
+  每个列的名称也是已知的，并且可以直接设置。</p>
+<p>这次我使用了泛型，这是 JDK5.0 首次引入的新功能。它在 NB 中正常工作（鼓掌！）<br>
+</p>
+
+<h2><a name="db07"></a>创建 JFrame 窗体类 - 窗体设计</h2>
+<p>现在，让我们创建 JFrame 窗体应用程序，这是项目的主类！可以在新建向导中选择 &quot;JFrame Form&quot;（JFrame 窗体）。我使用的名称是 &quot;InsertTable&quot;，它创建一个源文件 &quot;InsertTable.java&quot;。</p>
+
+<p>首先，设计该窗体。它应该是垂直长窗口，因此，我固定了窗体大小而不是使用“包装”。<br>
+  在 &quot;Inspector&quot;（检查器）窗口中选择 &quot;JFrame&quot; 节点以显示其属性。将 &quot;Form Size Policy&quot;（窗体大小策略）从缺省的 &quot;Generate pack()&quot;（生成 pack()）更改为 &quot;Generate Resize Code&quot;（生成调整大小代码）。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/resizeform.png" width="275" height="282"></p>
+<p><b>固定窗体大小。</b></p>
+<p>然后，&quot;Form Size&quot;（窗体大小）属性将变为可编辑的属性。编辑该属性以使其变为：</p>
+<p><img src="../../images_www/articles/win-with-netbeans/resized.png" width="182" height="19"></p>
+<p><b>编辑了窗体大小。</b></p>
+<p>此窗体将垂直分为三个部分：</p>
+<p>(1) 用于输入新数据的 JTextfield 或 JComboBox。<br>
+  (2) 用于发送数据和显示消息的 JButton。<br>
+
+  (3) JTable。</p>
+<p>前两个部分应位于每个 JPanel 上，JTable 应位于 JScrollPane 上。这些是基本的部分。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/panelspanes.png" width="276" height="193"></p>
+<p><b>用于放置组件的 JPanel 和 JScrollPane。</b></p>
+<p>请注意，节点的垂直位置并不表示其实际位置。我的意思是，dataPanel、sendPanel 和 tablePane 分别位于 BorderLayout 的北面、中心和南面。</p>
+<p>在 dataPanel 上，应放置三个 JTextField 和一个 JComboBox 以输入数据并放置四个 JLabel 以提供说明。我认为 GridLayout 最适于设置这些位置。在 NetBeans 中，JPanel 上的缺省布局是 FlowLayout。必须对其进行更改：</p>
+<p><img src="../../images_www/articles/win-with-netbeans/setlayout.png" width="343" height="262"> </p>
+<p><b>更改为 &quot;GridLayout&quot;</b></p>
+<p>然后，将显示该 GridLayout 的属性。将列数设置为 2，将行数设置为 4。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/griddata.png" width="190" height="112"></p>
+<p>然后，放置这些组件。如果您对位置不满意，可通过拖放在窗体上移动这些组件。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/griddragdrop.png" width="412" height="97"></p>
+<p><b>在 GridLayout 中移动 JComboBox。</b></p>
+<p>组件可能会移到错误的位置而变成不同的面板。不要担心，您也可以在 &quot;Inspector&quot;（检查器）窗口中通过拖放来移动其位置。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/inspectordragdrop.png" width="276" height="226"></p>
+<p><b>在 &quot;Inspector&quot;（检查器）窗口中移动 JComboBox。</b></p>
+<p>在设置所有组件后，定制其名称以显示其角色。<br>
+  还会定制每个 JLabel 的 text 属性，并删除 每个 JTextField 的该属性。以下示例介绍了如何编辑 JLabel 的 &quot;text&quot; 属性：</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/labeltxt.png" width="277" height="130"></p>
+<p><b>定制 &quot;text&quot; 属性以将 &quot;ID:&quot; 显示为 JLabel</b></p>
+<p>然后，在 sendPanel 中放置 JButton 和 JLabel。还要为该 JPanel 设置 GridLayout 并包含一列和两行。定制名称和 &quot;text&quot; 属性。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/sendpnlcmpns.png" width="203" height="76"></p>
+<p>这样，将按下列方式排列 JTable 以外的组件：</p>
+<p><img src="../../images_www/articles/win-with-netbeans/firstguisetting.png" width="402" height="271"></p>
+
+<p><b>已定制 JTable 以外的组件。</b></p>
+
+<h2><a name="db08"></a>定制 JTable</h2>
+<p>如上所示，JTable 此时具有 4x4 结构和空数据。让我们定制该组件以显示 MySQL 数据库的 &quot;cars&quot; 表的内容。</p>
+<p>在 &quot;Inspector&quot;（检查器）窗口中选择现在命名为 &quot;carTable&quot; 的 JTable 以显示其属性。查找 &quot;model&quot; 属性，然后单击右边缘的 &quot;...&quot; 按钮。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/tablemodelprop.png" width="275" height="213"></p>
+<p><b>carTable 及其 &quot;model&quot; 属性</b></p>
+<p>将显示编辑器窗口。此窗口中设置了缺省 4x4 结构。让我们将 &quot;<b>Select Mode</b>&quot;（选择模式）从 &quot;TableModelEditor&quot; 更改为 &quot;<b>FormConnection</b>&quot;。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/selectformcon.png" width="640" height="260"></p>
+
+<p><b>从缺省的表模型编辑器切换到窗体连接模式。</b></p>
+<p>在 &quot;Form Connection&quot;（窗体连接）模式下的选项窗口中，单击 &quot;User Code&quot;（用户代码）单选按钮。 </p>
+<p><img src="../../images_www/articles/win-with-netbeans/usercodezero.png" width="639" height="273"></p>
+<p><b>窗体连接模式</b></p>
+<p>然后查看此窗口的底部。其中包含 &quot;Advacned&quot;（高级）按钮。单击该按钮！</p>
+<p><img src="../../images_www/articles/win-with-netbeans/advancedbtn.png" width="115" height="36"></p>
+
+<p><b>位于窗口底部的 &quot;Advacned&quot;（高级）按钮</b></p>
+<p>将显示一个窗口，以编辑为 JTable 设置 TableModel 的代码前后的内容。此时，检查这两项内容以进行编辑。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/advancedcode.png" width="358" height="381"></p>
+<p>应在类似下面的 &quot;InsertTable.java&quot; 源代码中手动创建名为 getResultFromCars 的方法：</p>
+<pre class='examplecode'><font color="#660000">
+ public ResultSet getResultFromCars() {
+        
+        ResultSet rs=null;
+        
+        try{
+            rs=stmt.executeQuery(&quot;Select * from cars&quot;);
+        
+        }
+        catch(SQLException e){}
+        
+        return rs;
+        
+    }</font></pre>
+<p>单击 &quot;OK&quot;（确定），返回到 &quot;User Code&quot;（用户代码）以进行填充。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/setusermodel.png" width="263" height="47"></p>
+<p>请注意，此处的分号 &quot;;&quot; 用于终止句子，不应作为输入内容。这是为什么呢？检查源代码。检查 <b>InitComponents()</b> 方法。此处！</p>
+<p><img src="../../images_www/articles/win-with-netbeans/insertedtobluearea.png" width="289" height="61"></p>
+<p>浅蓝色的区域是“受保护”而“不能编辑”的区域？这是谁说的呀？嗬-嗬-嗬！您可以通过 NetBeans 准备的这种方法任意进行编辑呀！</p>
+
+
+<h2><a name="db09"></a>第一次运行 InsertTable</h2>
+<p>要第一次测试运行该定制 JTable，我们仍需要执行一些操作。首先，声明以下内容：</p>
+<p> <font color="#660000">private MyDBConnection mdbc;<br>
+  private java.sql.Statement stmt;</font></p>
+<p>将在源代码中的某个位置编写这些语句。最好放在 EOF 附近，靠近其他变量。</p>
+<p>然后声明构造函数。请注意，我们应该在其中添加抛出声明</p>
+<p><img src="../../images_www/articles/win-with-netbeans/exceptionconstruct.png" width="276" height="22"></p>
+<p>以避免出现讨厌的编译错误“未报告 java.sql.SQLException...”。</p>
+
+<p>构造函数的完整内容是：</p>
+<pre class='examplecode'><font color="#660000"> 
+public InsertTable() throws  Exception{
+        
+         mdbc=new MyDBConnection();
+         mdbc.init();
+         Connection conn=mdbc.getMyConnection();
+         stmt= conn.createStatement();
+        
+        initComponents();
+    }
+
+</font> </pre>
+<p>要避免相同的编译错误，还要执行一个操作。编辑 NetBeans 准备的 main 方法： </p>
+<p><img src="../../images_www/articles/win-with-netbeans/trycatchinmain.png" width="373" height="197"></p>
+<p><b>在 main 方法中添加 try-catch</b></p>
+<p>现在，让我们运行项目！可能会出现一个用于选择主类的窗口。在列表中，您仅找到此 &quot;InsertTable.class&quot;。选择该类。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/tableshown.png" width="399" height="222"></p>
+<p><b>显示 MySQL 的表数据</b></p>
+
+<p>将显示 MySQL 数据库的 &quot;cars&quot; 表中包含的唯一一行！</p>
+
+<h2><a name="db10"></a>精雕细琢...</h2>
+<p>现在，我们可以在 JTable 中显示 MySQL 的现有数据，让我们稍做修改以改进应用程序。</p>
+<p>一个操作是正确终止此应用程序，必须关闭与 MySQL之间的所有会话（连接、语句和结果集）。<br>
+  将通过关闭窗口来终止此应用程序。因此，我们应该为 WindowClosing 事件添加事件处理方法。 <br>
+  在 &quot;Inspector&quot;（检查器）窗口中选择 &quot;JFrame&quot; 以显示其属性窗口，然后单击 &quot;Events&quot;（事件）以切换页面。找到 &quot;windowClosing&quot; 事件。缺省情况下，将其设置为 &lt;NONE&gt;，但在单击文字 &lt;NONE&gt; 时，它将自动变为 &quot;formWindowClosing&quot;...在选择此行时，按 Enter 键。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/windowclosing.png" width="288" height="332"></p>
+<p><b>设置 JFrame 的 windowClosing 事件</b></p>
+<p>将显示源代码以允许编辑该方法。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/windowclosingcode.png" width="452" height="93"></p>
+<p><b>编辑 &quot;formWindowClosing&quot; 方法</b></p>
+<p>关闭语句和连接。</p>
+<p>另一个操作是设置名为 <b>typeCombo</b> 的 JComboBox 的项。是的，应设置该组件以选择汽车的驱动类型。</p>
+
+<p>在 &quot;Inspector&quot;（检查器）窗口中选择 &quot;typeCombo&quot; 节点以显示其属性。找到 &quot;<b>model</b>&quot; 属性，然后单击右边缘的 &quot;...&quot; 按钮，就像我们为 JTable 设置 TableModel 时一样。<br>
+  将显示一个窗口，这次我们使用缺省的 <b>ComboBoxModelEditor</b>。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/itemconbo.png" width="454" height="284"></p>
+<p>在 &quot;Item:&quot;（项：）字段中输入一个新项，然后单击 &quot;Add&quot;（添加）按钮。这很容易吧！我准备了 &quot;FF&quot;、&quot;FR&quot;、&quot;MR&quot; 和 &quot;4WD&quot; 项作为驱动类型。还要执行别的操作吗？</p>
+
+
+<h2><a name="db11"></a>在 MySQL 中插入数据</h2>
+<p>最后冲刺！在单击 &quot;Send&quot;（发送）按钮（名为 &quot;<b>sendButton</b>&quot; 的 JButton）时，就会执行在 MySQL 中插入数据的操作。</p>
+<p>在 NetBeans 的 GUI 编辑器中，可以方便地为 JButton 生成事件处理方法。只需双击窗体上的 JButton 本身即可。</p>
+<p>将在源文件中创建 <b>&quot;sendButtonActionPerformed&quot;</b> 方法<b></b>。让我们按如下方式填充内容：</p>
+
+<pre class='examplecode'><font color="#660000">private void sendButtonActionPerformed(java.awt.event.ActionEvent evt) {<font color="#006600">//GEN-FIRST:event_sendButtonActionPerformed
+        // TODO add your handling code here:</font>
+        
+        String carid=idField.getText();
+        String name=nameField.getText();        
+        String vendor=vendorField.getText();
+        String type=(String)typeCombo.getSelectedItem();
+        
+        String insertStr=&quot;&quot;;
+        
+        try{
+            
+            insertStr=&quot;insert into cars (carid, name, vendor, type) values(&quot;
+                    +<b>quotate</b>(carid)+&quot;,&quot;
+                    +quotate(name)+&quot;,&quot;
+                    +quotate(vendor)+&quot;,&quot;
+                    +quotate(type)
+                    +&quot;)&quot;;
+            
+            int done=stmt.executeUpdate(insertStr);
+            
+            commentLabel.setText(&quot;1 row inserted&quot;);
+           
+            <b>getContentPane().removeAll();
+            initComponents();</b>
+        
+        }
+        catch(Exception e){
+            commentLabel.setText(&quot;Error occurred in inserting data&quot;);
+            e.printStackTrace();
+        }
+        
+    }</font><font color="#006600">//GEN-LAST:event_sendButtonActionPerformed</font>
+</pre>
+<p>请注意，<b>initComponents</b> 方法是在插入数据并<b>删除当前内容窗格</b>后调用的。需要刷新 JTable 的外观...如果我更娴熟一些，我可能只刷新 JTable，而不是整个容器。这就是我们常说的“杀鸡焉用牛刀”。抱歉！</p>
+
+<p>还要注意，此处调用了 <b>quotate</b> 方法。我创建该方法，以便不再需要输入这么多的引号：</p>
+<pre class='examplecode'> <font color="#660000">public String quotate(String content){<br>    <br>        return &quot;'&quot;+content+&quot;'&quot;;<br>    }</font>
+
+</pre>
+<p>现在，我们完成了 <a href="https://netbeans.org/files/documents/4/299/InsertTable.java">InsertTable.java</a> 的完整代码。 </p>
+<p>运行项目！输入数据，然后单击 &quot;Send&quot;（发送）按钮。现在，您可以看到刚才在 JTable 中插入的另一行。反复插入几行！</p>
+<p><img src="../../images_www/articles/win-with-netbeans/appresult.png" width="399" height="263"></p>
+<p><b>运行完成的应用程序</b></p>
+<p>...让我们确保还可以从 NetBeans 的实用程序中查看这些数据。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/resultconfirmed.png" width="307" height="106"></p>
+
+<p>这是一项艰巨的工作！但通过此项目，我们学会了：</p>
+<ul>
+  <li>如何从 NetBeans 实用程序中运行数据库</li>
+  <li>如何编辑浅蓝色区域中的“受保护”代码</li>
+  <li>如何使用为 JTable 定制的 TableModel</li>
+</ul>
+<p>等等。</p>
+
+
+<p>&nbsp;</p>
+</body>
+</html>
+

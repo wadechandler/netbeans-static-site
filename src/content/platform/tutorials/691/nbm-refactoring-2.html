@@ -1,0 +1,799 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>NetBeans Refactoring Module Tutorial - Part 1</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+    <meta name="AUDIENCE" content="NBUSER"/>
+    <meta name="TYPE" content="ARTICLE"/>
+    <meta name="EXPIRES" content="N"/>
+    <meta name="developer" content="ralph"/>
+    <meta name="indexed" content="y"/>
+    <meta name="description"
+          content="refactoring tutorial part 2"/>
+       <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+<body>
+
+<h1>NetBeans Refactoring Module Tutorial - Part 2</h1>
+<p>This tutorial demonstrates how to create a module suite that provides one or more Java Refactorings. The tutorial is split into three parts:
+<ul class="toc">
+<li>Part1: Initiate</li>
+<li>Part2: Configurate and Execute</li>
+<li>Part3: Testing and Distribution</li>
+</ul>
+At the end of this series we will have a fully tested implementation of the Inline Constant Refactoring.
+</p>
+<p><p><b>Contents</b></p>
+<img  src="https://platform.netbeans.org/images/articles/65/netbeans-stamp65.gif" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.5" title="Content on this page applies to NetBeans IDE 6.5"></p>
+      <ul class="toc">
+<li><A HREF="#knowledge" CLASS="XRef">Prerequisite Knowledge</A>
+<li><A HREF="#refactoring" CLASS="XRef">NetBeans Refactoring</A>
+<li><A HREF="#setup" CLASS="XRef">Project Setup</A>
+<li><A HREF="#initiate" CLASS="XRef">Initiate</A>
+<li><A HREF="#implementation" CLASS="XRef">Implementation Factory</A>
+</ul></p>
+         
+<p><b>To follow this tutorial, you need the software and resources listed in the following 
+table.</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.7</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Version 6 or<br/>version 5</td>
+            </tr>
+        </tbody>
+    </table>
+   
+<h2><a name="knowledge"></a>Prerequisite Knowledge</h2>
+<p>This tutorial is a follow up on NetBeans Refactoring Module Tutorial for NetBeans Platform 6.7 Part 1. You will need the knowledge and modules created by that tutorial as a starting point for this one.</p> 
+
+<h2><a name="refactoring"></a>NetBeans Refactoring</h2>
+<p>In Part 1 of this tutorial we talked about the following steps you do, when you refactor in NetBeans.
+<ul><li>Select</li><li>Initiate</li><li>Configure</li><li>Preview</li><li>Execute</li><li>Undo</li></ul></p>
+<p>The steps Select, Preview and Undo are all automagically done by NetBeans. In this tutorial, Part 2, we will take care of the Configure and Execute steps. Part 3 will look at writing tests and make it ready to distribute.</p>
+
+<h2><a name="setup"></a>Project Setup</h2>
+<p>For this tutorial you need the module suite created in Part 1.
+<ol><li>Open the module suite InlineDemo.</li>
+<li>Add a new module to the suite with the name <tt>InlineDemoJava</tt> and the CodeNameBase <tt>org.nb.inlinedemo.java</tt>. We won't need an XML layer in this module, as we are going to use the Action from our API.</li>
+</ol></p>
+<p>Our module will use different API's from the NetBeans Platform and IDE. Setup the dependencies as shown below:
+<div><img src="../images/tutorials/refactoring2/APIDependencies2.png"></img></div></p>
+
+<h2><a name="refactoring"></a>The Refactoring</h2>
+<p>We start by writing the Refactoring. The refactoring class serves as an API for invoking the refactoring. Also it is used by various refactoring plugins to determine refactoring parameters. This class itself should do almost no work - all the work is done by the plugins. The refactoring class usually contains just getters and setters for the refactoring parameters.<ol>
+<li>Right-click the InlineDemoJava project, choose New > Other and choose Java Class from the Java category.</li>
+<li>Type <tt>InlineRefactoring</tt> in Class Name and <tt>org.nb.inlinedemo.java.api</tt> in Package.</li>
+<li>Extend the class AbstractRefactoring from the package <tt>org.netbeans.modules.refactoring.api</tt>.</li>
+<li>Add a constructor using the following code:
+<pre class="examplecode">
+public InlineRefactoring(TreePathHandle field) {
+    super(Lookups.fixed(field));
+}
+</pre></li>
+<li>For the Inline Constant refactoring, we need to know the name and the initialization string of the constant. Add the fields to the class
+<pre class="examplecode">
+private Tree initializerTree;
+private String fieldName;
+</pre></li>
+<li>Use the Encapsulate Field refactoring to create a Getter and Setter for the fields.</li>
+<li>The next step is to have your module export the <code>org.nb.inlinedemo.java.api</code> package so other modules can use it.</li>
+<li><p>In the API Versioning page in the Project Properties dialog box, check the checkbox for <code>org.nb.inlinedemo.java.api</code> in the Public Packages list, shown below:</p>
+<p><img border="1" src="../images/tutorials/refactoring2/ExportPackage2.png"/></p>
+</ol></p>
+
+<h2>Refactoring Plugin</h2>
+<p>Every refactoring has plugins - it should have at least one plugin - these actually do all the work. The refactoring module itself should provide the basic plugin that does the J2SE refactoring. Other modules can add other plugins - this makes them able to participate in the refactoring. For example, when using inline on a constant, a J2EE plugin needs to take care of replacing all the occurrences inside JSP documents.<ol>
+<li>Right-click the InlineDemoJava project, choose New > Other and choose Java Class from the Java category.</li>
+<li>Type <tt>InlineRefactoringPlugin</tt> in Class Name and <tt>org.nb.inlinedemo.java.plugins</tt> in Package.</li>
+<li>Extend the class JavaRefactoringPlugin from the package <tt>org.netbeans.modules.refactoring.java.spi</tt>.</li>
+<li>Click the lightbulb and implement all abstract methods.</li>
+<li>Create a constructor and two fields using the following code:
+<pre class="examplecode">
+private final InlineRefactoring refactoring;
+private final TreePathHandle treePathHandle;
+
+public InlineRefactoringPlugin(InlineRefactoring inlineRefactoring) {
+    refactoring = inlineRefactoring;
+    treePathHandle = refactoring.getRefactoringSource().lookup(TreePathHandle.class);
+}
+</pre></li>
+<li>Fill the method <tt>getJavaSource</tt> with this:<pre class="examplecode">
+protected JavaSource getJavaSource(Phase p) {
+    if (treePathHandle == null) {
+        return null;
+    }
+    switch (p) {
+        case PRECHECK:
+        case FASTCHECKPARAMETERS:
+            return JavaSource.forFileObject(treePathHandle.getFileObject());
+        case CHECKPARAMETERS:
+            ClasspathInfo cpInfo = getClasspathInfo(refactoring);
+            JavaSource source = JavaSource.create(cpInfo, treePathHandle.getFileObject());
+            return source;
+    }
+    throw new IllegalStateException();
+}
+</pre></li>
+<li>Only two methods need to be implemented; <tt>precheck</tt> and <tt>prepare</tt>. Prepare is called when the refactoring is executed and therefore, you have to implement it. Precheck is called before the configuration dialog is displayed. Add precheck using the following code:
+<pre class="examplecode">
+protected Problem preCheck(CompilationController info) throws IOException {
+    Problem preCheckProblem = null;
+    fireProgressListenerStart(InlineRefactoring.PRE_CHECK, 2);
+    info.toPhase(JavaSource.Phase.RESOLVED);
+    Element el = treePathHandle.resolveElement(info);
+    preCheckProblem = isElementAvail(treePathHandle, info);
+    if (preCheckProblem != null) {
+        return preCheckProblem;
+    }
+
+    preCheckProblem = isSourceElement(el, info);
+    if (preCheckProblem != null) {
+        return preCheckProblem;
+    }
+
+    switch (el.getKind()) {
+        case FIELD:
+            fireProgressListenerStep();
+            Set&lt;Modifier&gt; modifiers = el.getModifiers();
+            ArrayList&lt;Modifier&gt; needed = new ArrayList&lt;Modifier&gt;(2);
+            needed.add(Modifier.FINAL);
+            needed.add(Modifier.STATIC);
+            if (!modifiers.containsAll(needed)) {
+                preCheckProblem = createProblem(preCheckProblem, false, NbBundle.getMessage(InlineRefactoringPlugin.class, &quot;ERR_InlineNonConstant&quot;, el));
+            }
+            fireProgressListenerStep();
+            VariableTree tree = (VariableTree) info.getTrees().getTree(el);
+            refactoring.setFieldName(tree.getName().toString());
+            refactoring.setInitializerTree(tree.getInitializer());
+            if(refactoring.getInitializerTree() == null) {
+                preCheckProblem = createProblem(preCheckProblem, true, NbBundle.getMessage(InlineRefactoringPlugin.class, &quot;ERR_InlineNoInitializer&quot;));
+                return preCheckProblem;
+            }
+            break;
+        default:
+            preCheckProblem = createProblem(preCheckProblem, true, NbBundle.getMessage(InlineRefactoringPlugin.class, &quot;ERR_InlineWrongType&quot;));
+    }
+    fireProgressListenerStop();
+    return preCheckProblem;
+}
+</pre>This code checks three things<ol><li>Is the selected element a Field?</li><li>Is the selected Field static and final?</li><li>Is the field initialized during declaration?</li></ol> If one of these tests fail, the problem is presented to the user.</li>
+<li>Create a Bundle.properties file in <tt>org.nb.inlinedemo.java.plugins</tt> and add the following string:
+<pre class="examplecode">
+ERR_InlineNonConstant=Cannot inline a field which is not a constant field.
+ERR_InlineWrongType=Inline Refactoring can only inline constant fields.
+ERR_InlineNoInitializer=Cannot find the field initializer.
+ERR_ProjectNotOpened=Cannot refactor {0} that is defined outside of an open project.
+ERR_CannnotRefactorLibrary=Cannot change parameters of "{0}" which overrides method from library class.
+</pre></li>
+<li>Precheck uses the method isSourceElement to check if the selected element is in an opened project and is not part of a library. Add it using the following code:
+<pre class="examplecode">
+public static final Problem isSourceElement(Element el, CompilationInfo info) {
+    Problem preCheckProblem = null;
+    if (isFromLibrary(el, info.getClasspathInfo())) { //NOI18N
+        preCheckProblem = new Problem(true, NbBundle.getMessage(
+                InlineRefactoringPlugin.class, "ERR_CannotRefactorLibraryClass",
+                el.getEnclosingElement()));
+        return preCheckProblem;
+    }
+    FileObject file = SourceUtils.getFile(el, info.getClasspathInfo());
+    // isFromLibrary already checked file for null
+    if (!isElementInOpenProject(file)) {
+        preCheckProblem = new Problem(true, NbBundle.getMessage(
+                InlineRefactoringPlugin.class,
+                "ERR_ProjectNotOpened",
+                FileUtil.getFileDisplayName(file)));
+        return preCheckProblem;
+    }
+    return null;
+}
+
+public static boolean isElementInOpenProject(FileObject f) {
+    if (f == null) {
+        return false;
+    }
+    Project p = FileOwnerQuery.getOwner(f);
+    return isOpenProject(p);
+}
+
+public static boolean isFromLibrary(Element element, ClasspathInfo info) {
+    FileObject file = SourceUtils.getFile(element, info);
+    if (file == null) {
+        //no source for given element. Element is from library
+        return true;
+    }
+    return FileUtil.getArchiveFile(file) != null;
+}
+
+private static boolean isOpenProject(Project p) {
+    return OpenProjects.getDefault().isProjectOpen(p);
+}
+</pre></li>
+<li>The prepare method itself is quite small. It only queries for the files relevant to this refactoring and delegates the hard work to a TransformTask. Fill the prepare method using the following code:
+<pre class="examplecode">
+public Problem prepare(RefactoringElementsBag elements) {
+    if (treePathHandle == null) {
+        return null;
+    }
+    Set&lt;FileObject&gt; a = getRelevantFiles();
+    fireProgressListenerStart(ProgressEvent.START, a.size());
+    TransformTask transform = new TransformTask(new InlineTransformer(refactoring.getInitializerTree()), treePathHandle);
+    Problem problem = createAndAddElements(a, transform, elements, refactoring);
+    fireProgressListenerStop();
+    return problem;
+}
+</pre></li>
+<li>The getRelevantFiles method will need to look like this:
+<pre class="examplecode">
+private Set&lt;FileObject&gt; getRelevantFiles() {
+    ClasspathInfo cpInfo = getClasspathInfo(refactoring);
+    final Set&lt;FileObject&gt; set = new HashSet&lt;FileObject&gt;();
+    JavaSource source = JavaSource.create(cpInfo, treePathHandle.getFileObject());
+
+    try {
+        source.runUserActionTask(new CancellableTask&lt;CompilationController&gt;() {
+
+            public void cancel() {
+                throw new UnsupportedOperationException(&quot;Not supported yet.&quot;); // NOI18N
+            }
+
+            public void run(CompilationController info) throws Exception {
+                final ClassIndex idx = info.getClasspathInfo().getClassIndex();
+                info.toPhase(JavaSource.Phase.RESOLVED);
+                Element el = treePathHandle.resolveElement(info);
+                ElementHandle&lt;TypeElement&gt; enclosingType;
+                if (el instanceof TypeElement) {
+                    enclosingType = ElementHandle.create((TypeElement) el);
+                } else {
+                    enclosingType = ElementHandle.create(info.getElementUtilities().enclosingTypeElement(el));
+                }
+                set.add(SourceUtils.getFile(el, info.getClasspathInfo()));
+                if (!el.getModifiers().contains(Modifier.PRIVATE)) {
+                    set.addAll(idx.getResources(enclosingType, EnumSet.of(ClassIndex.SearchKind.FIELD_REFERENCES), EnumSet.of(ClassIndex.SearchScope.SOURCE)));
+                }
+            }
+        }, true);
+    } catch (IOException ioe) {
+        throw (RuntimeException) new RuntimeException().initCause(ioe);
+    }
+    return set;
+}
+</pre></li>
+</ol></p>
+
+<h2>Refactoring Transformer</h2>
+<p>Although the name may let you think otherwise, the Transformer will not change your source files. Instead it will create RefactoringElements - each of the elements represent a single change that the refactoring should do. So, in case of our Inline Constant Refactoring, the field declaration and every usage of the field being inlined would have a corresponding RefactoringElement. These elements will then be used by the refactoring preview, to execute the refactoring and by the undo refactoring. To create the transformer, we will make use of the RefactoringVisitor from the package <tt>org.netbeans.modules.refactoring.java.spi</tt>.
+<ol><li>First, create a new class <tt>InlineTransformer</tt> in the package <tt>org.nb.inlinedemo.plugins</tt></li>
+<li>Extend the class RefactoringVisitor and use the following code:
+<pre class="examplecode">
+private final Tree initializerTree;
+
+public InlineTransformer(Tree initializerTree) {
+    this.initializerTree = initializerTree;
+}
+</pre></li>
+<li>First, we will remove the declaration of the field. Use the following code:
+<pre class="examplecode">
+@Override
+public Tree visitClass(ClassTree node, Element p) {
+    Tree tree = workingCopy.getTrees().getTree(p);
+    if (!node.getMembers().contains(tree)) {
+        return super.visitClass(node, p);
+    }
+    ClassTree nNode = make.removeClassMember(node, tree);
+    rewrite(node, nNode);
+    return super.visitClass(node, p);
+}
+</pre></li>
+<li>Second, we need to replace every usage of the field with the string from the initializer. For this, we use the following three methods:
+<pre class="examplecode">
+@Override
+public Tree visitIdentifier(IdentifierTree node, Element p) {
+    renameUsageIfMatch(getCurrentPath(), node, p);
+    return super.visitIdentifier(node, p);
+}
+
+@Override
+public Tree visitMemberSelect(MemberSelectTree node, Element p) {
+    renameUsageIfMatch(getCurrentPath(), node, p);
+    return super.visitMemberSelect(node, p);
+}
+
+private void renameUsageIfMatch(TreePath path, Tree tree, Element elementToFind) {
+    if (workingCopy.getTreeUtilities().isSynthetic(path)) {
+        return;
+    }
+    Trees trees = workingCopy.getTrees();
+    Element el = workingCopy.getTrees().getElement(path);
+    if (el == null) {
+        path = path.getParentPath();
+        if (path != null &amp;& path.getLeaf().getKind() == Tree.Kind.IMPORT) {
+            ImportTree impTree = (ImportTree) path.getLeaf();
+            if (!impTree.isStatic()) {
+                return;
+            }
+            Tree idTree = impTree.getQualifiedIdentifier();
+            if (idTree.getKind() != Tree.Kind.MEMBER_SELECT) {
+                return;
+            }
+            final Name id = ((MemberSelectTree) idTree).getIdentifier();
+            if (id == null || id.contentEquals(&quot;*&quot;)) { // NOI18N
+                // skip import static java.lang.Math.*
+                return;
+            }
+            Tree classTree = ((MemberSelectTree) idTree).getExpression();
+            path = trees.getPath(workingCopy.getCompilationUnit(), classTree);
+            el = trees.getElement(path);
+            if (el == null) {
+                return;
+            }
+            Iterator iter = workingCopy.getElementUtilities().getMembers(el.asType(), new ElementUtilities.ElementAcceptor() {
+
+                public boolean accept(Element e, TypeMirror type) {
+                    return id.equals(e.getSimpleName());
+                }
+            }).iterator();
+            if (iter.hasNext()) {
+                el = (Element) iter.next();
+            }
+            if (iter.hasNext()) {
+                return;
+            }
+        } else {
+            return;
+        }
+    }
+
+    if (el.equals(elementToFind)) {
+        rewrite(tree, initializerTree);
+    }
+}
+</pre></li></ol>
+</p>
+
+<h2>JavaRefactoringsPluginFactory</h2>
+<p>Plugins are instantiated by the refactoring class automatically when some code creates an instance of a refactoring. The instantiation of the plugins is done by plugin factories that get called by the refactoring.<ol>
+<li>Create the class <tt>JavaRefactoringsPluginFactory</tt> in the package <tt>org.nb.inlinedemo.java.plugins</tt></li>
+<li>Implement the interface <tt>RefactoringPluginFactory</tt> and register it using the following annotation:
+<pre class="examplecode">
+@org.openide.util.lookup.ServiceProvider(service=org.netbeans.modules.refactoring.spi.RefactoringPluginFactory.class, position=100)
+</pre></li>
+<li>Add the method createInstance:
+<pre class="exampleCode">
+public RefactoringPlugin createInstance(AbstractRefactoring refactoring) {
+    if (refactoring instanceof InlineRefactoring) {
+        return new InlineRefactoringPlugin((InlineRefactoring) refactoring);
+    }
+    return null;
+}
+</pre></li></ol>
+Our refactoring itself is now finished, it does the needed checks and transforms the java code. But, before it can be connected to our action, we first have to make the InlineUI.
+</p>
+
+<h2>InlineUI</h2>
+<p>InlineUI will be an implementation of RefactoringUI interface. It plugs into the refactoring framework to which it provides a refactoring parameters panel, display name of the refactoring, reference to the Refactoring Class, etc.<ol><li>Create the class <tt>InlineUI</tt> in the package <tt>org.nb.inlinedemo.java.ui</tt> using the following code:
+<pre class="examplecode">
+public class InlineUI implements RefactoringUI {
+
+    private CustomRefactoringPanel panel;
+    private InlineRefactoring refactoring;
+
+    InlineUI(TreePathHandle selectedElement, CompilationInfo info) {
+        refactoring = new InlineRefactoring(selectedElement);
+    }
+
+    public String getName() {
+        return NbBundle.getMessage(InlineUI.class, &quot;LBL_Inline&quot;);
+    }
+
+    public String getDescription() {
+        String name = refactoring.getFieldName();
+        return new MessageFormat(NbBundle.getMessage(InlineUI.class, &quot;DSC_Inline&quot;)).format(
+                new Object[]{name});
+    }
+
+    public boolean isQuery() {
+        return false;
+    }
+
+    public CustomRefactoringPanel getPanel(ChangeListener parent) {
+        if (panel == null) {
+            panel = new InlinePanel(refactoring);
+        }
+        return panel;
+    }
+
+    public Problem setParameters() {
+        return setParameters(false);
+    }
+
+    public Problem checkParameters() {
+        return setParameters(true);
+    }
+
+    public boolean hasParameters() {
+        return true;
+    }
+
+    public AbstractRefactoring getRefactoring() {
+        return refactoring;
+    }
+
+    public HelpCtx getHelpCtx() {
+        return new HelpCtx(InlineUI.class);
+    }
+
+    private Problem setParameters(boolean checkOnly) {
+        if (checkOnly) {
+            return refactoring.fastCheckParameters();
+        } else {
+            return refactoring.checkParameters();
+        }
+    }
+}
+</pre></li>
+<li>Create a <tt>Bundle.properties</tt> in <tt>org.nb.inlinedemo.java.ui</tt> and add the following strings:
+<pre class="examplecode">
+LBL_Inline=Inline
+DSC_Inline=Inline instances of {0}?;
+</pre></li>
+</ol></p>
+
+<h2>InlinePanel</h2>
+<p>Now we will create the configuration panel. Because there are no parameters to be set for this refactoring, the user will be presented with a simple message.<ol>
+<li>Add a new JPanel to <tt>org.nb.inlinedemo.java.ui</tt> with the name <tt>InlinePanel</tt>.</li>
+<li>Add a JLabel to the center of the panel with the text: <tt>Inline instances of {0}?</tt></li>
+<li>Using the editor let the panel implement <tt>CustomRefactoringPanel</tt> from the package <tt>org.netbeans.modules.refactoring.spi.ui</tt></li>
+<li>Change the body of <tt>getComponent</tt> to:
+<pre class="examplecode">
+return this;
+</pre></li>
+<li>Change the body of <tt>initialize</tt> to:
+<pre class="examplecode">
+jLabel1.setText(new MessageFormat(NbBundle.getMessage(InlineUI.class, &quot;DSC_Inline&quot;)).format(
+                new Object[]{refactoring.getFieldName()}));
+</pre></li>
+<li>Add the parameter <tt>InlineRefactoring refactoring</tt> to the constructor. Select the parameter, click the lightbulb and choose Create Field.</li>
+</ol></p>
+
+<h2>ActionsProvider</h2>
+<p>Now we can connect the refactoring to our Action. We will need do create the methods canInline and doInline. The first method (canInline) determines when the action should be enabled based on the currently active (selected) nodes in the IDE. By convention the implementation of this method should not do anything expensive - preferably it should not tough the Java metadata and decide purely on whether there are JavaDataObjects behind the selected nodes and how many nodes are selected (some actions may be applicable to several nodes at once as in case of Pull Up refactoring, where you can select several members to be pulled up, some actions may be able operate on a single node only). For performance reasons the coInline method does not get information about the position of the caret in the editor - that's why the checks in this method should be weak. Most of the other checks are be done in refactoring preCheck() method (we talked about this method earlier), which can provide user with a descriptive message for why the refactoring cannot be performed on a selected object and how user can fix it.<ol>
+<li>Create the class <tt>JavaRefactoringActionsProvider</tt> in the package <tt>org.nb.inlinedemo.java.ui</tt>.</li>
+<li>Extend the class <tt>ActionsImplementationProvider</tt> and register it using the annotation:
+<pre class="examplecode">
+@org.openide.util.lookup.ServiceProvider(service = org.nb.inlinedemo.spi.ui.ActionsImplementationProvider.class, position = 100)
+</pre></li>
+<li>Add the following code to the class:
+<pre class="examplecode">
+@Override
+public boolean canInline(Lookup lookup) {
+    Collection&lt;? extends Node&gt; nodes = new HashSet&lt;Node&gt;(lookup.lookupAll(Node.class));
+    if (nodes.size() != 1) {
+        return false;
+    }
+    Node n = nodes.iterator().next();
+    TreePathHandle tph = n.getLookup().lookup(TreePathHandle.class);
+    if (tph != null) {
+        return RetoucheUtils.isRefactorable(tph.getFileObject());
+    }
+    DataObject dob = n.getCookie(DataObject.class);
+    if (dob == null) {
+        return false;
+    }
+    FileObject fo = dob.getPrimaryFile();
+    if (RetoucheUtils.isRefactorable(fo)) { //NOI18N
+        return true;
+    }
+    return false;
+}
+
+@Override
+public void doInline(Lookup lookup) {
+    Runnable task;
+    EditorCookie ec = lookup.lookup(EditorCookie.class);
+    if (isFromEditor(ec)) {
+        task = new TextComponentTask(ec) {
+
+            @Override
+            protected RefactoringUI createRefactoringUI(TreePathHandle selectedElement, int startOffset, int endOffset, CompilationInfo info) {
+                return new InlineUI(selectedElement, info);
+            }
+        };
+    } else if (nodeHandle(lookup)) {
+        task = new TreePathHandleTask(new HashSet&lt;Node&gt;(lookup.lookupAll(Node.class)), true) {
+
+            RefactoringUI ui;
+
+            @Override
+            protected void treePathHandleResolved(TreePathHandle handle, CompilationInfo javac) {
+                ui = new InlineUI(handle, javac);
+            }
+
+            @Override
+            protected RefactoringUI createRefactoringUI(Collection&lt;TreePathHandle&gt; handles) {
+                return ui;
+            }
+        };
+    } else {
+        task = new NodeToFileObjectTask(Collections.singleton(lookup.lookup(Node.class))) {
+
+            RefactoringUI ui;
+
+            @Override
+            protected void nodeTranslated(Node node, Collection&lt;TreePathHandle&gt; handles, CompilationInfo javac) {
+                TreePathHandle tph = handles.iterator().next();
+                ui = new InlineUI(tph, javac);
+            }
+
+            @Override
+            protected RefactoringUI createRefactoringUI(FileObject[] selectedElements, Collection&lt;TreePathHandle&gt; handles) {
+                return ui;
+            }
+        };
+    }
+    RetoucheUtils.invokeAfterScanFinished(task, getActionName(RefactoringActionsFactory.inlineAction()));
+}
+
+static boolean isFromEditor(EditorCookie ec) {
+    if (ec != null &amp;& ec.getOpenedPanes() != null) {
+        TopComponent activetc = TopComponent.getRegistry().getActivated();
+        if (activetc instanceof CloneableEditorSupport.Pane) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static boolean nodeHandle(Lookup lookup) {
+    Node n = lookup.lookup(Node.class);
+    if (n!=null) {
+        if (n.getLookup().lookup(TreePathHandle.class)!=null)
+            return true;
+    }
+    return false;
+}
+
+static String getActionName(Action action) {
+    String arg = (String) action.getValue(Action.NAME);
+    arg = arg.replace(&quot;&&quot;, &quot;&quot;); // NOI18N
+    return arg.replace(&quot;...&quot;, &quot;&quot;); // NOI18N
+}
+
+public static abstract class TextComponentTask implements Runnable, CancellableTask&lt;CompilationController&gt; {
+    private JTextComponent textC;
+    private int caret;
+    private int start;
+    private int end;
+    private RefactoringUI ui;
+
+    public TextComponentTask(EditorCookie ec) {
+        this.textC = ec.getOpenedPanes()[0];
+        this.caret = textC.getCaretPosition();
+        this.start = textC.getSelectionStart();
+        this.end = textC.getSelectionEnd();
+        assert caret != -1;
+        assert start != -1;
+        assert end != -1;
+    }
+
+    public void cancel() {
+    }
+
+    public void run(CompilationController cc) throws Exception {
+        TreePath selectedElement = null;
+        cc.toPhase(Phase.RESOLVED);
+        selectedElement = cc.getTreeUtilities().pathFor(caret);
+        //workaround for issue 89064
+        if (selectedElement.getLeaf().getKind() == Tree.Kind.COMPILATION_UNIT) {
+            List&lt;? extends Tree&gt; decls = cc.getCompilationUnit().getTypeDecls();
+            if (!decls.isEmpty()) {
+                selectedElement = TreePath.getPath(cc.getCompilationUnit(), decls.get(0));
+            }
+        }
+        ui = createRefactoringUI(TreePathHandle.create(selectedElement, cc), start, end, cc);
+    }
+
+    public final void run() {
+        try {
+            JavaSource source = JavaSource.forDocument(textC.getDocument());
+            source.runUserActionTask(this, true);
+        } catch (IOException ioe) {
+            ErrorManager.getDefault().notify(ioe);
+            return ;
+        }
+        TopComponent activetc = TopComponent.getRegistry().getActivated();
+
+        if (ui!=null) {
+            UI.openRefactoringUI(ui, activetc);
+        } else {
+            JOptionPane.showMessageDialog(null,NbBundle.getMessage(JavaRefactoringActionsProvider.class, &quot;ERR_CannotRenameKeyword&quot;));
+        }
+    }
+
+    protected abstract RefactoringUI createRefactoringUI(TreePathHandle selectedElement,int startOffset,int endOffset, CompilationInfo info);
+}
+
+public static abstract class TreePathHandleTask implements Runnable, CancellableTask&lt;CompilationController&gt; {
+    private Collection&lt;TreePathHandle&gt; handles = new ArrayList&lt;TreePathHandle&gt;();
+    private TreePathHandle current;
+    boolean renameFile;
+
+    public TreePathHandleTask(Collection&lt;? extends Node&gt; nodes) {
+        this(nodes, false);
+    }
+
+    public TreePathHandleTask(Collection&lt;? extends Node&gt; nodes, boolean useFirstHandle) {
+        for (Node n:nodes) {
+            TreePathHandle temp = n.getLookup().lookup(TreePathHandle.class);
+            if (temp!=null) {
+                handles.add(temp);
+                if (useFirstHandle) {
+                    break;
+                }
+            }
+        }
+    }
+
+    public void cancel() {
+    }
+
+    public void run(CompilationController info) throws Exception {
+        info.toPhase(Phase.ELEMENTS_RESOLVED);
+        Element el = current.resolveElement(info);
+        if (el!=null &amp;&amp; el instanceof TypeElement &amp;& !((TypeElement)el).getNestingKind().isNested()) {
+            if (info.getFileObject().getName().equals(el.getSimpleName().toString())) {
+                renameFile = true;
+            }
+        }
+        treePathHandleResolved(current, info);
+    }
+
+    public void run() {
+        for (TreePathHandle handle:handles) {
+            FileObject f = handle.getFileObject();
+            current = handle;
+            JavaSource source = JavaSource.forFileObject(f);
+            assert source != null;
+            try {
+                source.runUserActionTask(this, true);
+            } catch (IllegalArgumentException ex) {
+                ex.printStackTrace();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        TopComponent activetc = TopComponent.getRegistry().getActivated();
+
+        RefactoringUI ui = createRefactoringUI(handles);
+        if (ui!=null) {
+            UI.openRefactoringUI(ui, activetc);
+        } else {
+            JOptionPane.showMessageDialog(null,NbBundle.getMessage(JavaRefactoringActionsProvider.class, &quot;ERR_CannotRenameKeyword&quot;));
+        }
+    }
+
+    /**
+     * This is the place where subclasses may collect info about handles.
+     * @param handle handle
+     * @param javac context of running transaction
+     */
+    protected void treePathHandleResolved(TreePathHandle handle, CompilationInfo javac) {
+    }
+
+    protected abstract RefactoringUI createRefactoringUI(Collection&lt;TreePathHandle&gt; handles);
+}
+
+public static abstract class NodeToFileObjectTask implements Runnable, CancellableTask&lt;CompilationController&gt; {
+    private Collection&lt;? extends Node&gt; nodes;
+    public NonRecursiveFolder pkg[];
+    Collection&lt;TreePathHandle&gt; handles = new ArrayList&lt;TreePathHandle&gt;();
+    private Node currentNode;
+
+    public NodeToFileObjectTask(Collection&lt;? extends Node&gt; nodes) {
+        this.nodes = nodes;
+    }
+
+    public void cancel() {
+    }
+
+    public void run(CompilationController info) throws Exception {
+        info.toPhase(Phase.ELEMENTS_RESOLVED);
+        Collection&lt;TreePathHandle&gt; handlesPerNode = new ArrayList&lt;TreePathHandle&gt;();
+        CompilationUnitTree unit = info.getCompilationUnit();
+        Collection&lt;TreePathHandle&gt; publicHandles = new ArrayList&lt;TreePathHandle&gt;();
+        Collection&lt;TreePathHandle&gt; sameNameHandles = new ArrayList&lt;TreePathHandle&gt;();
+        for (Tree t: unit.getTypeDecls()) {
+            Element e = info.getTrees().getElement(TreePath.getPath(unit, t));
+            if (e == null || !(e.getKind().isClass() || e.getKind().isInterface())) {
+                // syntax errors #111195
+                continue;
+            }
+            if (e.getSimpleName().toString().equals(info.getFileObject().getName())) {
+                TreePathHandle representedObject = TreePathHandle.create(TreePath.getPath(unit,t),info);
+                sameNameHandles.add(representedObject);
+            }
+            if (e.getModifiers().contains(Modifier.PUBLIC)) {
+                TreePathHandle representedObject = TreePathHandle.create(TreePath.getPath(unit,t),info);
+                publicHandles.add(representedObject);
+            }
+        }
+        if (!publicHandles.isEmpty()) {
+            handlesPerNode.addAll(publicHandles);
+        } else {
+            handlesPerNode.addAll(sameNameHandles);
+        }
+
+        if (!handlesPerNode.isEmpty()) {
+            handles.addAll(handlesPerNode);
+            nodeTranslated(currentNode, handlesPerNode, info);
+        }
+    }
+
+    public void run() {
+        FileObject[] fobs = new FileObject[nodes.size()];
+        pkg = new NonRecursiveFolder[fobs.length];
+        int i = 0;
+        for (Node node:nodes) {
+            DataObject dob = node.getCookie(DataObject.class);
+            if (dob!=null) {
+                fobs[i] = dob.getPrimaryFile();
+                if (RetoucheUtils.isJavaFile(fobs[i])) {
+                    JavaSource source = JavaSource.forFileObject(fobs[i]);
+                    assert source != null;
+                    try {
+                        currentNode = node;
+                        // XXX this could be optimize by ClasspasthInfo in case of more than one file
+                        source.runUserActionTask(this, true);
+                    } catch (IllegalArgumentException ex) {
+                        ex.printStackTrace();
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    } finally {
+                        currentNode = null;
+                    }
+                }
+
+                pkg[i++] = node.getLookup().lookup(NonRecursiveFolder.class);
+            }
+        }
+        RefactoringUI ui = createRefactoringUI(fobs, handles);
+        if (ui!=null) {
+            UI.openRefactoringUI(ui);
+        } else {
+            JOptionPane.showMessageDialog(null,NbBundle.getMessage(JavaRefactoringActionsProvider.class, &quot;ERR_NoTypeDecls&quot;));
+        }
+    }
+
+    /**
+     * Notifies subclasses about the translation.
+     * This is the place where subclasses may collect info about handles.
+     * @param node node that is translated
+     * @param handles handles translated from the node
+     * @param javac context of running translation
+     */
+    protected void nodeTranslated(Node node, Collection&lt;TreePathHandle&gt; handles, CompilationInfo javac) {
+    }
+
+    protected abstract RefactoringUI createRefactoringUI(FileObject[] selectedElement, Collection&lt;TreePathHandle&gt; handles);
+}
+</pre></li>
+<li>The file RetoucheUtils is in the current version not in a public package. We will need to change the dependency on Java Refactoring to its implementation version. Expand the libraries node and select Java Refactoring.</li>
+<li>Right-click and choose Edit...</li>
+<li><p>Check Implementation Version as shown below.</p><p><img border="1" src="../images/tutorials/refactoring2/ImplementationVersion.png"/></p></li></ol></p>
+
+<h2>Next Steps</h2>
+You now have a working Inline Constant Refactoring. In the next tutorial we will test the refactoring and look at distribution.
+    
+</body>
+</html>

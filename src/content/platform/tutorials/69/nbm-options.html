@@ -1,0 +1,445 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <!-- -*- xhtml -*- -->
+    <title>NetBeans Options Window Module Tutorial for NetBeans Platform 6.5</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+    <meta name="AUDIENCE" content="NBUSER"/>
+    <meta name="TYPE" content="ARTICLE"/>
+    <meta name="EXPIRES" content="N"/>
+    <meta name="developer" content="gwielenga@netbeans.org"/>
+    <meta name="indexed" content="y"/>
+    <meta name="description"
+          content="A short guide to extending the Options Window."/>
+    <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+    <!--     Use is subject to license terms.-->
+</head>
+<body>
+    <h1>NetBeans Options Window Module Tutorial</h1>
+    
+    <p>This tutorial demonstrates how to extend the Options window.</p>
+
+       <p><strong class="notes">Note: </strong>This document uses the NetBeans IDE 6.8 Release. If you
+    are using an earlier version, see <a href="67/nbm-options.html">the 6.7 version
+        of this document</a>.</p>
+     
+     <p><b>Contents</b></p>
+   
+   <p><img src="../images/articles/69/netbeans-stamp7-8-9.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.5, 6.7, 6.8" title="Content on this page applies to NetBeans IDE 6.5, 6.7, 6.8"/></p>
+      <ul class="toc">
+        <li><a href="#intro">Introduction to Options Window Extensions</a></li>
+        <li><a href="#creatingthemoduleproject">Creating the Module Project</a></li>
+        <li><a href="#creatingandgettingtoknowthemainfiles">Extending the Options Window</a></li>
+        <li><a href="#creatingandgettingtoknowthemainfiles">Building and Installing the Module</a></li>
+        <li><a href="#creatingandgettingtoknowthemainfiles">Storing and Loading Preferences</a></li>
+       </ul>
+         
+<p><b>To follow this tutorial, you need the software and resources listed in the following 
+table.</b></p>
+
+     <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.8</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Version 6 or<br/>version 5</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 class="tutorial"><a name="intro"></a>Introduction to Options Window Extensions</h2>
+    
+    <p>Whether you
+    are creating a plugin for NetBeans IDE or for another application, there
+    is a good chance that you want the user to be able to specify settings,
+    such as the location of an external file. The Options window offers a
+    centralized location for all such settings. In the IDE, the Options window
+    is found under the Tools menu and looks as follows:</p>
+    
+    <p><img src="../images/tutorials/options/nbm-options-65-1.png" alt="Primary Panel"/></p>
+    
+    <p>The NetBeans APIs give you access to the Options window in two different ways. In the
+    first case, you can add a new main panel to the Options window. Using this approach, your
+    module will add a new 'primary' panel to the Options window, similar to the 'General' panel
+    or 'Editor' panel shown in the screenshot above. Your panel will, just like these panels,
+    have a name and an image in the top of the Options window, together with its settings in
+    the body of the panel. In the second case, the NetBeans APIs allow you to add a new subpanel
+    within the Miscellaneous panel, as shown below:</p>
+    
+    <p><img src="../images/tutorials/options/nbm-options-65-2.png" alt="Misc Panel"/></p>
+    
+    <p>In this case, your new subpanel will have its own tab, just like "Ant" or "Diff" above, together
+    with the settings within a panel in the body of the Options window extension.
+    Whether you add your user settings within a new primary panel or within a tab in the
+    Miscellaneous panel is completely up to you. Factors that might influence your
+    decision are purely personal and a question of your own taste.</p>
+    
+    <p>At the end of this tutorial, the Options window will be extended with a new panel.
+    In addition, you will be shown how to use the NetBeans <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/util/NbPreferences.html">NbPreferences</a></tt> class to store and
+    use the settings that the user specifies in your Options window extension.</p>
+    
+    <h2 class="tutorial"><a name="creatingthemoduleproject"></a>Creating the Module Project</h2>
+    
+    <p>We begin by working through the New Module Project
+    wizard. At the end of it, we will have a basic
+    source structure, with some default files, that
+    every NetBeans module requires.</p>
+
+    <ol>
+    <li>Choose File &gt; New Project (Ctrl+Shift+N). Under Categories, select NetBeans Modules.
+        Under Projects, select Module. Click Next.</li>
+    <li>In the Name and Location panel, type <tt>CoolOptions</tt> in the Project Name field.
+        Change the Project Location to any directory on your computer. Leave the Standalone Module option
+        and Set as Main Project checkbox selected. Click Next.</li>
+    <li>In the Basic Module Configuration panel, type <tt>org.netbeans.modules.cooloptions</tt>
+        in Code Name Base.</li>
+    <li>Do not select "Generate XML Layer", because you do not need a layer file in this scenario.
+        Leave the
+        location of the localizing bundle so that it will be stored in a package with
+        the name <tt>org/netbeans/modules/cooloptions</tt>. Click Finish.</li>
+</ol>
+    
+    
+    <p> The IDE creates the <tt>CoolOptions</tt>
+        project. The project contains all of your sources and project
+    metadata, such as the project's Ant build script. The project opens in the IDE. You can view its logical
+    structure in the Projects window (Ctrl+1) and its file structure in the Files window (Ctrl+2).</p>
+    
+    
+    <!-- ===================================    ================================================== -->
+    <h2><a name="creatingandgettingtoknowthemainfiles"></a>Extending the Options Window</h2>
+    <p>Now that we have a module project, which gives us our source structure,
+        we simply run through another wizard that will create the NetBeans API implementation
+        of an Options window extension. In the wizard, you simply
+        need to specify the type of panel you want to have generated, either a primary
+        panel or a miscellaneous panel, and then the wizard will
+        generate all the required classes and <tt>layer.xml</tt> registration
+        details for you.</p>
+        
+        
+        <ol>
+        
+        <li>Right-click the "CoolOptions" project node and
+        choose New &gt; Other. Under Categories, select Module Development. Under File Types, 
+    select Options Panel. You should now see the following:
+    
+    <p><img src="../images/tutorials/options/nb68-options-1.png" alt="Options template."/></p>
+    
+    <p>Click Next.</p></li>
+    <li>In the next panel, specify the type of panel that you want to create and fill
+    in the information required. Initially, this panel looks as follows:
+    
+    <p><img src="../images/tutorials/options/nb68-options-2.png" alt="Options template."/></p>
+    
+    <p>In this tutorial, we assume that we are creating a Miscellaneous Panel, which will
+        therefore extend <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/AdvancedOption.html">org.netbeans.spi.options.AdvancedOption</a>.</p>
+     <p>Fill in the above dialog with the following details:</p>
+    
+    <ul>
+        <li><b>Title.</b> Cool Options</li>
+        <li><b>Keywords.</b> cool</li>
+    </ul>
+         <p>You should now see the following:</p>
+         <p><img src="../images/tutorials/options/nb68-options-3.png" alt="Options template."/></p>
+         <p>Click Next.</p></li>
+    
+    <li>In the Location panel, you can set the prefix of the classes that will
+        be generated and the package where they will be placed. Change the Class Name
+    Prefix to "Cool" and leave the package name unchanged. Click Finish.</li></ol>
+        
+        <p>The Projects window should now look as follows:</p>
+        
+        <p><img src="../images/tutorials/options/nbm-options-65-6.png" alt="Initial Projects window."/></p>
+        
+
+        <p>Open the <tt>CoolOptionsPanelController</tt> class and notice that it has this content:</p>
+
+<pre>package org.netbeans.modules.cooloptions;
+
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+import javax.swing.JComponent;
+import org.netbeans.spi.options.OptionsPanelController;
+import org.openide.util.HelpCtx;
+import org.openide.util.Lookup;
+
+@OptionsPanelController.SubRegistration(location = "Advanced",
+displayName = "#AdvancedOption_DisplayName_Cool",
+keywords = "#AdvancedOption_Keywords_Cool",
+keywordsCategory = "Advanced/Cool")
+public final class CoolOptionsPanelController extends <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsPanelController.html">OptionsPanelController</a> {
+
+    private CoolPanel panel;
+    private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
+    private boolean changed;
+
+    public void update() {
+        getPanel().load();
+        changed = false;
+    }
+
+    public void applyChanges() {
+        getPanel().store();
+        changed = false;
+    }
+
+    public void cancel() {
+        // need not do anything special, if no changes have been persisted yet
+    }
+
+    public boolean isValid() {
+        return getPanel().valid();
+    }
+
+    public boolean isChanged() {
+        return changed;
+    }
+
+    public HelpCtx getHelpCtx() {
+        return null; // new HelpCtx("...ID") if you have a help set
+    }
+
+    public JComponent getComponent(Lookup masterLookup) {
+        return getPanel();
+    }
+
+    public void addPropertyChangeListener(PropertyChangeListener l) {
+        pcs.addPropertyChangeListener(l);
+    }
+
+    public void removePropertyChangeListener(PropertyChangeListener l) {
+        pcs.removePropertyChangeListener(l);
+    }
+
+    private CoolPanel getPanel() {
+        if (panel == null) {
+            panel = new CoolPanel(this);
+        }
+        return panel;
+    }
+
+    void changed() {
+        if (!changed) {
+            changed = true;
+            pcs.firePropertyChange(OptionsPanelController.PROP_CHANGED, false, true);
+        }
+        pcs.firePropertyChange(OptionsPanelController.PROP_VALID, null, null);
+    }
+
+}</pre>
+
+        <p>In addition, a new <tt>JPanel</tt> has been created, for the layout of your new panel.</p>
+        
+        
+        
+        <!-- ======================================================================================= -->
+            
+        <h2><a name="building"></a>Building and Installing the Module</h2>
+        <p>We have done no coding whatsoever, but we can already try out our module. When we do so
+            we will simply see our new panel, integrated with the other panels in the Options window. In subsequent
+        sections, we will add Swing components that will enable the user to enter and store their settings.</p>
+        <div class="indent">
+            
+            <h3 class="tutorial"><a name="installing-the-nbm"></a>Installing the NetBeans Module</h3>
+            
+            <p>In the Projects window, right-click the <tt>CoolOptions</tt> project and choose Run.</p>
+            <p>The module is built and installed in a new instance of the target NetBeans Platform.
+            The target NetBeans Platform opens so that you
+                can try out your new module.</p> 
+            
+            <h3 class="tutorial"><a name="using-the-nbm"></a>Using the NetBeans Module</h3>
+            
+            <p>In this section, we take on the role of the user. After a user
+                installs our module, they would typically take the steps outlined below to
+                specify a setting in the Options window.</p>
+                
+                <ol>
+                    <li>Choose Tools &gt; Options from the main menu. The Options window opens.</li>
+            
+            <li>Select the Miscellaneous panel
+            and notice that your new "Cool Options" panel has been
+            integrated there:
+        
+                <p><img src="../images/tutorials/options/nbm-options-65-7.png" alt="Options window installed 1."/></p></li>
+
+            <li>Close the Options window. Press Ctrl-I and then type the keyword you defined earlier:
+                <p><img src="../images/tutorials/options/nbm-options-65-8.png" alt="Options window installed 1."/></p>
+            <p>You should then be
+             able to click on the returned item to open the Options window. In addition,
+             the specific category that you created should be opened.</p></li>
+
+            </ol>
+            
+            <p>In the next section, we add a text field and button to the panel and
+            we learn how to store the user's setting when the Options window closes.
+            Then we learn how to load the setting and use it, when appropriate, in the module's code.</p>
+            
+        </div>
+        
+        <!-- ======================================================================================= -->
+            
+        <h2><a name="tweaking"></a>Storing and Loading Preferences</h2>
+        
+        <p>In this section, we begin by designing the Options window extension.
+            Using the GUI Builder, we add a <tt>JPanel</tt>, a <tt>JTextField</tt>, 
+            and a <tt>JLabel</tt>. Then we install the module again and we see
+            the result. Next, we begin coding. Using the NetBeans <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/util/NbPreferences.html">NbPreferences</a></tt> class,
+            we store the value entered by the user. Storage of preferences is done
+            in the user directory. Then we load the preference into an appropriate place
+        in our code.</p>
+        
+        
+        <div class="indent">
+            <h3 class="tutorial"><a name="icon"></a>Designing the Panel</h3>
+            
+            <p>First, let's add some Swing components to the panel, to give
+                the user a means of setting a preference.</p>
+
+            <ol>
+                <li>Make the panel in the Design view of <tt>CoolPanel.java</tt> larger, so
+                that you have room to manoeuvre.</li>
+                <li>Drag and drop a <tt>JPanel</tt>, a <tt>JTextField</tt>, and a <tt>JLabel</tt>
+                onto the panel. Add a titled border, containing the text "Details",
+                to the <tt>JPanel</tt>. Change the text of the <tt>JLabel</tt> to "Name".
+                You should now see the following:
+                <p><img src="../images/tutorials/options/nbm-options-65-9.png" alt="Options design"/></p></li>
+                <li>Install the module again. In the Options window, you should now see the following:
+                    <p><img src="../images/tutorials/options/nbm-options-65-10.png" alt="Options design"/></p></li>
+            </ol>
+            <p>You have now designed the new Options panel. In the next section, we'll add logic
+            to the panel so that the text in the text field will be stored when the Options window
+            closes.</p>
+                
+        <h3 class="tutorial"><a name="sources"></a>Storing Preferences</h3>
+        <p>In this section, we add code that will store the preference after the user clicks OK in the Options window.</p>
+
+        <ol>        
+            <li>Look in the source of the <tt>CoolPanel</tt> class. You should see the <tt>store()</tt> method defined as follows:
+            
+            <pre class=examplecode>void store() {
+    // TODO store modified settings
+    // Example:
+    // Preferences.userNodeForPackage(CoolPanel.class).putBoolean("someFlag", someCheckBox.isSelected());
+    // or for org.openide.util with API spec. version >= 7.4:
+    // NbPreferences.forModule(CoolPanel.class).putBoolean("someFlag", someCheckBox.isSelected());
+    // or:
+    // SomeSystemOption.getDefault().setSomeStringProperty(someTextField.getText());
+ }</pre>
+            
+            <p>The comments in the code present the three ways in which preferences can be stored. The first uses
+            the JDK's Preferences API. The second uses the NetBeans IDE 6.x+ NetBeans <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/util/NbPreferences.html">NbPreferences</a></tt> class. The third
+            uses the pre-6.0 System Option class. The third approach is deprecated, while the first does not
+            store preferences in the application's user directory. The second approach, the NetBeans <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/util/NbPreferences.html">NbPreferences</a></tt> class,
+            is the recommended approach. The NetBeans <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/util/NbPreferences.html">NbPreferences</a></tt> class is based on the JDK's Preferences API, but is
+            tailored towards NetBeans applications, in that it stores preferences in the application's user
+            directory, which is a convenient place to store them since all other user customizations for your application
+            are stored there too.</p></li>
+            
+            <li>In the <tt>store()</tt> method, delete all the comments and add this line:
+            
+            <pre class=examplecode>NbPreferences.forModule(CoolPanel.class).put("namePreference", jTextField1.getText());</pre>
+            
+            <p>Press Alt-Enter in the line. Let the IDE specify an import statement for the
+                NetBeans API package called <tt>org.openide.util.NbPreferences</tt>.</p></li>
+            
+            <li>Install the module again. Type a name in your Options window extension panel:
+            
+                <p><img src="../images/tutorials/options/nbm-options-65-11.png" alt="Typing a name"/></p></li>
+            
+            <li>Click OK. Switch to the Files window (Ctrl-2). Expand the application's <tt>build</tt>
+                folder. Look in the application's user directory,
+                within the <tt>config</tt> folder.
+                In the <tt>config</tt>  folder, you should find a folder called <tt>Preferences</tt>, containing
+            a properties file for your Options window.
+            Open the folder and notice that the preference has been stored there:
+            
+            <p><img src="../images/tutorials/options/nbm-options-65-12.png" alt="Preferences folder"/></p></li>
+            
+        </ol>
+                
+        <h3 class="tutorial"><a name="sources"></a>Loading Preferences</h3>
+        <p>In this section, we add code that will load the preference. We want the
+     preference, in this case "Harry Potter", to be loaded into at least two places.
+  First, we want the preference to be loaded into the Options window when the application
+ restarts. Secondly, we want to be able to use the preference somewhere in our module. After
+ all, the reason why a preference is set is so that it can be used somewhere else in the code.
+ Finally, we also need to handle the situation where the preference changes. In that case,
+ we need to add a preference listener and use the new value in our code, once the value changes.</p>
+
+        <ol>        
+            <li>Look in the source of the <tt>CoolPanel</tt> class. You should see the <tt>load()</tt> method,
+                defined with comments, similar to those discussed in the previous section.</li>
+            
+            <li>In the <tt>load()</tt> method, delete all the comments and replace them with the following:
+            
+            <pre class=examplecode>jTextField1.setText(NbPreferences.forModule(CoolPanel.class).get("namePreference", ""));</pre>   
+        
+            <p>Now, when you restart the application, the preference is loaded into the Options window.</p>
+
+            <p>Next, we will create a new <tt>TopComponent</tt>. We will only do so to demonstrate
+            how a preference is used. Instead of a <tt>TopComponent</tt>, you could use any other Java class
+            to use your preference. In other words, this is just an example of using a user's preference
+            in the context of a module.</p></li>
+            
+            <li>Right-click the module project and choose New Window Component. Call the Window Component
+            whatever you like and position it anywhere you want it to be. When you have created it,
+            add a <tt>JTextField</tt> to the <tt>TopComponent</tt>. This is where we will display the user's
+            preference.</li>
+            
+            <li>Switch to the <tt>TopComponent's</tt> Source view and add the following lines
+            to the end of the constructor:
+            
+<pre class=examplecode>Preferences pref = NbPreferences.forModule(CoolPanel.class);
+String name = pref.get("namePreference", "");
+
+pref.addPreferenceChangeListener(new PreferenceChangeListener() {
+    public void preferenceChange(PreferenceChangeEvent evt) {
+        if (evt.getKey().equals("namePreference")) {
+            jTextField1.setText(evt.getNewValue());
+        }
+    }
+});
+
+jTextField1.setText(name);</pre></li>
+
+        <li>Install the module again.
+  
+        <p>Whenever the application restarts, the current preference in the Options window
+            is shown in the <tt>TopComponent</tt>. And whenever you change the preference in
+            the Options window, the <tt>TopComponent</tt> immediately reflects the new value,
+            as soon as OK is clicked in the Options window.</p></li>
+        </ol>
+
+        
+        <p>Congratulations! You have successfully completed the Options Window Module Tutorial.
+            You now know how to provide the functionality needed for users to set your module's options.</p>
+        
+            
+    </div>
+    
+    
+        <p><br/></p>
+    <div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Options%20Window%20Module%20Tutorial">Send Us Your Feedback</a></div>
+    <p><br style="clear:both;" /></p>
+    <!-- ======================================================================================== -->
+    
+    <h2><a name="nextsteps"></a>Next Steps</h2>
+    
+    <p>For more information about creating and developing NetBeans modules, see the following resources:</p>
+    <ul>
+        <li><a href="https://netbeans.org/kb/trails/platform.html">Other Related Tutorials</a></li>
+        <li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API Javadoc</a></li>
+    </ul>
+    
+    <!-- ======================================================================================== -->
+    
+    
+</body>
+</html>

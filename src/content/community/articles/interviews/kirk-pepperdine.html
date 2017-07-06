@@ -1,0 +1,211 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>Interview with NetBeans user Kirk Pepperdine</title>
+        <meta name="description"
+              value="Kirk Pepperdine, NetBeans user, in conversation
+        about his work, performance tuning, memory leaks and usage of the NetBeans Profiler.">
+        <link rel="stylesheet" href="https://netbeans.org/netbeans.css">
+        <meta name="author" content="Gregg Sporar">
+    </head>
+    <body>
+        <h1>Interview with NetBeans user Kirk Pepperdine</h1>
+        
+        <p><TABLE><tr>
+                    <td><a href="http://kirk.blog-city.com/"><img 
+                        src="../../../images_www/articles/kirk-pepperdine.jpg" align="right" border="0"></a></td>
+                    <td width="10">&nbsp;</td>
+                    <td><p>Kirk Pepperdine works as an consultant, educator, and
+                            author. He is a frequent speaker at conferences and is
+                            a co-author of the book <i>Ant 
+                            Developer's Handbook</i>.  Kirk uses the NetBeans Profiler and
+                            with the recent move of the Profiler into the standard NetBeans IDE
+                            distribution in NetBeans 6.0 Milestone 8 he spent some time telling
+                            us about his experiences with it.
+                    </p></td>
+                </tr>
+        </TABLE></P>
+        
+        <p><h3>Q: Kirk tell us a little bit about yourself and what you do.</h3>
+        <p>A: I've been working with Java technologies for about 11 years, starting with when I 
+        began working for GemStone. I signed up because I wanted to 
+        work with their Smalltalk product but that plan didn't survive my first day 
+        there. Instead I got to work with their Java application server at a 
+        time when the term application server had yet to be defined. As for 
+        performance, well, I did some operational research performance 
+        work prior to working with Java so it was quite natural to continue 
+        doing performance work once I moved to working with Java. My current 
+        focus has been on imparting some of the things that I learned and 
+        continue to discover in my performance tuning course.
+        
+        <p><h3>Q: What sorts of tools do you use for performance tuning?</h3>
+        <p>A: I get asked what my favorite tools are all the time. In reality I 
+        don't have a favorite tool. Well, ok, I take that back. My favorite 
+        tool is one that gives me the information I need to solve the problem 
+        at hand. That tool is the hero of the day. I say this because tools 
+        are like little eyes that give you a view on the system that you are 
+        studying. However they only give you a pin prick's view so if that 
+        view happens to give you what you need to know then it's got to be good.
+        
+        <p><h3>Q: When did you start using the NetBeans Profiler?</h3>
+        <p>I don't really recall when I first ran into JFluild (the original Sun Labs project) but I've been watching it for quite some
+        time. I really got very interested in it when I saw the NetBeans 6.0
+        roadmap. As you know, I had been waiting on the arrival of Milestone 7 for quite
+        some time and aside from a few hiccups, it hasn't disappointed.
+        
+        <p><h3>Q: What features of the NetBeans Profiler do you use?</h3>
+        <p>A: My primary interest has been memory leaks. Even with all the tools 
+        out there - and there are some pretty decent ones, finding memory 
+        leaks is still very difficult. Recently I co-presented (with Dr. 
+        Heinz Kabutz) a University session at Javapolis where I wanted to give 
+        the attendees a solid methodology to find a leak by the end of the 
+        three hour session. What I didn't want was a problem with a class 
+        named ThisClassLeaks or something like that. I wanted to present on a 
+        real problem with enough code that you couldn't just stroll through 
+        the code and find it. The two features that stand out have been 
+        generations and the HeapWalker. They provide the answers to two of the 
+        three questions you need to answer when searching for a memory leak:  what, where, and why.
+        
+        <p><h3>Q: And what does generations tell you?</h3>
+        <p>A: Generations is a very clever, very simple idea though it can be a 
+        bit tricky to understand at first. To understand generations you first 
+        have to understand how objects age. An object's age is determined by 
+        the number of garbage collections (GC) it has survived. Since most objects 
+        never survive more than a few microseconds, they rarely get very old. 
+        So you may have a handful of different ages for each class. Now let's 
+        say you create a cache of constant values that you initialize at the 
+        start of an application. These objects will survive every GC and 
+        consequently be very old. However you will still only have a handful 
+        of different ages for those objects. Even in a cache where objects are 
+        moved in and out on a regular basis you will most likely only have a 
+        handful of ages. Objects that are constantly leaking will have a large 
+        number of different ages.
+        
+        <p>So as you can see, the difference between 
+        objects that leak and objects that don't will most likely show up in 
+        the number of different ages or generations. The key is, once your 
+        application starts producing leaking objects it never stops. The 
+        result is that the leaking class will live in an ever increasing number of 
+        generations. So not only will the number be large, it will also be 
+        growing continuously. So this measurement is a really cool way to pick 
+        off this type of object leak.
+        
+        <p><h3>Q: Do you have a quick example that could help us better understand
+        generations?</h3>
+        <p>A: Sure,  let's say your program allocates three instances of class 
+        Foo when the program starts and then it never allocates any more Foo 
+        objects.  And it holds references to those three instances forever.  
+        Now let's say we look at the state of the application after the 
+        garbage collector has run 500 times. What is the generations value for 
+        the Foo class? The answer is 1 and it will stay 1. Now let's say that 
+        you also continuously create objects of class Bar that leak throughout the lifetime 
+        of the application. The generations value for class Bar will most 
+        likely be 500 and it will always be increasing.
+        
+        <p><h3>Q: So generations helps you identify "what" objects were leaking. What 
+        about "where" and "why"?</h3>
+        <p>A: There are two things the NetBeans Profiler provides for that.  
+        First, during memory profiling it will show you which method allocated 
+        an object.  Sometimes just knowing where a leaking object was 
+        allocated is enough of a clue to let you figure out why it has not 
+        been garbage collected. But the answer to "where" the object is 
+        leaking can often be far away from where it is being created. This is 
+        one factor that makes finding leaks so challenging. This is where 
+        the NetBeans HeapWalker comes into play.
+        
+        <p><h3>Q: How does the NetBeans HeapWalker help?</h3>
+        <p>A: The JVM's HPROF agent is the original heap profiler. When you have it enabled it 
+        will produce a complete picture of everything that is in your Java 
+        heap space. The NetBeans HeapWalker uses the binary output from HPROF to 
+        reconstruct a view of memory. With the NetBeans HeapWalker you can perform a visual 
+        inspection of everything in that reconstructed view. The problem here 
+        is that even for a trivial application the heap can contain a very 
+        large number of objects. Finding a particular set of leaking objects in a heap 
+        is like looking for a needle in a haystack so you really need to have 
+        other bits of information to help you direct your search. So if we 
+        combine the information culled from generations with the HeapWalker, 
+        we can zero in on a suspected leak. 
+        
+        <p>Once you've got an instance of the leaking class selected in the HeapWalker,
+        the HeapWalker can find the shortest path from that object to a GC root. Chances 
+        are pretty good that when we do that we will find a domain object that is either an 
+        implied collection or contains a collection that is responsible for 
+        causing the leak. Now this still doesn't answer the question of "why" but 
+        even getting this far is a huge step in the diagnostic process.
+        
+        <p><h3>Q: Can you tell us about how you've used the tools?</h3>
+        <p>A: I've been anxiously awaiting the arrival of a stable 
+        version of this tool so I can put it through its paces. The  
+        M7 milestone is stable enough to fit that criteria. Before I use 
+        a tool in a live situation I want to be able to understand how to most 
+        effectively apply it. So I maintain a number of applications that leak 
+        in a couple of different ways. I've used M7 to diagnose the leaks in 
+        these applications. So far the results look very promising in that 
+        I've consistently been able to pick out signs of the leak very very 
+        quickly. It was this experience that lead me to include the tool in my 
+        performance tuning course even though it (version 6.0 of NetBeans) is still being 
+        baked.
+        
+        <p><h3>Q: How is the NetBeans Profiler being used in your training class?</h3>
+        <p>A: Again this is all very early stuff so the first introduction was 
+        gentle. However the impact of the tool in the heap tuning section of 
+        the course was dramatic. Since performance tuning is mostly about 
+        getting used to looking at the output from tools and instrumentation 
+        there is quite a bit of emphasis on solving problems. One of the 
+        exercises is particularly nasty. It contains a whole bunch of well 
+        hidden problems that closely resemble stuff I see in the field. The 
+        exercise is free form in that anything goes. They can use any tool 
+        they like or even rewrite the entire application. 
+        
+        <p>Everyone decided to 
+        use NetBeans to diagnose the memory leaks and the results were 
+        outstanding. This group managed to find leaks much faster and with far 
+        less difficulties than any group that had previously taken the course. 
+        It was very interesting to watch and I have started to use what I've 
+        learned during that session to restructure that portion of the course.
+        
+        <p><h3>Q: Starting with Milestone 8 of NetBeans 6.0, the Profiler will be 
+            included with the standard IDE installation.  You will no longer need 
+        to do a separate download and installation.  How does that sound to you?</h3>
+        <p>A: The install of the NetBeans Profiler was pretty trivial to begin with but 
+        anything to make it easier is always good news. 
+        
+        <p><h3>Q: Are there any features you would like to see added to the NetBeans Profiler?</h3>
+        <p>I think it goes without saying that there are always going to be times
+        when you wish a tool could do this or that so yes, there are a number of
+        things that I'd like to see included in the NetBeans Profiler. However I'd like
+        to focus on one large feature that I think would be most useful, the
+        ability to analyze information being reported upon by the garbage
+        collector. You can get this information using the JVM's -verbose:gc flag but as
+        you can imagine, the information is quite cryptic. It also requires one
+        to do quite a few calculations to extract useful information from these
+        logs and there are currently only a handful of tools with this
+        capability. The existing tools leave a lot of information on the table.
+        They also are standalone so there is some analysis that is either
+        extremely difficult or just impossible to obtain. 
+        
+        <p>For example, if you could combine
+        the GC logging information with an execution profile all of a sudden you
+        have the ability to zero in on areas of your application that are
+        responsible for a lot of object churn. As we start to run our
+        applications on more and more cores, applications will be able to create
+        more garbage at a much faster rate. This will put more pressure on the
+        garbage collector which means that being able to identify loci of object
+        churn is going to become increasingly more important.
+        
+        
+        <br style="clear:both;" />
+        <!-- ======================================================================================= -->
+
+        <h2><a name="moreinfo"></a>Resources</h2>
+        <p>For more information about using the NetBeans Profiler, see the following resources:
+        </p>
+        <ul>
+            <li><a href="https://netbeans.org/features/java/profiler.html">Profiler Overview</a></li>
+            <li><a href="http://profiler.netbeans.org/docs/help/5.5/getting_started.html">Profiler Basics</a></li>                        
+            <li><a href="https://netbeans.org/kb/55/profiler-tutorial.html">Profiler Tutorial</a></li>
+            <li><a href="http://profiler.netbeans.org/">Profiler project home page</a></li>
+        </ul>
+        
+    </body>
+</html>

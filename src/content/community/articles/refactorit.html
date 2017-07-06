@@ -1,0 +1,196 @@
+<HTML>
+<HEAD>
+<TITLE>NetBeans RefactorIT Module</TITLE>
+<META NAME="description" CONTENT="About the NetBeans RefactorIT module">
+<link rel="stylesheet" type="text/css" href="../../netbeans.css">
+<META NAME="AUDIENCE" CONTENT="NBUSER">
+<META NAME="TYPE" CONTENT="ARTICLE">
+<META NAME="TOPIC" CONTENT="ADVANCED">
+</HEAD>
+
+<BODY>
+
+<h2>About Refactoring</h2>
+
+<P>Let's face it: all code will have to evolve and be modified. Software of any
+sophistication just isn't destined to harden. New styles and practices of
+development are advocated by the <a href="http://agilemanifesto.org/">Agile Software Manifesto</a>
+and the iterative deployment processes of
+<a href="http://www.c2.com/cgi/wiki?ExtremeProgramming">extreme programming</a>
+to keep software flexible and more useful over time. The latest articles
+from Robert C. Martin highlight the importance of
+<a href="http://www.objectmentor.com/resources/articles/Continuous_Care.pdf">continuous care</a>,
+showing that the evolution of code -- through a process of refactoring -- is
+more important than initial design.
+
+<P>All of these practitioners advocate Refactoring as a primary discipline,
+to be applied to code bases within each iteration. Refactoring isn't a fad:
+it's a fundamental way to keep your code flexible and clean, as you keep
+learning about what the actual design needs are.
+
+<P>Using the methodology of Refactoring makes change <i>manageable</i> -
+using the RefactorIT tool makes change <i>easy</i>.
+
+<P>What RefactorIT Does</FONT>
+
+<P>RefactorIT is a NetBeans module that performs common refactoring
+operations safely and automatically. RefactorIT adds new menu items, such as
+Rename, Where Used or Extract Method, to IDE-s context menus.
+
+<P><IMG SRC="../../images_www/refactorIT_snapshot.jpg">
+<BR CLEAR><B>Figure 1</B>: Snapshot of RefactorIT in action with NetBeans.
+
+<P>With RefactorIT you can safely select any item and rename it, search for
+its usages or its dependencies. Extract a piece of code into a separate
+method. Move a class to a different package, encapsulate field to be
+accessed by getter and setter methods, turn constructor usages into factory
+method, explore classes hierarchy, extract a superclass or superinterface
+out of existing class, save and compare snapshots of API, find where
+exception is caught, track your TODO/FIXME comments, find not used fields
+and methods, see source code metrics, quickly navigate the source code or
+search for source code constructs like 'search for methods returning
+java.io.File'.
+
+<P>RefactorIT's Underlying Technology</FONT>
+
+<P>Basic functionality is not the only criteria for a refactoring tool to be
+useful and efficient. The tool must also meet certain requirements, among
+them:
+<DL>
+<DT><B>Accuracy</B></DT>
+<DD>Automatic refactorings must retain the original behavior of the code as
+fully as possible, and analysis tools must provide accurate information
+about the code.  This is clearly the most basic requirement for any
+refactoring tool.</DD>
+
+<DT><B>Speed</B></DT>
+<DD>Analysis and transformations performed by a refactoring tool are very
+sophisticated, especially for large projects with hundreds of source files.
+If those processes are not well optimized, they can be quite time consuming.
+Naturally, a refactoring tool which takes a long time to perform its tasks
+will not be widely used.</DD>
+
+<DT><B>Integration with an IDE</B></DT>
+<DD>Research suggests that developers are less likely to use a standalone
+refactoring tool &#150; whether it's powerful or not &#150; than one
+integrated with their development environment. The ability to invoke actions
+directly from the development environment is a significant feature to many
+users. A flexible integration to IDE(s) is a high priority of RefactorIT,
+but one which also requires that the target IDE has an extensible plug-in
+architecture.</DD>
+</DL>
+
+<P>Architecture of RefactorIT</FONT>
+
+<P>The objectives outlined above had a direct bearing on the architectural
+design of RefactorIT &#151; in fact the goal was to build a tool which can
+accurately and quickly perform refactorings and analysis functions invoked
+from various places within the IDE.
+
+<P><FONT CLASS="default">
+<TABLE WIDTH="332" BORDER="0" CELLSPACING="1" CELLPADDING="2" ALIGN="RIGHT">
+<TR>
+  <TD ALIGN="CENTER"><IMG SRC="../../images_www/refactorIT_architecture.gif" ALT="Figure 2: Architectural depiction of RefactorIT working with NetBeans to automate refactoring code."></TD>
+</TR>
+<TR>
+  <TD ALIGN="CENTER"><B>Figure 2</B>: Architectural depiction of RefactorIT working with NetBeans to automate refactoring code.</TD>
+</TR>
+</TABLE>
+
+<P>The resulting architecture can be roughly divided into distinct parts as
+follows:
+
+<UL>
+<LI>project loader</LI>
+<LI>source parser</LI>
+<LI>classfile loader</LI>
+<LI>general user interface</LI>
+<LI>integration to IDE</LI>
+<LI>refactoring module framework</LI>
+</UL>
+
+<P>The project loader handles the loading (or reloading) of the project upon
+the user's invocation of a refactoring or analysis function. When first run,
+the project loader builds a class model from the set of source and class
+files. In addition, it constructs an abstract syntax tree (AST) from the
+parsed source. The AST stores information about the source files &#150;
+below the method level &#150; and links type definitions with their
+references throughout the code. This is the heart of
+RefactorIT.<P>RefactorIT passes the AST to the refactoring or analyzing
+component specified by the user. From there, the tree is analyzed and
+manipulated, and finally RefactorIT displays the query results or writes the
+refactored sources to their corresponding files.
+
+<P>To optimize performance, RefactorIT caches the class model and syntax
+tree of the project. Consequently, for large projects, the first run only of
+a refactoring or analysis function goes relatively slowly as the class model
+and syntax trees is built. Subsequent runs take much less time because the
+project class model is already constructed and only has to be updated in
+places where the user has changed code.<P>RefactorIT has a pluggable module
+architecture &#150; in fact all refactorings are implemented in different
+modules. This enables developers to add experimental modules to RefactorIT
+without worrying about compatibility &#151; only the modules which are fully
+tested are bundled with the installer.
+
+<P>RefactorIT in Practice</FONT>
+
+<P>Let's say, we have a calculation caching mechanism. In the start we build
+up calculation results that we need to store and later query this cache to
+save time. We have created our own data structure MultiValueMap for storing
+these caches.
+
+<P>This structure needs to be fast, while we are building it and memory
+efficient, when we store it. Currently it is only fast and not memory
+efficient.
+
+<P>We have found out we could 'compact' the map, but in its compact form the
+storing operations would be slower.
+
+<P>So what we need to do is to call compact on right items and at the right
+time.
+
+<P>RefactorIT Walkthrough</FONT>
+<OL>
+<LI>We are using a RefactorIT feature 'Structure Search' to find places
+where MultiValueMap is used as field:
+
+<BR><img src="../../images_www/refactorIT_wt1.png" VSPACE="8" HSPACE="10"><P></LI>
+
+<LI>We click the results through and hide the results of short lived
+objects, because we do not need to compact them:
+
+<BR><img src="../../images_www/refactorIT_wt2.png" VSPACE="8" HSPACE="10"><P></LI>
+
+<LI>From remaining results we choose 'Where Used' on the field to find out
+when the map construction has ended. There we add a call to 'compact()'
+method:
+
+<BR><img src="../../images_www/refactorIT_wt3.png" VSPACE="8" HSPACE="10"><P></LI>
+
+<LI>When going through the list we choose 'Hide' for items we have done so
+the remaining search results serve as a TODO list. - Notice that line
+numbers of search results are recalculated after the code changes.</LI>
+</OL>
+
+<P>Conclusion</FONT>
+
+<P>RefactorIT provides a wide range of refactoring and analysis functions
+which enable developers of Java technology to quickly and successfully
+restructure program source - improving its design, evolution, and reuse
+potential.<P>NetBeans was chosen to be the primary integration platform for
+RefactorIT because it is the home of worldwide innovation in Java Tools.
+RefactorIT, through its tight integration with NetBeans, makes the
+refactoring process easier, faster, and more efficient.
+
+<P>Further Information</FONT>
+
+<P>For further information about RefactorIT, refer to the following web
+pages
+
+<UL><LI><A HREF="http://www.aqris.com/display/ap/Download">http://www.aqris.com/display/ap/Download</A>
+<LI><A HREF="http://www.aqris.com/display/ap/Features">http://www.aqris.com/display/ap/Features</A>
+<LI><A HREF="http://forte.sun.com/ffj/articles/refactorIT.html">http://forte.sun.com/ffj/articles/refactorIT.html</a>
+</UL>
+
+</BODY>
+</HTML>

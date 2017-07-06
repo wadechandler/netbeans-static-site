@@ -1,0 +1,622 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <!-- -*- xhtml -*- -->
+        <title>Platform HTML Editor for the NetBeans Platform</title>
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+        <meta name="AUDIENCE" content="NBUSER"/>
+        <meta name="TYPE" content="ARTICLE"/>
+        <meta name="EXPIRES" content="N"/>
+        <meta name="developer" content="jtulach@netbeans.org"/>
+        <meta name="indexed" content="y"/>
+        <meta name="description"
+              content="A short guide to creating an HTML editor on the NetBeans Platform."/>
+        <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+    <body>
+        <h1>NetBeans Platform HTML Editor</h1>
+
+        <p>This tutorial provides a very simple and quick introduction to 
+            the NetBeans Platform workflow by walking you through the creation 
+            of a simple HTML Editor. Though simple to create, the HTML Editor you create
+            will be a mature application because it will reuse the infrastructure provided
+            by the NetBeans Platform, as well as several modules from NetBeans IDE.
+            For example, without any coding, your
+            HTML Editor will have a mature window system, which it reuses
+            from the NetBeans Platform.
+            Once you are done with this tutorial, you 
+            will have a general understanding of how to create, build, and run 
+            applications on top of the NetBeans Platform.</p>
+
+        <p>After you finish this tutorial, you can move on to the 
+            <a href="https://netbeans.org/kb/trails/platform.html">NetBeans Platform learning trail</a>.
+            The learning trail provides comprehensive tutorials 
+            that highlight a wide range of NetBeans APIs for a variety of application types. 
+            If you do not want to do a "Hello World" application, you can skip this 
+            tutorial and jump straight to the learning trail.</p>
+
+        <p><b class="notes">Note:</b> This document uses NetBeans IDE 7.3 and NetBeans Platform 7.3. If you
+            are using an earlier version of these products, see <a href="72/nbm-htmleditor.html">the 
+                previous version
+                of this document</a>.
+            If this is your first encounter with the NetBeans Platform,
+            you are recommended to work through the <a href="nbm-quick-start.html">NetBeans Platform Quick Start</a> before
+            continuing with this one. If, instead of learning how to create a NetBeans Platform
+            application, you would like to learn how to create a NetBeans plugin,
+            see the <a href="nbm-google.html">NetBeans Plugin Quick Start</a>.</p>
+
+        <p><b>Contents</b></p>
+
+        <p><img src="../images/articles/74/netbeans_stamp_74_73_72.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 7.3" title="Content on this page applies to NetBeans IDE 7.3"/></p>
+        <ul class="toc">
+            <li><a href="#generating">Generating the Skeleton Application</a></li>
+            <!--            <li><a href="#tweakingthemenuitems">Tweaking the User Interface: Removing Menus and Toolbars</a></li>
+                        <li><a href="#tweakingthewindowlayout">Tweaking the Window Layout: Opening Windows by Default</a></li>
+                        <li><a href="#tweakingthefavorites">Tweaking the Favorites Window: Customizing Predefined Strings</a></li>
+                        <li><a href="#tweakingthefeatures">Tweaking the Feature Set: Adding Versioning Support</a></li>-->
+            <li><a href="#distributingtheapplication">Distributing the Application</a>
+                <ul>
+                    <li><a href="#zip">Distributing the HTML Editor via a ZIP File</a></li>
+                    <li><a href="#webstart">Distributing the HTML Editor via the Shared NetBeans Web Start Repository</a></li>
+                </ul>
+            </li>
+        </ul>
+
+        <p><b>To follow this tutorial, you need the software and resources listed in the following 
+                table.</b></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Software or Resource</th>
+                    <th class="tblheader" scope="col">Version Required</th>
+                </tr> 
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                    <td class="tbltd1">version 7.3 or above</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                    <td class="tbltd1">version 7 or above</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!--  <p class="tips">Optionally, for troubleshooting purposes, you can <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=6635">download the
+                  completed sample</a> and inspect the sources.</p>-->
+        <p>At the end of this tutorial, you will have an 
+            HTML Editor that looks like this:</p>
+
+        <p><img src="../images/tutorials/htmleditor/73/pic10.png" alt="Finding the Favorites window"/></p>
+
+        <p><b class="notes">Note:</b> Although this a very simple demo application, it is not a toy! It is a <i>real</i>
+            program that supports easy editing of HTML pages, with features such as code completion,
+            validation, and predefined HTML snippets.</p>
+
+        <p>The HTML Editor that you create in this tutorial is a rich-client application built "on top of the NetBeans Platform". What this
+            means is that the core of the IDE, which is what the NetBeans Platform <i>is</i>, will be the base
+            of your application. On top of the NetBeans Platform, you add the modules that you need
+            and exclude the ones that the IDE needs but that your application doesn't.
+            Here you see some of the IDE's modules, added to the NetBeans Platform, which is its base:</p>
+
+        <p><img src="../images/tutorials/htmleditor/diagram.png" alt="Structure of NetBeans Platform applications"/></p>
+
+        <p>Creating this HTML Editor means generating an application skeleton, excluding the modules
+            and user interface items that you do not need, and then setting the NetBeans IDE's Favorites window
+            as the window that will open by default when the IDE starts. The Favorites window will
+            be rebranded so that it will be a browser for HTML documents. All of these activities
+            are supported by user interface elements in the IDE, as you will learn in this tutorial. </p>
+
+        <p>You will see for yourself how simple
+            and easy it is to build, or to be more precise, to <em>assemble</em> a
+            full-featured application on top of the NetBeans Platform. At the end, you are shown how
+            to make the final product easily downloadable and launchable using WebStart.
+        </p>
+
+
+        <p><b class="notes">Note:</b> Even though it is a separate product, there is no need to download the NetBeans Platform separately
+            for purposes of this tutorial. You will develop the rich-client application in the IDE and then exclude the modules
+            that are specific to the IDE but that are superfluous to you application.</p>
+
+        <!-- ===================================================================================== -->
+
+        <h2 class="tutorial"><a name="generating"></a>Generating the Skeleton Application</h2>
+
+        <p>When creating an application on the NetBeans Platform,
+            the very first step is to create a NetBeans Platform Application project.
+            The template we will use to create our new NetBeans Platform Application project
+            includes a subset of the modules provided by the NetBeans Platform.</p>
+
+        <div class="indent">
+
+            <ol>
+                <li><p>Using the New Project wizard (Ctrl-Shift-N), create a NetBeans Platform Application 
+                        project from the template
+                        in 
+                        the NetBeans Modules category, as shown below:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/htmleditor/73/pic1.png" alt="New Project wizard"/></p>
+                </li>
+
+                <li><p>Click Next and name the NetBeans Platform Application project "NetBeansHTMLEditor":</p>
+                    <br/>
+                    <p><img src="../images/tutorials/htmleditor/73/pic2.png" alt="New Project wizard"/></p>
+                    <br/>
+                    <p>Click Finish. The skeleton application is created:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/htmleditor/73/pic3.png" alt="New Project wizard"/></p>
+                </li>
+
+                <li><p>We'll start by using the IDE to brand
+                        our new application. Right-click the project node, choose Branding,
+                        and then make a few changes in the Branding Editor:</p>
+                    <br/>
+                    <ul><li><p>In the Basic panel, make
+                                sure that you like the application title for the titlebar,
+                                as well as the icons, as shown below:</p>
+                            <br/>
+                            <p><img src="../images/tutorials/htmleditor/73/pic4.png" alt="Application panel"/></p></li>
+                        <li><p>In the Splash Screen panel, notice that
+                                you can provide the application's splash screen, and progress
+                                bar brandings, as shown below:</p>
+                            <br/>
+                            <p><img src="../images/tutorials/htmleditor/73/pic5.png" alt="Splash Screen panel"/></p>
+                            <br/>
+                            <p><b class="notes">Note:</b> If you do not have a splash screen, use <a href="../images/tutorials/htmleditor/splash.gif">this one</a></p>.
+                        </li>
+                    </ul>
+                </li>
+
+                <li><p>Now that the application has been branded, let's make
+                        sure that the modules we need for our HTML editor are
+                        available to the application. Right-click the project node,
+                        choose Properties, and then go to the Libraries panel
+                        in the Project Properties
+                        dialog box. Here you see a list of "clusters". A cluster is
+                        a collection of related modules and represents a folder in
+                        the application's installation directory. The only clusters that need to be 
+                        selected are, in the first place, <tt>platform</tt>, which is already selected,
+                        but expand it and <i>also</i> select "favorites", which provides the
+                        Favorites window that you will use to open HTML files later.
+                        Next, expand the <tt>ide</tt> cluster, and
+                        select all the HTML modules in the "ide" cluster, as shown below:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/htmleditor/73/pic7.png" alt="Application panel"/></p>
+                    <br/>
+                    <p>Next, click the "Resolve" button and the required modules
+                        will be added to the set of modules needed by
+                        modules that you have already selected to be
+                        part of the application.</p></li>
+                <li><p>Also select the "Lexer to NetBeans Bridge" module in the <tt>ide</tt> cluster, as shown below:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/htmleditor/73/pic8.png" alt="Application panel"/></p>
+                </li>
+                <li><p>Finally select the "User Utilities" module in the <tt>ide</tt> cluster, as shown below:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/htmleditor/73/pic9.png" alt="Application panel"/></p>
+                    <p>Now you have the subset of NetBeans modules relevant to your HTML Editor. Click OK
+                        to exit the Project Properties dialog.</p></li>
+                <li><p>Right-click
+                        the application and run it. Choose File | Open File and then
+                        open some HTML files. You should see a fully functional HTML editor:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/htmleditor/73/pic10.png" alt="Application panel"/></p>
+                </li>
+
+            </ol>
+
+        </div>
+
+        <!--        <p>Even though you need all the NetBeans modules that you now have, you probably do not
+                    need all of the user interface elements, such as all the elements in the Run menu
+                    and the Debug menu, that these modules give you. In the next sections,
+                    you tweak the user interface and customize the window layout specifically for the HTML Editor
+                    that you are creating.</p>-->
+        <!--
+                 ===================================================================================== 
+        
+                <h2 class="tutorial"><a name="tweakingthemenuitems"></a>Tweaking the User Interface: Removing Menus and Toolbars</h2>
+        
+                <p>You can keep or reject as much of the user interface that your selected modules give you. For example, your HTML Editor probably
+                    does not need any or all of the items under the Tools menu. Similarly, maybe there are toolbars
+                    or toolbar buttons that you can do without. In this section, you prune the IDE's user interface
+                    until you are left with a subset that is useful to your specific rich-client application.</p>
+        
+                <div class="indent">
+        
+                    <ol><li><p>Expand the NetBeans Platform Application project, right-click the Modules node
+                                and choose Add New, as shown below:</p>
+        
+                            <p><img src="../images/tutorials/htmleditor/71/new-nb-app-wiz9.png" alt="New Project wizard"/></p>
+        
+                            <p>The New Project wizard (Ctrl-Shift-N) appears.</p></li>
+                        <li>Name the project <tt>BrandingModule</tt>. Click Next.</li>
+        
+                        <li>In the Code Name Base field, type <tt>org.netbeans.brandingmodule</tt> and then
+                            complete the wizard.</li>
+                        <li><p>Next, you need a "layer.xml" file, which the NetBeans Platform will merge with its
+                                virtual filesystem. The layer.xml file will declare the items 
+                                that should be added to or removed
+                                from the virtual filesystem of your HTML Editor.</p>
+                            <p>Right-click the module, choose New, and then Other, as shown below:</p>
+                            <p><img src="../images/tutorials/htmleditor/71/new-nb-app-wiz91.png" alt="New Project wizard"/></p>
+                            <p>In the New File dialog, choose "Module Development | XML Layer" and then complete the wizard.</p>
+                            <p>Notice that you can expand the newly created layer.xml file and show all the
+                                folders and files declared in the NetBeans Platform's virtual filesystem.</p>
+                        </li>
+                        <li><p>In the <tt>&lt;this layer in context&gt;</tt> node,
+                                the IDE shows you a merged view of all folders and files that all modules register in their
+                                layers. To exclude items, you can right-click them and choose 'Delete', as shown below:
+                            </p>
+                            <p><img style="border:1px solid black" src="../images/tutorials/htmleditor/71/new-nb-app-wiz92.png" alt="Application panel"/></p>
+        
+                            <p>The IDE then adds
+                                tags to the module's <tt>layer.xml</tt> file which, when the module is installed,
+                                hides the items that you have deleted. For example, by right-clicking within <tt>Menu Bar/Edit</tt>, you can remove
+                                menu items from the Edit menu that are not necessary for the HTML Editor. 
+                                By doing this, you generate snippets such as the following in the <tt>layer.xml</tt> file:</p>
+        
+                            <pre class="examplecode">&lt;folder name="Menu"&gt;
+            &lt;folder name="Edit"&gt;
+                &lt;file name="org-netbeans-modules-editor-MainMenuAction$StartMacroRecordingAction.instance_hidden"/&gt;
+                &lt;file name="org-netbeans-modules-editor-MainMenuAction$StopMacroRecordingAction.instance_hidden"/&gt;
+            &lt;/folder&gt;       
+        &lt;/folder&gt;</pre>
+        
+                            <p>
+                                The result of the above snippet is that the <tt>Start Macro Recording</tt> and <tt>Stop Macro Recording</tt>
+                                actions provided by another module are removed from the menu by your branding module.
+                                To show them again, simply delete the tags above from the <tt>layer.xml</tt> file.</p></li>
+                        <li>Use the approach described in the previous step to hide as many toolbars, toolbar buttons,
+                            menus, and menu items as you want. When you have completed this stage, look in the <tt>layer.xml</tt> file. When you do so,
+                            you should see something similar to the following, depending on the items that you have deleted:
+        
+                            <pre class="examplecode">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+        &lt;!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.2//EN" "https://netbeans.org/dtds/filesystem-1_2.dtd"&gt;
+        &lt;filesystem&gt;
+            &lt;folder name="Menu"&gt;
+                &lt;file name="BuildProject_hidden"/&gt;
+                &lt;folder name="File"&gt;
+                    &lt;file name="Separator2.instance_hidden"/&gt;
+                    &lt;file name="SeparatorNew.instance_hidden"/&gt;
+                    &lt;file name="SeparatorOpen.instance_hidden"/&gt;
+                    &lt;file name="org-netbeans-modules-project-ui-CloseProject.shadow_hidden"/&gt;
+                    &lt;file name="org-netbeans-modules-project-ui-CustomizeProject.shadow_hidden"/&gt;
+                    &lt;file name="org-netbeans-modules-project-ui-NewFile.shadow_hidden"/&gt;
+                    &lt;file name="org-netbeans-modules-project-ui-NewProject.shadow_hidden"/&gt;
+                    &lt;file name="org-netbeans-modules-project-ui-OpenProject.shadow_hidden"/&gt;
+                    &lt;file name="org-netbeans-modules-project-ui-RecentProjects.shadow_hidden"/&gt;
+                    &lt;file name="org-netbeans-modules-project-ui-SetMainProject.shadow_hidden"/&gt;
+                    &lt;file name="org-netbeans-modules-project-ui-groups-GroupsMenu.shadow_hidden"/&gt;
+                &lt;/folder&gt;
+                &lt;file name="Refactoring_hidden"/&gt;
+                &lt;file name="RunProject_hidden"/&gt;
+                &lt;folder name="Window"&gt;
+                    &lt;file name="ViewRuntimeTabAction.shadow_hidden"/&gt;
+                    &lt;file name="org-netbeans-modules-project-ui-logical-tab-action.shadow_hidden"/&gt;
+                    &lt;file name="org-netbeans-modules-project-ui-physical-tab-action.shadow_hidden"/&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt;
+            &lt;folder name="Toolbars"&gt;
+                &lt;file name="Build_hidden"/&gt;
+                &lt;file name="Debug_hidden"/&gt;
+            &lt;/folder&gt;
+        &lt;/filesystem&gt;</pre>
+                        </li>
+                        <li><p>Run the application again and notice that you now have less menus and toolbar
+                                buttons than you had before:</p>
+                            <p><img src="../images/tutorials/htmleditor/71/new-nb-app-wiz93.png" alt="New Project wizard"/></p>
+        
+                        </li>
+                    </ol>
+        
+                </div>
+        
+                 =====================================================================================         
+        
+                <h2 class="tutorial"><a name="tweakingthewindowlayout"></a>Tweaking the Window Layout: Opening Windows by Default</h2>
+                <p>
+                    By using the  <tt>&lt;this layer in context&gt;</tt> node, you can not only delete existing
+                    user interface elements, but you can also change their content. For example, the
+                    HTML Editor works on HTML files, so in contrast to the regular IDE, which works with Java source files and projects as well,
+                    it makes sense to show the <tt>Favorites</tt> window in the initial layout.
+                </p>
+        
+                <p>
+                    The definition of the window layout is also described as files in layers,
+                    all stored under the <tt>Windows2</tt> folder. The files in the <tt>Windows2</tt> folder are
+                    pseudo-human readable XML files defined by the 
+                    <a href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/org/openide/windows/doc-files/api.html">
+                        Window System APIs</a>. They are quite complex but the good news is
+                    that, for purposes of our HTML Editor, it is not necessary
+                    to understand them fully, as shown below.
+                </p>
+        
+                <div class="indent">
+        
+                    <ol><li><p>In your branding module, find the "layer.xml" file,
+                                in the main package of the module. Expand the file,
+                                in the Projects window. One of the subfolders is
+                                name <tt>&lt;this layer in context&gt;</tt>. Expand
+                                the folder and find the <tt>Windows2/Modes</tt> subfolder.
+                                Within it, find the file highlighted below, named "favorites.wstcref":</p>
+        
+                            <p><img src="../images/tutorials/htmleditor/71/new-nb-app-wiz94.png" alt="Finding the Favorites window"/></p>
+        
+                            <p>
+                                The file contains the following:
+                            </p>
+                            <pre class="examplecode">
+        &lt;tc-ref version="2.0"&gt;
+            &lt;module name="org.netbeans.modules.favorites/1" spec="1.1" /&gt;
+            &lt;tc-id id="favorites" /&gt;
+            &lt;state opened="false" /&gt;
+        &lt;/tc-ref&gt;</pre>    
+                            <p>Even though most of the XML is cryptic, there is one line which 
+                                seems promising&#8212;without needing to read 
+                                any kind of documentation, it seems likely that
+                                changing the <tt>false</tt> to <tt>true</tt> is going to make the component
+                                opened by default. Do so now.</p></li>
+        
+                        <li>
+                            <p>You should now see that your branding module contains a new file,
+                                one for each of the files that you changed. In effect, these files
+                                override the ones that you found in the previous steps. These have
+                                been automatically registered in your module's <tt>layer.xml</tt> file.</p>
+                            <p>Run the application again and you should see the following, that is,
+                                the Favorites window should be opened automatically when the
+                                application has started up:</p>
+                            <p><img src="../images/tutorials/htmleditor/71/new-nb-app-wiz95.png" alt="Finding the Favorites window"/></p>
+                        </li>
+        
+                    </ol>
+        
+                </div>
+        
+        
+                 =====================================================================================      
+        
+                <h2 class="tutorial"><a name="tweakingthefavorites"></a>Tweaking the Favorites Window: Customizing Predefined Strings</h2>
+                <p>
+                    In the subfolders of a NetBeans Platform Application project's <tt>branding</tt>
+                    folder, which
+                    is visible in the Files window, you
+                    can override strings defined in the NetBeans Platform sources. In
+                    this section, you override strings that define
+                    labels used in the Favorites window. For example, you
+                    change the "Favorites" label to "HTML Files",
+                    because you will use that window specifically for
+                    HTML files.
+                </p>
+        
+                <div class="indent">
+        
+                    <ol><li><p>Right-click the project node and choose "Branding", as you did
+                                earlier in this tutorial. This time, open the Resource Bundles
+                                tab of the Branding Editor, as shown below:</p>
+        
+                            <p><img src="../images/tutorials/htmleditor/71/new-nb-app-wiz96.png" alt="Finding the Favorites window"/></p>
+        
+                        </li>
+                        <li><p>Type "favorites" in the "Search" field, after which the
+                                list of strings filters down to those that
+                                contain the entered string, as shown below:</p>
+        
+                            <p><img src="../images/tutorials/htmleditor/71/new-nb-app-wiz97.png" alt="Finding the Favorites window"/></p>
+        
+                        </li>
+                        <li><p>For each string you want to brand, right-click it in
+                                the dialog shown in the previous step and choose
+                                "Add To Branding". Then type the new string
+                                for the selected item.</p>
+                            <p>When you complete your work in the Branding Editor, switch to
+                                the Files window and notice that a new "bundle.properties"
+                                file has been created within the application branding folder,
+                                overriding the related "bundle.properties" file within the
+                                NetBeans Platform:</p>
+                            <p><img src="../images/tutorials/htmleditor/71/new-nb-app-wiz98.png" alt="Finding the Favorites window"/></p>
+        
+                        </li>
+        
+                        <li><p>Run the application again and you will see that
+                                the texts and labels in the Favorites window have changed
+                                to those you have defined:</p>
+                            <p><img src="../images/tutorials/htmleditor/71/new-nb-app-wiz99.png" alt="Finding the Favorites window"/></p>
+                        </li>
+        
+                    </ol>
+        
+                </div>
+        
+                <p>This illustrates the point that you can take
+                    a component from the NetBeans Platform and then brand it to
+                    meet your business requirements.</p>
+        
+        
+                 =====================================================================================      
+        
+                <h2 class="tutorial"><a name="tweakingthefeatures"></a>Tweaking the Feature Set: Adding Versioning Support</h2>
+                <p>
+                    We now have a complete HTML Editor. However, since the editor is based
+                    on top of NetBeans IDE, we can include as many of the IDE's features
+                    as we need. 
+                </p>
+                <p>As an example, let's add versioning support in our application. It would
+                    be a useful feature for our users, who are likely to have a repository
+                    where HTML files can be stored. By integrating the IDE's versioning tools
+                    into our HTML editor, we enable our users to interact with their
+                    repositories.</p>
+        
+                <div class="indent">
+        
+                    <ol><li><p>Right-click the application, choose Properties, and
+                                use the Libraries tab to add the "Local History" module, 
+                                which is in the "ide" cluster:</p>
+        
+                            <p><img src="../images/tutorials/htmleditor/71/new-nb-app-wiz992.png" alt="Finding the Favorites window"/></p>
+                            <p>Now click the "Resolve" button, so that any related
+                                modules will also be included in the application.</p>
+                        </li>
+                        <li><p>Run the application again and notice that
+                                you now have a History tab for each HTML document,
+                                as well as a new "Team" menu, currently
+                                containing one item, for Local History:</p>
+        
+                            <p><img src="../images/tutorials/htmleditor/71/new-nb-app-wiz993.png" alt="Finding the Favorites window"/></p>
+        
+                        </li>
+                        <li><p>Repeat step 1 above, this time selecting "Mercurial":</p>
+        
+                            <p><img src="../images/tutorials/htmleditor/71/new-nb-app-wiz994.png" alt="Finding the Favorites window"/></p>
+                            <p>Again, click the "Resolve" button, so that any related
+                                modules will also be included in the application.
+                                Also find the Subversion modules and add them to the
+                                application. When you run the application again, the Team
+                                menu shows the additional versioning tools that
+                                have been included:</p>
+                            <p><img src="../images/tutorials/htmleditor/71/new-nb-app-wiz995.png" alt="Finding the Favorites window"/></p>
+                        </li>
+                    </ol>
+        
+                </div>
+        
+                <p>This illustrates the point that you can include additional
+                    modules from NetBeans IDE and the NetBeans Platform to
+                    include new features in your application.</p>
+                 =====================================================================================      
+        -->
+        <h2 class="tutorial"><a name="distributingtheapplication"></a>Distributing the Application</h2>
+        <p>
+            Choose one of two approaches for distributing
+            your application. If you want to maintain as much
+            control over your application as possible, you will
+            use web start (JNLP) to distribute your application over the web.
+            In this scenario, whenever you want to update the application,
+            you will do so locally and let your end users know about the
+            update, which they will automatically have available next time
+            they start up your application over the web. Alternatively, 
+            distribute a ZIP file containing your application. The end users
+            will then have the complete application locally available. You would
+            then distribute updates and new features via the update mechanism,
+            described below.</p>
+
+        <div class="indent">
+
+
+            <h3 class="tutorial"><a name="zip"></a>Distributing the Application via a ZIP File</h3>
+            <p> To make your application extendable, you need to let your
+                users install modules to enhance the application's
+                functionality. To do so, your application is already bundling the Plugin Manager.
+            </p>
+
+            <div class="indent">
+
+                <ol>
+                    <!--                    <li>Choose the Tools | Plugins menu item and install
+                                            some plugins that are useful to your HTML Editor.
+                                            Browse the <a href="http://plugins.netbeans.org/PluginPortal/">Plugin Portal</a>
+                                            to find some suitable ones. This is also how your end users will update their
+                                            local installation of your application.</li>-->
+
+                    <li>Right-click the application's project node and
+                        choose Build ZIP Distribution.</li>
+
+
+
+                    <li><p>In the <tt>dist</tt> folder (visible in the
+                            Files window), you should now be able to see
+                            a ZIP file, as follows:</p>
+
+                        <p><img src="../images/tutorials/htmleditor/73/pic11.png" alt="Finding the Favorites window"/></p>
+
+                        <p><b class="notes">Note:</b> The application's launcher is created in
+                            the <tt>bin</tt> folder, as shown above.</p></li>
+                </ol>
+
+            </div>
+
+        </div>
+
+        <!-- ======================================================================================== -->
+
+        <div class="indent">
+
+
+            <h3><a name="webstart"></a>Distributing the HTML Editor via the Shared NetBeans Web Start Repository</h3>
+
+            <p>
+                Instead of distributing a ZIP file, let's prepare for
+                a webstart distribution by finetuning the <tt>master.jnlp</tt> file that is
+                generated the first time you start the application via "Run JNLP Application". Even though it does the job, it
+                is not yet ready for distribution. At the very least, you need to change the
+                information section to provide better descriptions and icons.</p>
+
+            <p>
+                Another change to the standard JNLP infrastructure is the use of a 
+                shared JNLP repository on www.netbeans.org. By default, the JNLP application
+                generated for a suite always contains all its modules as well as all the modules it depends on.
+                This may be useful for intranet usage, but it is a bit less practical for
+                wide internet use. When on the internet, it is much better if all the 
+                applications built on the NetBeans Platform refer to one repository of
+                NetBeans modules, which means that such modules are shared and 
+                do not need to be downloaded 
+                more than once.
+            </p>
+
+            <p>
+                There is such a repository for NetBeans Platform. It does not contain all
+                the modules that NetBeans IDE has, but
+                it contains enough to make most of non-IDE applications like our HTML Editor
+                possible.
+                To use the repository, you only need to modify the application's
+                <tt>platform.properties</tt>
+                by adding the correct URL:
+            </p>
+            <pre class="examplecode">
+# share the libraries from common repository on netbeans.org
+# this URL is for release72 JNLP files:
+jnlp.platform.codebase=http://bits.netbeans.org/7.2/jnlp/
+            </pre>    
+            <p>Similarly, for 7.1:</p>
+            <pre class="examplecode">
+# share the libraries from common repository on netbeans.org
+# this URL is for release71 JNLP files:
+jnlp.platform.codebase=http://bits.netbeans.org/7.1/jnlp/
+            </pre>    
+            <p>Similarly, for 7.0:</p>
+            <pre class="examplecode">
+# share the libraries from common repository on netbeans.org
+# this URL is for release70 JNLP files:
+jnlp.platform.codebase=http://bits.netbeans.org/7.0/jnlp/
+            </pre>    
+            <p>Similarly, for 6.9:</p>
+            <pre class="examplecode">
+# share the libraries from common repository on netbeans.org
+# this URL is for release69 JNLP files:
+jnlp.platform.codebase=http://bits.netbeans.org/6.9/jnlp/
+            </pre>    
+            <p>
+                As soon as the application is started as a JNLP application, all its shared plug-in modules
+                are going to be loaded from netbeans.org and shared with other
+                applications doing the same.</p>
+        </div>
+        <!--========================================================================================-->
+        <p></p>
+        <div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20NetBeans%20HTML%20Editor%20Tutorial%207.3">Send Us Your Feedback</a></div>
+        <!--========================================================================================-->
+
+        <h2><a name="nextsteps"></a>See Also</h2>
+
+        <p>This concludes the NetBeans HTML Editor Tutorial. 
+            For more information about creating and developing applications on the NetBeans Platform, see the following resources:</p>
+        <ul>
+            <li><a href="https://netbeans.org/kb/trails/platform.html">Other Related Tutorials</a></li>
+            <li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API Javadoc</a></li>
+        </ul>
+
+        <!-- ======================================================================================== -->
+
+
+    </body>
+</html>

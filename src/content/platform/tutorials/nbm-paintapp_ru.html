@@ -1,0 +1,750 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <!-- -*- xhtml -*- -->
+    <title>Руководство по разработке приложений для рисования на платформе NetBeans 6.8</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="AUDIENCE" content="NBUSER"/>
+    <meta name="TYPE" content="ARTICLE"/>
+    <meta name="EXPIRES" content="N"/>
+    <meta name="developer" content="gwielenga@netbeans.org"/>
+    <meta name="indexed" content="y"/>
+    <meta name="description"
+          content="A guide to creating a Paint application."/>
+   <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+<body>
+
+<h1>Руководство по разработке приложений для рисования на платформе NetBeans</h1>
+
+<p>В этом руководстве представлены базовые аспекты разработки функционально насыщенных клиентских приложений на платформе NetBeans. Разработка приложений на платформе NetBeans подразумевает использование при разработке возможностей ядра среды IDE NetBeans. Все модули среды IDE, которые не требуются для разрабатываемого приложения, будут исключены, тогда как необходимые модули будут использованы. Использование уже готовых компонентов ядра среды IDE экономит значительное количество времени и сил. </p>
+
+  <p><strong class="notes">Примечание.</strong> В этом документе используется среда IDE NetBeans версии 6.5. Если установлена среда IDE NetBeans 6.x, обратитесь к <a href="60/nbm-paintapp_ru.html">версии 6.0/6.1 этого документа</a>.</p>
+   
+    <p><b>Содержание</b></p>
+   
+   <p><img src="../images/articles/69/netbeans-stamp7-8-9.png" class="stamp" width="114" height="114" alt="Содержимое на этой странице относится к среде IDE NetBeans 6.5, 6.7, 6.8" title="Содержимое на этой странице относится к среде IDE NetBeans 6.5, 6.7, 6.8" /></p>
+      <ul class="toc">
+     <li><a href="#intro">Введение в разработку приложения для рисования</a></li>
+     <li><a href="#setup">Создание приложения для рисования</a>
+     <ul>
+         <li><a href="#creatingModuleSuite">Создание скелета приложения</a></li>
+         <li><a href="#creatingLibWrapModule">Создание проекта модуля-обертки библиотеки</a></li>
+         <li><a href="#creatingModProj">Создание модуля</a></li>
+         <li><a href="#specifyingModProjDep">Определение зависимостей модуля</a></li>
+     </ul></li>
+     <li><a href="#impMod">Создание и внедрение элемента холста для рисования</a>
+     <ul>
+         <li><a href="#creatingCanv">Создание холста</a></li>
+         <li><a href="#prepTopComp">Подготовка класса TopComponent</a></li>
+         <li><a href="#initTopComp">Инициализация класса TopComponent</a></li>
+         <li><a href="#fillSkelMeth">Заполнение кодом скелетных методов</a></li>
+         <li><a href="#savingImage">Функция сохранения изображения на диске</a></li>
+     </ul></li>
+     <li><a href="#defNew">Создание пункта меню для создания нового холста </a></li>
+     <li><a href="#defSave">Создание пункта меню для сохранения холста </a></li>
+     <li><a href="#wrappingUp">Заключительная подготовка</a></li>
+     <li><a href="#creatingDist">Создание дистрибутива</a></li>
+       </ul>
+         
+<p><b>Для работы с этим руководством требуется программное обеспечение и ресурсы, перечисленные в следующей таблице.</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Программное обеспечение или ресурс</th>
+                <th class="tblheader" scope="col">Требуемая версия</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">Среда IDE NetBeans</a></td>
+                <td class="tbltd1">версия 6.7 или выше </td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Комплект для разработчика на языке Java (JDK)</a></td>
+                <td class="tbltd1">версия 6 или<br/>версия 5</td>
+            </tr>
+        </tbody>
+    </table>
+
+ <h2>Введение в разработку приложения для рисования</h2><p><a name="intro"></a></p>
+
+<p>Целью этого руководства является быстрая подготовка читателя к практической работе. Необходимо будет создать и установить простое приложение на платформе NetBeans. Это приложение позволит пользователю рисовать на экране и сохранять результаты:</p>
+
+ <p><img src="../images/tutorials/paintapp/result-without-menus-60.png" alt="Готовое приложение" /></p>
+
+<p>Такая начальная версия далека от полнофункционального приложения для рисования, но, тем не менее, она иллюстрирует самый простой вариант создания приложения на базе платформы NetBeans.</p>
+
+<p><b class="notes">Примечание.</b> Если необходимо получить дополнительные сведения о модулях NetBeans, а не о функционально насыщенных клиентских приложениях, рекомендуется обратиться к руководству <a href="nbm-google_ru.html">Быстрое начало работы с подключаемыми модулями в среде NetBeans </a>. </p>
+
+ <p>В настоящем руководстве создается приложение на основе шаблона, поставляемого со средой IDE. Для просмотра готового приложения или разрешения проблем, возникающих при работе с этим руководством, в окне мастера создания проекта можно открыть шаблон по пути, указанному ниже:</p>
+  
+  <p><img src="../images/tutorials/paintapp/sample-in-new-project-60.png" alt="Панель выбора имени и расположения" /></p>
+
+ 
+ <h2>Создание приложения для рисования</h2><p><a name="setup"/></p>
+
+<p>В этом разделе необходимо будет создать структуру будущего приложения. Сначала следует создать скелет приложения, для чего используется соответствующий мастер. Приложение зависит от библиотеки, поэтому также будет создан модуль-обертка вокруг библиотеки, содержащий файл JAR библиотеки. Наконец, будет создан модуль, содержащий код.</p>
+ 
+<div class="indent">
+    
+<p><a name="creatingModuleSuite"></a></p><h3 class="tutorial">Создание скелета приложения</h3>
+
+<p>Для создания скелета приложения используется шаблон &quot;Приложение на платформе NetBeans&quot;. Скелет состоит из набора модулей, которые совместно образуют основу приложения. С помощью диалогового окна &quot;Свойства проекта&quot; назначаются заставка приложения, имя приложения, а также тип и количество модулей NetBeans, которые требуется использовать. Можно также воспользоваться такими возможностями, как создание дистрибутива в формате ZIP и построение приложения на базе Java WebStart (JNLP), являющимися важными средствами распространения приложения среди других пользователей.</p>
+
+<ol>
+	<li>Выберите в меню &quot;Файл&quot; команду &quot;Новый проект&quot;. В разделе &quot;Категории&quot; выберите параметр &quot;Модули NetBeans&quot;. В разделе &quot;Проекты&quot; выберите параметр &quot;Приложение на платформе NetBeans&quot;.
+ <p><img src="../images/tutorials/paintapp/paintapp-proj-wiz.png" alt="шаблон проекта" /></p>
+ <p>Нажмите кнопку &quot;Далее&quot;.</p></li>
+	<li>На панели &quot;Имя и расположение&quot; в поле &quot;Имя проекта&quot; введите <tt>PaintApp</tt>. В поле &quot;Расположение проекта&quot; укажите любой каталог на компьютере. Оставьте флажок &quot;Установить как главный проект&quot; отмеченным. Нажмите кнопку &quot;Готово&quot;. </li>
+
+      </ol>
+
+<p>После этого скелет созданного приложения откроется в среде IDE. Он состоит из двух узлов в окне &quot;Проекты&quot;. Первый узел (&quot;Модули&quot;) предназначен для добавления к приложению модулей и модулей-оберток вокруг библиотек вручную. Кроме того, при использовании мастера создания модулей или мастера создания модулей-оберток вокруг библиотек, создаваемые модули можно автоматически добавлять к приложению.</p>
+
+<h3 class="tutorial"><a name="creatingLibWrapModule"></a>Создание проекта модуля-обертки библиотеки</h3>
+
+<p>Модуль-обертка библиотеки &ndash; это модуль, файл JAR которого содержит не код, а только указатель на библиотеку. Благодаря этому библиотека становится модулем NetBeans; поэтому к ней применяются все защитные функции системы загрузчика классов NetBeans без изменения первоначального файла JAR. В дальнейшем создаваемое приложение зависит от библиотеки так же, как если бы библиотека была обычным модулем NetBeans. При появлении новых версий библиотеки в дистрибутиве изменяется только единственный файл модуля NetBeans (NBM) для библиотеки оберток.</p>
+
+<p><b class="notes">Примечание.</b> К преимуществам построения приложений на платформе NetBeans относится интерфейс пользователя на базе стандартного инструментария для разработки интерфейса пользователя для Java &ndash; Swing. Так как Swing используется в течение долгого времени, существует множество компонентов, которые можно использовать в создаваемом приложении. В этом руководстве применяется существующий компонент JavaBean для выбора цветов (исходный код приведен в CVS NetBeans, в области <tt>contrib/coloreditor</tt>). Имя файла JAR &ndash; <tt>ColorChooser.jar</tt>. Библиотеку можно загрузить <a href="https://colorchooser.dev.java.net/">здесь</a>. Сохраните ее в любом месте файловой системы. </p>
+
+ <p>Для создания модуля-обертки библиотеки для файла <tt>ColorChooser.jar</tt>выполните следующие действия:</p>
+
+  <ol>
+<li>Выберите в меню &quot;Файл&quot; команду &quot;Новый проект&quot;. В разделе &quot;Категории&quot; выберите параметр &quot;Модули NetBeans&quot;. В области &quot;Проекты&quot; выберите &quot;Модуль-обертка библиотеки&quot; и нажмите кнопку &quot;Далее&quot;.</li>
+      <li>На панели &quot;Выбор библиотеки&quot; либо введите в текстовое поле &quot;Библиотека&quot; путь к файлу <tt>ColorChooser.jar</tt>, либо перейдите к его расположению с помощью функции обзора.</li>
+<li>Оставьте поле &quot;Лицензия&quot; незаполненным. Если предполагается создание дистрибутива готового продукта, необходимо включить лицензионный файл внешней библиотеки. Нажмите кнопку &quot;Далее&quot;.</li>
+ <li>На панели &quot;Имя и расположение&quot; заполните имя проекта, укажите расположение проекта и убедитесь в том, что в раскрывающемся списке &quot;Добавить к набору модулей&quot; выбрано значение, соответствующее добавлению модуля к приложению. Нажмите кнопку &quot;Далее&quot;.</li>
+ <li>На панели &quot;Базовая настройка модуля&quot; введите уникальную основу кодового имени, укажите отображаемое имя модуля и местоположение локализируемого файла ресурсов для модуля:
+
+<p><img src="../images/tutorials/paintapp/lib-wrap-1.png" alt="Панель выбора имени и расположения" /></p>
+
+<p>Нажмите кнопку &quot;Готово&quot;. </p></li></ol>
+
+<p>В среде IDE создается модуль, служащий оберткой для выбранной библиотеки <tt>colorchooser.jar</tt>. Структура модуля выводится в окне &quot;Проекты&quot;. В узле &quot;Модули&quot; в структуре приложения показано, что модуль является частью приложения.</p>
+
+<h3 class="tutorial"><a name="creatingModProj"></a>Создание модуля</h3>
+ <p>Теперь необходимо создать модуль для будущего фактического кода.</p>
+     <ol>
+	<li>Выберите в меню &quot;Файл&quot; команду &quot;Новый проект&quot;. В разделе &quot;Категории&quot; выберите параметр &quot;Модули NetBeans&quot;. В области &quot;Проекты&quot; выберите &quot;Модуль&quot; и нажмите кнопку &quot;Далее&quot;.</li>
+	<li>На панели &quot;Имя и расположение&quot; в поле &quot;Имя проекта&quot; введите <tt>Paint</tt>. В поле &quot;Расположение проекта&quot; укажите любой каталог на компьютере. Убедитесь, что выбран переключатель &quot;Добавить к набору модулей&quot;, а в раскрывающемся списке &quot;Набор модулей&quot; выбрано приложение <tt>PaintApp</tt>. Установите флажок &quot;Установить как главный проект&quot;. Нажмите кнопку &quot;Далее&quot;.</li>
+
+ <li>На панели &quot;Основные настройки модуля&quot; введите <tt>org.netbeans.paint</tt> В поле &quot;Отображаемое имя модуля&quot; оставьте имя <tt>Paint</tt>. Не изменяйте местоположение локализируемого файла ресурсов. Установите флажок &quot;Создать слой XML&quot; и оставьте местоположение локализуемого файла ресурсов и слоя XML по умолчанию; при этом они будут храниться в пакете с именем <tt>org.netbeans.paint</tt>. 
+ <p>Эти файлы предназначены для следующего:</p>
+ <ul>
+ <li><b>Локализируемый файл ресурсов.</b> Указывает строки на конкретном языке в целях интернационализации.</li>
+ <li><b>Слой XML.</b> Регистрирует элементы, такие как меню и кнопки панели инструментов, в приложении на платформе NetBeans. 
+</li>
+ </ul>
+
+
+<p>Нажмите кнопку &quot;Готово&quot;. </p></li></ol>
+
+<p> В среде IDE создается проект <tt>Paint</tt>. Проект содержит все исходные файлы и метаданные проекта, например, сценарий сборки проекта Ant. Проект откроется в среде IDE. Логическую структуру проекта можно просмотреть в окне &quot;Проекты&quot; (CTRL+1), а его файловую структуру &ndash; в окне &quot;Файлы&quot; (CTRL+2). Например, окно &quot;Проекты&quot; должно выглядеть следующим образом:</p>
+
+<p><img src="../images/tutorials/paintapp/paintapp-start-1.png" alt="Приложение для рисования" /></p>
+
+
+<p>Кроме пакета локализации и файла layer.xml, проект также содержит следующие важные файлы:</p>
+ <ul>
+ <li><b>Манифест модуля.</b> Объявляет проект модулем. Кроме того, он определяет некоторые характерные для модуля параметры настройки, например, местоположение файла layer.xml, местоположение пакета локализации и версию модуля.</li>
+ <li><b>Сценарий построения.</b> Предусматривает пространство для создания собственных параметров Ant и переопределения параметров, указанных в файле <tt>nbproject/build-impl.xml</tt>.</li>
+ <li><b>Метаданные проекта.</b> Содержат такую информацию, как тип проекта, содержимое, платформа, путь к классам, зависимости и связи между командами проекта и параметрами в сценариях Ant.</li>
+
+</ul>
+<p>В этом руководстве изменять эти файлы не придется.</p>
+
+
+
+<h3 class="tutorial"><a name="specifyingModProjDep"></a>Определение зависимостей модуля</h3>
+
+
+
+<p>Необходимо будет создать подклассы для нескольких классов, принадлежащих <a href="http://bits.netbeans.org/dev/javadoc/index.html">интерфейсам API NetBeans</a>. Кроме того, проект должен зависеть от файла <tt>ColorChooser.jar</tt>. Все интерфейсы API NetBeans реализованы модулями, поэтому выполнение обеих задач подразумевает лишь добавление в список модулей некоторых необходимых для выполнения модулей.</p>
+
+  <ol>
+	  <li>В окне &quot;Проекты&quot; щелкните правой кнопкой мыши узел проекта <tt>Paint</tt> и выберите &quot;Свойства&quot;. Откроется диалоговое окно &quot;Свойства проекта&quot;. В области &quot;Категории&quot; выберите &quot;Библиотеки&quot;</li>
+	
+ <li>Для каждого указанного в приведенной ниже таблице интерфейса API выберите &quot;Добавить зависимость...&quot;, а затем в текстовом поле &quot;Фильтр&quot; начинайте вводить имя класса, для которого требуется подкласс.
+ 
+ <table width="76%" border="1">
+ <tbody>
+   <tr>
+ <td>
+	<div><b>Класс</b></div>
+      </td>
+      <td>
+        <div><b>Интерфейc API</b></div>
+      </td>
+     
+      <td>
+	<div><b>Назначение</b></div>
+      </td>
+  </tr>
+    <tr>
+<td><tt>ColorChooser</tt></td>
+		<td><tt>ColorChooser</tt></td>
+
+                <td>Модуль-обертка библиотеки для созданного компонента выбора цветов.</td>
+            </tr>
+            <tr>
+<td><tt>DataObject</tt></td>
+		<td><tt>Интерфейс API для систем данных</tt></td>
+
+                <td>Модуль NetBeans, содержащий класс DataObject</td>
+            </tr>
+            <tr>
+<td><tt>DialogDisplayer</tt></td>
+		<td><tt>Интерфейс API для диалоговых окон</tt></td>
+ 
+                <td>Позволяет создавать уведомления пользователя, описания диалогового окна и разрешает выводить их на экран.</td>
+            </tr>
+            <tr>
+ <td><tt>AbstractFile</tt></td>
+		<td><tt>API файловой системы</tt></td>
+
+                <td>Позволяет общему интерфейсу API обращаться к файлам единообразным способом.</td>
+            </tr>
+            <tr>
+<td><tt>AbstractNode</tt></td>
+		<td><tt>Интерфейс API для узлов</tt></td>
+
+                <td>Основное средство визуализации объектов в NetBeans.</td>
+            </tr>
+            <tr>
+<td><tt>StatusDisplayer</tt></td>
+		<td><tt>API утилит интерфейса</tt></td>
+
+                <td>Класс &quot;StatusDisplayer&quot; используется для создания строки состояния в главном окне.</td>
+            </tr>
+            <tr>
+<td><tt>WeakListeners</tt></td>
+		<td><tt>Интерфейс API для средств</tt></td>
+
+                <td>Этот класс содержит класс &quot;WeakListeners&quot;.</td>
+            </tr>
+            <tr>
+<td><tt>TopComponent</tt></td>
+		<td><tt>Системный интерфейс API для окон</tt></td>
+
+                <td>Этот класс содержит класс &quot;TopComponent JPanel&quot;.</td>
+            </tr>
+  
+  </tbody>
+</table>
+ 
+ <p>В вышеприведенной таблице в первом столбце перечислены все классы, которым в этом руководстве потребуются подклассы. В каждом из этих случаев начинайте вводить имя класса в поле &quot;Фильтр&quot; и просматривайте сужающийся список в поле &quot;Модуль&quot;. Второй столбец таблицы следует использовать для выбора подходящего интерфейса API (или, в случае <tt>ColorChooser</tt>, библиотеки) из сокращенного списка &quot;Модуль&quot;; для подтверждения выбора нажмите кнопку &quot;ОК&quot;:</p>
+
+<p><img src="../images/tutorials/paintapp/libfilter-60.png" alt="initial-proj-window" /></p>
+</li>
+<li>Нажмите кнопку &quot;ОК&quot; для выхода из диалогового окна &quot;Свойства проекта&quot;.</li>
+<li>Если в окне &quot;Проекты&quot; не развернут узел проекта модуля &quot;Paint&quot;, разверните его. Затем разверните узел &quot;Важные файлы&quot; и дважды щелкните узел &quot;Метаданные проекта&quot;. Обратите внимание, что выбранные интерфейсы API были объявлены как зависимости модулей.</li>
+
+
+    </ol>
+    </div>
+    <h2><a name="impMod"></a>Создание и внедрение элемента холста для рисования</h2> 
+       
+
+ <div class="indent">
+   <h3 class="tutorial"><a name="creatingCanv"></a>Создание холста</h3>
+    <p>Следующим действием будет создание фактического компонента, на котором пользователь сможет рисовать. В данном случае используется чистый компонент Swing, поэтому подробности его реализации можно пропустить и работать с окончательной версией. Для этой панели в исходном коде используется элемент выбора цветов, для которого был создан модуль-обертка библиотеки. При запуске готового приложения он отобразится на панели инструментов редактирования изображений.</p>
+    <ol>
+	<li>В окне &quot;Проекты&quot; разверните узел <tt>Paint</tt>, затем узел &quot;Папки с исходными файлами&quot;, после этого щелкните правой кнопкой мыши узел <tt>org.netbeans.paint</tt>. Выберите в меню &quot;Создать&quot; команду &quot;Класс Java&quot;.</li>
+	<li>Введите <tt>PaintCanvas</tt> в поле имени класса. Убедитесь, что в качестве пакета определен файл <tt>org.netbeans.paint</tt>. Нажмите кнопку &quot;Готово&quot;. Файл <tt>PaintCanvas.java</tt> открывается в редакторе исходного кода.</li>
+	<li>Замените стандартное содержимое файла содержимым, которое можно найти <a href="https://platform.netbeans.org/guide/tutorials/paintTutorial/PaintCanvas.java">здесь</a>. Если пакет имеет имя, отличное от <tt>org.netbeans.paint</tt>, исправьте имя пакета в редакторе исходного кода.</li> 
+    </ol>
+  
+    <h3 class="tutorial"><a name="prepTopComp"></a>Подготовка класса TopComponent</h3>
+
+<p>Теперь необходимо будет написать первый класс для <a href="http://bits.netbeans.org/dev/javadoc/index.html">интерфейсов API среды NetBeans</a>. Это класс <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/org/openide/windows/TopComponent.html">TopComponent</a></tt>. Класс <tt>TopComponent</tt> &ndash; это класс <tt>JPanel</tt>, для которого у системы управления окнами NetBeans имеются методы взаимодействия, поэтому его можно будет разместить внутри контейнера с вкладками в главном окне.</p>
+
+ <ol>
+		<li>В окне &quot;Проекты&quot; разверните узел <tt>Paint</tt>, затем узел &quot;Папки с исходными файлами&quot;, после этого щелкните правой кнопкой мыши узел <tt>org.netbeans.paint</tt>. Выберите в меню &quot;Создать&quot; команду &quot;Класс Java&quot;. Введите <tt>PaintTopComponent</tt> в поле имени класса. Убедитесь, что в качестве пакета определен файл <tt>org.netbeans.paint</tt>. Нажмите кнопку &quot;Готово&quot;. Файл <tt>PaintTopComponent.java</tt> открывается в редакторе исходного кода.</li>
+        <li>В верхней части файла измените объявление класса на следующее:
+            <pre class="examplecode">public class PaintTopComponent extends TopComponent implements ActionListener, ChangeListener {</pre></li>
+        <li>Нажмите CTRL+SHIFT+I для исправления операторов импорта и нажмите в диалоговом окне кнопку &quot;ОК&quot;. Среда IDE произведет необходимые объявления пакета импорта в верхней части файла.
+	<p>Обратите внимание на красную линию под введенным объявлением класса. Установите курсор в строке и обратите внимание на лампочку, появившуюся в левом поле. Щелкните изображение лампочки (или нажмите ALT+ВВОД), как показано ниже:</p>
+
+<p><img src="../images/tutorials/paintapp/lightbulb-60.png" alt="Лампочка." /></p>
+
+Выберите &quot;Реализовать все абстрактные методы&quot; Среда IDE создаст два скелетных метода: <tt>actionPerformed()</tt> и <tt>stateChanged()</tt>. Немного позднее их необходимо будет заполнить кодом.</li>
+	<li>Над классом <tt>PaintTopComponent</tt> добавьте следующие три объявления переменных, а затем исправьте операторы импорта (CTRL+SHIFT+I).
+        <pre class="examplecode">    private PaintCanvas canvas = new PaintCanvas(); //Компонент для рисования
+    private JComponent preview; //Компонент на панели инструментов, обозначающий размер кисти
+    private static int ct = 0; //Счетчик, который дает имена новым изображениям</pre></li>
+        <li>Теперь необходимо реализовать два шаблонных метода. Первый сообщает системе управления окнами о необходимости игнорирования открытых окон, если приложение закрыто; второй предоставляет основную строку для уникального идентификатора строки создаваемого элемента. Каждый элемент <tt>TopComponent</tt> имеет уникальный идентификатор строки, который используется при сохранении <tt>TopComponent</tt>. Вставьте два следующих метода в класс <tt>PaintTopComponent</tt>:
+<pre class="examplecode">    @Override
+    public int getPersistenceType() {
+        return PERSISTENCE_NEVER;
+    }
+
+    @Override
+    public String preferredID() {
+        return &quot;Image&quot;;
+    }</pre></li>
+    </ol>
+
+    <p>Класс должен выглядеть следующим образом:</p>
+
+<pre class="examplecode">public class PaintTopComponent extends TopComponent implements ActionListener, ChangeListener {
+    
+    private PaintCanvas canvas = new PaintCanvas(); //Компонент для рисования
+    private JComponent preview; //Компонент на панели инструментов, обозначающий размер кисти
+    private static int ct = 0; //Счетчик, который дает имена новым изображениям
+    
+    public PaintTopComponent() {
+    }
+    
+    @Override
+    public void actionPerformed(ActionEvent arg0) {
+        throw new UnsupportedOperationException(&quot;Пока не поддерживается.&quot;);
+    }
+    
+    @Override
+    public void stateChanged(ChangeEvent arg0) {
+        throw new UnsupportedOperationException(&quot;Пока не поддерживается.&quot;);
+    }
+    
+    @Override
+    public int getPersistenceType() {
+        return PERSISTENCE_NEVER;
+    }
+    
+    @Override
+    public String preferredID() {
+        return &quot;Image&quot;;
+    }
+    
+}</pre>
+        
+    <h3 class="tutorial"><a name="initTopComp"></a>Инициализация класса TopComponent</h3>
+  
+<p>В этом разделе будет добавлен код, инициализирующий интерфейс пользователя.</p>
+ 
+<ol>
+    <li>Определите конструктор и исправьте выражения импорта (CTRL+SHIFT+I):
+       
+<pre class="examplecode">    public PaintTopComponent() {
+
+        initComponents();
+
+        String displayName = NbBundle.getMessage(
+                PaintTopComponent.class,
+                &quot;UnsavedImageNameFormat&quot;,
+                new Object[] { new Integer(ct++) }
+        );
+
+        setDisplayName(displayName);
+
+    }</pre>
+
+<p>Код в этом случае довольно прост. Первым вызывается еще не написанный метод <tt>initComponents()</tt>, который добавит панель инструментов и элемент &quot;PaintCanvas&quot; к элементу <tt>TopComponent</tt>. Так как этот метод еще не написан, он подчеркивается красной линией. Как и в предыдущем случае, щелкните изображение лампочки (или нажмите ALT+ВВОД) и примите предложение:</p>
+
+        <p><img src="../images/tutorials/paintapp/lightbulb-initcomponents-60.png" alt="Лампочка." /></p>
+
+        <p>Будет создан скелетный код метода <tt>initComponents()</tt>.</p></li>
+
+
+	<li>Разверните пакет <tt>org.netbeans.paint</tt> в окне &quot;Проекты&quot;. Дважды щелкните файл <tt>Bundle.properties</tt>, чтобы открыть его в редакторе исходного кода. В конец добавьте следующую строку: 
+    <pre class="examplecode">    UnsavedImageNameFormat=Image {0}</pre>
+<p>Она отвечает за текст, который будет использоваться для идентификации нового файла изображения перед его сохранением пользователем. Например, когда пользователь в первый раз выбирает &quot;Новый холст&quot; в готовом приложении, над редактором исходного кода появится вкладка с текстом &quot;Image 0&quot;. Перед продолжением не забудьте сохранить файл.</p>
+</li></ol>
+
+
+<h3 class="tutorial"><a name="fillSkelMeth"></a>Заполнение кодом скелетных методов</h3>
+
+<p>В этом разделе будет написан код интерфейса пользователя для создаваемого приложения. Для визуальной разработки формата можно также использовать Конструктор GUI среды IDE.</p>
+
+   <ol>
+
+<li>Метод <tt>initComponents()</tt> устанавливает в панели элементы, благодаря которым пользователь получает возможность взаимодействия с приложением. Его скелетный метод был создан в предыдущем разделе в классе <tt>PaintTopComponent.java</tt>. Заполните его следующим образом:
+
+<pre class="examplecode">    private void initComponents() {
+
+        setLayout(new BorderLayout());
+        JToolBar bar = new JToolBar();
+
+        ColorChooser fg = new ColorChooser();
+        preview = canvas.createBrushSizeView();
+
+        //Формирование панели инструментов
+
+        //Обеспечьте правильное размещение элементов:
+        Dimension min = new Dimension(32, 32);
+        preview.setMaximumSize(min);
+        fg.setPreferredSize(new Dimension(16, 16));
+        fg.setMinimumSize(min);
+        fg.setMaximumSize(min);
+
+        JButton clear = new JButton(
+          	    NbBundle.getMessage(PaintTopComponent.class, &quot;LBL_Clear&quot;));
+
+        JLabel fore = new JLabel(
+         	    NbBundle.getMessage(PaintTopComponent.class, &quot;LBL_Foreground&quot;));
+
+        fg.addActionListener(this);
+        clear.addActionListener(this);
+
+        JSlider js = new JSlider();
+        js.setMinimum(1);
+        js.setMaximum(24);
+        js.setValue(canvas.getDiam());
+        js.addChangeListener(this);
+
+        fg.setColor(canvas.getColor());
+
+        bar.add(clear);
+        bar.add(fore);
+        bar.add(fg);
+        JLabel bsize = new JLabel(
+     	    NbBundle.getMessage(PaintTopComponent.class, &quot;LBL_BrushSize&quot;));
+
+        bar.add(bsize);
+        bar.add(js);
+        bar.add(preview);
+
+        JLabel spacer = new JLabel(&quot;   &quot;); //Выровняйте разделитель так, чтобы кисть в предварительном просмотре не была растянута до конца панели инструментов:
+        spacer.setPreferredSize(new Dimension(400, 24));
+        bar.add(spacer);
+
+        //Установите панель инструментов и элемент для рисования:
+        add(bar, BorderLayout.NORTH);
+        add(canvas, BorderLayout.CENTER);
+        
+    }</pre>
+    <p>Нажмите CTRL+SHIFT+I для добавления отсутствующих операторов импорта. </p></li>
+
+<li>Заполните два других созданных метода. Они используются для прослушивания класса <tt>PaintTopComponent</tt>: 
+<pre class="examplecode">    public void actionPerformed(ActionEvent e) {
+
+        if (e.getSource() instanceof JButton) {
+           canvas.clear();
+        } else if (e.getSource() instanceof ColorChooser) {
+           ColorChooser cc = (ColorChooser) e.getSource();
+           canvas.setPaint (cc.getColor());
+        }
+        
+        preview.paintImmediately(0, 0, preview.getWidth(), preview.getHeight());
+        
+    }</pre>
+
+<pre class="examplecode">    public void stateChanged(ChangeEvent e) {
+
+        JSlider js = (JSlider) e.getSource();
+        canvas.setDiam (js.getValue());
+        preview.paintImmediately(0, 0, preview.getWidth(), preview.getHeight());
+        
+    }</pre>
+</li>
+        <li>В конец файла <tt>Bundle.properties</tt> добавьте следующие пары &quot;ключ-значение&quot;:
+<pre class="examplecode">
+    LBL_Clear = Очистить
+    LBL_Foreground = Цвет 
+    LBL_BrushSize = Размер кисти
+</pre>
+            <p>Перед продолжением не забудьте сохранить файл.</p>
+
+</li>
+</ol>
+    
+<h3 class="tutorial"><a name="savingImage"></a>Функция сохранения изображения на диске</h3>
+
+<p>В новом приложении необходимо реализовать возможность сохранения созданных изображений пользователем. Эта функциональная возможность активируется включением следующего кода в класс <tt>PaintTopComponent</tt>.</p>
+
+ <ol>
+    <li>Вставьте следующий код в класс <tt>PaintTopComponent</tt>:
+
+<pre class="examplecode">    public void save() throws IOException {
+
+        if (getDisplayName().endsWith(&quot;.png&quot;)) {
+	    doSave(new File(getDisplayName()));
+        } else {
+	    saveAs();
+        }
+        
+    }
+
+    public void saveAs() throws IOException {
+
+        JFileChooser ch = new JFileChooser();
+        if (ch.showSaveDialog(this) == JFileChooser.APPROVE_OPTION &amp;&amp; ch.getSelectedFile() != null) {
+
+	    File f = ch.getSelectedFile();
+            
+	    if (!f.getPath().endsWith(&quot;.png&quot;)) {
+	        f = new File(f.getPath() + &quot;.png&quot;);
+	    }
+            
+	    if (!f.exists()) {
+            
+	        if (!f.createNewFile()) {
+		    String failMsg = NbBundle.getMessage(
+		             PaintTopComponent.class,
+			    &quot;MSG_SaveFailed&quot;, new Object[] { f.getPath() }
+	            );
+		    JOptionPane.showMessageDialog(this, failMsg);
+		    return;
+	        }
+                
+	    } else {
+	        String overwriteMsg = NbBundle.getMessage(
+		    PaintTopComponent.class,
+                    &quot;MSG_Overwrite&quot;, new Object[] { f.getPath() }
+	        );
+                
+	        if (JOptionPane.showConfirmDialog(this, overwriteMsg)
+	        != JOptionPane.OK_OPTION) {
+		    return;
+	        }
+                
+	    }
+            
+	    doSave(f);
+            
+        }
+        
+    }
+
+    private void doSave(File f) throws IOException {
+
+        BufferedImage img = canvas.getImage();
+        ImageIO.write(img, &quot;png&quot;, f);
+        String statusMsg = NbBundle.getMessage(PaintTopComponent.class,
+            &quot;MSG_Saved&quot;, new Object[] { f.getPath() });
+        StatusDisplayer.getDefault().setStatusText(statusMsg);
+        setDisplayName(f.getName());
+        
+    }</pre></li>
+
+    <li>Добавьте в файл <tt>Bundle.properties</tt> следующие строки:
+<pre class="examplecode">    MSG_SaveFailed = Запись в файл невозможна {0}
+    MSG_Overwrite = {0} существует.  Перезаписать?
+    MSG_Saved = Изображение сохранено в {0}</pre>
+
+<p>Перед продолжением не забудьте сохранить файл.</p>
+
+</li>
+
+    <li>Нажмите CTRL+SHIFT+I для исправления операторов импорта. Для класса <tt>File</tt> будут отображены два полностью определенных имени. Выберите вариант <tt>java.io.File</tt>.</li>
+</ol>
+
+</div>
+<h2><a name="defNew"></a>Создание пункта меню для создания нового холста</h2>
+
+<p>Для создания основных функциональных возможностей модуля используются шаблоны файлов разработки модуля. При использовании шаблона файла среда IDE регистрирует созданный элемент в файле <tt>layer.xml</tt>. После выполнения мастера для создания шаблона файла для дальнейшей разработки модуля используются <a href="https://netbeans.org/download/dev/javadoc/">интерфейсы API NetBeans</a>.</p>
+
+      <ol>
+	<li>В окне &quot;Проекты&quot; щелкните правой кнопкой мыши узел проекта &quot;Paint&quot; и выберите в меню &quot;Создать&quot; команду &quot;Прочее&quot;. В мастере создания файлов выберите &quot;Разработка модулей&quot; в области &quot;Категории&quot; и &quot;Действие&quot; в области &quot;Типы файлов&quot;. Нажмите кнопку &quot;Далее&quot;.</li>
+
+          <li>На панели &quot;Тип действия&quot; примите параметры по умолчанию. Нажмите кнопку &quot;Далее&quot;.</li>
+<li>На панели &quot;Регистрация в интерфейсе&quot; выберите &quot;Глобальный пункт меню&quot; и &quot;Глобальная кнопка панели инструментов&quot;. Установите следующие значения:
+<ul><li><b>Категория:</b> Правка</li>
+<li><b>Меню:</b> Файл</li>
+<li><b>Позиция:</b> Без ограничений! </li>
+<li><b>Панель инструментов:</b> Файл</li>
+<li><b>Позиция:</b> Без ограничений! </li>
+</ul>
+ <p><b class="notes">Примечание:</b> Местоположение действия не имеет значения, однако оно должно находиться в меню &quot;Файл&quot; и на панели инструментов &quot;Файл&quot;.</p>
+ <p>На экране должны быть представлены следующие параметры:</p>
+ <p><img src="../images/tutorials/paintapp/newcanvasaction-60.png" alt="Панель регистрации в интерфейсе." /></p>
+
+<p>Нажмите кнопку &quot;Далее&quot;.</p></li>
+<li>На панели &quot;Имя, значок и расположение&quot; введите <tt>NewCanvasAction</tt> в качестве имени класса и <tt>New Canvas</tt> в поле &quot;Отображаемое имя&quot;. 
+
+<p>В области &quot;Значок&quot; перейдите к этому значку с помощью функции обзора (щелкните его правой кнопкой мыши на этой странице и сохраните в папку <tt>org.netbeans.paint</tt>): <img src="../images/tutorials/paintapp/new_icon.png" alt="Значок создания холста." /></p></li>
+
+  <li><p>Нажмите кнопку &quot;Готово&quot;. </p>
+
+<p>В результате создается файл <tt>NewCanvasAction.java</tt> в <tt>org.netbeans.paint</tt>, который открывается в редакторе исходного кода. На экране должно отобразиться следующее:</p>
+
+<pre class="examplecode">/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package org.netbeans.paint;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public final class NewCanvasAction implements ActionListener {
+
+    public void actionPerformed(ActionEvent e) {
+        // TODO реализация тела действия
+    }
+    
+}</pre>
+
+
+
+<p>Как указано на панели &quot;Регистрация в интерфейсе&quot;, среда IDE регистрирует класс действия как пункт меню и как кнопку на панели инструментов в файле <tt>layer.xml</tt>.</p></li>
+
+
+<li>В редакторе исходного кода откройте <tt>NewCanvasAction.java</tt> и заполните метод <tt>actionPerformed()</tt> следующим кодом:
+ 
+
+<pre class="examplecode">    public void actionPerformed(ActionEvent e) {
+        PaintTopComponent tc = new PaintTopComponent();
+        tc.open();
+        tc.requestActive();       
+    }</pre>
+   <p>Этот код создает новый экземпляр элемента редактирования изображения; откройте его, в результате чего он появится в главном окне, а затем активируйте его путем установки курсора и выбора связанной с ним вкладки.</p></li>
+  </ol>
+
+  <h2 class="tutorial"><a name="defSave"></a>Создание пункта меню для сохранения холста</h2>
+
+  <p>Как и в предыдущем разделе, для создания элемента меню используется мастер создания действий, с помощью которого далее будет создана функция сохранения изображений.</p>
+   
+ <ol>
+	<li>В окне &quot;Проекты&quot; щелкните правой кнопкой мыши узел проекта &quot;Paint&quot; и выберите в меню &quot;Создать&quot; команду &quot;Прочее&quot;. В мастере создания файлов выберите &quot;Разработка модулей&quot; в области &quot;Категории&quot; и &quot;Действие&quot; в области &quot;Типы файлов&quot;. Нажмите кнопку &quot;Далее&quot;.</li>
+
+<li>На панели &quot;Тип действия&quot; примите параметры по умолчанию. Нажмите кнопку &quot;Далее&quot;.</li>
+<li>На панели &quot;Регистрация в интерфейсе&quot; выберите &quot;Глобальный пункт меню&quot; и &quot;Глобальная кнопка панели инструментов&quot;. Установите следующие значения:
+
+ <ul><li><b>Категория:</b> Правка</li>
+<li><b>Меню:</b> Файл</li>
+<li><b>Позиция:</b> Без ограничений! </li>
+<li><b>Панель инструментов:</b> Файл</li>
+<li><b>Позиция:</b> Без ограничений!</li>
+</ul>
+<p><b class="notes">Примечание:</b> Местоположение действия не имеет значения, однако оно должно находиться в меню &quot;Файл&quot; и на панели инструментов &quot;Файл&quot;.</p>
+
+
+Нажмите кнопку &quot;Далее&quot;.</li>
+<li>На панели &quot;Имя, значок и расположение&quot; введите <tt>SaveCanvasAction</tt> в качестве имени класса и <tt>Save Canvas</tt> в поле &quot;Отображаемое имя&quot;.
+
+<p>В области &quot;Значок&quot; вставьте этот значок (щелкните его правой кнопкой мыши на этой странице и сохраните в папку <tt>org.netbeans.paint</tt>):</p>
+    <img src="../images/tutorials/paintapp/save_icon.png" alt="Значок сохранения холста" /></li>
+
+  <li>Нажмите кнопку &quot;Готово&quot;.
+
+<p>В результате создается файл <tt>SaveCanvasAction.java</tt> в <tt>org.netbeans.paint</tt>, который открывается в редакторе исходного кода. </p></li>
+ 
+ <li>Измените сигнатуру класса: <tt>CallableSystemAction</tt> должен быть расширен, а <tt>PropertyChangeListener</tt> &ndash; реализован:
+  
+  <pre class="examplecode">public final class SaveCanvasAction extends CallableSystemAction implements PropertyChangeListener</pre></li>
+
+<li>В редакторе исходного кода убедитесь в том, что файл <tt>SaveCanvasAction.java</tt> открыт, и заполните метод <tt>actionPerformed()</tt> следующим кодом:
+
+<pre class="examplecode">    @Override
+    public void actionPerformed(ActionEvent e) {
+        TopComponent tc = TopComponent.getRegistry().getActivated();
+
+        if (tc instanceof PaintTopComponent) {
+
+            try {
+                ((PaintTopComponent) tc).saveAs();
+            } catch (IOException ioe) {
+                ErrorManager.getDefault().notify(ioe);
+            }
+
+        } else {
+
+            //Теоретически за промежуток времени между нажатием 
+            //кнопки в меню или в панели инструментов и вызовом действия 
+            //активный элемент мог измениться.  Это маловероятно,
+            //но теоретически возможно
+            Toolkit.getDefaultToolkit().beep();
+
+        }
+    }</pre>
+    <p>Нажмите CTRL+SHIFT+I для добавления отсутствующих операторов импорта. </p>
+  <img src="../images/tutorials/paintapp/fiximports-60.png" alt="Исправьте операторы импорта." /></li>
+
+<li>Заполните методы класса <tt>CallableSystemAction</tt> следующим образом:
+
+<pre class="examplecode">    @Override
+    public String getName() {
+        return &quot;Save Canvas&quot;;
+    }
+
+    @Override
+    public HelpCtx getHelpCtx() {
+        return null;
+    }
+</pre>   </li>
+
+<li>Заполните метод <tt>propertyChange()</tt> класса <tt>PropertyChangeListener</tt> следующим образом:
+
+<pre class="examplecode">    @Override    
+    public void propertyChange(PropertyChangeEvent evt) {
+
+        if (TopComponent.Registry.PROP_ACTIVATED.equals(evt.getPropertyName())){
+	    updateEnablement();
+        }
+        
+    }</pre>
+        
+    <p>При появлении красной линии нажмите ALT+ВВОД, и среда IDE создаст метод <tt>updateEnablement()</tt> в классе <tt>SaveCanvasAction</tt>.</p></li>
+
+<li>Затем определите метод <tt>updateEnablement()</tt>:
+
+<pre class="examplecode">    private void updateEnablement() {
+
+        setEnabled(TopComponent.getRegistry().getActivated()
+        instanceof PaintTopComponent);
+
+    }</pre></li>
+
+<li>После этого определите конструктор:
+
+<pre class="examplecode">    public SaveCanvasAction() {  
+
+        TopComponent.getRegistry().addPropertyChangeListener (
+	    WeakListeners.propertyChange(this,
+	    TopComponent.getRegistry()));
+       
+        updateEnablement();
+        
+    }</pre>
+    
+    <p>При появлении красной линии нажмите ALT+ВВОД для импорта средой IDE <tt>org.openide.util.WeakListeners</tt>.</p>
+
+<p>Важной частью кода является добавление прослушивающего процесса изменения свойств. <tt>TopComponent.Registry</tt> &ndash; это реестр всех открытых экземпляров <tt>TopComponent</tt> в системе, т.е. всех открытых вкладок. Он должен прослушиваться на наличие изменений и предусматривать разрешение или запрет выполнения действия в зависимости от текущего фокуса.</p>
+
+<b class="notes">Примечание.</b> Вместо непосредственного добавления прослушивающего процесса изменения свойств можно вызвать <tt>WeakListeners.propertyChange()</tt>. В результате будет создан прослушивающий процесс изменения свойств, слабо связанный с рассматриваемым действием. Несмотря на то, что действие активно только при открытом приложении, если код ни при каких условиях не открепляет прослушивающий процесс, рекомендуется предусмотреть слабосвязанный прослушивающий процесс. В противном случае возможна потенциальная утечка памяти &ndash; действие никогда не сможет быть обработано сборщиком мусора, так как реестр будет ссылаться на него в своем списке прослушивающих процессов.
+ </li>
+  </ol>
+
+  <p>В окне &quot;Проекты&quot; должно отображаться следующее:</p>
+
+  <p><img src="../images/tutorials/paintapp/final-paint-module.png" alt="Итоговый вид окна &quot;Проекты&quot;. " /></p>
+
+ <h2><a name="wrappingUp"></a>Заключительная подготовка</h2>
+ <p>Разумеется, всегда желательно создавать тщательно настроенное приложение, поэтому приведем ряд завершающих действий. Сначала создадим для приложения экран заставки, а затем сформируем дистрибутив в виде архива ZIP и приложение JNLP.</p>
+
+<ol>
+	<li>Запустите проект <tt>PaintApp</tt>. После запуска приложения установите небольшой размер основного экрана и нарисуйте экран-заставку. Для сохранения экрана используйте кнопку &quot;Сохранить&quot;. </li>
+    <li>Щелкните правой кнопкой мыши узел исходного проекта <tt>PaintApp</tt>, выберите &quot;Свойства&quot; и щелкните &quot;Построить&quot; в диалоговом окне &quot;Свойства проекта&quot;.</li> 
+
+    <li>Выберите параметр &quot;Создать отдельное приложение&quot;. Теперь можно ввести название приложения (имя в средстве запуска, создаваемом средой IDE) и текст заголовка (который будет выводиться в строке заголовка). По умолчанию должно отображаться следующее:
+
+<p><img src="../images/tutorials/paintapp/splashscreen1-60.png" alt="Заставка" /></p></li>
+     
+       <li>Выберите &quot;Заставка&quot;. Найдите собственный экран-заставку с помощью функции обзора. При отсутствии собственной заставки используйте <a href="https://platform.netbeans.org/images/tutorials/paintapp/splash.gif">эту</a>. Нажмите кнопку &quot;ОК&quot; для прикрепления заставки к приложению:
+<p><img src="../images/tutorials/paintapp/splashscreen-60.png" alt="Заставка" /></p></li>
+
+<li>Затем в файле <tt>layer.xml</tt> модуля Paint добавьте следующие теги в папку &quot;Menu&quot;. Эти теги удаляют меню &quot;Переход&quot; и &quot;Просмотр&quot;, которые не должны быть представлены в приложении для рисования.
+
+ <pre class="examplecode">&lt;file name=&quot;GoTo_hidden&quot;/&gt;
+&lt;file name=&quot;View_hidden&quot;/&gt;</pre>
+
+<p>В качестве альтернативы, вместо добавления вышеуказанных тегов вручную можно удалить папки в узле <tt>&lt;этот слой в контексте&gt;</tt> <tt>layer.xml</tt>. Для этого разверните узел <tt>&lt;этот слой в контексте&gt;</tt>, а затем разверните узел &quot;Строка меню&quot;. Щелчком правой кнопки мыши вызовите меню для узлов &quot;Переход&quot; и &quot;Просмотр&quot; и выберите &quot;Удалить&quot;.</p></li>
+
+<li>После этого снова запустите приложение и проверьте появившийся экран-заставку. Обратите внимание, что в запущенном приложении в строке заголовка выводится указанный текст. Кроме того, сократилось количество пунктов меню, кнопок на панели инструментов и других элементов: <img src="../images/tutorials/paintapp/result-without-menus-60.png" alt="Результат без меню" />
+</li>
+</ol>
+
+<h2 class="tutorial"><a name="creatingDist"/>Создание дистрибутива</h2>
+ 
+<p>
+Теперь необходимо выбрать тип дистрибутива. Щелкните правой кнопкой мыши узел <tt>PaintApp</tt> и для сборки готового приложения со всеми необходимыми модулями и файлами в один файл ZIP выберите &quot;Создать дистрибутив ZIP&quot;. Также можно выбрать &quot;Построить приложение JNLP&quot; для создания версии JavaWebStart приложения, которое можно разместить на веб-сервере и перейти к нему по ссылке непосредственно с веб-страницы (потребуется указать точный URL-адрес: созданный дескриптор будет использовать протокол &quot;file:&quot;, поэтому можно будет тестировать созданный веб-дистрибутив на локальном компьютере).</p>
+   
+   
+<p>Поздравляем! Сборка приложения для рисования на базе платформы NetBeans завершена. Следующая тема: <a href="https://platform.netbeans.org/tutorials/nbm-feedreader.html">Руководство по созданию приложения для чтения каналов на платформе NetBeans</a>.</p>
+
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback: NetBeans Platform Paint Application Tutorial">Мы ждем ваших отзывов</a></div>
+
+</body>
+</html>

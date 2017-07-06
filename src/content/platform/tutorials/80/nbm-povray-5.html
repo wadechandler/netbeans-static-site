@@ -1,0 +1,359 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+    <head>
+
+        <title>Writing POV-Ray Support for NetBeans V&#8212;Creating the API</title>
+
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+        <meta name="AUDIENCE" content="NBUSER"/>
+        <meta name="TYPE" content="ARTICLE"/>
+        <meta name="EXPIRES" content="N"/>
+        <meta name="developer" content="geertjan.wielenga@oracle.com"/>
+        <meta name="indexed" content="y"/>
+        <meta name="description"
+              content="NetBeans POV-Ray Support Tutorial Part V&#8212;Creating and exposing an API"/>
+        <!--      Copyright (c) 2006 Sun Microsystems, Inc. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+
+    </head>
+
+    <body>
+
+        <h1>Writing POV-Ray Support for NetBeans V&#8212;Creating an API</h1>
+
+        <p>This is a continuation of the tutorial for building a POV-Ray rendering application on
+            the NetBeans Platform. If you have not read the <a href="nbm-povray-1.html">first</a>,
+            <a href="nbm-povray-2.html">second</a>, <a href="nbm-povray-3.html">third</a>,
+            and <a href="nbm-povray-4.html">fourth</a>
+            parts of this tutorial, you may want to start there.</p>
+
+        <h2 class="tutorial"><a name="setup"></a>Creating the API</h2>
+
+        <p>As discussed when we <a href="nbm-povray-2.html">designed POV-Ray support</a>,
+            we will need an API&#8212;there will be some intercommunication between
+            POV-Ray files and the project.  In particular, we will need some interfaces:</p>
+
+        <ul>
+            <li><code>MainFileProvider</code>&#8212;find the main file of a project&#8212;the
+		one to render when the whole file is built, and allow a POV-Ray
+                scene file node to find out if it <i>is</i> the main file (so it can
+                bold-face its display name).</li>
+            <li><code>RendererService</code>&#8212;an API a POV-Ray file node can call
+                to ask that it be rendered as an image </li>
+            <li><code>ViewService</code>&#8212;an API a POV-Ray file can call to ask
+                that its associated image be shown in the IDE, rendering it if necessary.
+            </li>
+        </ul>
+
+        <p>For this, we will actually create a separate module.  That way we avoid a
+            dependency between file support and project support&#8212;either module will be
+            loadable by itself as long as the module providing the API is there.  Also,
+            this helps in delivering updates&#8212;the API presumably will remain stable,
+            and psychologically having it in a separate module helps the developer to be
+            aware when they are making API changes.  It also means that a completely
+            different module supporting POV-Ray files could still get them rendered
+            via this API, and completely different project support could be provided
+            with no changes to the file support module.</p>
+
+        <p>So it's generally healthy for the codebase to do it this way.</p>
+
+        <div class="indent">
+
+            <ol>
+                <li>Right-click the application's Modules node
+                    and choose Add New, as shown below:
+                    <p><img alt="" src="../images/tutorials/povray/71/ch5/pic1.png"/></p>
+                    <p class="tips">This is a faster mechanism for creating new modules,
+                        compared to going to File | New Project and then clicking through
+                        to the New Module wizard.</p>
+                </li>
+                <li>Name the project &quot;api&quot; and click Next or press
+                    Enter.</li>
+                <li>Provide the code name &quot;org.netbeans.examples.api.povray&quot;&#8212;this
+                    follows the NetBeans package naming conventions that public
+                    packages shall have the name <code>org.netbeans.api...</code> to
+                    indicate visually that they are intended to be API (and thus kept
+                    backward compatible). Provide the display name &quot;Povray API&quot;.
+                    Click Finish or press Enter to create the project</li>
+                <li><p>Right-click the Libraries node of the
+                        Povray API project and choose Add Module Dependency.</p>
+                    <p><img alt="" src="../images/tutorials/povray/71/ch5/pic2.png"/></p>
+                    <p class="tips">This is a faster mechanism for setting new module dependencies,
+                        compared to going to using the Project Properties window to do so.</p>
+                    <p>Add a new
+                        dependency on the File System API
+                        module (look for <code>FileObject</code> for a fast way
+                        to find it).</p></li>
+                <li>Create a new abstract Java class in <code>org.netbeans.modules.examples.api.povray</code>
+                    called <code>MainFileProvider</code>, and implement it as follows:
+                    <pre class="examplecode">package org.netbeans.examples.api.povray;
+
+import org.openide.filesystems.FileObject;
+
+public abstract class MainFileProvider {
+
+    public abstract FileObject getMainFile();
+
+    public abstract void setMainFile (FileObject file);
+
+    public boolean isMainFile (FileObject file) {
+        return file.equals(getMainFile());
+    }
+
+}</pre>
+                </li>
+                <li>Create a new abstract Java class in <code>org.netbeans.modules.examples.api.povray</code>
+                    called <code>RendererService</code>, and implement it as follows:
+                    <pre class="examplecode">package org.netbeans.examples.api.povray;
+
+import java.util.Properties;
+import org.openide.filesystems.FileObject;
+
+public abstract class RendererService {
+
+    public static final String PROJECT_RENDERER_KEY_PREFIX = "renderer.";
+    public static final String PRODUCTION_RENDERER_SETTINGS_NAME = "production";
+
+    public abstract FileObject render(FileObject scene, String propertiesName);
+
+    public abstract FileObject render(FileObject scene, Properties renderSettings);
+
+    public abstract FileObject render(FileObject scene);
+
+    public abstract FileObject render();
+
+    public abstract String[] getAvailableRendererSettingsNames();
+
+    public abstract Properties getRendererSettings(String name);
+
+    public abstract String getPreferredRendererSettingsNames();
+
+    public abstract String getDisplayName(String settingsName);
+
+}</pre>
+                </li>
+                <li>Create a new Java interface in <code>org.netbeans.modules.examples.api.povray</code>
+                    called <code>ViewService</code>, and implement it as follows:
+                    <pre class="examplecode">package org.netbeans.examples.api.povray;
+
+import org.openide.filesystems.FileObject;
+
+public interface ViewService {
+
+    boolean isRendered(FileObject file);
+
+    boolean isUpToDate(FileObject file);
+
+    void view(FileObject file);
+
+}</pre>
+                    <p class="tips">If you are wondering why the first two are abstract classes instead of interfaces,
+                        the answer is simple.  In the case of <code>MainFileProvider</code>, it allows
+                        us to implement <code>isMainFile()</code>;  in the case of
+                        <code>RendererService</code>, it is highly probable that there will be new
+                        requirements for it in the future, and you can add methods [with some sort of
+                        default implementation] to an abstract class semi-backward-compatibly [name
+                        collisions with subclasses are still possible], but not to an interface.
+                        ViewService is simple and well-defined enough that it will probably never
+                        change.</p>
+                </li>
+                <li><p>Right-click the Povray API project in the Projects window and
+                        choose Properties. Go to the API Versioning page in the dialog.</p>
+                    <p></p>
+                    <ul>
+                        <li>Fill in &quot;1&quot; for the Major Version Number</li>
+                        <li><p>Click the Autoload radio button&#8212;this means this module is a
+                                library&#8212;it will only be loaded if something else starts to
+                                use a class from it, which is more effecient.</p></li>
+                        <li><p>In the Public Packages list, put a checkmark
+                                into the checkbox for the API package. This means the
+                                package will be available to any module that has
+                                set a dependency on this one.</p>
+                        </li>
+                    </ul>
+                    <p>The dialog should now look as follows:</p>
+                    <p><img alt="" src="../images/tutorials/povray/71/ch5/pic3.png"/></p>
+                </li>
+                <li>Finally, right-click the Povray Projects project and add a dependency on
+                    our new module&#8212;just search for one of the classes we've added.
+                    Then do the same for the Povray File Support module, so both of
+                    these modules can see API classes (but not each others' classes).
+                </li>
+            </ol>
+
+        </div>
+
+        <h2 class="tutorial"><a name="setup"></a>Using the API from PovrayDataNode</h2>
+
+        <p>We haven't implemented the API yet, but we can set up some code that
+            will use it&#8212;we know we want the node for the file which is the
+            &quot;main file&quot; of our project to be shown in bold text.  And
+            having some code that uses the API will help to test it once it is
+            written, which will be a bit of work.</p>
+
+        <div class="indent">
+
+            <ol>
+
+                <li>In the Povray File Support module, add a new module
+                    dependency on the Project API. You need this API because
+                    we need to use the <tt>FileOwnerQuery</tt> class. This class is part
+                    of the Project API&#8212;a class with static methods that will return the project
+                    (if any) which owns a given file.   Our <code>Node</code> will need to
+                    look up the project it belongs to, and then query the project's <code>Lookup</code>
+                    to try to find an implementation of our API classes.</li>
+
+                <li><p>In the <tt>org.netbeans.examples.modules.povfile</tt> package,
+                        create a new class named <code>PovrayDataNode</code>. Let it
+                        extend <tt>DataNode</tt> and create a constructor that receives
+                        our <tt>PovrayDataObject</tt>. The class should now look as follows:</p>
+
+                    <pre class="examplecode">package org.netbeans.examples.modules.povfile;
+
+import org.openide.loaders.DataNode;
+import org.openide.nodes.Children;
+
+public class PovrayDataNode extends DataNode {
+
+    public PovrayDataNode(PovrayDataObject obj) {
+        super(obj, Children.LEAF);
+    }
+
+}</pre></li>
+
+                <li>Add the following methods to <code>PovrayDataNode</code>:
+
+                    <pre class="examplecode">    private FileObject getFile() {
+        return getDataObject().getPrimaryFile();
+    }
+
+    private Object getFromProject (Class clazz) {
+        Object result;
+        Project p = FileOwnerQuery.getOwner(getFile());
+        if (p != null) {
+            result = p.getLookup().lookup (clazz);
+        } else {
+            result = null;
+        }
+        return result;
+    }
+
+    private boolean isMainFile() {
+        MainFileProvider prov = (MainFileProvider)getFromProject (MainFileProvider.class);
+        boolean result;
+        if (prov == null) {
+            result = false;
+        } else {
+            FileObject myFile = getFile();
+            result = prov.isMainFile(myFile);
+        }
+        return result;
+    }
+
+    @Override
+    public String getHtmlDisplayName() {
+        return isMainFile() ? "&lt;b&gt;" + getDisplayName() + "&lt;/b&gt;" : null;
+    }</pre>
+
+                    <p class="tips">What the above code does is fairly straightforward.  <code>getFile()</code>
+                        returns a <code>FileObject</code>, which is a virtual
+                        filesystem file, that this <code>Node</code> represents.
+                        <code>getFromProject</code> tries to find the project that owns the file,
+                        and if it finds one, queries its
+                        <code><a href="http://wiki.netbeans.info/wiki/view/DevFaqLookup">Lookup</a></code>,
+                        asking it for an instance of the <code>Class</code> that was passed into
+                        this method (i.e., one of the classes in the API we just defined).
+                        <code>isMainFile()</code> uses the above two methods to decide if this
+                        <code>Node</code> represents the &quot;main file&quot; of the project (the
+                        one that should be rendered by POV-Ray if the user chooses to &quot;build&quot;
+                        the project&#8212;POV-Ray supports file includes, so there may be many files in
+                        a project, but only one master image).  <code>getHtmlDisplayName()</code> is
+                        where the rubber meets the road&#8212;this method will return a boldface
+                        HTML string if this <code>Node</code> represents the main file.</p>
+
+                </li>
+
+                <li><p>Check that the <tt>PovrayDataNode</tt> has this content:</p>
+
+                    <pre class="examplecode">package org.netbeans.examples.modules.povfile;
+
+import org.netbeans.api.project.FileOwnerQuery;
+import org.netbeans.api.project.Project;
+import org.netbeans.examples.api.povray.MainFileProvider;
+import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataNode;
+import org.openide.nodes.Children;
+
+public class PovrayDataNode extends DataNode {
+
+    public PovrayDataNode(PovrayDataObject obj) {
+        super(obj, Children.LEAF);
+    }
+
+    private FileObject getFile() {
+        return getDataObject().getPrimaryFile();
+    }
+
+    private Object getFromProject (Class clazz) {
+        Object result;
+        Project p = FileOwnerQuery.getOwner(getFile());
+        if (p != null) {
+            result = p.getLookup().lookup (clazz);
+        } else {
+            result = null;
+        }
+        return result;
+    }
+
+    private boolean isMainFile() {
+        MainFileProvider prov = (MainFileProvider)getFromProject (MainFileProvider.class);
+        boolean result;
+        if (prov == null) {
+            result = false;
+        } else {
+            FileObject myFile = getFile();
+            result = prov.isMainFile(myFile);
+        }
+        return result;
+    }
+
+    @Override
+    public String getHtmlDisplayName() {
+        return isMainFile() ? "&lt;b&gt;" + getDisplayName() + "&lt;/b&gt;" : null;
+    }
+
+}</pre></li>
+
+                <li>Finally, we want to use the above <tt>Node</tt> class
+                    instead of the default <tt>Node</tt> class that the
+                    <tt>PovrayDataObject</tt> has been using thus far. Open
+                    the <tt>PovrayDataObject</tt> class and add the following
+                    method to register our new <tt>Node</tt>:
+
+                    <pre class="examplecode">@Override
+protected Node createNodeDelegate() {
+    return new PovrayDataNode(this);
+}</pre>
+
+                </li>
+
+            </ol>
+
+        </div>
+
+        <h2 class="tutorial"><a name="setup"></a>Next Steps</h2>
+
+        <p>In the <a href="nbm-povray-6.html">next section</a> we will implement the
+            API we have created. But, from the above code, you can see how the API
+            will be used by our <tt>Node</tt> class, to determine whether a <tt>Node</tt>
+            should be boldfaced. Here we don't need to know nor care how the API
+            is implemented. We simply ask for the availability of the <tt>MainFileProvider</tt>
+            and, depending on its availability, we change the display name of the
+            <tt>Node</tt>.
+        </p>
+
+    </body>
+
+</html>

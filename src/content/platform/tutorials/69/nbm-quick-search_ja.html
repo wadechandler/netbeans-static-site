@@ -1,0 +1,506 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>NetBeans プラットフォーム 6.5: 高速検索の統合のチュートリアル</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="gwielenga@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A short guide to using the Nodes API.">
+<!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+	<h1>高速検索の統合のチュートリアル</h1>
+
+<p>このチュートリアルでは、新しい項目を NetBeans の高速検索機能に統合するモジュールを記述する方法を示します。 
+
+   <p><b>目次</b></p>
+   
+   <p><img  src="../images/articles/69/netbeans-stamp7-8-9.png" class="stamp" width="114" height="114" alt="このページの内容は NetBeans IDE 6.5、6.7、および 6.8 が対象です" title="このページの内容は NetBeans IDE 6.5、6.7、および 6.8 が対象です" /></p>
+      <ul class="toc">
+  <li><a href="#intro">高速検索の統合入門</a></li>
+  <li><a href="#creating">モジュールプロジェクトの作成</a></li>
+  <li><a href="#use">「高速検索プロバイダ」ウィザードの使用</a></li>
+  <li><a href="#third">外部 HTML DOM パーサーの統合</a></li>
+  <li><a href="#code">高速検索の統合のコーディング</a></li>
+  <li><a href="#install">インストールおよび機能の動作確認</a></li>
+  <li><a href="#platform">NetBeans プラットフォームでの高速検索機能の使用</a></li>
+  <ul>
+     <li><a href="#enable">NetBeans プラットフォームでの高速検索機能の有効化</a></li>
+     <li><a href="#enable2">NetBeans プラットフォームでのデフォルトの Web 検索プロバイダの有効化</a></li>
+  </ul>
+  <li><a href="#share">共有可能バイナリの作成</a></li>
+       </ul>
+         
+<p><b>このチュートリアルを行うには、次の表に示すソフトウェアおよびリソースが必要です。</b></p>
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                <th class="tblheader" scope="col">必須バージョン</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.7 以上</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">version 6 または<br/>version 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+ <p class="tips">トラブルシューティングのために、<a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=11179">完了したサンプルをダウンロード</a>してソースを調べることもできます (任意)。
+    
+
+
+<h2 class="tutorial"><a name="intro"></a>高速検索の統合入門</h2>
+
+<p>NetBeans IDE 6.5 で導入された高速検索機能は、IDE の右上隅のテキストフィールドで構成されます。検索文字列をフィールドに入力すると、ドロップダウンリストが表示され、一致する項目が示されます。デフォルトでは、項目は IDE に登録されているアクションの名前と IDE の JavaHelp トピックから検索されます。アクション項目を選択するとアクションが呼び出され、ヘルプ項目を選択すると JavaHelp でトピックが開きます。
+ 
+ <p>また、<a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/overview-summary.html">高速検索 API</a> も公開されています。これを使用して、独自の検索項目を高速検索機能に統合できます。IDE 内で、または NetBeans プラットフォーム上にある独自のアプリケーションの一部として、この機能を使用できます。
+
+<p>このチュートリアルでは、<a href="http://netbeans.dzone.com">NetBeans Zone</a> の項目を高速検索機能と統合するモジュールを作成します。
+
+<p><p align="left"><img border="1" src="../images/tutorials/qsearch/deployed-result.png" alt="配備結果">
+
+
+<!-- ===================================================================================== -->
+
+<h2 class="tutorial"><a name="creating"></a> モジュールプロジェクトの作成</h2>
+      
+<p>この節では、ウィザードを使用して、各 NetBeans モジュールが必要とするソースの構造を作成します。ソースの構造は、特定の場所にある特定のフォルダと、常に必要なファイルのセットで構成されます。たとえば、すべての NetBeans モジュールには、プロジェクトのメタデータを保存する <tt>nbproject</tt> フォルダと、ツールバーボタンやウィンドウなどの項目を宣言登録するための <tt>layer.xml</tt> ファイルが必要です。
+
+<ol>
+          
+	      <li>「ファイル」&gt;「新規プロジェクト」(Ctrl-Shift-N) を選択します。「カテゴリ」で「NetBeans モジュール」を選択します。「プロジェクト」で「モジュール」を選択し、「次へ」をクリックします。</li>
+	<li>「名前と場所」パネルで、「プロジェクト名」に「<tt>NetBeansZoneSearch</tt>」と入力します。「プロジェクトの場所」を、<tt>c:\mymodules</tt> などのコンピュータ上の任意のディレクトリに変更します。「スタンドアロンモジュール」ラジオボタンは選択したままにしておきます。パネルは次のようになります。
+
+<p><p align="left"><img src="../images/tutorials/qsearch/new-module-1.png" alt="新規プロジェクトウィザードの手順 1。">
+ <p>「次へ」をクリックします。
+
+<li>「基本モジュール構成」パネルで、コード名ベースに「<tt>org.netbeans.modules.nbzone</tt>」と入力します。推奨されるモジュール表示名に空白文字を追加し、<tt>NetBeans Zone Search</tt> に変更します。「XML レイヤーを生成」チェックボックスを選択し、「ローカライズ版バンドル」と「XML レイヤー」の場所はそのままにしておきます。これらは <tt>org/netbeans/modules/nbzone</tt> という名前のパッケージに格納されます。パネルは次のようになります。
+
+<p><p align="left"><img src="../images/tutorials/qsearch/new-module-2.png" alt="新規プロジェクトウィザードの手順 2。">
+
+<li>「完了」をクリックします。</ol>
+
+<p> IDE によって <tt>NetBeans Zone Search</tt> プロジェクトが作成されます。このプロジェクトには、ソースや、プロジェクトの Ant 構築スクリプトなどのプロジェクトメタデータがすべて含まれます。IDE でプロジェクトが開きます。「プロジェクト」ウィンドウ (Ctrl-1) で、プロジェクトの論理構造を表示できます。また、「ファイル」ウィンドウ (Ctrl-2) で、プロジェクトのファイル構造を表示できます。 
+
+
+      <br />
+
+<!-- ===================================================================================== -->
+<h2><a name="use"></a>「高速検索プロバイダ」ウィザードの使用</h2>
+
+<p>この節では、ウィザードを使用して、高速検索機能との統合を開始するために必要となるスタブクラスとレイヤーのエントリを作成します。
+
+  
+ <ol>
+	
+	 <li>プロジェクトノードを右クリックし、「新規」&gt;「その他」を選択します。「新規ファイル」ダイアログで、「モジュールの開発」&gt;「高速検索プロバイダ」を選択します。</li>
+	      <li>「高速検索プロバイダ」パネルで、次のとおりに設定します。
+        <p><ul>
+            <li><b>プロバイダクラス名。</b>ウィザードで生成するスタブのクラス名を指定します。このフィールドには、「NBZoneSearchProvider」と入力します。
+            <li><b>パッケージ。</b>スタブクラスが生成されるパッケージを指定します。ドロップダウンから「org.netbeans.modules.nbzone」を選択します。
+            <li><b>カテゴリ表示名。</b>スタブで作成するカテゴリの表示名を指定します。このフィールドには、「NetBeans Zone」と入力します。
+            <li><b>コマンド接頭辞。</b>スタブで作成するカテゴリの検索結果を絞る接頭辞を指定します。このフィールドには、「nb」と入力します。
+            <li><b>ポップアップでの位置。</b>高速検索機能での新規カテゴリの位置を指定します。カテゴリをポップアップの最初にするには、「0」のままにします。
+          </ul>
+          <p>画面は次のようになります。
+<p><p align="left"><img src="../images/tutorials/qsearch/quick-search-template.png" alt="高速検索テンプレート">
+          
+<li>「完了」をクリックします。
+
+<p><p>「プロジェクト」ウィンドウは次のようになります。
+
+<p><p align="left"><img src="../images/tutorials/qsearch/projects-window-final.png" alt="プロジェクトの最終ウィンドウ。"></ol>
+
+      <p><tt>layer.xml</tt> ファイルは、次のように表示されます。
+      
+<pre>&lt;filesystem&gt;
+    &lt;folder name=&quot;QuickSearch&quot;&gt;
+        &lt;folder name=&quot;NetBeansZone&quot;&gt;
+            &lt;attr name=&quot;SystemFileSystem.localizingBundle&quot; stringvalue=&quot;org.netbeans.modules.nbzone.Bundle&quot;/&gt;
+            &lt;attr name=&quot;command&quot; stringvalue=&quot;nb&quot;/&gt;
+            &lt;attr name=&quot;position&quot; intvalue=&quot;0&quot;/&gt;
+            &lt;file name=&quot;org-netbeans-modules-nbzone-NBZoneSearchProvider.instance&quot;/&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/filesystem&gt;</pre>      
+
+      <br />
+      
+    <!-- ======================================================================================= -->
+      
+      <h2><a name="third"></a>外部 HTML DOM パーサーの統合</h2>
+<p>次の節では、NetBeans Zone を解析できるようにするために、HTML DOM パーサーが必要になります。任意の適切なパーサーを使用できます。このチュートリアルでは、<a href="http://sourceforge.net/project/showfiles.php?group_id=13153">JTidy</a> を使用します。</p>
+
+<p>モジュールで使用可能な外部 JAR ファイルを作成する方法は、2 つあります。1 つ目の方法は、JAR を「ライブラリラッパーモジュール」と呼ばれる個別のモジュールに置き、機能性モジュールとライブラリラッパーモジュールをモジュールスイートに置いてから、機能性モジュールをライブラリラッパーモジュールに<i>依存</i>させます。2 つの別個のモジュールを持つことの利点は、外部 JAR の新規バージョンがリリースされたときに再配布が必要なのが、機能性コードも含む大きなモジュールではなく、外部 JAR のみを含む小さなモジュールだけであることです。2 つ目の方法は、次で行う機能性モジュールに JAR を追加する方法です。この方法の利点は、配布するモジュールが 1 つだけなので、短期だけの場合に便利であることです。欠点は、外部ライブラリを機能性コードと混在させるため、厳密にはモジュールアプローチではなくなることです。
+
+<div class="indent">
+    
+ <ol>
+    
+    <li><a href="http://sourceforge.net/project/showfiles.php?group_id=13153">JTidy</a> をダウンロードし、その中にある <tt>Tidy.jar</tt> を探します。
+    
+    <li>「ファイル」ウィンドウで、<tt>Tidy.jar</tt> を <tt>release/modules/ext</tt> フォルダに格納し、次に示すようなフォルダ構造を作成します。
+     
+    <p><p align="left"><img src="../images/tutorials/qsearch/tidyjar.png" alt="JTidy JAR。" />
+
+<li><tt>nbproject</tt> フォルダにある <tt>project.xml</tt> ファイルの最後のほう、すなわちファイルの最後の直前に、次のボールドタグを追加します。
+ 
+ <pre>
+            ...
+            ...
+            ...
+            <b>&lt;class-path-extension&gt;
+                &lt;runtime-relative-path&gt;ext/Tidy.jar&lt;/runtime-relative-path&gt;
+                &lt;binary-origin&gt;release/modules/ext/Tidy.jar&lt;/binary-origin&gt;
+            &lt;/class-path-extension&gt;</b>
+        &lt;/data&gt;
+    &lt;/configuration&gt;
+ &lt;/project&gt;</pre>
+ 
+ <li><tt>project.properties</tt> ファイルで次の行を追加します。
+ 
+ <pre>cp.extra=release/modules/ext/Tidy.jar</pre>
+
+ </ol>
+ 
+    </div>
+ <p>これで、外部 HTML DOM パーサーは、モジュールのクラスパス上にあることになります。次の節で実行する必要があるように、JAR 内のクラスを使用できます。
+    
+    
+    <!-- ======================================================================================= -->
+      
+      <h2><a name="code"></a>高速検索の統合のコーディング</h2>
+<p>次に、API を実装します。API のクラスは、次のとおりです。</p>
+
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">クラス</th>
+                <th class="tblheader" scope="col">説明</th>
+            </tr>
+            <tr>
+              <td class="tbltd1"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchProvider.html">SearchProvider</a></td>
+                <td class="tbltd1">高速検索 API のメインのインタフェース。高速検索の結果の新しいグループを提供するために、このインタフェースを実装します。</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchRequest.html">SearchRequest</a></td>
+                <td class="tbltd1">高速検索の要求の説明。</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchResponse.html">SearchResponse</a></td>
+                <td class="tbltd1">SearchRequest の結果を収集するための応答オブジェクト。</td>
+            </tr>
+        </tbody>
+    </table>
+    
+<p><p>次では、必要なモジュールとの依存関係を設定し、その依存関係を独自のモジュールに実装します。
+
+<div class="indent">
+    
+    <ol>
+        
+        <li>プロジェクトを右クリックし、「プロパティー」を選択して「ライブラリ」パネルに次の依存関係を設定します。
+        
+     <p><p align="left"><img src="../images/tutorials/qsearch/set-dependencies.png" alt="依存関係の設定" />
+        
+        <li>生成されたクラスを開きます。
+        
+        <li>次のようにクラスを修正します。
+    
+ <pre>public class NBZoneSearchProvider implements <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchProvider.html">SearchProvider</a> {
+
+    /**
+     * Method is called by infrastructure when search operation is requested.
+     * Implementors should evaluate given request and fill response object with
+     * apropriate results
+     *
+     * @param request Search request object that contains search string
+     * @param response Search response object that stores search results 
+     * Note that it's important to react to return value of 
+     * SearchResponse.addResult(...) method and stop computation if 
+     * false value is returned.
+     */
+    @Override 
+    public void evaluate(<a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchRequest.html">SearchRequest request</a>, <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchResponse.html">SearchResponse response</a>) {
+        try {
+
+            <b>//The URL that we are providing a search for:</b>
+            URL url = new URL(&quot;http://netbeans.dzone.com&quot;);
+            <b>//Stuff needed by Tidy:</b>
+            Tidy tidy = new Tidy();
+            tidy.setXHTML(true);
+            tidy.setTidyMark(false);
+            tidy.setShowWarnings(false);
+            tidy.setQuiet(true);
+
+            <b>//Get the org.w3c.dom.Document from Tidy,
+            //or use a different parser of your choice:</b>
+            Document doc = tidy.parseDOM(url.openStream(), null);
+
+            <b>//Get all &quot;a&quot; elements:</b>
+            NodeList list = doc.getElementsByTagName(&quot;a&quot;);
+
+            <b>//Get the number of elements:</b>
+            int length = list.getLength();
+
+            <b>//Loop through all the &quot;a&quot; elements:</b>
+            for (int i = 0; i &lt; length; i++) {
+
+                String href = null;
+                if (null != list.item(i).getAttributes().getNamedItem(&quot;href&quot;)) {
+                    <b>//Get the &quot;href&quot; attribute from the current &quot;a&quot; element:</b>
+                    href = list.item(i).getAttributes().getNamedItem(&quot;href&quot;).getNodeValue();
+                }
+
+                <b>//Get the &quot;title&quot; attribute from the current &quot;a&quot; element:</b>
+                if (null != list.item(i).getAttributes().getNamedItem(&quot;title&quot;)) {
+                    String title = list.item(i).getAttributes().getNamedItem(&quot;title&quot;).getNodeValue();
+
+                    <b>//If the title matches the requested text:</b>
+                    if (title.toLowerCase().indexOf(<a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchRequest.html">request.getText().toLowerCase()</a>) != -1) {
+
+                        <b>//Add the runnable and the title to the response
+                        //and return if nothing is added:</b>
+                        if (!<a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchResponse.html">response.addResult(new OpenFoundArticle(href), title)</a>) {
+                            return;
+                        }
+
+                    }
+
+                }
+
+            }
+
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+    }
+
+    private static class OpenFoundArticle implements Runnable {
+
+        private String article;
+
+        public OpenFoundArticle(String article) {
+            this.article = article;
+        }
+
+        public void run() {
+            try {
+                URL url = new URL(&quot;http://netbeans.dzone.com&quot; + article);
+                StatusDisplayer.getDefault().setStatusText(url.toString());
+                URLDisplayer.getDefault().showURL(url);
+            } catch (MalformedURLException ex) {
+                Logger.getLogger(NBZoneSearchProvider.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        
+    } 
+    
+ }</pre>
+ 
+ <li>次のインポート文が宣言されていることを確認します。
+ 
+<pre>import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.netbeans.spi.quicksearch.SearchProvider;
+import org.netbeans.spi.quicksearch.SearchRequest;
+import org.netbeans.spi.quicksearch.SearchResponse;
+import org.openide.awt.HtmlBrowser.URLDisplayer;
+import org.openide.awt.StatusDisplayer;
+import org.openide.util.Exceptions;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.w3c.tidy.Tidy;</pre> 
+ 
+ </ol>
+    </div>
+
+      
+    <!-- ======================================================================================= -->
+
+<h2><a name="install"></a>インストールおよび機能の動作確認</h2>
+<p>次に、モジュールをインストールし、高速検索機能の統合を使用します。IDE は、Ant 構築スクリプトを使用してモジュールを構築およびインストールします。構築スクリプトは、プロジェクトを作成するときに作成されます。</p>
+<div class="indent">
+
+
+      <ol>
+	      <li>「プロジェクト」ウィンドウでプロジェクトを右クリックし、「実行」を選択します。
+	      <p><p>IDE の新しいインスタンスが開始され、高速検索の統合モジュールがインストールされます。 
+               <li>高速検索機能で文字列を入力し、その文字列が NetBeans Zone のタイトルと一致したら、NetBeans Zone の項目が結果に含まれます。
+<p><p align="left"><img border="1" src="../images/tutorials/qsearch/deployed-result.png" alt="配備結果">
+<p><tt>layer.xml</tt> で定義したコマンド接頭辞を入力し、そのあとに空白文字を入力すると、関連カテゴリだけが次のように検索されます。
+<p><p align="left"><img border="1" src="../images/tutorials/qsearch/command.png" alt="コマンド接頭辞">
+		 <li>項目をクリックすると、IDE でブラウザを設定している場合はそれが開き、選択した項目が表示されます。
+       </ol>          
+   </div>
+      <br />
+
+
+<!-- ======================================================================================= -->
+
+<h2><a name="platform"></a>NetBeans プラットフォームでの高速検索機能の使用</h2>
+
+<p>前の節では、既存アプリケーションのモジュールを作成することが想定されていました。このあとの 2 つのトピックは、モジュールを作成する代わりに、NetBeans プラットフォーム上に独自のアプリケーションを作成する場合に適用されます。
+
+<div class="indent">
+    
+<h3><a name="enable"></a>NetBeans プラットフォームでの高速検索機能の有効化</h3>
+
+<p>NetBeans IDE には高速検索機能のサポートがありますが、NetBeans プラットフォームにはありません。デフォルトでは、高速検索機能は表示されません。高速検索機能を有効にするには、次の手順を行います。
+
+<div class="indent">
+  
+      <ol>
+          <li>次のタグを <tt>layer.xml</tt> ファイルに追加します。
+<pre>&lt;folder name=&quot;Toolbars&quot;&gt;
+    &lt;folder name=&quot;QuickSearch&quot;&gt;
+        &lt;attr name=&quot;SystemFileSystem.localizingBundle&quot; stringvalue=&quot;org.netbeans.modules.nbzone.Bundle&quot;/&gt;
+        &lt;file name=&quot;org-netbeans-modules-quicksearch-QuickSearchAction.shadow&quot;&gt;
+            &lt;attr name=&quot;originalFile&quot; 
+            stringvalue=&quot;Actions/Edit/org-netbeans-modules-quicksearch-QuickSearchAction.instance&quot;/&gt;
+        &lt;/file&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>           
+
+<li>このキーおよび値のペアを <tt>Bundle.properties</tt> ファイルに追加します。
+ 
+ <pre>Toolbars/QuickSearch=Quick Search</pre>
+
+              <li>NetBeans プラットフォームアプリケーションを実行すると、高速検索機能が利用可能で、機能していることがわかるはずです。
+
+<p><p align="left"><img src="../images/tutorials/qsearch/netbeans-platform-qsearch.png" alt="高速検索機能がある NetBeans プラットフォーム">
+
+
+       </ol>
+ 
+    </div>
+<!-- ======================================================================================= -->
+
+<h3><a name="enable2"></a>NetBeans プラットフォームでのデフォルトの Web 検索プロバイダの有効化</h3>
+
+<p>NetBeans ソースでは、デフォルトの Web 検索プロバイダの実装が可能です。このプロバイダは、検索文字列が一致するテキストを Google で検索します。IDE では、<tt>netbeans.org</tt> と、IDE に関連するオンラインドキュメント用の関連サイトを検索するために使用されています。 
+ 
+ <p><b>注:</b> 残念ながら、Web 検索プロバイダを何度も使用していたので、Google がこの自動検索が利用規約に反しているとし、機能を継続することを拒否しました。そのため、IDE で Web 検索プロバイダは無効になっています。
+ 
+ <p>前述の制限に同意する場合は、この Web 検索プロバイダをブランディングし、NetBeans プラットフォームアプリケーションで使用できます。
+ 
+ 
+
+<div class="indent">
+  
+      <ol>
+          <li>前の節で説明したように、高速検索機能が有効になっていることを確認します。
+          <li>次のタグを <tt>layer.xml</tt> ファイルに追加します。
+<pre>&lt;folder name=&quot;Guardian&quot;&gt;
+   &lt;file name=&quot;org-netbeans-modules-quicksearch-web-WebQuickSearchProviderImpl.instance&quot;/&gt;
+&lt;/folder&gt;</pre>           
+
+<li>アプリケーションの <tt>branding</tt> フォルダに、次に示すようなフォルダの階層と、スクリーンショットにある <tt>Bundle.properties</tt> ファイルを作成します。
+ 
+<p><p align="left"><img border="1" src="../images/tutorials/qsearch/brand-provider.png" alt="">プロバイダのブランディング
+
+<p><p>IDE では前述のプロパティーは次のようにハードコードされていますが、NetBeans プラットフォームでは未定義であるため、前述のようなブランディングが必要です。
+
+<pre>quicksearch.web.site=netbeans.org
+quicksearch.web.url_patterns=.*netbeans\.org/kb.*,\
+    /.*wiki\.netbeans\.org/.*faq.*,.*wiki\.netbeans\.org/.*howto.*,\
+    .*platform\.netbeans\.org/tutorials.*</pre>
+
+              <li>NetBeans プラットフォームアプリケーションを実行すると、デフォルトの Web 高速検索プロバイダが利用可能で、機能していることがわかるはずです。
+
+<p><p align="left"><img border="1" src="../images/tutorials/qsearch/clare-wigfall.png" alt="Guardian 検索">
+
+
+       </ol>
+ 
+    </div>
+ </div>
+    
+<!-- ======================================================================================= -->
+
+<h2><a name="share"></a>共有可能なモジュールバイナリの作成</h2>
+
+<p>モジュールが完了したので、ほかの人にそのモジュールを使用させることができます。そのためには、バイナリの「NBM」 (NetBeans モジュール) ファイルを作成し、それを配布する必要があります。 
+
+<div class="indent">
+  
+      <ol>
+	      <li>「プロジェクト」ウィンドウで、<tt>NetBeans Zone Search</tt> プロジェクトを右クリックし、「NBM を作成」を選択します。
+
+	      <p><p>NBM ファイルが作成されます。これは「ファイル」ウィンドウ (Ctrl-2) で確認できます。
+	      <p><p align="left"><img border="1" src="../images/tutorials/qsearch/shareable-binary.png" alt="共有可能な NBM。">
+	      <li>たとえば、<a href="http://plugins.netbeans.org/PluginPortal/">NetBeans プラグインポータル</a>を通じて、ほかの人がそのファイルを使用できるようにします。受信者は「プラグインマネージャー」(「ツール」&gt;「プラグイン」) を使用して、それをインストールします。
+       </ol>
+ 
+    </div>
+
+
+<!-- ======================================================================================== -->
+
+
+  <br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Quick%20Search%20Integration%20Tutorial">ご意見をお寄せください</a></div>
+<br style="clear:both;" />
+  
+  
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>次の手順</h2>
+
+<p>NetBeans モジュールの作成と開発の詳細については、次のリソースを参照してください。 
+  <ul>
+	  <li><a href="https://platform.netbeans.org/index.html">NetBeans プラットフォームのホームページ</a></li>
+	  <li><a href="http://bits.netbeans.org/dev/javadoc/index.html">NetBeans API の一覧 (現行の開発バージョン)</a></li>
+  <li><a href="https://netbeans.org/kb/trails/platform_ja.html">その他の関連チュートリアル</a></li></ul>
+  </p>
+  
+  <p><p>
+<!-- ======================================================================================== -->
+<!-- 
+<h2><a name="version"></a>Versioning </h2>
+<p>
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+         19 July 2008
+      </td>
+      <td>
+      Initial version.
+      </td>
+  </tr>
+ </tbody>
+</table>
+-->
+</body>
+</html>

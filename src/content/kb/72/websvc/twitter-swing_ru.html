@@ -1,0 +1,467 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+<html>
+    <head><link rel="stylesheet" href="../../../print.css" type="text/css" media="print">
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>Создание графического клиента для Twitter - краткий учебный курс по IDE NetBeans</title>
+        <meta name="KEYWORDS" content="NETBEANS, TUTORIAL, GUIDE, USER, DOCUMENTATION,
+              WEB SERVICE, WEB SERVICES, REST, SAAS, TWITTER, SWING, GUI, CLIENT, LISTCELLRENDERER">
+        <meta name="description"
+              content="Using NetBeans IDE, create a simple, graphical,
+              REST-based client that displays Twitter public messages and lets you
+              view and update your Twitter status. The application uses Swing and
+              NetBeans IDE's support for Twitter's SaaS operations.">
+        <link rel="stylesheet" href="../../../netbeans.css">
+</head>
+    <body>
+        <h1>Создание графического клиента для Twitter</h1>
+        <p>В этом кратком учебном курсе IDE NetBeans используется для создания простого, графического клиента на основе REST, в котором отображаются сообщения от друзей в Twitter в соответствии с хронологией и который позволяет просматривать и обновлять ваше состояние в Twitter. Приложение использует Swing и поддержку IDE NetBeans для операций в режиме "программное обеспечение как услуга" с Twitter.</p>
+        <img alt="Запущен клиент, в котором отображаются сообщения Twitter" class="margin-around" height="374" src="../../../images_www/articles/72/websvc/twitter-swing/client-display.png" width="570" />
+        <p>При отсутствии учетной записи Twitter перейдите по ссылке <a href="http://twitter.com" target="_blank">twitter.com</a> и создайте ее. </p>
+        <p>Полный образец данного приложения доступен для загрузки.  Щелкните <a href="https://netbeans.org/projects/samples/downloads/download/Samples%252FWeb%2520Services%252FTwitterSwingClient.zip" target="_blank">здесь</a> для загрузки образца.</p>
+        <p><b>Содержание</b></p>
+        <img alt="Содержимое на этой странице применимо к IDE NetBeans 6.9-7.1" class="stamp" height="114" src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" title="Содержимое этой страницы применимо к IDE NetBeans 6.9-7.1" width="114">
+        <ul class="toc">
+            <li><a href="#jframe">Проектирование JFrame</a></li>
+            <li><a href="#show-status">Отображение пользовательского статуса</a></li>
+            <li><a href="#authentication">Получение ключей OAuth с сайта Twitter</a></li>
+            <li><a href="#run">Выполнение проекта</a></li>
+            <li><a href="#multiservis">Вызов нескольких служб</a><ul>
+            <li><a href="#add-services">Добавление служб и объединение вызовов в один класс</a></li>
+            
+            <li><a href="#modify-paths">Изменение путей ресурсов</a></li>
+            </ul></li>
+            <li><a href="#update-status">Добавление действия по обновлению статуса</a></li>
+            <li><a href="#public-timeline-autoupdate">Отображение имен пользователей и статусов в JFrame</a>
+            <ul>
+                <li><a href="#timer-task">Создание TimerTask</a></li>
+                <li><a href="#add-run">Добавление метода run с помощью операции getFriendsTimeline</a></li>
+                <li><a href="#listcellrenderer">Создание компонента визуализации ячейки списка</a></li>
+                <li><a href="#display-component">Отображение объекта &quot;Component&quot; в TwitterJFrame</a></li>
+            </ul></li>
+			<li><a href="#connecting-proxy">Подключение через прокси</a></li>
+        </ul>
+    <p><b>Для работы с этим учебным курсом требуются программное обеспечение и ресурсы, перечисленные ниже.</b></p>
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Программное обеспечение или материал</th>
+                    <th class="tblheader" scope="col">Требуемая версия</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html" target="_blank">IDE NetBeans</a></td>
+                    <td class="tbltd1">Пакетная загрузка Java EE</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html" target="_blank">Комплект для разработчика на языке Java (JDK)</a></td>
+                    <td class="tbltd1">Версия 6 или версия 7<br></td>
+                </tr>
+                <tr>
+                    <td class="tbltd1" colspan="2">Имя пользователя и пароль для учетной записи <a href="http://www.twitter.com" target="_blank">Twitter</a></td>
+                </tr>
+            </tbody>
+        </table>
+    <h2><a name="jframe"></a>Проектирование JFrame</h2>
+        <p>В этом действии будут созданы элементы графического пользовательского интерфейса, позволяющие отобразить ленту сообщений и пользовательский значок, а также читать и обновлять статус в Twitter.  Все элементы графического пользовательского интерфейса переносятся в <a href="http://java.sun.com/javase/6/docs/api/" target="_blank">JFrame</a>.  Точное соблюдение принципов создания элементов графического пользовательского интерфейса, описанных в данном разделе, не требуется.  Представленный вариант создания носит рекомендательный характер.  Например, можно добавить больше функциональных возможностей.  Тем не менее, создание всех элементов, описанных в данном учебном курсе, обязательно.</p>
+        <p><strong>Проектирование JFrame:</strong></p>
+        <ol>
+            <li>Выберите команду &quot;Файл&quot; &gt; &quot;Новый проект&quot;. Откроется мастер создания проекта. Выберите категорию &quot;Java category&quot;, затем выберите проект приложения &quot;Java Application project&quot;.  Нажмите кнопку &quot;Далее&quot;.</li>
+            <li>Присвойте проекту имя TwitterSwingClient.  Выберите путь к папке проекта в поле &quot;Project Location&quot;.  <em>Снимите флажок</em> &quot;Create Main Class&quot;.  (JFrame станет главным классом).  Нажмите кнопку &quot;Завершить&quot;.<br /> <img alt="Мастер создания проектов, в котором отображаются поля для создания проекта TwitterSwingClient" border="1" class="margin-around" height="443" src="../../../images_www/articles/72/websvc/twitter-swing/create-project.png" width="600">  </li>
+            <li>В среде IDE будет создан проект TwitterSwingClient, отображаемый в окне &quot;Projects&quot;.  Щелкните правой кнопкой мыши узел проекта &quot;TwitterSwingClient&quot; и выберите &quot;New&quot; &gt; &quot;JFrame Form&quot; (или &quot;New&quot; &gt; &quot;Other&quot; &gt; &quot;Swing GUI Forms&quot; &gt; &quot;JFrame Form&quot;).  Откроется мастер создания форм JFrame.</li>
+            <li>Присвойте форме имя TwitterJFrame и создайте для нее пакет с именем <tt>twitterclient</tt>.  Нажмите кнопку &quot;Завершить&quot;. <br><img alt="Мастер создания форм JFrame, в котором отображаются поля для создания TwitterJFrame" class="margin-around" height="447" src="../../../images_www/articles/72/websvc/twitter-swing/create-jframe-form.png" width="600"></li>
+            <li>TwitterJFrame будет открыт в представлении &quot;Design&quot; редактора среды IDE.  В нем содержится палитра Swing с компонентами, которые можно перетащить в JFrame. <br><img alt="Twitter J Frame в представлении проектирования редактора" class="margin-around" height="368" src="../../../images_www/articles/72/websvc/twitter-swing/design-view.png" width="600"></li>
+            <li>Щелкните элемент управления &quot;Button&quot;, расположенный под элементами управления Swing в палитре.  Перетащите его в правый нижний угол JFrame.  Обратите внимание, что кнопка отображает имя объекта JButton - &quot;jButton1&quot;. <br><img alt="JFrame с отображением новой добавленной jButton1" class="margin-around b-all" height="409" src="../../../images_www/articles/72/websvc/twitter-swing/jbutton1.png" width="436"></li>
+            <li>Щелкните правой кнопкой мыши &quot;jButton1&quot; и выберите в контекстом меню команду &quot;Edit Text&quot;.  Измените отображаемый текст на &quot;Update&quot;.</li>
+            <li>Перетащите элемент управления &quot;Label&quot; (jLabel1) в левый нижний угол JFrame.  Измените отображаемый текст на &quot;Icon&quot;.  В этой метке будет отображаться значок пользователя. </li>
+            <li>Перетащите элемент управления &quot;Text Field&quot; (jTextField1) в позицию между элементами &quot;Label&quot; и &quot;Button&quot;.  Измените отображаемый текст на &quot;Status&quot;.  Щелкните правый край текстового поля и растяните его в направлении кнопки.  При этом должны появиться голубые направляющие, отображающие предполагаемое расстояние от кнопки.</li>
+            <li>Щелкните правой кнопкой мыши &quot;jLabel1&quot; и выберите &quot;Properties&quot; в контекстном меню.  Откроется диалоговое окно &quot;jLabel1 Properties&quot;.  Установите свойство labelFor для указания на &quot;jTextField1&quot;.  (Это повысит уровень доступности). </li>
+            <li>Найдите свойства &quot;Maximum Size&quot;, &quot;Minimum Size&quot; и &quot;Preferred Size&quot;.  Установите для каждого из свойств значение [48,48] для соответствия размерам значков Twitter: 48 X 48 пикселей. <br> <img alt="Для свойств j Label 1 в Twitter J Frame отображаются размеры 'Максимальный', 'Минимальный' и 'Предпочитаемый', для которых заданы значения 48, 48" class="margin-around b-all" height="421" src="../../../images_www/articles/72/websvc/twitter-swing/jlabel-properties.png" width="497"></li>
+            <li>Перетащите контейнер &quot;Scroll Pane&quot; в верхнюю часть JFrame.  Растяните его границы так, чтобы он занимал большую часть или все пространство над текстовым полем и кнопкой.  (Можно оставить некоторое пространство пустым для добавления дополнительных функций, например, меню в <a href="https://netbeans.org/projects/samples/downloads/download/Samples%252FWeb%2520Services%252FTwitterSwingClient.zip" target="_blank">образце приложения</a>.)</li>
+            <li>Перетащите элемент &quot;List&quot; в &quot;Scroll Pane&quot;.  Появится список элементов.  Сохраните TwitterJFrame.  JFrame должен выглядеть, как изображено на рисунке ниже: <br> <img alt="Twitter J Frame в представлении проектирования редактора со всеми базовыми элементами графического интерфейса пользователя" class="margin-around b-all" height="371" src="../../../images_www/articles/72/websvc/twitter-swing/jframe-with-list.png" width="561"> </li>
+        </ol>
+        <p>Все компоненты графического пользовательского интерфейса для клиента Swing созданы.  Теперь можно добавить первую операцию Twitter SaaS.</p>
+        <h2><a name="show-status"></a>Отображение пользовательского статуса</h2>
+        <p>В данном разделе будет создан новый метод и к нему добавлена операция Twitter getUserTimeline.  Операции getUserTimeline присваивается значок и текущий статус пользователя.  Теперь необходимо добавить код к методу для отображения значка и статуса в &quot;jLabel1&quot; и &quot;jTextField&quot; соответственно.  Также необходимо добавить строку в конструктор JFrame для инициализации метода.</p>
+        <p><strong>Отображение пользовательского статуса:</strong></p>
+        <ol>
+            <li>Перейдите в режим просмотра исходного кода TwitterJFrame.</li>
+            <li>Нажмите Alt-Insert или щелкните правой кнопкой мыши и выберите в контекстном меню 'Вставить код'. Откроется меню вставляемого кода.<br /><img alt="Откроется меню вставляемого кода в метод initUserInfo" class="margin-around" height="158" src="../../../images_www/articles/72/websvc/twitter-swing/insert-code-menu.png" width="171"></li>
+            <li>Щелкните элемент &quot;Создать клиент REST&quot;.  Откроется диалоговое окно &quot;Доступные ресурсы REST&quot;. <br /> <img alt="Диалоговое окно &quot;Доступные ресурсы REST&quot;" class="margin-around" height="263" src="../../../images_www/articles/72/websvc/twitter-swing/available-rest-dialog.png" width="386"></li>
+            <li>Выберите параметр &quot;Зарегистрированные в среде IDE&quot; и нажмите кнопку &quot;Обзор&quot;.  Перейдите к разделу Twitter &gt; Twitter OAuth &gt; [statuses] &gt; [user_timeline.{format}].  Нажмите кнопку &quot;ОК&quot;.<br><img alt="Окно 'Службы' с деревом веб-служб, в котором показана выбранная операция Twitter getUserTimelineById" class="margin-around" height="583" src="../../../images_www/articles/72/websvc/twitter-swing/browse-user-timeline.png" width="430"></li>
+            <li>Отобразится диалоговое окно &quot;Доступные ресурсы REST&quot; с выбранным ресурсом Twitter OAuth user_timeline, соответствующим именем класса и типом проверки подлинности OAuth.  Нажмите кнопку &quot;ОК&quot;.<br><img alt="Заполненное диалоговое окно &quot;Доступные ресурсы REST&quot;" class="margin-around" height="263" src="../../../images_www/articles/72/websvc/twitter-swing/completed-rest-dialog.png" width="386"></li>
+            <li>Откроется диалоговое окно с запросом о необходимости создания объектов Java на основе ссылок на схемы XML в файле WADL. Нажмите кнопку &quot;Да&quot;.</li>
+            <li>В конце класса TwitterJFrame среда IDE создает внутренний класс с именем Twitter_OAuth_user_timeline__format_JerseyClient.  
+              <p>Внутренний класс имеет сложную структуру и содержит следующие поля, методы и внутренние классы.</p>
+              <ul>
+                <li><tt>CONSUMER_KEY</tt>: строка Consumer Key</li>
+                <li><tt>CONSUMER_SECRET</tt>: строка Consumer Sectret</li>
+                <li><tt>initOAuth()</tt>: метод для инициализации OAuth</li>
+                <li><tt>getUserTimeline()</tt>: метод, соответствующий методу HTTP: getUserTimeline (из ресурса REST)</li>
+                <li><tt>makeOAuthRequestUnique()</tt>: используется для нескольких вызовов API в одном сеансе</li>
+                <li><tt>login</tt>: используется для входа в приложение Twitter (принудительная авторизация).  Этот метод вызывает два дополнительных метода: <tt>getOAuthAccessToken</tt> и <tt>getOAuthRequestToken</tt>.</li>
+              </ul>
+              <p>Ниже представлена структура класса, отображаемая в окне навигатора.</p>
+              <img alt="Окно 'Навигатор', в котором отображается класс Twitter_OAuth_user_timeline__format_JerseyClient" class="margin-around" height="459" src="../../../images_www/articles/72/websvc/twitter-swing/user-timeline-internal-class.png" width="572"></li>
+            <li>В элементе TwitterJFrame вставьте следующий код непосредственно перед внутренним классом Twitter_OAuth_user_timeline__format_JerseyClient.  Этот код создает переменную <tt>client</tt>, представляющую собой экземпляр внутреннего класса.
+              <pre class="examplecode">private Twitter_OAuth_user_timeline__format_JerseyClient client;</pre>
+            <img alt="Фрагмент кода, в котором показывается переменная клиента непосредственно над внутренним классом" class="margin-around b-all" height="141" src="../../../images_www/articles/72/websvc/twitter-swing/class-variable.png" width="591"></li>
+            <li>Найдите метод <tt>main</tt> в TwitterJFrame.  Перед этим методом создайте новый метод <tt>initUserInfo</tt>, вызывающий исключения MalformedURLException и IOException.
+              <pre class="examplecode">private void initUserInfo() throws MalformedURLException, IOException {
+
+
+
+}</pre>
+            </li>
+            <li>Вставьте следующий код в тело метода <tt>initUserInfo</tt>.  Комментарии в коде описывают выполняемые действия.
+            <pre class="examplecode">private void initUserInfo() throws MalformedURLException, IOException {
+<br>
+    //Create an instance of the internal service class
+    client = new Twitter_OAuth_user_timeline__format_JerseyClient("xml");
+<br>
+    //Log in, get tokens, and append the tokens to the consumer and secret
+    //keys
+    client.login();
+    client.initOAuth();
+<br>
+    //Call getUserTimeline, get a list of statuses, pass the most recent
+    //status as a StatusType object, and display the text of that object
+    //in the JTextField
+    Statuses statuses = client.getUserTimeline(Statuses.class, null, null, null, "1");
+    StatusType st = statuses.getStatus().get(0);
+    jTextField1.setText(st.getText().trim());
+<br>
+    //Get a UserType object from the StatusType object, get the URL of that
+    //user's icon, and display that icon in the JLabel
+    UserType user = st.getUser();
+    String iconSrc = user.getProfileImageUrl();
+    URL iconUrl = new URL(iconSrc);
+    ImageIcon icon = new ImageIcon(iconUrl, user.getScreenName());
+    jLabel1.setIcon(icon);
+}</pre>
+            </li>
+            <li>Откройте диалоговое окно 'Исправить все выражения импорта' (Ctrl/⌘-Shift-I или из контекстного меню). В диалоговом окне выберите twitter.twitteroauth.twitterresponse.StatusType, а не класс Java по умолчанию StatusType.<br> <img alt="Диалоговое окно &quot;Исправление операторов импорта&quot; после завершения метода initUserInfo" class="margin-around" height="347" src="../../../images_www/articles/72/websvc/twitter-swing/inituserinfo-imports.png" width="580"></li>
+            <li>Добавьте блок try/catch в конструктор TwitterJForm для вызова <tt>initUserInfo</tt> при выполнении приложения.  Диалоговое окно &quot;Исправление операторов импорта&quot; после добавления блока try/catch.
+              <pre class="examplecode">public TwitterJFrame() {
+    initComponents();
+
+    try {
+        initUserInfo();
+    } catch (IOException ex) {
+        Logger.getLogger(TwitterJFrame.class.getName()).log(Level.SEVERE, null, ex);
+    }
+ }</pre>
+            </li>
+        </ol>
+    <p>После <a href="#authentication">получения ключей OAuth с сайта Twitter</a> можно запустить проект. Щелкните правой кнопкой мыши узел &quot;project&quot; и выберите &quot;Run&quot; в контекстном меню.  Откроется приложение, отображающее значок и статус пользователя.</p>
+    
+    <h2><a name="authentication"></a>Получение ключей OAuth с сайта Twitter</h2>
+        <p>Чтобы обеспечить доступ приложения Java к данным Twitter, необходимо получить с сайта Twitter ключи CUSTOMER и CUSTOMER_SECRET, а также строку подтверждения.  Эти ключи необходимы, так как на сайте Twitter используется авторизация OAuth.  При этом метод OAuth предполагает вызов со стороны веб-приложения на сервере.  Чтобы получить ключи авторизации, необходимо зарегистрировать фиктивное веб-приложение.</p>
+        <p><b>Получение ключей OAuth с сайта Twitter:</b></p>
+        <ol>
+          <li>Откройте браузер. Перейдите на страницу <a href="http://twitter.com/apps" target="_blank">Twitter > Приложения</a> и щелкните <a href="http://twitter.com/apps/new" target="_blank">Зарегистрировать новое приложение Ä‚ďż˝Ă˘â‚¬ĹˇÄ‚â€šĂ‚Â»</a>.  Предварительно следует войти в учетную запись Twitter.  Если у вас есть несколько учетных записей, убедитесь в том, что выполнен вход в верную запись.</li>
+          <li>Введите <tt>NB User Timeline Application</tt> в текстовое поле <strong>Application Name</strong>.</li>
+          <li>Введите описание в поле <strong>Description</strong>.  Это необходимый параметр. Можно ввести текст аналогичный следующему: "Java application created in NetBeans IDE calling the user_timeline operation".</li>
+          <li>Введите произвольный URL-адрес в поле <strong>Application Website</strong>.</li>
+          <li>Выберите значение Client для параметра <strong>Application Type</strong>.</li>
+          <li>Выберите значение Read &amp; Write для параметра <strong>Default Access Type</strong>.
+          <p class="alert"><strong>Внимание! </strong>Убедитесь в том, что выбрано значение Read &amp; Write.  Несмотря на то, что параметры можно изменить позже, это не влияет на полномочия доступа приложения.</p></li>
+          <li>Не изменяйте другие значения по умолчанию и нажмите кнопку Save.  Откроется страница браузера с подробными сведениями о зарегистрированном приложении. Найдите параметры <strong>Consumer key</strong> и <strong>Consumer secret</strong>.</li>
+          <li>Скопируйте параметр Consumer key из браузера.  Перейдите в среду IDE и скопируйте строку, в которой устанавливается параметр <tt>CONSUMER_KEY</tt>.  Вставьте значение ключа Consumer key между кавычками. <br> <img alt="TwitterClient,  вкотором отображается местоположение CONSUMER_KEY и CONSUMER_SECRET" border="1" class="margin-around" height="269" src="../../../images_www/articles/72/websvc/twitter-swing/keys-in-twitter-client.png" width="552"></li>
+          <li>Скопируйте и вставьте ключ Consumer secret key из браузера в клиент TwitterSwingClient.  Сохраните изменения.</li>
+        </ol>
+        <h2><a name="run"></a> Выполнение проекта</h2>
+        <p>После получения ключей Consumer key и Consumer secret key проект можно запустить. Приложение вызывает сайт Twitter, в результате чего открывается окно браузера, делающее для приложения возможным доступ к данным. </p>
+        <p><strong>Для запуска проекта выполните следующие действия:</strong></p>
+        <ol>
+          <li>Если TwitterSwingClient является основным проектом, нажмите клавишу F6.  В противном случае щелкните правой кнопкой мыши узел проекта TwitterSwingClient и выберите в контекстном меню 'Выполнить'.</li>
+          <li>В браузере откроется окно Twitter с запросом на разрешение доступа к данным Twitter.  Нажмите кнопку Allow.</li>
+          <li>Загрузится новая страница с ПИН-кодом. Скопируйте этот ПИН-код.</li>
+          <li>В окне вывода среды IDE отобразится запрос на ввод строки oauth_verifier.  Вставьте ПИН-код после двоеточия : и нажмите кнопку ВВОД.<br><img alt="Окно вывода в IDE с запросом строки средства проверки, которая еще не вставлена" class="margin-around" height="128" src="../../../images_www/articles/72/websvc/twitter-swing/request-verifier-string.png" width="496"></li>
+          <li>Откроется настольный клиент, отображающий последние сообщения Twitter.<br> <img alt="Запущено приложение, отображающее значок и состояние пользователя." class="margin-around b-all" height="338" src="../../../images_www/articles/72/websvc/twitter-swing/client-showing-status.png" width="556"></li>
+        </ol>
+        <h2><a name="multiservis"></a>Вызов нескольких <tt></tt> служб</h2>
+        <p>Итоговая версия приложения вызывает три службы Twitter: user_timeline{format} (уже вызвано), update{format}и friends_timeline{format}.  Вызовы этих служб используют одно и то же имя пользователя. Для этого вызовы должны иметь один и тот же класс клиента. Вызов нескольких служб с одного клиента выполняется в два этапа:</p>
+        <ul>
+          <li>Добавление нескольких служб в один клиентский класс.</li>
+          <li>Изменение пути ресурсов в клиентском классе.</li>
+        </ul>
+        <div class="indent">
+            <h3><a name="add-services"></a>Добавление служб и объединение вызовов в один класс</h3>
+    <p>В этом разделе вначале добавляются клиенты для других служб, которые затем объединяются в один клиент. </p>
+    <p><strong>Добавление нескольких служб:</strong></p>
+        <ol>
+            <li>Нажмите клавиши ALT+INS и выберите команду &quot;Создать клиент REST&quot;.<br> <img alt="Откроется меню вставляемого кода в метод initUserInfo" class="margin-around" height="158" src="../../../images_www/articles/72/websvc/twitter-swing/insert-code-menu.png" width="171"></li>
+            <li>Выполните действия по созданию клиента REST, которые были описаны в разделе <a href="#show-status">Отображение пользовательского статуса</a>, но выберите службу [statuses] &gt; [update.{format}].  В среде IDE будет создан внутренний класс Twitter_OAuth_update__format_JerseyClient, схожий с классом Twitter_OAuth_user_timeline__format_JerseyClient.<br> <img alt="Диалоговое окно 'Доступные ресурсы Rest', отображающее службу форматирования обновления" class="margin-around" height="567" src="../../../images_www/articles/72/websvc/twitter-swing/select-update-format.png" width="430"></li>
+            <li>Повторите действия 1 и 2, чтобы добавить клиент для службы [friends_timeline.{format}].</li>
+            <li>Измените имя исходного класса Twitter_OAuth_user_timeline__format_JerseyClient.  Он будет общим классом, вызывающим все три службы. Выберите экземпляр с именем Twitter_OAuth_user_timeline__format_JerseyClient и нажмите Ctrl-R или щелкните правой кнопкой мыши и выберите 'Реорганизовать' > 'Переименовать'. Откроется диалоговое окно &quot;Переименование класса&quot;.  Введите новое имя TwitterClient.<br><img alt="Диалоговое окно 'Переименовать класс' с новым именем TwitterClient" class="margin-around" height="225" src="../../../images_www/articles/72/websvc/twitter-swing/rename-dialog.png" width="396"></li>
+            <li>Нажмите кнопку &quot;Refactor&quot; (Реорганизация).  В среде IDE будут заменены все экземпляры имени класса.<br><img alt="Имя класс изменено в нескольких местоположениях" border="1" class="margin-around" height="163" src="../../../images_www/articles/72/websvc/twitter-swing/replaced-names.png" width="331"></li>
+            <li>Найдите класс Twitter_Oauth_friends_timeline__format_JerseyClient в окне навигатора.  Найдите и дважды щелкните метод <tt>getFriendsTimeline</tt> в этом классе.<br> <img alt="Окно 'Навигатор', в котором отображается метод getPublicTimeline" class="margin-around" height="286" src="../../../images_www/articles/72/websvc/twitter-swing/navigate-getpublictimeline.png" width="369"></li>
+            <li>Курсор в редакторе будет перемещен к методу <tt>getFriendsTimeline</tt>.  Вырежьте приведенный ниже метод в буфер обмена.
+              <pre class="examplecode">public &lt;T&gt; T getFriendsTimeline(Class&lt;T&gt; responseType, String since, String since_id, String page, String count) throws UniformInterfaceException {
+      String[] queryParamNames = new String[]{"since", "since_id", "page", "count"};
+      String[] queryParamValues = new String[]{since, since_id, page, count};
+      return webResource.queryParams(getQueryOrFormParams(queryParamNames, queryParamValues)).accept(javax.ws.rs.core.MediaType.TEXT_XML).get(responseType);
+}</pre>
+            </li>
+            <li>Вставьте метод <tt>getFriendsTimeline</tt> во внутренний класс TwitterClient под методом <tt>getUserTimeline</tt>.</li>
+            <li>Вырежьте и вставьте метод <tt>updateStatus</tt> из Twitter_OAuth_update__format_JerseyClient в TwitterClient под методом <tt>getFriendsTimeline</tt>.</li>
+        </ol>
+            
+            
+            
+            
+    <h3><a name="modify-paths"></a>Изменение путей ресурсов</h3>
+            <p>Теперь все вызовы служб Twitter выполняются в одном клиентском классе.  При этом пути ресурсов в этом классе создаются некорректно. Сгенерированные средой IDE пути относятся к службе user_timeline при первом создании класса.  Необходимо изменить класс таким образом, чтобы на уровне класса путь ресурсов был общим, а конкретные пути назначались методами вызова служб.</p>
+            <p><strong>Изменение путей ресурсов:</strong></p>
+            <ol>
+            <li>Найдите конструктор TwitterClient и удалите параметр <tt>String format</tt>.<br> <img alt="Представление типа "До и после" удаления параметра из конструктора" class="margin-around" height="160" src="../../../images_www/articles/72/websvc/twitter-swing/remove-format-pm.png" width="600"></li>
+            <li>В правом поле появляется красный указатель ошибки. Щелкните его, чтобы перейти к строке в элементе <tt>initUserInfo</tt>, которая создает экземпляр класса TwitterClient.  Это строка <tt>client = new TwitterClient(&quot;xml&quot;);</tt>.  Удалите параметр xml, так как конструктор TwitterClient больше не принимает его.  Теперь строка выглядит следующим образом: <tt>client = new TwitterClient();</tt>.  Указатели ошибки исчезают.</li>
+            <li>Вернитесь к конструктору TwitterClient.  Для этого можно использовать окно навигатора. Найдите следующую строку:
+            <pre class="examplecode">String resourcePath = java.text.MessageFormat.format("statuses/user_timeline.{0}", new Object[]{format}); </pre>
+            <p>Эта строка задает путь <tt>resourcePath</tt> для всего класса.  Измените строку таким образом, чтобы путь <tt>resourcePath</tt> указывал на каталог <tt>statuses</tt>.  Теперь строка выглядит следующим образом:</p>
+            
+            <pre class="examplecode">String resourcePath = &quot;statuses&quot;;</pre></li>
+            
+            <li>Перейдите к методу <tt>getUserTimeline</tt>.  Найдите строку <tt>return</tt>:<br>
+            <pre class="examplecode">return webResource.queryParams(getQueryOrFormParams(queryParamNames, queryParamValues))...;</pre>
+            <p>Добавьте сведения о пути (выделены ниже <strong>жирным шрифтом</strong>) в начало вызова.</p><pre class="examplecode">return webResource.<strong>path("user_timeline.xml").</strong>queryParams(getQueryOrFormParams(queryParamNames, queryParamValues)).accept(javax.ws.rs.core.MediaType.TEXT_XML).get(responseType);</pre>
+            </li>
+            <li>Перейдите к  методу <tt>getFriendsTimeline</tt>.  Найдите строку <tt>return</tt>:<br>
+              <pre class="examplecode">return webResource.queryParams(getQueryOrFormParams(queryParamNames, queryParamValues)).accept(javax.ws.rs.core.MediaType.TEXT_XML).get(responseType);</pre>
+              <p>Добавьте сведения о пути в начало вызова.</p>
+              <pre class="examplecode">return webResource.path(&quot;friends_timeline.xml&quot;).queryParams(getQueryOrFormParams(queryParamNames, queryParamValues)).accept(javax.ws.rs.core.MediaType.TEXT_XML).get(responseType);<br>
+              </pre>
+            </li>
+            <li>Перейдите к методу <tt>updateStatus</tt>.  Найдите строку <tt>return</tt>:<br>
+              <pre class="examplecode">return webResource.type(javax.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED)...</pre>
+              <p>Добавьте сведения о пути в начало вызова.</p>
+              
+              <pre class="examplecode">return webResource.<strong>path(&quot;update.xml&quot;).</strong>type(javax.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED).post(responseType, getQueryOrFormParams(formParamNames, formParamValues));</pre>
+            </li>
+            <li>Найдите и закомментируйте метод TwitterClient <tt>setResourcePath</tt>.  Это делается в качестве предосторожности, так как он нигде не вызывается.</li>
+            <li>Удалите классы Twitter_OAuth_update__format_JerseyClient и Twitter_Oauth_friends_timeline__format_JerseyClient. </li>
+            </ol>
+            
+    <p>Теперь из класса JerseyClient доступны все три службы.</p>
+            <p class="alert"><b>Внимание!</b> В приведенной выше процедуре изменяется три оператора <tt>return</tt>.  Убедитесь в том, что изменены все три оператора!</p>
+            </div>
+            <h2><a name="update-status"></a>Добавление действия по обновлению статуса</h2>
+            <ol>
+            <li>Вернитесь в представление &quot;Design&quot; в TwitterJFrame. Дважды щелкните кнопку &quot;Update&quot; в JFrame. Редактор возвращается к представлению &quot;Source&quot; в теле метода <tt>jButton1ActionPerformed</tt>, созданного средой IDE. <br> <img alt="TwitterJFrame в представление 'Источник' с курсором в середине нового созданного метода jButton1ActionPerformed" border="1" class="margin-around" height="341" src="../../../images_www/articles/72/websvc/twitter-swing/jbutton1-code.png" width="600"></li>
+            <li>Заполните тело метода <tt>jButton1ActionPerformed</tt> следующим текстом:
+            <p class="alert"><b>Внимание!</b> При обновлении статуса он будет отображаться в кодировке UTF-8, пробелы будут отображаться в виде знаков + или символов %21 и т.д. Если содержимое текстового поля не преобразовать в UTF-8, то приложение завершит работу с ошибкой &quot;Invalid signature&quot; при наличии пробелов в сообщении!  Если вы найдете обходное решение этой проблемы, используйте ссылку &quot;Обратная связь&quot; в руководстве. </p>
+            <pre class="examplecode">private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {                                         
+    String rawStatus = jTextField1.getText().trim();
+    String status = URLEncoder.encode(rawStatus, &quot;UTF-8&quot;);
+    client.makeOAuthRequestUnique();
+    try {
+    client.updateStatus(String.class, status, null);
+    } catch(UniformInterfaceException ex) {
+        System.out.println("Exception when calling updateStatus = " + ex.getResponse().getEntity(String.class));
+    }
+
+}    </pre>
+            </li>
+        </ol>
+    <p>Этот код получает текст из текстового поля и передает его в класс <tt>updateStatus</tt>.  Обратите внимание на вызов <tt>makeOAuthRequestUnique</tt>.  Код вызывает этот метод, так как приложение уже выполнило вход в систему и авторизовано путем вызова <tt>login</tt> и <tt> initOAuth</tt> из <tt>initUserInfo</tt> в ходе инициализации.  Метод <tt>makeOAuthRequestUnique</tt> увеличивает существующие параметры OAuth nonce и timestamp для обеспечения уникальности каждого из запросов.</p>
+    <p class="alert"><b>Внимание!</b> В этом случае неочевидно, какой из методов лучше использовать: <tt>makeOAuthRequestUnique</tt> или <tt>initOAuth</tt>.  При неполадках взаимодействия следует попробовать обе формы.</p>
+    <p>Следует также отметить, что вызов <tt>updateStatus</tt> окружен блоком try/catch.  Это позволяет устранить ошибки, которые могут возникать при вызове <tt>updateStatus</tt>.</p>
+    <h2><a name="public-timeline-autoupdate"></a>Отображение имен пользователей и статусов в JFrame</h2>
+        <p>Теперь настроим приложение для отображения имен пользователей и всех статусов друзей в Twitter. </p>
+<ul>
+            <li>Для получения имен пользователей и статусов из Twitter приложение вызывает операцию Twitter <tt>getFriendsTimeline</tt> при его запуске.  Для настройки <a href="#add-run">создайте новый метод run</a>, который переопределит метод <tt>run </tt> в <tt>main</tt>.  Вставьте вызовы <tt>getFriendsTimeline</tt> в этот метод.</li>
+  <li>Для автоматического обновления отображения, <a href="#timer-task">перенесите метод run</a>, содержащий операцию <tt>getFriendsTimeline</tt>, в <tt><a href="http://java.sun.com/javase/6/docs/api/java/util/TimerTask.html" target="_blank">java.util.TimerTask</a></tt>, выполняющий метод <tt>run</tt> каждые 75 секунд.</li>
+            <li>Приложение отображает данные в виде ячеек в списке.  Необходимо передать данные в компоненты графического пользовательского интерфейса, которые могут быть отображены в виде ячеек в списке. Также можно отформатировать отображение данных.  Для этого <a href="#listcellrenderer">создайте новый JPanel</a>, реализующий <tt><a href="http://java.sun.com/javase/6/docs/api/javax/swing/ListCellRenderer.html" target="_blank">javax.swing.ListCellRenderer</a></tt>.  JPanel вернет объект <tt><a href="http://java.sun.com/javase/6/docs/api/java/awt/Component.html" target="_blank">java.awt.Component</a></tt>, передав имя пользователя и статус в JLabels.  Измените формат JPanel. </li>
+            <li>В TwitterJFrame <a href="#display-component">настройте JList</a> для отображения объектов Component, возвращаемых посредством JPanel. </li>
+    </ul>
+        <div class="indent">
+            <h3><a name="timer-task"></a>Создание TimerTask</h3>
+            <p>Для автоматического обновления ленты сообщений в Twitter перенесите код выполнения в TimerTask.  Напишите обертку TimerTask и заполните ее при помощи кода выполнения.  В противном случае в коде возникнет множество предупреждений об ошибках.</p>
+            <p><strong>Создание TimerTask:</strong></p>
+            <ol>
+                <li>Откройте TwitterJFrame в представлении &quot;Sources&quot; редактора.</li>
+                <li>Найдите объявление класса и конструктор.
+                    <pre class="examplecode">public class TwitterJFrame extends javax.swing.JFrame {
+
+    /** Creates new form TwitterJFrame */
+    public TwitterJFrame() {
+        initComponents();
+        try {
+            initUserInfo();
+        } catch (IOException ex) {
+            Logger.getLogger(TwitterJFrame.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }</pre>
+                </li>
+                <li>В теле метода конструктора, расположенного выше <tt class="examplecode">initComponents();</tt>, создайте экземпляр класса <tt><a href="http://java.sun.com/javase/6/docs/api/java/util/Timer.html" target="_blank">java.util.Timer</a></tt>.  Посредством параметров поток <tt>Timer</tt> получит имя &quot;Twitter Updater&quot; и запрет на запуск в качестве демона.
+
+                    <pre class="examplecode">public class TwitterJFrame extends javax.swing.JFrame {
+
+    /** Creates new form TwitterJFrame */
+    public TwitterJFrame() {<strong>
+        Timer t = new Timer("Twitter Updater`", false);</strong>
+        initComponents();
+        try {
+            initUserInfo();
+        } catch (IOException ex) {
+            Logger.getLogger(TwitterJFrame.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+                    </pre>
+                </li>
+                <li>Щелкните правой кнопкой мыши в любом местоположении редактора и выберите 'Исправить выражения импорта' в контекстном меню или нажмите Ctrl/⌘-Shift-I. Открывается диалоговое окно, в котором можно выбрать классы для импорта. Добавьте оператор импорта для <tt>java.util.Timer</tt>.</li>
+                <li>После создания экземпляра класса <tt>Timer</tt>, создайте новый метод <tt>Timer.scheduleAtFixedRate</tt>.  Параметрами метода являются объект <tt>TimerTask</tt>, задержка перед первым выполнением задачи и частота выполнения задачи.  Установите для метода время ожидания равным 30 секундам и частоту запуска равной 75 секундам.  Начальная задержка позволяет войти в систему. Точный код, выделенный полужирным шрифтом, изображен на рисунке ниже.  На месте вставки кода выполнения остается пустая строка.  Обратите внимание, что для <tt>java.util.TimerTask</tt> необходимо добавить оператор импорта.
+                    <pre class="examplecode">public class TwitterJFrame extends javax.swing.JFrame {
+
+    /** Creates new form TwitterJFrame */
+    public TwitterJFrame() {
+        Timer t = new Timer("Twitter Updater`", false);<strong>
+        t.scheduleAtFixedRate(new TimerTask() {<br><br>
+        }, 30000, 75000);</strong>
+        initComponents();
+        try {
+            initUserInfo();
+        } catch (IOException ex) {
+            Logger.getLogger(TwitterJFrame.class.getName()).log(Level.SEVERE, null, ex);
+        }
+     }</pre>
+              </li>
+            </ol>
+          <p>Теперь код обертки <tt>TimerTask</tt> является завершенным.  Далее рассматривается добавление кода выполнения.</p>
+          <h3><a name="add-run"></a><tt>Добавление</tt><tt></tt> метода run с помощью операции getFriendsTimeline</h3>
+            <p>Для отображения имен пользователей и статусов приложение вызывает данные из Twitter.  Twitter SaaS предоставляет операцию <tt>getFriendsTimeline</tt> для получения имен пользователей и статусов.  Для выполнения операции <tt>getFriendsTimeline</tt> при запуске приложения она должна находиться внутри метода <tt>run</tt>.  Поскольку приложение отображает имена пользователей и статусы в JList, ему потребуется добавить результаты <tt>getFriendsTimeline</tt> как элементы объекта <tt><a href="http://java.sun.com/javase/6/docs/api/javax/swing/DefaultListModel.html" target="_blank">DefaultListModel</a></tt>. </p>
+          <p><strong>Добавление метода run с помощью операции getFriendsTimeline:</strong></p>
+            <ol>
+                <li>Над конструктором TwitterJFrame создайте объект <tt>DefaultListModel</tt> с именем <tt>statusesListModel</tt>.
+                    <pre class="examplecode">public class TwitterJFrame extends javax.swing.JFrame {
+
+    <strong>private DefaultListModel statusesListModel = new DefaultListModel();</strong>
+<br>
+    /** Creates new form TwitterJFrame */
+    public TwitterJFrame() {
+                    </pre>
+                </li>
+                <li>Щелкните правой кнопкой мыши в любом местоположении редактора и выберите 'Исправить выражения импорта' в контекстном меню или нажмите Ctrl/⌘-Shift-I. В результате добавится оператор импорта для <tt>DefaultListModel</tt>. </li>
+                <li>В теле объекта <tt>TimerTask</tt> создайте новый метод <tt>run</tt>.  Используйте аннотацию <tt>@Override</tt> для переопределения метода <tt>run</tt> в <tt>main</tt>.
+                    <pre class="examplecode">public class TwitterJFrame extends javax.swing.JFrame {
+
+    private DefaultListModel statuses = new DefaultListModel();<br><br>
+
+
+
+    /** Creates new form TwitterJFrame */
+    public TwitterJFrame() {
+        Timer t = new Timer(&quot;Twitter Updater`&quot;, false);<br>        t.scheduleAtFixedRate(new TimerTask() {<br>         <strong>   @Override</strong><br>            <strong>public void run(){<br>             <br>            }</strong><br>        }, 1500, 75000);<br>        initComponents();
+        try {
+            initUserInfo();
+        } catch (IOException ex) {
+            Logger.getLogger(TwitterJFrame.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    </pre>
+                </li>
+              <li>Вставьте следующий код <tt></tt> в тело метода <tt>run</tt>. 
+                <pre class="examplecode">@Override
+public void run() {
+    <strong>System.out.println("Timer Task is running");
+    try {
+        client.initOAuth();
+        Statuses response = client.getFriendsTimeline(Statuses.class, null, null, null, "10");
+        // Clear the list model so it does not replicate the contents from the last run
+        statusesListModel.clear();
+        // Create a Status Type object for every status in the Status list, and add an element
+        // to the list model for every status type object
+        for (final StatusType st : response.getStatus()) {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    statusesListModel.addElement(st);
+                }
+            });
+        }
+    } catch (UniformInterfaceException ex) {
+    System.out.println("Exception when calling getFriendsTimeline = " + ex.getResponse().getEntity(String.class));
+    }
+</strong>}</pre>
+              </li>
+                
+            </ol>
+          <p>Код для получения статусов из ленты сообщений Twitter готов.  Теперь необходимо написать новый класс, возвращающий объект <tt>Component</tt> с элементами списка, визуализируемыми в компонентах графического пользовательского интерфейса.</p>
+          <h3><a name="listcellrenderer"></a>Создание компонента визуализации ячейки списка</h3>
+            <p>Теперь у вас имеется код, получающий объекты <tt>Status</tt> из ленты сообщений друзей Twitter и создающий элемент списка для каждого статуса.  Однако элементы строк списка не могут быть отображены в JList.  Необходимо передать данные в компоненты графического пользовательского интерфейса.  Для этого создайте новый JPanel, реализующий <tt><a href="http://java.sun.com/javase/6/docs/api/javax/swing/ListCellRenderer.html" target="_blank">javax.swing.ListCellRenderer</a></tt>.  JPanel вернет объект <tt><a href="http://java.sun.com/javase/6/docs/api/java/awt/Component.html" target="_blank">java.awt.Component</a></tt>, передав имя пользователя и статус в JLabels.  Можно настроить внешний вид JLabels в JPanel. </p>
+            <p><strong>Добавление компонента визуализации ячейки списка:</strong></p>
+            <ol>
+                <li>Щелкните правой кнопкой мыши узел проекта и выберите &quot;New&quot; &gt; &quot;JPanel Form&quot;.  Откроется мастер создания форм JFrame.</li>
+                <li>Определите для JPanel имя <tt>Item</tt> и разместите его в пакете <tt>twitterclient</tt>. <br> <img alt="Мастер создания форм JPanel, в котором отображается панель с именем 'Элемент' и пакет twitterclient" border="1" class="margin-around" height="286" src="../../../images_www/articles/72/websvc/twitter-swing/create-jpanel-form.png" width="600"></li>
+                <li>Нажмите кнопку &quot;Завершить&quot;. В представлении &quot;Design&quot; редактора откроется <tt>Item.java</tt>. </li>
+                <li>Перетащите элементы &quot;Label&quot; и &quot;Text Pane&quot; в JPanel.  &quot;Label&quot; отобразит имя пользователя, а &quot;Text Pane&quot; &ndash; сообщение о статуса пользователя.</li>
+                <li>Разместите &quot;Label&quot; и &quot;Text Pane&quot; в соответствии с тем, как вы хотите отобразить данные.  На рисунке ниже имя пользователя расположено наверху слева, а текст статуса &ndash; ниже, с небольшим отступом вправо.  В проекте <a href="https://netbeans.org/projects/samples/downloads/download/Samples%252FWeb%2520Services%252FTwitterSwingClient.zip" target="_blank">примера приложения</a> данные расположены наверху слева, а имя пользователя &ndash; внизу справа.  Оставьте достаточно пустого пространства в &quot;JPanel&quot; под &quot;Text Pane&quot; для расширения панели &quot;Text Pane&quot; в случае увеличения объема текста.<br> <img alt="Компоновка jlabels, в которой отображается имя пользователя и текст состояния" class="margin-around b-all" height="198" src="../../../images_www/articles/72/websvc/twitter-swing/item-layout.png" width="425"></li>
+                <li>Щелкните правой кнопкой мыши элемент &quot;jLabel&quot; и выберите &quot;Properties&quot; в контекстном меню.  В окне &quot;Properties&quot; можно изменить шрифт, цвет, выравнивание и другие характеристики.  Установите свойство <tt>&quot;labelFor&quot;</tt> для указания на &quot;jTextPane1&quot;.  Это повысит уровень доступности.  Поэкспериментируйте со свойствами метки для достижения требуемого внешнего вида.  На рисунке ниже цвет шрифта установлен на синий в свойстве &quot;Foreground&quot;. <br> <img alt="Диалоговое окно свойств JLabel, в котором для 'Передний план' задан синий цвет" border="1" class="margin-around" height="527" src="../../../images_www/articles/72/websvc/twitter-swing/item-label-color.png" width="557"></li>
+                <li>Откройте диалоговое окно &quot;Properties&quot; панели &quot;JTextPane&quot; и попробуйте изменить различные настройки ее внешнего вида.</li>
+                <li>Перейдите в представление &quot;Source&quot; для <tt>Item.java</tt>.  Найдите блок &quot;Generated Code&quot; и разверните его.  В результате отобразится код, созданный средой IDE при установке свойств &quot;JLabel&quot; и &quot;JTextPane&quot;.
+                    <p>Обратите внимание на синий цвет, установленный для &quot;JLabel1&quot; на рисунке ниже.  Обратите также внимание на свойства, установленные для &quot;JTextPane&quot;.</p>
+                <img alt="Код, созданный Item.java путем задания свойств JLabel свойств в представлении конструктора" class="margin-around b-all" height="350" src="../../../images_www/articles/72/websvc/twitter-swing/item-generated-code.png" width="592"></li>
+                <li>Найдите объявление класса и добавьте код <tt class="examplecode">implements ListCellRenderer</tt>.
+                    <pre class="examplecode">public class Item extends javax.swing.JPanel <strong>implements ListCellRenderer</strong> {</pre>
+                </li>
+                <li>Нажмите Ctrl-Shift-I (⌘-Shift-I в MacOS). В результате добавится оператор импорта для <tt>javax.swing.ListCellRenderer</tt>.  Появится предупреждение о необходимости реализации всех абстрактных методов. </li>
+                <li> Добавьте несколько пустых строк между созданным блоком кода и объявлениями переменных.  В это пространство добавьте следующий код, реализующий абстрактный метод <tt>getListCellRendererComponent</tt>.  (Можно скопировать и вставить этот код или попробовать ввести его с помощью функции автозавершения кода).  Этот код заменит тексты меток по умолчанию username и text объектами Text, User и ScreenName, полученными вместе с классом twitteroauth StatusType.  После этого код вернет экземпляр класса &quot;Component&quot; с новыми значениями свойства &quot;text&quot; в &quot;JLabel&quot;.
+                    <pre class="examplecode">public Component getListCellRendererComponent(JList list, Object value, int index, boolean sel, boolean focus) {
+        StatusType st = (StatusType) value;
+        jTextPane1.setText(st.getText());
+        jLabel1.setText("&lt;html&gt;" + st.getUser().getScreenName() + "&lt;/html&gt;");
+        return this;
+}</pre>
+                </li>
+            <li>Нажмите Ctrl-Shift-I (⌘-Shift-I в MacOS). В результате будут добавлены операторы импорта для классов StatusType и Component.  Выберите версию twitteroauth StatusType.  Сохраните Item.java.</li>
+            </ol>
+            <p>Теперь у вас есть класс &quot;Item&quot;, возвращающий объект &quot;Component&quot; с отображаемыми в &quot;JLabel&quot; и &quot;JTextPane&quot; именем пользователя и статусом.  Настроим &quot;TwitterJFrame&quot; для использования &quot;Component&quot;.</p>
+
+            <h3><a name="display-component"></a>Вывод компонента в TwitterJFrame</h3>
+            <p>Для отображения объекта &quot;Component&quot;, созданного в Item.java, JList в TwitterJFrame должен в качестве средства визуализации ячейки использовать Item.java. </p>
+            <ol>
+                <li>Вернитесь в TwitterJFrame.  Выберите &quot;JList&quot; в представлении &quot;Design&quot;.  Щелкните правой кнопкой мыши и откройте &quot;Properties&quot;. <br><img alt="Диалоговое окно свойств для элемента JList в TwitterJFrame" class="margin-around b-all" height="462" src="../../../images_www/articles/72/websvc/twitter-swing/jlist-properties.png" width="460"></li>
+                <li>Выберите свойство <tt>model</tt>.  Нажмите комбинацию клавиш Ctrl+Пробел.  Откроется пользовательский редактор свойств, в котором текст будет отображен в списке по умолчанию. <br><img alt="Пользовательский редактор свойств jList" class="b-all margin-around" height="265" src="../../../images_www/articles/72/websvc/twitter-swing/jlist-custom-editor.png" width="458"></li>
+                <li>В раскрывающемся меню &quot;Set jLlist1's model property using:&quot; выберите &quot;Custom Code&quot;.  Появится текстовое поле, в которое необходимо ввести свойства для <tt>jLabel1.setModel</tt>.  Введите в поле <tt>statusesListModel</tt> и нажмите кнопку &quot;ОК&quot;. <br><img alt="Пользовательский редактор свойств jList, в котором отображается setModel(statuses), выбранный в пользовательском редакторе кода" class="margin-around" height="341" src="../../../images_www/articles/72/websvc/twitter-swing/jlist-model.png" width="433">
+                <li>В диалоговом окне &quot;Properties&quot; выберите &quot;cellRenderer&quot; и нажмите комбинацию клавиш Ctrl+Пробел.  Откроется пользовательский редактор свойств.</li>
+                <li>В раскрывающемся меню &quot;Set jLlist1's cellRenderer property using:&quot; выберите &quot;Custom Code&quot;.  Появится текстовое поле, в которое необходимо ввести свойства для <tt>jLabel1.cellRenderer</tt>.  Введите<tt> new Item()</tt> и нажмите кнопку &quot;OK&quot;. <br><img alt="Редактор свойств свизуализатора ячеек пользовательского JList, в котором показывается новый выбранный элемент" class="margin-around" height="221" src="../../../images_www/articles/72/websvc/twitter-swing/jlist-custom-cell-renderer.png" width="498"></li>
+            </ol>
+
+            <p>Клиентское приложение готово!  Сохраните все файлы и запустите приложение.  (Щелкните правой кнопкой мыши узел проекта и выберите &quot;Run&quot;).  Откроется приложение со списком сообщений ленты и полем, содержащим ваш статус.</p>
+        <img alt="Запущен клиент, в котором отображаются сообщения Twitter" class="margin-around" height="374" src="../../../images_www/articles/72/websvc/twitter-swing/client-display.png" width="570">        </div>
+        <h2><a name="connecting-proxy"></a>Подключение через прокси;</h2>
+	
+	  
+<p>При подключении к Интернету через прокси необходимо настроить среду IDE и проект TwitterSwingClient для использования настроек прокси.</p>
+<p>Для настройки среды IDE откройте &quot;Tools&quot; &gt; &quot;Options&quot; &gt; &quot;General&quot;.  Найдите раздел &quot;Proxy Settings&quot;.  Вы можете настроить прокси вручную, использовать системные настройки прокси или не использовать настройки прокси вообще.  Среда IDE получает системные настройки прокси из системного веб-браузера по умолчанию.</p>
+<p>Для проекта TwitterSwingClient необходимо указать для прокси протокол HTTP, используемый обработчиком.  Эти действия описаны в<a href="http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html" target="_blank"> документации Java SE 6</a>.  Прокси определяется в параметрах, передаваемых виртуальной машине.  В  IDE NetBeans эти параметры задаются в диалоговом окне свойств.</p>
+<p><strong>Определение прокси для проекта TwitterSwingClient:</strong></p>
+<ol>
+  <li>В окне 'Проекты' щелкните правой кнопкой мыши узел проекта TwitterSwingClient и выберите 'Свойства'. Откроется диалоговое окно Properties (&quot;Свойства&quot;).</li>
+  <li>В дереве &quot;Categories&quot; выберите &quot;Run&quot;.  В окне появятся свойства &quot;Run&quot;.</li>
+  <li>Введите <tt>-Dhttp.proxyHost=server -Dhttp.proxyPort=port</tt> в поле &quot;VM Options&quot;.  Замените &quot;server&quot; и &quot;port&quot; на имя узла и порт вашего прокси-сервера. <br><img alt="Настройки прокси в параметрах VM в диалоговом окне свойств проекта" class="margin-around" height="304" src="../../../images_www/articles/72/websvc/twitter-swing/proxy-settings.png" width="600"></li>
+</ol>
+
+<h2><a name="more_exercises"></a>Дополнительные упражнения</h2>
+        <p>Ниже приведены дополнительные мысли для исследования:</p>
+        <ul>
+            <li>Измените значок пользователя в Twitter (в браузере) и запустите клиент заново.  Убедитесь в том, что новый значок пользователя отображается.</li>
+            <li>Добавьте в JFrame панель инструментов с некоторыми функциями.</li>
+    </ul>
+  <div class="feedback-box">
+        <a href="/about/contact_form.html?to=3&amp;subject=Feedback:RESTful%20Swing%20Client%20for%20Twitter">Мы ждем ваших отзывов</a></div>
+
+        <br style="clear:both;" >
+        <h2><a name="seealso"></a>Дополнительные сведения</h2>
+        <p>Дополнительные сведения об использовании IDE NetBeans для разработки и использования веб-служб, а также для разработки графических пользовательских интерфейсов см. следующие ресурсы: </p>
+        <ul>
+            <li><a href="../../docs/websvc/rest_ru.html">Начало работы с веб-службами RESTful</a></li>
+            <li><a href="../../docs/java/quickstart-gui_ru.html">Создание графических пользовательских интерфейсов в IDE NetBeans</a></li>
+            <li><a href="../../docs/java/gui-image-display_ru.html">Обработка изображений в приложении GUI</a></li>
+            <li><a href="../../docs/websvc/jersey-rcp-client_ru.html">Создание клиентов службы RESTful в модулях NetBeans</a></li>
+            <li><a href="../../trails/web_ru.html">Учебная карта по веб-службам</a></li>
+            <li><a href="../../trails/matisse_ru.html">Учебная карта по приложениям на Java и JavaFX с графическим интерфейсом</a>.</li>
+        </ul>
+    <p>Для отправки комментариев и предложений, получения поддержки и новостей о последних разработках, связанных с Java EE IDE NetBeans <a href="../../../community/lists/top.html">присоединяйтесь&nbsp; к&nbsp;списку рассылки nbj2ee@netbeans.org</a>.</p>
+    </body>
+</html>

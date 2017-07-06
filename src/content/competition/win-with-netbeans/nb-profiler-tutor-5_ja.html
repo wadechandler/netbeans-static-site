@@ -1,0 +1,260 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>NetBeans IDE 4.0 プロファイラチュートリアル</title>
+<META NAME="description" CONTENT="NetBeans IDE 4.0 Profiler Tutorial">
+<link rel="stylesheet" type="text/css" href="../../netbeans.css">
+<META NAME="EXPIRES" CONTENT="N">
+<meta name="author" content=""/>
+<meta name="indexed" content="y"/>
+<meta name="description" content="NetBeans IDE 4.0 Profiler Tutorial"/>
+</head>
+<body>
+<h1>NetBeans IDE 4.0 プロファイラチュートリアル</h1>
+<div class="articledate" style="margin-left:0px;"><a href="../win-with-netbeans.html">Win With NetBeans</a> コンペティションの一部として Gregg Sporar 氏から寄稿</div>
+<p>この記事は、NetBeans プロファイラのマイルストーン 5 と組み合わせて使用されることが想定されています。 
+
+<p>NetBeans プロファイラは、アプリケーションの実行時動作に関する重要な情報を提供する強力なツールです。NetBeans プロファイラは、比較的少ないオーバーヘッドで、CPU パフォーマンスやメモリー使用量を追跡します。このチュートリアルでは、NetBeans 4.0 でこのプロファイラを使用して次のことを行うための方法を示します。</p>
+
+<ul>
+  <li><a href="#runtime">Web アプリケーションの実行時動作を監視する</a></li>
+  <li><a href="#cpu">アプリケーションのメソッドが使用する CPU 時間を確認する</a></li>
+  <li><a href="#createObjects">アプリケーションによるオブジェクトの作成を監視する</a></li>
+</ul>
+
+<p>このチュートリアルの一部は最初、2004 年 6 月の <i>Java Developer's Journal</i> の、JFluid (NetBeans のプロファイル技術) に関する記事 (http://sys-con.com/story/?storyid=45081&amp;DE=1) に掲載されました。転載された内容はすべて、<i>Java Developer's Journal</i> の発行元の許可により使用されています。</p>
+
+<p><a name="top"></a>このチュートリアルの所要時間は約 1 時間です。</p>
+
+<h2><a name="genericsetup"></a>環境の設定</h2></br><br />
+<div class="indent">
+<h3 class="tutorial">プロファイラのインストール</h3>
+<p>
+
+NetBeans プロファイラは Beta 版であり、個別ダウンロードとして入手可能です。このチュートリアルを使用するには、最新バージョンの NetBeans プロファイラをインストールする必要があります。必ず、NetBeans プロファイラの<a href="http://profiler.netbeans.org/index.html">ダウンロードとインストールの手順</a>に従ってください。
+</p>
+<h3 class="tutorial"><a name="tomcat"></a>Tomcat の構成</h3>
+<p>
+
+Web アプリケーションのプロファイルを行うには、NetBeans プロファイラに含まれている JDK を使用して Web サーバーを実行する必要があります。したがって、NetBeans にバンドルされている Tomcat サーバーでプロファイラを使用するには、Tomcat の起動方法を少し変更する必要があります。これを行うもっとも簡単な方法は、Tomcat を起動するスクリプトを変更することです。このスクリプトは、catalina.bat (Windows の場合) または catalina.sh (UNIX の場合) です。これらのスクリプトは Tomcat の bin フォルダ内に格納されています。Windows システムの場合の典型的な場所を、次に示します。 <br>
+  <pre class="examplecode">
+  C:\Program Files\netbeans-4.0\nb4.0\jakarta-tomcat-5.0.28\bin\catalina.bat</pre>
+  そして、UNIX の場合の場所は、次のようになります。
+  <pre class="examplecode">
+  /export/home/gs/tools/netbeans/40/nb4.0/jakarta-tomcat-5.0.28/bin/catalina.sh</pre>
+  <ol>
+     <li>スクリプトのコピーをバックアップとして保存します。</li>
+     <p><li>ファイルの最上部にある大きなコメントブロックのすぐ下に、NetBeans プロファイラに含まれる JDK が格納されたフォルダに <tt>JAVA_HOME</tt> を設定するための行を追加します。フォルダ名を表示するには、NetBeans で「プロファイラ」&gt;「ヘルプ」&gt;「プロファイラについて」を選択します。Windows での値の例:
+     <pre class="examplecode">
+    set JAVA_HOME=c:\Documents and Settings\gs\.netbeans\4.0\modules\profiler-ea-vm\</pre>
+     UNIX での値の例:
+     <pre class="examplecode">
+    JAVA_HOME=&quot;/home/gs/.netbeans/4.0/modules/profiler-ea-vm/&quot;
+</pre></li>
+  </ol>
+</p>
+<h3 class="tutorial">必須ソースファイルの取得</h3>
+<p>
+このチュートリアルでは、『<a href="../../kb/archive/index.html">NetBeans IDE 4.0 Quick Start Guide for Web Applications</a>』で作成される HelloWeb プロジェクトに基づく Web アプリケーションを使用します。このチュートリアルでの変更点としては、受信要求を処理するサーブレットを追加したことなどが挙げられます。これは、Java Bean を作成したあと、応答を作成する JSP にディスパッチします。NetBeans プロファイラの機能がはっきりとわかるように、このサーブレットは意図的に低品質な方法で記述されています。
+
+<p><tt>ProfilingTutorial.zip</tt> ファイルからすべてのアプリケーションファイルを取得します。</p>
+<ol>
+  <li>ファイルシステム内で、解凍後のアプリケーションファイルのためのフォルダを作成します。以降では、このフォルダを <tt><i>$</i><i>UNZIPHOME</i></tt> と呼びます。</li>
+  <p><li><tt><a href="https://netbeans.org/files/documents/4/387/ProfilingTutorial.zip">ここ</a></tt>をクリックして <tt>ProfilingTutorial.zip</tt> ファイルをダウンロードします。</li><p></p>
+  <p><li>ファイルを解凍するアプリケーションを使用して、<tt>ProfilingTutorial.zip</tt> ファイルを <tt><i>$</i><i>UNZIPHOME</i></tt> に解凍します。</li><p></p>
+  <p>この時点で <tt><i>$</i><i>UNZIPHOME</i></tt> には、<tt>web</tt> フォルダと <tt>src</tt> フォルダが含まれています。<tt>web</tt> フォルダには、2 つの JSP ファイルと、配備記述子が含まれています。<tt>src</tt> フォルダには、サーブレットクラスと Java Bean クラスのソースファイルが含まれています。</p>
+</ol>
+</div>
+
+<h2><a name="create"></a>プロジェクトの作成</h2></br><br />
+<div class="indent">
+<h3 class="tutorial">提供されたソースファイルからの Web プロジェクトの作成</h3>
+ <ol>
+  <li>「ファイル」&gt;「新規プロジェクト」(Ctrl-Shift-N キー) を選択します。「カテゴリ」で「Web」を選択します。「プロジェクト」の下の「既存のソースを使用する Web プロジェクト」を選択します。「次へ」をクリックします。</li><p>
+  <li>「場所」の「参照」をクリックし、Web アプリケーションのドキュメントルートを選択します。このドキュメントルートは、<tt>ProfilingTutorial.zip</tt> ファイルの解凍先となったフォルダである <tt><i>$</i><i>UNZIPHOME</i></tt> になります。</li><p>
+  <li>「プロジェクト名」で <tt>ProfilingTutorial</tt> と入力します。「次へ」をクリックします。</li><p>
+  <li>「完了」をクリックします。IDE によって、<tt><i>$</i><i>UNZIPHOME/nbproject</i></tt> プロジェクトフォルダと <tt><i>$</i><i>UNZIPHOME/build.xml</i></tt> ファイルが作成されます。IDE で ProfilingTutorial プロジェクトが開きます。プロジェクトの論理構造は「プロジェクト」ウィンドウで、ファイル構造は「ファイル」ウィンドウで確認できます。</li><p>
+  <li>この最後の手順が必要となるのは、JDK v5 をデフォルトの Java プラットフォームとして使用するように NetBeans が構成されている場合だけです。 <p>
+    <ol type="i">
+    <li>現在のプロファイラでは、JDK v1.4.2 によって作成された .class ファイルのみがサポートされているため、v1.4.2 JDK のインストールと NetBeans Java プラットフォームとしての構成をまだ行なっていない場合は、それを完了する必要があります。NetBeans プロファイラの Beta 版では、v1.4.2 に基づく JDK がインストールされます。「<a href="#tomcat">Tomcat の構成</a>」の手順では、これを <tt>JAVA_HOME</tt> として設定しました。詳細は、オンラインの<a href="http://profiler.netbeans.org/docs/help/index.html">プロファイラのヘルプ</a>を参照してください。<p>
+    <li>「プロジェクト」ウィンドウで、「<tt>ProfilingTutorial</tt>」エントリを右クリックし、「プロパティー」を選択します。v.1.4.2 JDK を使用する Java プラットフォームを選択したあと、「了解」ボタンをクリックします。  </li><p>
+     <li>Tomcat の bin フォルダで、catalina.50.bat (Windows の場合) または catalina.50.sh (UNIX の場合) のバックアップコピーを作成します。</li><p>
+     <li>catalina.50.bat (Windows の場合) または catalina.50.sh (UNIX の場合) に対して、「<a href="#tomcat">Tomcat の構成</a>」の手順で行なったのと同じ編集を行います。</li><p>
+     </ol>
+</li>
+  </ol>
+  </div>
+<h3 class="tutorial">プロジェクトの実行</h3>
+
+<ol>
+<li>「プロジェクト」ウィンドウで「<tt>ProfilingTutorial</tt>」エントリを右クリックし、「プロジェクトの生成物を削除して構築」を選択します。次に、「<tt>ProfilingTutorial</tt>」エントリを再度右クリックし、「プロジェクトを実行」を選択します。これにより、IDE でプロジェクトが構築され、Tomcat が起動されたあと、index.jsp ページがブラウザウィンドウ内に表示されます。</li><p>
+<li>Tomcat が正しく起動したことを確認するために、IDE の「出力」ウィンドウの「Bundled Tomcat」タブをクリックします。Tomcat の出力の一番上までスクロールし、NetBeans プロファイラの JVM を使用して Tomcat が起動されたことを確認します。<tt>Using JAVA_HOME</tt> で始まる行を調べます。NetBeans プロファイラの JVM を含むフォルダが Java ホームになっているはずです。Tomcat が起動しない場合や、NetBeans プロファイラの JVM を含むディレクトリが <tt>JAVA_HOME</tt> になっていない場合は、「<a href="#tomcat">Tomcat の構成</a>」の手順に従ったかどうかを確認してください。Windows の場合のサンプル出力を次に示します。
+
+<p><a href="../../images_www/articles/win-with-netbeans/tomcat.png" title="Tomcat 出力を表示 - フルサイズの画像を表示する場合にクリック"><img src="../../images_www/articles/win-with-netbeans/tomcat-small.png" width="500" height="121" alt="Tomcat 出力を表示 - フルサイズの画像を表示する場合にクリック" vspace="5" hspace="5" class="b-none" style="display: block; margin-left:auto; margin-right:auto;"></a></li>
+
+<p><li>ブラウザのウィンドウが開き、<tt>http://localhost:8084/ProfilingTutorial/</tt> のページが表示されているはずです。Web アプリケーションが動作していることを確認するために、名前フィールドに <tt>NetBeans User</tt> と入力し、「OK」ボタンをクリックします。結果は次の図のようになるはずです。<img src="../../images_www/articles/win-with-netbeans/hello.png" class="align-center" alt="アプリケーションの出力を表示" vspace="5" style="display: block; margin-left:auto; margin-right:auto;"></li><p>
+</ol>
+</div>
+
+<h2><a name="runtime"></a>実行時動作の監視</h2></br><br />
+<div class="indent">
+<h3 class="tutorial">実行中のアプリケーションへの接続</h3>
+ <p>
+ NetBeans プロファイラに含まれる JVM が Tomcat で使用されていることを確認したので、IDE のプロファイルツールをその JVM に接続し、その実行時動作を監視できます。
+  <ol>
+ <li>「プロファイル」&gt;「プロファイラを接続」を選択します。「接続設定を指定」ダイアログが表示されます。</li>
+ <p><li>「接続先」で、「J2EE Web/アプリケーションサーバー」を選択します</li>
+ <p><li>「実行元」で、「このコンピュータ」ラジオボタンをクリックします</li>
+ <p><li>「接続設定」で、「動的接続」ラジオボタンをクリックしたあと、「実行中の VM を選択」ラジオボタンをクリックします。VM のリストから Tomcat のエントリ (通常は <tt>org.apache.catalina.startup.Bootstrap start</tt>) を選択します。</li>
+ <p><li>「作業ディレクトリ」に、Tomcat の bin フォルダの完全修飾名を入力します。例として、Windows システムでの典型的な値は次のとおりです。 <br>
+  <pre class="examplecode">
+  C:\Program Files\netbeans-4.0\nb4.0\jakarta-tomcat-5.0.28\bin</pre>
+  そして、UNIX の場合の値は、次のようになります。
+  <pre class="examplecode">
+  /export/home/gs/tools/netbeans/40/nb4.0/jakarta-tomcat-5.0.28/bin</pre>
+  </li>
+  <p><li>「了解」ボタンをクリックします。「接続してプロファイル」ダイアログが表示されます。</li>
+  <p><li>大きな「アプリケーションを監視」ボタンをクリックします。「スレッドの監視を有効化」オプションがオンになって<i>いない</i>ことを確認します。  </li><p>
+  <li>「接続」ボタンをクリックします。</li>
+ </ol>
+
+ <h3 class="tutorial"><a name="interpretingMonitor">モニターグラフの解釈</a></h3>
+ NetBeans プロファイラは、次に示すような 3 つのグラフを出力ウィンドウに表示します。
+
+<p><a href="../../images_www/articles/win-with-netbeans/monitorGraphs.png" title="モニターグラフを表示 - フルサイズの画像を表示する場合にクリック"><img src="../../images_www/articles/win-with-netbeans/monitorGraphs-small.png" width="500" height="110" class="align-center" alt="モニターグラフを表示 - フルサイズの画像を表示する場合にクリック" vspace="5" hspace="5" class="b-none" style="display: block; margin-left:auto; margin-right:auto;"></a>
+
+ <p>もっとも理解しやすいのが左のグラフです。赤色でシェーディングされた部分は JVM ヒープの割り当て済みサイズを示しており、ほぼ 1 秒ごとに更新されます。紫色のオーバーレイは、実際に使用されているヒープ領域の量を示しています。上の例では、直前の更新時での割り当て済みヒープサイズは、約 14M バイトでした。その 14M バイトのうち、4M バイトを少し超えるだけの量が、Java オブジェクトを保持する目的で実際に使用されています。</p>
+ <p>右のグラフも容易に理解できます。これは、JVM 内の実際のスレッドの数を示したものにすぎず、ほぼ 1 秒ごとに更新されます。</p>
+ <p>もっとも興味深いのは中央のグラフです。これは、ヒープの 2 つの重要な統計情報を示しています。
+ <ul>
+ <li>青色の線は、JVM でガベージコレクションに費やされた実行時間のパーセンテージであり、グラフの右端にある y 軸に基づいてグラフ化されます。JVM でガベージコレクションに費やされた時間は、JVM がアプリケーションを実行できない時間になります。したがって、青色の線で示されるパーセンテージが大きい場合は、より大きなヒープサイズ (-Xmx パラメータの<a href="http://java.sun.com/j2se/1.5.0/">ドキュメント</a>を参照) を設定するか、場合によっては別のガベージコレクション<a href="http://java.sun.com/docs/hotspot/gc1.4.2/">アルゴリズム</a>に切り替えるなど、JVM の調整を検討することをお勧めします。</li><p>
+<li>
+ 赤色の線は生存中世代であり、グラフの左端にある y 軸スケールに基づいてグラフ化されます。生存中世代数は、JVM のヒープ上にあるすべての Java オブジェクトの異なる年齢の数であり、この「年齢」は、あるオブジェクトが生存してきたガベージコレクションの回数として定義されます。生存中世代の値が低い場合、それは、ヒープ上のほとんどのオブジェクトの生存期間がほぼ同じ長さであることを示しています。一方、生存中世代の値が時間とともに急激に増えている場合、それはアプリケーションが、すでに割り当てられた多くの古いオブジェクトへの参照を維持しつつ、新しいオブジェクトを割り当てていることを示しています。それらの古いオブジェクトが実際にはもう必要でない場合、アプリケーションがメモリーを浪費している (あるいは「リークしている」) ことになります。
+ </li>
+ </ul>
+ <img src="../../images_www/articles/win-with-netbeans/telemetryGraphsButton.png" alt="遠隔測定グラフボタンを表示" > ボタンをクリックすると、IDE によって、3 つのグラフのより大きいバージョンがメイン表示ウィンドウに表示されます。<p>
+</div>
+
+<h2><a name="cpu"></a>メソッドが使用する CPU 時間の確認</h2></br><br />
+<div class="indent">
+<h3 class="tutorial">パフォーマンス解析モードへの切り替え</h3>
+<p>
+
+ プロファイラは、Tomcat の JVM に接続してはいますが、高レベルの統計情報を監視しているだけです。アプリケーション内の特定の 1 つのメソッド (または複数のメソッド) のパフォーマンスに関する詳細情報を取得するには、プロファイラの設定を変更する必要があります。
+ <ol>
+ <li><img src="../../images_www/articles/win-with-netbeans/modifyProfilingButton.png" alt="「プロファイルを変更」ボタンを表示" > ボタンをクリックするか、「プロファイル」&gt;「プロファイルを変更」を選択します。<p></li>
+ <li>「パフォーマンスを解析」ボタンをクリックします。<p></li>
+ <li>「アプリケーションの一部」ラジオボタンを選択します。次に、「アプリケーションの一部」ラジオボタンの隣にある「選択」ボタンをクリックします。<p></li>
+ <li>「追加」ボタンをクリックします。<p></li>
+ <li>「選択」ボタンをクリックします。プロファイラによって「クラスを選択」ツリーが表示されます。<p></li>
+ <li>プラス記号のアイコンをクリックして「ProfilingTutorial」エントリを展開します。<p></li>
+ <li>プラス記号のアイコンをクリックして「ソースパッケージ」エントリを展開します。<p></li>
+ <li>「org.me.hello」エントリを展開します。<p></li>
+ <li>「RequestHandler.java」エントリを展開します。<p></li>
+ <li>「RequestHandler」エントリをクリックしたあと、「了解」ボタンをクリックします。<p></li>
+ <li>すると、次に示すように、RequestHandler クラスのメソッドが「メソッドの選択」ダイアログに表示されます。<tt>processRequest</tt> メソッドをクリックしたあと、「了解」ボタンをクリックします。
+
+<p><img src="../../images_www/articles/win-with-netbeans/selectMethods.png" alt="「メソッドの選択」ダイアログを表示" vspace=5 style="display: block; margin-left:auto; margin-right:auto;"></li>
+
+<p><li><tt>processRequest</tt> メソッドを選択するために「ルートメソッド」のリスト内でそれをクリックしたあと、「了解」ボタンをクリックします。今、<tt>processRequest</tt> をパフォーマンス解析のルートメソッドとして選択しました。これは、<tt>processRequest</tt> メソッド、そこから呼び出されるすべてのメソッド、さらにそこから呼び出されるすべてのメソッド (以下同様) が、監視対象となることを意味します。プロファイラは、<tt>processRequest</tt> を起点にしてメソッド呼び出しグラフの解析を行うことで、プロファイルを行う必要のあるメソッドを決定します。プロファイルの対象となるのはそれらのメソッドだけであり、アプリケーションの残りの部分は引き続き、プロファイルオーバーヘッドのないフルスピードで実行されます。<p></li>
+ <li>「プロファイルを変更」ダイアログで「了解」ボタンをクリックします。<p></li>
+ </ol>
+<h3 class="tutorial">プロファイル対象メソッドの実行</h3>
+<p>
+
+ <tt>processRequest</tt> をルートメソッドとして選択したので、そのルートメソッドが実行される原因となる Web アプリケーションの部分を使用する必要があります。index.jsp ページからの要求はすべて <tt>processRequest</tt> メソッドで処理されるため、これを行うのは簡単です。
+ <ol>
+ <li>Web ブラウザで「戻る」ボタンをクリックして <tt>http://localhost:8084/ProfilingTutorial/</tt> ページに戻ります。<p></li>
+ <li>「了解」ボタンをクリックすることで、「NetBeans User」をユーザー名として再送信します。応答が表示されるまで少し長い時間がかかりますが、これは、<tt>processRequest</tt> メソッドのパフォーマンスをプロファイラが監視しているからです。
+ <li><b>Hello, NetBeans User!</b> がブラウザに表示されたあと、<img src="../../images_www/articles/win-with-netbeans/currentResultsButton.png" alt="現在の結果のボタンを表示"> ボタンをクリックするか、「プロファイル」&gt;「現在の結果を取得」を選択します。
+ </ol>
+
+
+ <h3 class="tutorial">パフォーマンス解析グラフの解釈</h3>
+  <p>
+
+
+
+ プロファイラは次に示すように、最新のパフォーマンス結果を表示します。
+
+ <p><a href="../../images_www/articles/win-with-netbeans/performanceResults.png" title="パフォーマンスの結果を表示 - フルサイズの画像を表示する場合にクリック"><img src="../../images_www/articles/win-with-netbeans/performanceResults-small.png" width="500" height="352" class="align-center" alt="パフォーマンスの結果を表示 - フルサイズの画像を表示する場合にクリック" class="b-none" style="display: block; margin-left:auto; margin-right:auto;"></a>
+
+ <p>上側のウィンドウには、ルートメソッドから始まる完全なメソッド呼び出しグラフが表示されています。<tt>processRequest</tt> メソッドの実行時間は、168 ミリ秒 (ms) でした。ただし、<tt>processRequest</tt> メソッド自体の命令を実行するのに費やされた時間はごくわずかです。ウィンドウ内の 6 行目から、<tt>processRequest</tt> の「セルフタイム」が 0.421 ms にすぎないことがわかります。時間の大部分は、<tt>processRequest</tt> から呼び出されたメソッド内で費やされました。特に、<tt>forward</tt> メソッドが実行時間の 84.7% を占めています。これは、<tt>forward</tt> メソッドに与えられた作業量を考えれば、驚くべきことではありません。</p>
+ <p>NetBeans プロファイラの威力は、コード内に含まれる、予期しなかったボトルネックやアプリケーションの十分なスケーリングを妨げるボトルネックの特定が容易になる点にあります。<tt>createUniqueID</tt> メソッドは実行時間の 11.3% を占めています。<tt>createUniqueID</tt> エントリの隣にあるプラス記号をクリックすると、どこで時間がかかったのかを正確に調査できます。<tt>createUniqueID</tt> のソースコードを調べると、再設計を行うべき、恐ろしく非効率なアルゴリズムが使用されていることがわかります。
+ <p>下側のウィンドウでの描写はよりフラットなものであり、呼び出しグラフ内の各メソッドの「セルフタイム」が表示されています。</p>
+
+</div>
+<br />
+
+<h2><a name="createObjects"></a>オブジェクトの作成の監視
+</h2></br><br />
+<div class="indent">
+<h3 class="tutorial">メモリー解析モードへの切り替え</h3>
+<p>
+
+ プロファイラは、CPU パフォーマンス、メモリー使用量のいずれかの詳細な解析 (<i>計測</i>とも呼ばれる) を行うことはできますが、その両方を同時に行うことはできません。JVM のヒープ上のオブジェクトの割り当てやガベージコレクションに関する詳細情報を取得するには、プロファイラの設定を変更する必要があります。
+ <ol>
+ <li><img src="../../images_www/articles/win-with-netbeans/modifyProfilingButton.png" alt="「プロファイルを変更」ボタンを表示" > ボタンをクリックするか、「プロファイル」&gt;「プロファイルを変更」を選択します。<p></li>
+ <li>「メモリーの使用状況を解析」ボタンをクリックします。<p></li>
+ <li>「オブジェクト作成とガベージコレクションの両方を記録」ラジオボタンを選択します。<p></li>
+ <li>「了解」ボタンをクリックします。<p></li>
+ </ol>
+
+ <h3 class="tutorial">プロファイル対象アプリケーションの実行</h3>
+ <p>
+
+ メモリーの使用状況の解析を選択したので、Web アプリケーションがメモリーを効率的に使用しているか判断できるように、Web アプリケーションを使用する必要があります。
+ <ol>
+ <li>Web ブラウザで「戻る」ボタンをクリックして <tt>http://localhost:8084/ProfilingTutorial/</tt> ページに戻ります。<p></li>
+ <li>「了解」ボタンをクリックすることで、「NetBeans User」をユーザー名として再送信します。<p></li>
+ <li><b>Hello, NetBeans User!</b> がブラウザに表示されたら、ブラウザの「戻る」ボタンをクリックして前のページに戻ります。<p></li>
+ <li>手順 2 から 3 を 9 回繰り返します。このデモでは、同じユーザー名を繰り返し送信する必要があります。<p></li>
+ <li><img src="../../images_www/articles/win-with-netbeans/currentResultsButton.png" alt="現在の結果のボタンを表示"> ボタンをクリックするか、「プロファイル」&gt;「現在の結果を取得」を選択します。<p></li>
+ <li>プロファイラにより、最新のメモリー解析結果が表として表示されます。「クラス名」列をクリックして行をクラス名でソートします。<p></li>
+ <li><tt>org.me.hello.NameHandler</tt> クラスの行が表示されるまで、表の行を下方向にスクロールします。<p></li>
+ </ol>
+
+ <h3 class="tutorial">メモリー解析グラフの解釈</h3>
+<p>
+ 次の図には、<tt>org.me.hello.NameHandler</tt> クラスの統計情報が表示されています。
+
+<p><a href="../../images_www/articles/win-with-netbeans/liveObjects.png" title="メモリーの結果を表示 - フルサイズの画像を表示する場合にクリック"><img src="../../images_www/articles/win-with-netbeans/liveObjects-small.png" class="align-center" width="500" height="273" alt="メモリーの結果を表示 - フルサイズの画像を表示する場合にクリック" vspace=5 class="b-none" style="display: block; margin-left:auto; margin-right:auto;"></a>
+
+ <p>各列では、オブジェクト割り当てやメモリー使用の情報が提供されます。
+ <ul>
+ <li>合計割り当てオブジェクト数(右端) は、もっとも簡単に理解できます。これは、作成されたこのクラスのすべてのオブジェクトの合計数です。<tt>NameHandler</tt> クラスではこの値は 10 になっていますが、これは、Web アプリケーションのフォーム上で「了解」ボタンを押した回数です。<p></li>
+ <li>割り当てオブジェクト数は、プロファイラが実際に監視しているオブジェクトの数です。この例では、作成された <tt>NameHandler</tt> の 10 個のインスタンスのうち、プロファイラが監視しているのは 1 個だけです。この数はデフォルトで、合計割り当てオブジェクト数の値の約 10% になります (したがって、表示される数が図のものと多少異なる可能性があります)。プロファイラは、作成されたオブジェクトのサブセットのみを監視することで、JVM に加わるオーバーヘッドを劇的に減らすことができ、それにより、アプリケーションをフルスピードに近い速度で実行できます。<p></li>
+ <li>ライブオブジェクト数は、まだ JVM のヒープ上に存在し、メモリーを消費している割り当てオブジェクトの数です。<p></li>
+ <li>2 つの「ライブバイト数」列には、ライブオブジェクトによって使用されているヒープメモリーの量が表示されます。一方の列にはグラフが表示され、他方にはテキストが表示されます。<p></li>
+ <li>平均年齢の値は、ライブオブジェクトを使用して計算されます。各オブジェクトの年齢は、そのオブジェクトが生存してきたガベージコレクションの数です。年齢の合計をライブオブジェクト数で割ったものが、平均年齢です。<p></li>
+ <li>世代数の値は、ライブオブジェクトを使用して計算されます。平均年齢の場合と同じく、オブジェクトの年齢は、そのオブジェクトが生存してきたガベージコレクションの数です。世代数の値は、ライブオブジェクトの異なる年齢の数です。<p></li>
+ </ul>
+ <p>この情報を使用すると、メモリーリークを突き止めやすくなります。世代数の値は、「<a href="#interpretingMonitor">モニターグラフの解釈</a>」節で説明した生存中世代の値と同じですが、単一クラスのオブジェクトに限定されます。この細粒度の監視は、ヒープ領域を浪費している特定のオブジェクトを発見するのに役立つ可能性があります。  </p>
+
+ <p>ただしこの例では、<tt>NameHandler</tt> クラスの問題に気付くのに、世代数は必要ありません。合計割り当てオブジェクト数の値は 10 です。サーブレットコードの意図は、同じユーザー名が入力されたときに <tt>NameHandler</tt> オブジェクトを再利用することでした。明らかにそうなっていません。バグは <tt>processRequest</tt> メソッドにあります。<tt>Map</tt> 内のエントリのチェックに使用されるキーが、エントリの格納に使用されるキーと同じではありません。その結果、非常に典型的な Java のメモリーリークが発生しています。オブジェクトが <tt>Map</tt> 内に配置されたあと、忘れ去られています。</p>
+
+ <p>アプリケーションの動作を理解するためのもう 1 つの便利なツールは、ある特定のクラスのオブジェクトがコード内のどこで割り当てられているかを確認することです。これにより多くの場合、オブジェクトがまだヒープ上に存在する理由に関する手掛かりが得られます。この表で任意のクラスのエントリを右クリックして「割り当てスタックトレースを表示」を選択すると、NetBeans プロファイラによってそのクラスのスタックトレースが表示されます。
+ </p>
+ <p>プロファイルセッションを終了するには、「プロファイル」&gt;「切り離す」を選択します。</p>
+  </div>
+ <br />
+
+
+<h2><a name="exploring"></a>さらなる調査</h2></br><br />
+<div class="indent">
+<p>
+   このチュートリアルで説明したのは、プロファイラの多くの強力な機能のほんの一部にすぎません。次の各トピックの詳細については、NetBeans プロファイラのヘルプファイルを参照してください。
+   <ul>
+  <li>CPU 使用率のプロファイル時にクラスフィルタを定義すると、アプリケーションの外側にあるメソッド (java.* に含まれるすべてのメソッドなど) がプロファイルされないようにすることができます。これにより、アプリケーションがフルスピードに近い速度で実行される状態を維持しやすくなります。</li><p>
+  <li>CPU 使用率のプロファイルを行うと JVM のバイトコード最適化が妨げられ、報告される CPU 時間が実際のパフォーマンスと一致しなくなる可能性があります。けれども、プロファイラの影響を最小限に抑えるための手法があります。</li><p>
+ <li>メモリー使用解析の機能は、オブジェクト割り当てのみを監視するように制限できます。これにより、パフォーマンスへのプロファイラの影響が減ります。</li><p>
+  <li>メモリー使用の解析時に、問題の原因と思われるクラスが数個のみであることに気付いた場合、ほかのすべてのクラスのオブジェクトの監視を無効にすることができます。</li><p>
+  <li>アプリケーションの起動時間やアプリケーション内の特定のコードフラグメントを監視する機能があります。</li><p>
+  <li>スレッドの詳細な統計情報が使用可能です。</li><p>
+  <li>リモートプロファイル - 別のマシン上で実行されているアプリケーションをプロファイルします。</li>
+ </ol>
+ </div>
+</body>
+
+</html>
+

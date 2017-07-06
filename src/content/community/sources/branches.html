@@ -1,0 +1,310 @@
+<HTML>
+<HEAD>
+<title>Branches in CVS</title>
+<META NAME="description" CONTENT="A paper on making branches in CVS">
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<meta name="generator" content="emacs">
+<META NAME="AUDIENCE" CONTENT="NBDEVELOPER">
+<META NAME="TYPE" CONTENT="ARTICLE">
+<META NAME="TOPIC" CONTENT="NB_ORG">
+<meta name="nav_link" content="CVS Branches">
+<meta name="nav_priority" content="2">
+<link rel="stylesheet" type="text/css" HREF="../../netbeans.css">
+</HEAD>
+
+<BODY>
+
+<h1>Branches in CVS</h1>
+<BR><FONT CLASS="smalltext"><a href="mailto:mryzl@netbeans.org">Martin Ryzl</a>,
+<a href="mailto:jglick@netbeans.org">Jesse Glick</a></FONT>
+
+<P>
+CVS allows you to isolate changes onto a separate line of
+development, known as a branch. When you change files on a branch, those
+changes do not appear on the main trunk or other branches.
+
+Later you can move changes from one branch to main trunk (or from main
+trunk to the branch) by merging. Merging involves first running cvs
+update -j, to merge the changes into the working directory. You can then
+commit that revision, and thus effectively copy the changes
+onto another branch.
+
+<h2>When to create a new branch</h2>
+For NetBeans/Forte I see two possible reasons for creating a new branch:
+
+<ol>
+ <li>Official branch for a new release. Such a branch will be created by
+an experienced person who knows what he is doing and therefore it
+might be expected that there won't be any problem.
+
+ <li>Private branch(es) created by a developer. Such branches are
+typically used for unstable code that will be merged into the main
+trunk as soon as it will became stable. This document presents
+some recommendations that should be followed when someone will create
+a private branch.
+</ol>
+
+<h2>Recommendations for working with branches</h2>
+
+<ol>
+ <li>Read carefully CVS documentation. It can be found at
+<a href="http://www.cvshome.org/docs/manual/index.html">
+http://www.cvshome.org/docs/manual/index.html</a>. If you have any
+problem, don't hesitate to ask someone who can help you.
+
+ <h4>Other references:</h4>
+ <ul>
+  <li>CVS--Concurrent Versions System<br>
+  <a href="http://www.delorie.com/gnu/docs/cvs/cvs_toc.html">http://www.delorie.com/gnu/docs/cvs/cvs_toc.html</a>
+
+  <li>CVS--Concurrent Versions System<br>
+  <a href="http://web.mit.edu/afs/athena.mit.edu/project/gnu/doc/html/cvs_toc.html">http://web.mit.edu/afs/athena.mit.edu/project/gnu/doc/html/cvs_toc.html</a>
+
+  <li>Versioning and Branching With CVS<br>
+  <a href="http://www2.cs.utah.edu/impulse/cvs/index.html">http://www2.cs.utah.edu/impulse/cvs/index.html</a>
+
+  <li>Cederqvist CVS manual<br>
+  <a href="http://ximbiot.com/cvs/manual/">http://ximbiot.com/cvs/manual/</a> 
+  
+  <li>How to Use CVS<br />
+   <a href="http://owen.sj.ca.us/rkowen/howto/cvs.html">http://owen.sj.ca.us/rkowen/howto/cvs.html</a>
+  
+  <li>CVS Introduction Lecture<br>
+  <a href="http://www.cdt.luth.se/~peppar/presentations/cvs/">http://www.cdt.luth.se/~peppar/presentations/cvs/</a>
+
+  <li>Maintaining the ChangeLog<br>
+  <a href="http://gnu.atnet.at/software/guile/changelogs/guile-changelogs_toc.html">http://gnu.atnet.at/software/guile/changelogs/guile-changelogs_toc.html</a>
+ </ul>
+
+ <br>
+ <li>Do not use any CVS expandable keywords (&#36;Id&#36;, &#36;Log&#36;, etc.), as these
+interact poorly with merges. For example, suppose that you have used
+ &#36;Revision&#36; in your code. And that you have two versions of the file
+ with revisions 1.2, 1.1.2.1. Then you might get the following results
+ from a merge:
+
+ <pre>
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; file1
+key &#36;Revision: 1.2 &#36;
+=======
+key &#36;Revision: 1.1.2.1 &#36;
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; 1.1.2.1
+ </pre>
+
+If you <i>*really*</i> need to use CVS keywords, please, consult CVS
+documentation or (better) ask someone who knows how to do it.
+ <p>
+ <li>Make a tag (cvs tag) whenever you do anything at all interesting
+(esp. before and after any merge); it never hurts and it may save you
+later. Remember that tags are global, so choose them descriptively so
+they will not conflict. For example <b>unstable_rmi_merged_on_Sep_6</b>
+can be used.
+<p>
+It may be useful for example if you perform more sequential merges.
+Suppose you have an branch R1fix and you have completed the first step
+of your unstable development. You want to merge it into the main trunk
+and then continue development in unstable branch. After some time you
+will repeat merging, etc.
+
+<pre>
++-----+    +-----+    +-----+    +-----+    +-----+
+! 1.1 !----! 1.2 !----! 1.3 !----! 1.4 !----! 1.5 !   <- The main trunk
++-----+    +-----+    +-----+    +-----+    +-----+
+                !                           *
+                !                          * (merge)
+                !                         *
+                !   +---------+    +---------+    +---------+
+Branch R1fix -> +---! 1.2.2.1 !----! 1.2.2.2 !----! 1.2.2.3 !
+                    +---------+    +---------+    +---------+
+
+</pre>
+If you just  use the <i>cvs update -j R1fix m.c</i> command again,
+CVS will attempt to merge again the changes which you have already
+merged, which can have undesirable side effects.
+<p>
+If you tag <b>R1fix</b> branch after every merge into the trunk, it is
+possible to use the new tag in merge command and merge only what was
+changed since the last merge.
+<p>
+<li>When you make modifications and check them in, change as few lines as
+possible (e.g. do not reindent the whole file just for fun), and don't
+mix unrelated changes in a single commit; these will make merging go
+more smoothly and reduce the chance of error.
+<p>
+<li>Use branches if you need to do some unstable development - it is good
+for you because you can store all your versions and CVS server is
+probably backed up, it is good for other people because your code
+doesn't break builds. But do not use a lot of local unstable branches,
+because they may be hard to keep track of. If you need to do some
+unstable development for a while and need a branch, then use one.
+</ol>
+
+<h2>How to work with branches</h2>
+
+<ol>
+ <li>create a new branch
+ <ul>
+  <li>
+    <i>cvs tag new_branch_name_root</i><br>
+    <i>cvs tag -b -r new_branch_name_root new_branch_name</i>
+    <p>
+    it creates a tag for main trunk (before the merge) and then it
+    creates a branch based on the current revisions in the working
+    copy, assigning that branch the name `new_branch_name'.
+    <p>
+    Example:<br>
+    <i>cvs tag rmi_root</i><br>
+    <i>cvs tag -b -r rmi_root unstable_rmi</i>
+    <p>
+    creates a new unstable branch for rmi module to main trunk
+    <p>
+  <li>
+    <i>cvs tag -r some_existing_branch new_branch_root</i><br>
+    <i>cvs tag -b -r new_branch_root new_branch_name</i>
+    <p>
+    <b>-r new_branch_root</b> says that this branch should be rooted at
+    the revision that corresponds to the tag <b>new_branch_root</b>. It need not be
+    the most recent revision -- it's often useful to split a branch off
+    an old revision (for example, when fixing a bug in a past release
+    otherwise known to be stable).
+    <p>
+    Example:<br>
+    <i>cvs tag -r boston boston_rmi</i><br>
+    <i>cvs tag -b -r boston_rmi unstable_rmi_boston</i>
+    <p>
+    creates a new unstable branch for rmi based on current boston
+    branch
+    <p>
+    <b>Note:</b> difference between <i>tag</i> and <i>rtag</i> is that
+    <i>tag</i> command adds a tag to checked out version of files
+    whereas <i>rtag</i> uses the most recent versions in the repository.
+    These can have different effects, e.g. if someone checks in new
+    stuff while you are working.
+    <p>
+   </ul>
+ <li>access to an existing branch
+  <ul>
+   <li>
+    <i>cvs checkout -r branch_name</i>
+    <p>
+    Example:<br>
+    <i>cvs checkout -r boston</i>
+    <p>
+   <li>
+    <i>cvs update [-r branch_name]</i>
+    <p>
+   the above command switches to the specified branch name - it merges
+   any changes.
+    <p>
+   <b>Note:</b> do not use <i>update -r</i>. It is potentially very
+   confusing (although it does do exactly what it says, usually you
+   don't really want to do that). Always check out branches into
+   separate, clearly labeled directories. For example, ~/src/boston for
+   boston branch, ~/src/jaga for main trunk, etc. Make a fresh checkout of
+   the whole repository, with most stuff on the trunk and just your
+   unstable code on the branch.
+   <p>
+   Example:<br>
+   <i>cd unstable_rmi</i><br>
+   <i>cvs checkout nbsrc</i><br>
+   <i>cvs checkout -r unstable_rmi rmi</i><br>
+   ...<br>
+   <i>cvs update</i><br>
+   </ul>
+   <p>
+ <li>merging
+  <ul>
+   <li>
+    <i>cvs tag before_merge</i></br>
+    <i>cvs update -j branch_name test.java</i></br>
+    <i>cvs rtag -r branch_name branch_name_merged_on_date</i></br>
+    <i>cvs commit -m proper message"</i>
+    <i>cvs tag after_merge</i></br>
+    <p>
+   merges all changes on branch to the main trunk, tags it and commit
+   to CVS. It is also possible to used revision numbers instead of
+   tags but tags makes work with merging more smooth.
+    <p>
+  <li>
+    <i>cvs tag before_merge_on_date</i><br>
+    <i>cvs update -j branch_name_merged_on_date -j branch_name</i><br>
+    <i>cvs rtag -r branch_name branch_name_merged_on_date</i><br>
+    <i>cvs commit -m proper message"</i>
+    <i>cvs tag after_merge_on_date</i><br>
+    <p>
+   merges all changes since specified merge to the main trunk,
+   tags it and commit to CVS.
+   <p>
+   Example:<br>
+   <i>cd jaga/rmi</i><br>
+   <i>cvs tag before_merge_Sep_10</i><br>
+   <i>cvs update -j unstable_rmi_merged_on_Sep_6 -j unstable_rmi</i><br>
+   <i>cvs rtag -r unstable_rmi unstable_rmi_merged_on_Sep_10</i><br>
+   <i>cvs commit -m "merged a new feature"</i>
+   <i>cvs tag after_merge_Sep_10</i><br>
+   <p>
+   It is also possible to merge main trunk into a branch. This is
+   conceptually probably harder, but follows the same principles.
+   Suppose an example that you are working on unstable branch and
+   someone else has been checked some fixes into the main trunk. You
+   want to integrate these fixes into your code too but not to
+   affect the main trunk with your unstable code and later to merge your
+   unstable code to the main trunk.
+   <p>
+   Example:<br>
+
+   ## create an unstable branch<br>
+   <i>cvs rtag unstable_root my_module</i><br>
+   <i>cvs rtag -b -r unstable_root unstable my_module</i><br>
+   <i>mkdir unstable</i><br>
+   <i>cd unstable</i><br>
+   <i>cvs checkout -r unstable my_module</i><br>
+   ## some work in the branch whereas someone else has fixed trunk<br>
+   ## merge the trunk to the branch<br>
+   <i>cvs rtag main_trunk_fixed my_module</i><br>
+   <i>cvs tag unstable_before_merging_main_trunk_fixed</i><br>
+   <i>cvs update -j unstable_root -j main_trunk_fixed</i><br>
+   [resolve conflicts and commit]<br>
+   <i>cvs tag unstable_after_merging_main_trunk_fixed</i><br>
+   ## some work in both main trunk and the branch<br>
+   ## finally, merge the branch to the trunk<br>
+   <i>cd stable</i><br>
+   <i>cvs checkout my_module</i><br>
+   <i>cvs tag before_merge_unstable</i><br>
+   <i>cvs update -j main_trunk_fixed -j unstable</i><br>
+   [resolve conflicts and commit]<br>
+   <i>cvs tag after_merge_unstable</i><br>
+
+  <P>
+  Suppose the following example:
+
+<pre>
+    /- 1 | 2 | M1 | 5              (branch)
+root
+   \- 3 | 4 | 6 | 7 | M2               (trunk)
+</pre>
+
+Numbers are changes (revisions) made by user. Suppose that every
+revision is stored as a diff to previous revision.<br>
+M1 is a result of merging the trunk (rev. 4) to the branch.<br>
+M2 is a result of merging the branch (rev. 5)to the trunk.
+<P>
+So current status at M1 is root+1+2+3+4,  status at 5 is
+root+1+2+3+4+5 and status at 7 is root+3+4+6+7.
+<P>
+Finally M2 is created (cvs update -j 4 -j branch) as &lt;status at 7&gt;
++ (&lt;status at 5&gt; - &lt;status at 4&gt;) = root+3+4+6+7 +
+(root+1+2+3+4+5 -(root+3+4)) = root+3+4+6+7 + (root+1+2+3+4+5 - root-3-4))
+= root+3+4+6+7 + (+1+2+5) = root+1+2+3+4+5+6+7
+<P>
+In practice, hovewer, update -j -j literally takes the two revisions you
+asked for, and more or less runs diff3 on them and your working file.
+It does not know or care what changes you made where--that is your job.
+cvs update always runs a single merge, it does not do anything in steps.
+The example above show how one can check whether result of merging would
+be what he wants.
+ </ul>
+</ul>
+
+</BODY>
+</HTML>

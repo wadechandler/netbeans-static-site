@@ -1,0 +1,292 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+
+<html>
+<head>
+   <title>ビジュアルモバイルデザイナのカスタムコンポーネント: モバイルアプリケーション用の待機画面の作成 - NetBeans Java ME チュートリアル</title>
+   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+   <link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+   <meta name="author" content="Karol Harezlak">
+</head>
+<body>
+<a name="top"></a>
+<h1>ビジュアルモバイルデザイナのカスタムコンポーネント: モバイルアプリケーション用の待機画面の作成</h1>
+  <p> Java ME アプリケーションが適切に動作するために、ネットワークへの接続が必要になることがよくあります。ところが、ワイヤレスネットワークは現在でも比較的低速です。ネットワーク接続やデータ転送を待機するバックグラウンドタスクによってアプリケーションが一時停止した場合に、表示画面が完全に固まってしまったのか、中止してあとでやり直したほうがいいのか、判断に迷うことがあります。このようなユーザーにとって不愉快で、ありがちな事態に、開発者はどのように対処したらよいでしょうか。 </p>
+<p>答えは「待機画面」を追加することです。待機画面では、ユーザーがバックグラウンド作業 (ネットワークへの接続など) のブロックを実行したり、作業の進捗状況を表示したり、アプリケーションが正常に動作中であることをユーザーに通知するメッセージを画面に表示することができます。このチュートリアルでは、ビジュアルモバイルデザイナ (VMD) を使用して、カスタマイズ可能でアプリケーションフローに追加できる待機画面カスタムコンポーネントを含めることによって、待機画面の作成を簡素化する方法を示します。</p>
+<p>NetBeans でのモバイルアプリケーション開発に習熟していない場合、次に進む前に「<A HREF="quickstart.html">NetBeans Java ME MIDP 開発のクイックスタートガイド</A>」から始めることをお勧めします。</p>
+<!--<p class="notes"><b>注:</b> NetBeans IDE 6.8 を使用している場合、<a href="../../68/javame/waitscreen.html">「モバイルアプリケーション用の待機画面の作成」(NetBeans IDE 6.8)</a> チュートリアルを参照してください。</p>-->
+<h3>目次</h3>
+<img  src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" class="stamp" alt="このページの内容は NetBeans IDE 6.9 以降が対象です" title="このページの内容は NetBeans IDE 6.9 以降が対象です" >
+
+<ul>
+
+<li><a href="#intro" title="待機画面コンポーネントの動作方法">待機画面コンポーネントの動作方法</a></li>
+<li><a href="#sample" title="サンプルアプリケーションのインストールと実行">サンプルアプリケーションのインストールと実行</a></li>
+<li><a href="#creating" title="待機画面カスタムコンポーネントを使用したモバイルアプリケーションの作成">待機画面カスタムコンポーネントを使用したモバイルアプリケーションの作成</a>
+<ul>
+    <li> <a href="#create">WaitScreenExample プロジェクトの作成</a> </li>
+    <li><a href="#add">MyWaitScreen プロジェクトへのパッケージとビジュアル MIDlet の追加</a></li>
+    <li><a href="#addcomponent">MyWaitScreenMIDlet へのコンポーネントの追加</a></li>
+    <li><a href="#addimage">画像リソースの追加</a></li>
+    <li><a href="#addcomponents">了解コマンド、戻るコマンド、および終了コマンドをテキストボックスコンポーネントと待機画面コンポーネントに追加</a></li>
+    <li><a href="#createflow">アプリケーションフローの作成</a></li>
+    <li><a href="#backgroundtask">待機画面のバックグラウンドタスクの作成</a></li>
+    <li><a href="#run">プロジェクトの実行</a></li>
+  </ul></li>
+  <li><a href="#javadoc-waitscreen">待機画面コンポーネントと簡易取消可能タスクコンポーネントの Javadoc</a></li>
+  <li><a href="#seealso" title="関連項目">関連項目</a></li>
+</ul>
+
+<p><b>このチュートリアルを完了するには、次のソフトウェアとリソースが必要です。</b></p>
+
+<table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                <th class="tblheader" scope="col">必須バージョン</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE と Java ME</a></td>
+                <td class="tbltd1">version 6.9 以降</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit</a> (JDK)</td>
+                <td class="tbltd1">version 6 または version 7</td>
+            </tr>      
+        </tbody>
+</table>
+<h2><a name="intro"></a>待機画面コンポーネントの動作方法</h2>
+<p> 待機画面コンポーネントのためのバックグラウンドタスクの作成には、2 種類の方法があります。<code>取消可能タスク</code>インタフェースを実装するクラスを記述するか、または<code>簡易取消可能タスク</code>リソースを使用できます。<code>setTask()</code> メソッドを使用して、バックグラウンドタスクを待機画面に割り当てることができます。 </p>
+  <p>待機画面コンポーネントでは、バックグラウンドタスクの完了時に、表示可能な別のオブジェクトへの切り替えが自動的に行われます。タスクが正常に終了した場合、待機画面は <code>setNextDisplayable()</code> メソッドによって提供される画面に切り替わります。タスクが正常に終了しなかった場合、待機画面は <code>setFailureDisplayable()</code> メソッドによって提供される画面に切り替わります。デフォルトの表示可能なオブジェクトが設定されていない場合、待機画面は <code>setNextDisplayable()</code> メソッドで指定される画面に切り替わります。次に表示可能な画面が設定されていない場合、待機画面は以前に表示された画面に戻ります。 </p>
+  <p>このコンポーネントは、MIDP 2.0 デバイスプロファイルがサポートされたアプリケーションでのみ使用できます。</p>
+  <p class="align-center"><a href="#top">ページの先頭へ</a></p>
+<h2><a name="sample"></a>サンプルアプリケーションのインストールと実行</h2>
+<div class="indent"> 始める前に、チュートリアルの最終結果を確認します。 
+  <p>次の手順で waitscreenexample サンプルアプリケーションをインストールします。</p>
+  <ol>
+    <li> <a href="https://netbeans.org/projects/samples/downloads/download/Samples/Mobile/WaitScreenExample.zip">WaitScreenExample.zip</a> をダウンロードします。</li>
+    <li> ファイルを展開します。 </li>
+    <li> IDE で、「<tt>ファイル</tt>」&gt;「<tt>プロジェクトを開く</tt>」を選択し、展開したファイルがあるフォルダを選択します。 </li>
+    <li>「プロジェクトを開く」をクリックします。<br>「プロジェクト」ビューは次のように表示されるはずです。 
+    <p class="align-center"><img src="../../../images_www/articles/71/mobility/waitscreen/ws-project-window.png" alt="WaitScreenExample ファイルが表示された「プロジェクト」ウィンドウ" border=1> 
+    </p> </li>
+    <li>「プロジェクト」ウィンドウでプロジェクトノードを右クリックし、「実行」を選択します (または F6 キーを押す)。アプリケーションが実行されると、エミュレータウィンドウが開き、デフォルトのデバイスエミュレータでアプリケーションが実行されるところが表示されます。 </li>
+    <li>「エミュレータ」ウィンドウで「起動」の下のボタンをクリックします。エミュレータに NetBeans Web サイトの URL アドレスである http://netbeans.org が表示されます。</li>
+    <li>「OK」の下のボタンをクリックします。通信時間を使用してよいかどうかを尋ねる画面が表示されます。 </li>
+    <li>「Yes」の下のボタンをクリックして続行します。エミュレータで Web サイトへの接続が試行され、待機画面が表示されます。 
+ <p class="align-center"> <img src="../../../images_www/articles/71/mobility/waitscreen/ws-emulator.png" alt="サンプル待機画面アプリケーションが表示された DefaultColorPhone エミュレータ" border=1> </p>
+    </li>
+    <li>エミュレータを接続したら、アプリケーションを閉じます。 </li>
+  </ol>
+</div>
+
+<p class="align-center"><a href="#top">ページの先頭へ</a></p>
+<h2><a name="creating"></a>待機画面カスタムコンポーネントを使用したモバイルアプリケーションの作成 </h2>
+<div class="indent"> 
+<p>待機画面コンポーネントが動作するところを確認できたので、最初に戻ってこのアプリケーションを作成します。アプリケーションを作成するには、次の手順を実行します。 </p>
+  <ol>
+    <li> <a href="#create">WaitScreenExample プロジェクトの作成</a> </li>
+    <li><a href="#add">MyWaitScreen プロジェクトへのパッケージとビジュアル MIDlet の追加</a></li>
+    <li><a href="#addcomponent">MyWaitScreenMIDlet へのコンポーネントの追加</a></li>
+    <li><a href="#addimage">画像リソースの追加</a></li>
+    <li><a href="#addcomponents">了解コマンド、戻るコマンド、および終了コマンドをテキストボックスコンポーネントと待機画面コンポーネントに追加</a></li>
+    <li><a href="#createflow">アプリケーションフローを作成</a></li>
+    <li><a href="#backgroundtask">待機画面のバックグラウンドタスクの作成</a></li>
+    <li><a href="#run">プロジェクトを実行する</a></li>
+  </ol>
+  <p class="notes"><strong>注:</strong> このプロジェクトを作成する前に、前の手順で実行した WaitScreenExample のサンプルプロジェクトを必ず終了または削除してください。NetBeans IDE では、同じ名前のプロジェクトを同時に開くことはできません。 </p>
+</div>
+<div class="indent"> 
+  <h3 class="tutorial">WaitScreenExample プロジェクトの作成<a name="create"></a></h3>
+  <ol>
+    <li> 「<tt>ファイル</tt>」&gt;「<tt>新規プロジェクト</tt>」(Ctrl-Shift-N) を選択します。「カテゴリ」から「<tt>Java ME</tt>」を選択します。「プロジェクト」で「<tt>モバイルアプリケーション</tt>」を選択して、「次へ」をクリックします。 </li>
+    <li> 「プロジェクト名」フィールドに「<code>WaitScreenExample</code>」と入力します。「プロジェクトの場所」をシステム上の任意のディレクトリに変更します。このディレクトリを <tt>$PROJECTHOME</tt> とします。 </li>
+    <li> 「Hello MIDlet を作成」チェックボックスの選択を解除します。「次へ」をクリックします。 </li>
+    <li> 「エミュレータプラットフォーム」は、「Sun Java Wireless Toolkit 2.5.2」を選択したままにしておきます。「完了」をクリックします。 </li>
+    <!--li> Click Finish. The project folder contains all of your sources and project metadata, such as the project Ant script. The application itself is displayed in the Flow Design window of the Visual Mobile Designer. </li-->
+  </ol>
+  <h3 class="tutorial">WaitScreenExample プロジェクトへのパッケージとビジュアル MIDlet の追加<a name="add"></a></h3>
+  <ol>
+    <li> 「プロジェクト」ウィンドウで <code>WaitScreenExample</code> プロジェクトを選択し、「<tt>ファイル</tt>」&gt;「<tt>新規ファイル</tt>」(Ctrl-N) を選択します。「カテゴリ」から「Java」を選択します。「ファイルの種類」として「Java パッケージ」を選択します。「次へ」をクリックします。 </li>
+    <li> 「パッケージ名」フィールドに「<code>waitscreenexample</code>」と入力します。「完了」をクリックします。 </li>
+    <li> 「プロジェクト」ウィンドウで <code>waitscreenexample</code> パッケージを選択し、「<tt>ファイル</tt>」&gt;「<tt>新規ファイル</tt>」(Ctrl-N) を選択します。「カテゴリ」にある「MIDP」を選択します。「ファイルの種類」として「ビジュアル MIDIlet」を選択します。「次へ」をクリックします。 </li>
+      <li> 「MIDlet 名」フィールドと「MIDP クラス名」フィールドに「<code>MyWaitScreenMidlet</code>」と入力します。「完了」をクリックします。 </li>
+  </ol>
+  <h3 class="tutorial">MyWaitScreenMidlet へのコンポーネントの追加<a name="addcomponent"></a></h3>
+  <p>「ビジュアル MIDlet」を選択してビジュアルモバイルデザイナ (VMD) を開きます。VMD ウィンドウ最上部の「フロー」ビューをクリックしてフローデザイナを開き、ここでアプリケーションフローを設計します。 </p>
+  <ol>
+    <li> ビジュアル MIDlet を「フロー」ビューに切り替えます。次の画面コンポーネントをコンポーネントパレットからドラッグし、フローデザイナにドロップします。 
+    
+    <ul>
+      <li> 
+        <div class="indent"> テキストボックス</div>
+      </li>
+      <li> 
+        <div class="indent">待機画面</div>
+      </li>
+      <li> 
+        <div class="indent">リスト</div>
+      </li>
+      <li> 
+        <div class="indent">警告 
+        </div>
+      </li>
+    </ul></li>
+    <li>「<tt>textBox</tt>」を選択します。コンポーネントパレットの下の「プロパティー」ウィンドウで、「タイトル」プロパティーを「<code>Text Box</code>」に変更します。</li>
+    <li>次のコンポーネントに対し、同じ操作を実行してタイトルを変更します。      
+      <ul>
+        <li> 
+          <div class="indent"><tt>waitScreen</tt> を「<code>Wait Screen</code>」に変更</div>
+        </li>
+        <li> 
+          <div class="indent"><tt>list</tt> を「<code>List</code>」に変更</div>
+        </li>
+        <li> 
+          <div class="indent"><tt>alert</tt> を「<code>Alert</code>」に変更</div>
+        </li>
+      </ul>
+    </li>
+    <li>次の各コンポーネントに対して、プロパティーの値を使用します。  
+      <ul>
+        <li> 
+          <div class="indent"><tt>textBox</tt> のテキストプロパティーを「<code>http://netbeans.org</code>」に変更</div>
+        </li>
+        <li> 
+          <div class="indent"><tt>alert</tt> の文字列プロパティーを「<code>Connection Failed</code>」に変更</div>
+        </li>
+		<li> 
+          <div class="indent"><tt>WaitScreen</tt> のテキストプロパティーを「<code>Please Wait...</code>」に変更</div>
+        </li>
+      </ul>
+    </li>
+   
+  </ol>
+  <p>「フロー」ビューは、次の画像のように表示されるはずです。 </p>
+   <p class="align-center">
+					  <a href="../../../images_www/articles/71/mobility/waitscreen/ws-flowdesigner.png" rel="lytebox"
+                       title="コンポーネントのアイコンを持つ「フロー」ビュー"> <img src="../../../images_www/articles/71/mobility/waitscreen/ws-flowdesigner-small.png"
+                     alt="コンポーネントのアイコンを持つ「フロー」ビュー" border=1></a></p>
+  
+  <h3 class="tutorial">画像リソースの追加<a name="addimage" id="addimage"></a></h3>
+  <p>このセクションでは、待機画面と警告画面に使用する画像を追加します。 </p>
+  <ol>
+    <li><a href="../../../images_www/articles/71/mobility/waitscreen/alert.png">alert.png</a> ファイルと <a href="../../../images_www/articles/71/mobility/waitscreen/sandglass.png">sandglass.png</a> ファイルをダウンロードして <code>$PROJECTHOME/src/waitscreenexample</code> フォルダにコピーします。</li>
+    <li><tt>alert</tt> コンポーネントを右クリックし、ポップアップメニューから「プロパティー」を選択します。</li>
+    <li>「プロパティー」ダイアログボックスで、「画像」プロパティーの省略符号ボタン (<img src="../../../images_www/articles/71/mobility/waitscreen/ellipsis-button.png" border=1 alt="省略符号ボタン"  >) をクリックします。</li>
+    <li>「画像」ダイアログで「追加」をクリックします。<br>
+    <tt>image1</tt> コンポーネントが追加されます。</li>
+<li>「参照」をクリックし、「開く」ダイアログボックスで、コピーされた alert.png ファイルへのパスを指定します。</li>
+<li>「開く」をクリックします。<br>画像が追加されます。</li>
+<li>「了解」をクリックして「画像」ダイアログボックスを閉じます。</li>
+<li>「閉じる」をクリックして「プロパティー」ダイアログボックスを閉じます。<br>alert.png の画像は <tt>alert</tt> コンポーネントにバインドされます。</li>
+	
+	
+    
+    <li><tt>waitScreen</tt> コンポーネントについて、手順 2 から 8 を繰り返し、sandglass.png を <tt>image2</tt> として追加し、これをコンポーネントにバインドします。 </li>
+  </ol>
+</div> 
+<div class="indent"> 
+  <h3 class="tutorial">了解コマンド、戻るコマンド、および終了コマンドをテキストボックスコンポーネントと待機画面コンポーネントに追加<a name="addcommands" id="addcommands"></a></h3>
+  <ol>
+    <li>パレットの「コマンド」セクションで<tt>了解コマンド</tt>を選択します。これを <tt>textBox</tt> にドラッグ＆ドロップします。</li>
+    <li> パレットの「コマンド」セクションで<tt>戻るコマンド</tt>を選択します。これを <tt>list</tt> にドラッグ＆ドロップします。</li>
+    <li> パレットの「コマンド」セクションで<tt>終了コマンド</tt>を選択します。これを <tt>list</tt> にドラッグ＆ドロップします。</li>
+  </ol>
+  <h3 class="tutorial">アプリケーションフローの作成<a name="createflow" id="createflow"></a></h3>
+  <p>これで、アプリケーションフローを作成する準備ができました。</p>
+  <ol>
+    <li>「フロー」ビューで、モバイルデバイスの「<tt>起動</tt>」をクリックし、それを <tt>textBox</tt> コンポーネントまでドラッグします。</li>
+    <li>同様に、次の図に示すようにコンポーネントを接続します。 
+  
+  <p class="align-center">
+					  <a href="../../../images_www/articles/71/mobility/waitscreen/ws-flow.png" rel="lytebox"
+                       title="Mobile Device、textBox1、waitScreen、list、MobileDevice の順に接続されたフローデザイナ画面。エラーコマンドから alert に接続したあとで、list に接続する"> <img src="../../../images_www/articles/71/mobility/waitscreen/ws-flow-small.png"
+                     alt="Mobile Device、textBox1、waitScreen1、list、MobileDevice の順に接続されたフローデザイナ画面。エラーコマンドから alert に接続したあとで、list に接続する" border=1></a></p>
+  
+    </li>
+  </ol>
+  <h3 class="tutorial">待機画面のバックグラウンドタスクの作成<a name="backgroundtask" id="backgroundtask"></a></h3>
+  <ol>
+    <li>「フロー」ビューで、<tt>waitScreen</tt> コンポーネントを右クリックし、ポップアップメニューから「プロパティー」を選択します。</li>
+    <li>「プロパティー」ダイアログボックスで、「タスク」ドロップダウンメニューから <tt>&lt;NewCancellableTask&gt;</tt> を選択し、「閉じる」をクリックします。 <br> 
+    これで、<tt>simpleCancellableTask</tt> が <tt>waitScreen</tt> コンポーネントのバックグラウンドタスクになりました。</li>
+    <li>ビジュアルモバイルデザイナの最上部にある「ソース」ボタンをクリックして、アプリケーションのソースコードに切り替えます。 </li>
+    <li><code>MyWaitScreenMIDlet</code> ソースコードの <code>public void destroyapp(boolean unconditional) { }</code> のあとに次のコードをペーストすることによって、バックグラウンドタスク用のメソッドを追加します。
+    <pre class="examplecode">
+      private void getServerInfo() throws IOException {
+      String url = textBox.getString();
+      list.deleteAll();
+      /**
+      * HttpConnection を開く
+      */ 
+      HttpConnection hc = (HttpConnection) Connector.open(url);
+
+      /**
+      * 索引でヘッダーフィールドキーとヘッダーフィールドを
+      * 取得し、list に挿入する。
+      */
+      list.setTitle(hc.getURL());   
+      for (int i=0;hc.getHeaderFieldKey(i)!=null; i++){
+      list.insert(i,hc.getHeaderFieldKey(i)+&quot; :&quot;+hc.getHeaderField(i),null);       
+      }     
+      /**
+      * 終了時 ...
+      */
+      hc.close();
+      } 
+</pre></li>
+    <li>ソースコードを右クリックし、ポップアップメニューで「インポートを修正」を選択します (または、Ctrl+Shift+I キーを押します)。</li>
+	<li><tt>public class MyWaitScreenMidlet extends MIDlet implements CommandListener {</tt> 文字列 (18 行目) を見つけ、<tt>final</tt> を挿入すると、次のようになります。
+	<pre class="examplecode"> public final class MyWaitScreenMidlet extends MIDlet implements CommandListener {</pre></li>
+	<li>ソースコードから <tt>public MyWaitScreenMidlet()</tt> メソッドを見つけ (38 行目)、<tt>public MyWaitScreenMidlet() {</tt> のあとに次のコードを挿入します。<br>
+	<pre class="examplecode"> List list1 = getList();</pre> </li>
+    <li>「画面」をクリックして「画面」ビューに切り替え、<tt>SimpleCancellableTask</tt> を選択します。</li>
+	<li>「プロパティー」ウィンドウで、「<tt>実行可能コード</tt>」プロパティーの省略符号ボタン (<img src="../../../images_www/articles/71/mobility/waitscreen/ellipsis-button.png" border=1 alt="省略符号ボタン"  >) をクリックします。</li>
+	<li>「実行可能コード」ダイアログボックスで「ソースへ移動」をクリックします。</li>
+    <li>ソースコードから <tt>getSimpleCancellableTask()</tt> メソッドを見つけ (328 行目)、<tt>public void execute() throws Exception {</tt> のあとの <tt>// write task-execution user code here</tt> という場所に次のコードを挿入します。<br>
+	<pre class="examplecode"> getServerInfo();</pre></li> 
+  </ol>
+</div>
+<div class="indent"> 
+  <h3 class="tutorial">プロジェクトの実行<a name="run"></a></h3>
+  
+      <p>F6 キーを押して主プロジェクトを実行します。</p>
+      <p> 「実行」&gt;「主プロジェクトを実行」を選択する方法もあります。</p>
+    
+ 
+</div>
+<p class="align-center"><a href="#top">ページの先頭へ</a></p>
+<div class="indent"> 
+<a name="javadoc-waitscreen"></a>
+  <h2>待機画面コンポーネントと簡易取消可能タスクコンポーネントの Javadoc</h2>
+  <P>NetBeans IDE には、VMD で使用できるほかのコンポーネントと同様に、<tt>待機画面</tt>コンポーネントや<tt>簡易取消可能タスク</tt>コンポーネントに関する API Javadoc が用意されています。<tt>待機画面</tt>コンポーネントおよび<tt>簡易取消可能タスク</tt>コンポーネントの Javadoc を表示するには、次の手順を実行します。</P>
+  <OL>
+<li>ソースコードの<tt>待機画面</tt>コンポーネントまたは<tt>簡易取消可能タスク</tt>コンポーネントにカーソルを合わせ、Ctr-Shift- スペースキーを押します (または「<tt>ソース</tt>」&gt;「<tt>ドキュメントを表示</tt>」を選択します)。<br>
+この要素の Javadoc がポップアップウィンドウに表示されます。 </li>
+<li>ポップアップウィンドウで「外部 Web ブラウザにドキュメントを表示」アイコン (<img src="../../../images_www/articles/71/mobility/smscomposer/show-doc-button.png" alt="「外部 Web ブラウザにドキュメントを表示」">) をクリックすると、<tt>待機画面</tt>コンポーネントまたは<tt>簡易取消可能タスク</tt>コンポーネントについての詳細な情報がブラウザに表示されます。</li>
+
+	
+</OL>
+</div>
+
+<p class="align-center"><a href="#top">ページの先頭へ</a></p>
+ <div class="feedback-box"><a href="/about/contact_form.html?to=6&subject=VMD%20Custom%20Components:%20Creating%20Wait%20Screens">ご意見をお寄せください</a>
+  </div>
+  <br style="clear:both;" >
+   <br>
+<h2><a name="seealso"></a>関連項目</h2>
+  <ul>
+    <li><a href="smscomposer.html">ビジュアルモバイルデザイナのカスタムコンポーネント: SMS コンポーザアプリケーション</a></li>
+    <li><a href="filebrowser.html">ビジュアルモバイルデザイナのカスタムコンポーネント: モバイルデバイスのファイルブラウザの作成</a></li>
+    <li><a href="pimbrowser.html">ビジュアルモバイルデザイナのカスタムコンポーネント: PIM (Personal Information Manager) アプリケーションの作成</a></li>
+    <li><a href="loginscreen.html">ビジュアルモバイルデザイナのカスタムコンポーネント: モバイルログイン画面の作成</a></li>
+    <li><a href="splashscreen.html">ビジュアルモバイルデザイナのカスタムコンポーネント: Java ME アプリケーションでのスプラッシュ画面の使用</a></li>
+    <li><a href="tableitem.html">ビジュアルモバイルデザイナのカスタムコンポーネント: Java ME アプリケーションでの表項目の使用</a></li>
+    <li><a href="http://wiki.netbeans.org/VisualMobileDesignerPalatteReference">参照: ビジュアルモバイルデザイナのパレットのガイド</a></li>
+  </ul>
+  <p class="align-center"><a href="#top">ページの先頭へ</a></p>
+</body>
+</html>

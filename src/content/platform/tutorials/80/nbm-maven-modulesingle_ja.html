@@ -1,0 +1,434 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Maven を使用した NetBeans モジュールの作成</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="AUDIENCE" content="NBUSER"/>
+    <meta name="TYPE" content="ARTICLE"/>
+    <meta name="EXPIRES" content="N"/>
+    <meta name="indexed" content="y"/>
+    <meta name="description" content="A short demonstration of how to use Maven to create and run a NetBeans Platform Module Suite."/>
+    <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+<body>
+
+    <h1>Maven を使用した NetBeans モジュールの作成</h1>
+
+    <p>このドキュメントでは、Maven 原型から NetBeans モジュールプロジェクトを作成し、モジュールを構築して IDE のインストール構成にインストールする方法を示します。このチュートリアルでは、インストールするとプロジェクトに新しいファイルの種類が作成できるようになる、簡単なモジュールプロジェクトを作成します。このモジュールは、新しいファイルの種類を選択したときに使用できるようになるメニューアクションも作成します。
+    </p>
+
+    <p>このドキュメントは、Ant ベースの「<a href="https://platform.netbeans.org/tutorials/nbm-filetype_ja.html">NetBeans ファイルの種類のチュートリアル</a>」に基づいており、NetBeans モジュールの開発において、Ant を使用する場合と Maven を使用する場合の違いについていくつか説明します。これらの相違点を少し理解すれば、「<a href="https://netbeans.org/kb/trails/platform_ja.html">NetBeans プラットフォームの学習</a>」のチュートリアルを容易に理解できるようになります。</p>
+
+    <p class="tips">NetBeans プラットフォームをはじめて使用する場合は、スクリーンキャストシリーズの「<a href="https://platform.netbeans.org/tutorials/nbm-10-top-apis.html">NetBeans API のトップ 10</a>」を視聴いただくことをお勧めします。</p>
+
+    <p><b>目次</b></p>
+    <p><img src="../images/articles/74/netbeans_stamp_74_73_72.png" class="stamp" width="114" height="114" alt="このページの内容は NetBeans IDE 6.5、6.7、および 6.8 が対象です" title="このページの内容は NetBeans IDE 6.5、6.7、および 6.8 が対象です" /></p>
+
+    <ul class="toc">
+        <li><a href="#config">IDE での Maven の使用方法</a>
+            <ul>
+            <li><a href="#config1">Maven オプションの構成</a></li>
+            <li><a href="#config2">Maven リポジトリの表示</a></li>
+            </ul></li>
+        <li><a href="#01">NetBeans プラットフォームモジュールプロジェクトの作成</a>
+            <ul>
+            <li><a href="#01a">モジュールの作成</a></li>
+            <li><a href="#01b">DataObject クラスの作成</a></li>
+            </ul>
+        </li>
+        <li><a href="#02">モジュールプロジェクトの構築および実行</a>
+            <ul>
+            <li><a href="#02a">NetBeans インストールの場所の指定</a></li>
+            <li><a href="#02b">モジュールの実行</a></li>
+            </ul>
+        </li>
+        <li><a href="#03">ファイルの種類のアクションの追加</a>
+            <ul>
+            <li><a href="#03a">アクションクラスの作成</a></li>
+            <li><a href="#03b">アクションへの動作の割り当て</a></li>
+            </ul>
+        </li>
+        <li><a href="#04">ファイルの種類のウィンドウの作成</a></li>
+        <li><a href="#05">マルチビューウィンドウの作成</a></li>
+      </ul>
+
+<p><b>このチュートリアルを行うには、次の表に示すソフトウェアおよびリソースが必要です。</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                <th class="tblheader" scope="col">必須バージョン</th>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://download.netbeans.org/">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.9</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">version 6</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://maven.apache.org/">Maven</a></td>
+                <td class="tbltd1">version 2.0.9 以降</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><strong class="notes">注:</strong> NetBeans プラットフォーム用のアプリケーション開発のために、別々のバージョンの NetBeans プラットフォームをダウンロードする必要はありません。通常、NetBeans IDE でアプリケーションおよびモジュールを開発し、NetBeans プラットフォームおよびアプリケーションを実行するのに必要なモジュールのみを追加します。</p>
+
+    <p>このチュートリアルを開始する前に、必要に応じて次のドキュメントをお読みください。</p>
+    <ul>
+        <li><a href="http://wiki.netbeans.org/MavenBestPractices">NetBeans 6.x での Apache Maven のベストプラクティス</a></li>
+        <li><a href="http://www.sonatype.com/books/maven-book/reference/introduction.html">Chapter 1. Introducing Apache Maven</a> (『<a href="http://www.sonatype.com/books/maven-book/reference/public-book.html">Maven: The Definitive Guide</a>』)</li>
+        <li><a href="https://netbeans.org/kb/docs/java/gui-functionality_ja.html">GUI 構築入門</a></li>
+    </ul>
+
+
+
+
+
+
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++ Configuring Maven +++++++++++++++++++++++++++++++++ -->
+
+    <h2><a name="config"></a>IDE での Maven の使用方法</h2>
+    <p>これがはじめての Maven プロジェクトである場合は、Maven の構成設定および Maven リポジトリブラウザに慣れることをお勧めします。</p>
+
+    <div class="indent">
+        <a name="config1"></a>
+        <h3>Maven オプションの構成</h3>
+        <p>「オプション」ウィンドウの「Maven」タブを使用して、IDE における Maven の動作を設定したり、設定が正しいかどうかを確認したりできます。</p>
+
+        <ol>
+            <li>「オプション」ウィンドウの「その他」カテゴリを選択して、「Maven」タブをクリックします。</li>
+            <li>Maven をインストールするローカルの場所を指定します (2.0.9 以降が必要)。</li>
+            <li>Maven のローカルリポジトリの場所が正しいことを確認します。</li>
+            <li>「了解」をクリックします。</li>
+        </ol>
+        <p>ほとんどの場合、Maven の設定が標準的であれば、「オプション」ウィンドウの情報はすでに正しいものになっています。</p>
+
+        <p class="notes"><strong>注:</strong> Maven サポートは、Java SE 機能セットの一部として有効になっています。「オプション」ウィンドウで「Maven」タブが使用できない場合は、Java アプリケーションを作成して Java SE が有効になっているか確認してください。</p>
+
+        <h3><a name="config2"></a>Maven リポジトリの表示</h3>
+        <p>Maven ですべてのプロジェクトを構築するために使用されるアーティファクトは、Maven のローカルリポジトリに格納されます。アーティファクトがプロジェクトの依存リソースとして宣言されると、そのアーティファクトは登録されたリモートリポジトリの 1 つからローカルリポジトリにダウンロードされます。</p>
+
+        <p>デフォルトで、NetBeans リポジトリおよびよく知られているインデックス付きの Maven リポジトリがいくつか登録され、リポジトリブラウザウィンドウに一覧表示されます。NetBeans リポジトリには、プロジェクトの構築に必要な、ほとんどの公開アーティファクトが含まれています。Maven リポジトリブラウザを使用すると、ローカルリポジトリとリモートリポジトリの内容を確認することができます。「ローカルリポジトリ」ノードを展開すると、ローカルにあるアーティファクトを表示できます。NetBeans リポジトリノードの下に一覧表示されているアーティファクトは、プロジェクトの依存リソースとして追加できますが、すべてのアーティファクトがローカルにあるわけではありません。これらはプロジェクトの依存リソースとして宣言されたときにだけ、ローカルリポジトリに追加されます。</p>
+
+        <p>Maven リポジトリブラウザを開くには、次の手順に従います。</p>
+        <ul>
+            <li>メインメニューから「ウィンドウ」&gt;「その他」&gt;「Maven リポジトリブラウザ」を選択します。<br/>
+            <img src="../images/tutorials/maven-quickstart68/maven-nbm-netbeans-repo.png" alt="Maven リポジトリブラウザのスクリーンショット" title="Maven リポジトリブラウザのスクリーンショット" class="margin-around b-all"  />
+
+            </li>
+        </ul>
+    </div>
+
+
+    <!-- =================================================================== -->
+    <!-- ++++++++++++++++++++++ Creating the Module ++++++++++++++++++++++++ -->
+
+    <h2><a name="01"></a>NetBeans プラットフォームモジュールプロジェクトの作成</h2>
+    <p>この節では、NetBeans モジュールプロジェクトを作成してから、新しいファイルの種類のための DataObject を作成します。</p>
+    <div class="indent">
+        <h3><a name="01a"></a>モジュールの作成</h3>
+        <p>この課題では、「新規プロジェクト」ウィザードを使用して、Maven 原型から NetBeans モジュールプロジェクトを作成します。</p>
+        <ol>
+            <li>「新規プロジェクト」ウィザードを開き、「Maven」カテゴリから「Maven NetBeans モジュール」を選択します。「次へ」をクリックします。</li>
+            <li>「プロジェクト名」に「<strong>AbcFileType</strong>」と入力します。「完了」をクリックします。</li>
+        </ol>
+        <p>「完了」をクリックすると、IDE によって AbcFileType プロジェクトが作成されます。POM を見ると、Maven が <tt><a href="http://maven.apache.org/plugins/maven-jar-plugin/">maven-jar-plugin</a></tt> を使用して JAR を構築し、<tt><a href="http://mojo.codehaus.org/nbm-maven-plugin/">nbm-maven-plugin</a></tt> が NetBeans モジュール (<tt>nbm</tt>) として JAR をパッケージ化することが確認できます。</p>
+    
+        <pre class="examplecode">    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+    &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+    &lt;artifactId&gt;AbcFileType&lt;/artifactId&gt;
+    <strong>&lt;packaging&gt;nbm&lt;/packaging&gt;</strong>
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+    &lt;name&gt;AbcFileType NetBeans Module&lt;/name&gt;
+    ...
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+                <strong>&lt;artifactId&gt;nbm-maven-plugin&lt;/artifactId&gt;</strong>
+                &lt;extensions&gt;true&lt;/extensions&gt;
+            &lt;/plugin&gt;
+            ...
+            &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                <strong>&lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;</strong>
+                &lt;version&gt;2.2&lt;/version&gt;
+                &lt;configuration&gt;
+                    &lt;!-- to have the jar plugin pickup the nbm generated manifest --&gt;
+                    &lt;useDefaultManifestFile&gt;true&lt;/useDefaultManifestFile&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;</pre>
+
+        
+
+
+        <h3><a name="01b"></a>DataObject クラスの作成</h3>
+
+        <p>この節では、「新規ファイルの種類」ウィザードを使用して、<tt>.abc</tt> という名前の新しいファイルの種類を作成および認識するためのファイルを作成します。このウィザードは、MIME タイプリゾルバである <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/DataObject.html">DataObject</a></tt> および <tt>abc</tt> ファイルのファイルテンプレートを作成し、新しいファイルの種類の登録エントリを追加するように <tt>layer.xml</tt> を変更します。</p>
+
+        <ol>
+            <li>「プロジェクト」ウィンドウでプロジェクトノードを右クリックし、「新規」&gt;「ファイルの種類」を選択します。</li>
+            <li>「ファイルの認識」パネルで、「MIME タイプ」に「<strong>text/x-abc</strong>」、「ファイル名の拡張子」に「<strong>.abc .ABC</strong>」を入力します。「次へ」をクリックします。<br/>
+            <img src="../images/tutorials/maven-single/maven-single-new-filetype-wizard.png" alt="「新規ファイルの種類」ウィザードのスクリーンショット" title="「新規ファイルの種類」ウィザード" class="margin-around b-all"  />
+            </li>
+            <li>「クラス名の接頭辞」に「<strong>Abc</strong>」と入力します。</li>
+            <li>「参照」をクリックして、16x16 ピクセルの画像ファイルを新しいファイルの種類のアイコンとして選択します。「完了」をクリックします。
+                <p class="tips">この画像 <tt><a href="../images/tutorials/maven-crud/abc16.png">abc16.png</a></tt> (<img src="../images/tutorials/maven-crud/abc16.png" alt="16x16 アイコン画像 " title="16x16"  />) をシステムに保存して、ウィザードでこの画像を指定することもできます。</p>
+            </li>
+        </ol>
+
+
+        <p>「完了」をクリックすると、IDE によって <tt>AbcDataObject</tt> クラスが作成され、指定したファイルの種類のアイコンが、「その他のソース」の下の <tt>src/main/resources</tt> のパッケージにコピーされます。<br/>
+        <img src="../images/tutorials/maven-single/maven-single-projects1.png" alt="「プロジェクト」ウィンドウのスクリーンショット" title="「プロジェクト」ウィンドウのスクリーンショット" class="margin-around b-all"  />
+
+        </p>
+        <p>「プロジェクト」ウィンドウを見ると、ウィザードによって <tt>src/main/resources</tt> ディレクトリに MIME タイプリゾルバ (<tt>AbcResolver.xml</tt>) およびテンプレート (<tt>AbcTemplate.abc</tt>) ファイルが作成されているのが確認できます。</p>
+
+        <p class="tips">IDE によって作成されたファイルの詳細については、「<a href="http://wiki.netbeans.org/DevFaqDataObject">DataObject とは</a>」、および「<a href="nbm-filetype_ja.html">NBM ファイルの種類のチュートリアル</a>」の「<a href="nbm-filetype_ja.html#recognizing">Abc ファイルの認識</a>」節を参照してください。</p>
+
+
+    </div>
+
+
+
+    <!-- =================================================================== -->
+    <!-- ++++++++++++++++++++++ Running the  Module ++++++++++++++++++++++++ -->
+    <h2><a name="02"></a>プロジェクトの構築と実行</h2>
+
+    <p>この節では、現バージョンの IDE にモジュールがインストールされるように、モジュールを設定します。モジュールを実行すると、IDE の新しいインスタンスが起動します。 </p>
+
+    <div class="indent">
+        <h3><a name="02a"></a>NetBeans インストールの場所の指定</h3>
+        <p>Maven 原型を使用して NetBeans プラットフォームモジュールを作成した場合、デフォルトではターゲット NetBeans インストールは指定されません。プロジェクトを構築することはできますが、インストールディレクトリを設定せずにプロジェクトを実行しようとすると、「出力」ウィンドウに次のような構築エラーが表示されます。<br/>
+        <img src="../images/tutorials/maven-single/output-build-error.png" alt="構築エラーを表示する「出力」ウィンドウのスクリーンショット" title="構築エラーを表示する「出力」ウィンドウ" class="margin-around b-all"  />
+
+        </p>
+        <p>IDE のインストール場所にモジュールをインストールして実行するには、POM の <tt>nbm-maven-plugin</tt> 要素を編集して、インストールディレクトリのパスを指定する必要があります。</p>
+        <ol>
+            <li>「プロジェクトファイル」ノードを展開し、<tt>pom.xml</tt> をエディタで開きます。</li>
+            <li><tt>nbm-maven-plugin</tt> 要素に <tt>&lt;netbeansInstallation&gt;</tt> 要素を追加して、NetBeans インストール場所のパスを指定します。
+<pre class="examplecode">&lt;plugin&gt;
+    &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+    &lt;artifactId&gt;nbm-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;3.2&lt;/version&gt;
+    &lt;extensions&gt;true&lt;/extensions&gt;
+    <strong>&lt;configuration&gt;
+       &lt;netbeansInstallation&gt;/home/me/netbeans-6.9&lt;/netbeansInstallation&gt;
+    &lt;/configuration&gt;</strong>
+&lt;/plugin&gt;</pre>
+       <!-- &lt;descriptor&gt;src/main/nbm/module.xml&lt;/descriptor&gt; -->
+            <p class="notes"><strong>注:</strong> パスには、実行可能ファイルが含まれている <tt>bin</tt> ディレクトリが存在するディレクトリを指定する必要があります。</p>
+            <p>たとえば、OS X では次のようなパスになります。</p>
+            <pre class="examplecode">&lt;netbeansInstallation&gt;/Applications/NetBeans/NetBeans 6.9.app/Contents/Resources/NetBeans&lt;/netbeansInstallation&gt;</pre>
+            </li>
+        </ol>
+
+        <h3><a name="02b"></a>モジュールの実行</h3>
+        <p>NetBeans IDE インストールディレクトリを指定したら、モジュールを構築および実行できます。</p>
+        <ol>
+            <li>プロジェクトノードを右クリックし、「構築」を選択します。</li>
+            <li>プロジェクトのノードを右クリックし、「実行」を選択します。</li>
+        </ol>
+        <p>「実行」を選択すると、新しいモジュールがインストールされた IDE が起動します。新しいモジュールが正常に機能しているかどうかを確認するには、新しいプロジェクトを作成してから、「新規ファイル」ウィザードを使用して <tt>abc</tt> ファイルを作成します。たとえば、簡単な Java アプリケーションを作成して「新規ファイル」ウィザードを開くと、「その他」カテゴリで「空の Abc ファイル」を選択できます。</p>
+        <p class="tips">新しいファイルを作成する際、「プロジェクト」ウィンドウにファイルを表示するにはソースパッケージを指定します。デフォルトでは、「新規ファイルの種類」ウィザードは、プロジェクトのルートレベルにファイルを作成します。</p>
+        <p><img src="../images/tutorials/maven-single/wizard-new-abc-file.png" alt="Abc ファイルの種類が表示された「新規ファイル」ウィザードのスクリーンショット" title="Abc ファイルの種類が表示された「新規ファイル」ウィザード" class="margin-around b-all"  />
+        <br/>
+        新しい abc ファイルを作成したら、このファイルの種類のアイコンでファイルが「プロジェクト」ウィンドウに表示されているのが確認できます。エディタでファイルを開くと、新しいファイルの内容がファイルテンプレートから生成されたのが確認できます。<br/>
+        <img src="../images/tutorials/maven-single/maven-single-projects-abcfile.png" alt="「プロジェクト」ウィンドウの Abc ファイルとエディタ表示のスクリーンショット" title="「プロジェクト」ウィンドウの Abc ファイルとエディタ表示" class="margin-around b-all"  />
+        </p>
+    </div>
+
+
+
+    <!-- =================================================================== -->
+    <!-- +++++++++++++++++++++++ Adding an Action ++++++++++++++++++++++++++ -->
+    <h2><a name="03"></a>ファイルの種類のアクションの追加</h2>
+    <p>この節では、ユーザーが新しいファイルの種類のノードを右クリックしたときに、ポップアップメニューから呼び出せるアクションを追加します。</p>
+
+    <div class="indent">
+        <h3><a name="03a"></a>アクションクラスの作成</h3>
+        <p>この課題では、「新規アクション」ウィザードを使用して、新しいファイルの種類のアクションを実行する Java クラスを作成します。ウィザードは、<tt>layer.xml</tt> にもクラスを登録します。</p>
+        <ol>
+            <li>プロジェクトノードを右クリックし、「新規」&gt;「アクション」を選択します。</li>
+            <li>「アクションの種類」パネルで、「条件付きで有効化」を選択して、「Cookie クラス」に「<strong>com.mycompany.abcfiletype.AbcDataObject</strong>」と入力します。「次へ」をクリックします。<br/>
+            <img src="../images/tutorials/maven-single/maven-single-newactionwizard.png" alt="「新規アクション」ウィザードのスクリーンショット" title="「新規アクション」ウィザード" class="margin-around b-all"  />
+            </li>
+            <li>「カテゴリ」ドロップダウンリストから「編集」を選択して、「大域メニュー項目」を選択解除します。</li>
+            <li>「ファイルの種類のコンテキストメニュー項目」を選択して、「内容の種類」ドロップダウンリストで「<strong>text/x-abc</strong>」を選択します。「次へ」をクリックします。</li>
+            <li>「クラス名」に「<strong>MyAction</strong>」、「表示名」に「<strong>My Action</strong>」と入力します。「完了」をクリックします。</li>
+        </ol>
+        <p>「完了」をクリックすると、<tt>com.mycompany.abcfiletype</tt> ソースパッケージに <tt>MyAction.java</tt> が作成されます。エディタで <tt>layer.xml</tt> を開くと、<tt>Actions</tt> folder 要素内にある <tt>Edit</tt> folder 要素内で、ウィザードによってこのファイルの種類の新しいアクションの詳細情報が追加されているのが確認できます。</p>
+        <pre class="examplecode">
+&lt;folder name=&quot;Actions&quot;&gt;
+    &lt;folder name=&quot;Edit&quot;&gt;
+        <strong>&lt;file name=&quot;com-mycompany-abcfiletype-MyAction.instance&quot;&gt;</strong>
+            &lt;attr name=&quot;delegate&quot; methodvalue=&quot;org.openide.awt.Actions.inject&quot;/&gt;
+            &lt;attr name=&quot;displayName&quot; bundlevalue=&quot;com.mycompany.abcfiletype.Bundle#CTL_MyAction&quot;/&gt;
+            &lt;attr name=&quot;injectable&quot; stringvalue=&quot;com.mycompany.abcfiletype.MyAction&quot;/&gt;
+            &lt;attr name=&quot;instanceCreate&quot; methodvalue=&quot;org.openide.awt.Actions.context&quot;/&gt;
+            &lt;attr name=&quot;noIconInMenu&quot; boolvalue=&quot;false&quot;/&gt;
+            &lt;attr name=&quot;selectionType&quot; stringvalue=&quot;EXACTLY_ONE&quot;/&gt;
+            &lt;attr name=&quot;type&quot; stringvalue=&quot;com.mycompany.abcfiletype.AbcDataObject&quot;/&gt;
+        &lt;/file&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+        <p>また、<tt>Loaders</tt> および <tt>Factories</tt> folder 要素内にも、新しいファイルの種類に適用される要素がウィザードによって生成されています。<tt>abc</tt> のファイルの種類のメニューアクションは <tt>Actions</tt> の下に指定され、<tt>DataLoader</tt> は <tt>Factories</tt> の下に指定されます。</p>
+
+        <pre class="examplecode">
+&lt;folder name=&quot;Loaders&quot;&gt;
+    &lt;folder name=&quot;text&quot;&gt;
+        <strong>&lt;folder name=&quot;x-abc&quot;&gt;
+            &lt;folder name=&quot;Actions&quot;&gt;
+                &lt;file name=&quot;com-mycompany-abcfiletype-MyAction.shadow&quot;&gt;</strong>
+                    &lt;attr name=&quot;originalFile&quot; stringvalue=&quot;Actions/Edit/com-mycompany-abcfiletype-MyAction.instance&quot;/&gt;
+                    <strong>&lt;attr name=&quot;position&quot; intvalue=&quot;0&quot;/&gt;</strong>
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-CopyAction.shadow&quot;&gt;
+                    &lt;attr name=&quot;originalFile&quot; stringvalue=&quot;Actions/Edit/org-openide-actions-CopyAction.instance&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;400&quot;/&gt;
+                &lt;/file&gt;
+                ...
+            &lt;/folder&gt;
+            <strong>&lt;folder name=&quot;Factories&quot;&gt;
+                &lt;file name=&quot;AbcDataLoader.instance&quot;&gt;</strong>
+                    &lt;attr name=&quot;SystemFileSystem.icon&quot; urlvalue=&quot;nbresloc:/com/mycompany/abcfiletype/abc16.png&quot;/&gt;
+                    &lt;attr name=&quot;dataObjectClass&quot; stringvalue=&quot;com.mycompany.abcfiletype.AbcDataObject&quot;/&gt;
+                    &lt;attr name=&quot;instanceCreate&quot; methodvalue=&quot;org.openide.loaders.DataLoaderPool.factory&quot;/&gt;
+                    &lt;attr name=&quot;mimeType&quot; stringvalue=&quot;text/x-abc&quot;/&gt;
+                &lt;/file&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+
+        <p class="tips">ポップアップメニューの「My Action」の位置は、<tt>position</tt> 属性 (<tt>&lt;attr name=&quot;position&quot; intvalue=&quot;0&quot;/&gt;</tt>) によって指定されます。デフォルトでは、新しいアクションのこの属性の <tt>intvalue</tt> に <tt>0</tt> が割り当てられ、このアクションがリストの最上部に表示されます。順番を変えるには、<tt>intvalue</tt> を変更します。たとえば、<tt>intvalue</tt> を <tt>200</tt> に変更すると、「My Action」メニュー項目は「開く」メニュー項目の下に表示されます (「開く」アクションの <tt>intvalue</tt> は <tt>100</tt>)。</p>
+
+
+        <h3><a name="03b"></a>アクションへの動作の割り当て</h3>
+        <p>ここで、アクションのコードを追加する必要があります。この例では、ポップアップメニューからアクションが呼び出されたら、<tt>DialogDisplayer</tt> を使用してダイアログボックスを開くコードを追加します。また、<tt>DialogDisplayer</tt> を使用するために、<tt>org.openide.dialogs</tt> で直接依存リソースを宣言する必要もあります。</p>
+        <ol>
+            <li><tt>MyAction.java</tt> の <tt>actionPerformed(ActionEvent ev)</tt> メソッドを変更して、「My Action」が呼び出されるとダイアログを開くようにします。
+            <pre class="examplecode">@Override
+public void actionPerformed(ActionEvent ev) {
+   <strong>FileObject f = context.getPrimaryFile();
+   String displayName = FileUtil.getFileDisplayName(f);
+   String msg = &quot;This file is &quot; + displayName + &quot;.&quot;;
+   NotifyDescriptor nd = new NotifyDescriptor.Message(msg);
+   DialogDisplayer.getDefault().notify(nd);</strong>
+}</pre>
+            </li>
+            <li>インポートを修正して、<tt><strong>org.openide.filesystems.FileObject</strong></tt> がインポートされることを確認します。変更を保存します。
+            <p>インポートを修正したとき、<tt>org.openide.DialogDisplayer</tt> のインポート文を追加しました。ここで、<tt>org.openide.dialogs</tt> アーティファクトの依存リソースを、推移的な依存リソースではなく直接依存リソースと宣言する必要があります。</p></li>
+            <li>プロジェクトの「ライブラリ」ノードの下にある「<tt>org.openide.dialogs</tt>」JAR を右クリックして、「直接依存リソースとして宣言」を選択します。</li>
+        </ol>
+        <p>ここで、モジュールをテストして、新しいアクションが正常に機能するかどうかを確認できます。</p>
+        <p class="notes"><strong>注:</strong> モジュールを実行するには、最初にモジュールに対して「生成物を削除」および「構築」を実行する必要があります。</p>
+        <p><img src="../images/tutorials/maven-single/maven-single-action-popup.png" alt="「プロジェクト」ウィンドウの Abc ファイルとエディタ表示のスクリーンショット" title="「プロジェクト」ウィンドウの Abc ファイルとエディタ表示" class="margin-around b-all"  />
+        </p>
+        <p><tt>abc</tt> のファイルの種類のノードを右クリックすると、ポップアップメニュー項目の 1 つに「My Action」が表示されているのが確認できます。</p>
+    
+    </div>
+
+
+    <!-- =================================================================== -->
+    <!-- +++++++++++++++++++++++ Creating a Window +++++++++++++++++++++++++ -->
+
+    <h2><a name="04"></a>ファイルの種類のウィンドウの作成</h2>
+    <p>デフォルトでは、新しいファイルの種類は基本的なテキストエディタで開きます。新しいファイルの種類をエディタで開かないようにするには、新しいファイルの種類を編集するための専用の新しいウィンドウを作成します。そのあとで、ほかのファイル編集方法をサポートするためにウィンドウコンポーネントを変更できます。たとえば、ウィンドウをビジュアルエディタに変更できます。この節では、新しいファイルの種類専用の新しいウィンドウコンポーネントを作成します。</p>
+
+    <ol>
+        <li>プロジェクトノードを右クリックし、「新規」&gt;「ウィンドウ」を選択します。</li>
+        <li>ドロップダウンリストから「<strong>editor</strong>」を選択し、「アプリケーションの起動時に開く」を選択します。「次へ」をクリックします。</li>
+        <li>「クラス名の接頭辞」に「<strong>Abc</strong>」と入力します。「完了」をクリックします。</li>
+        <li>エディタで <tt>AbcDataObject.java</tt> を開き、<tt>DataEditorSupport</tt> ではなく <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/OpenSupport.html">OpenSupport</a></tt> を使用するようにクラスコンストラクタを変更します。
+        <pre class="examplecode">
+public AbcDataObject(FileObject pf, MultiFileLoader loader) throws DataObjectExistsException, IOException {
+    super(pf, loader);
+    CookieSet cookies = getCookieSet();
+    <strong>cookies.add((Node.Cookie) new AbcOpenSupport(getPrimaryEntry()));</strong>
+}</pre>
+        </li>
+        <li>コンストラクタによって呼び出される <tt>AbcOpenSupport</tt> クラスを作成します。
+        <p class="tips"><tt>AbcOpenSupport</tt> への呼び出しが含まれる行で Alt-Enter を入力すると、パッケージ <tt>com.mycompany.abcfiletype</tt> に <tt>AbcOpenSupport</tt> が作成されます。</p></li>
+        <li><tt>AbcOpenSupport</tt> を変更し、<tt>OpenSupport</tt> を拡張して <tt>OpenCookie</tt> および <tt>CloseCookie</tt> を実装します。
+        <pre class="examplecode">
+class AbcOpenSupport <strong>extends OpenSupport implements OpenCookie, CloseCookie</strong> {</pre>
+        </li>
+        <li>abstract メソッドを (Alt-Enter で) 実装して、クラスを次のように変更します。
+        <pre class="examplecode">
+    public AbcOpenSupport(<strong>AbcDataObject.Entry entry</strong>) {
+        <strong>super(entry);</strong>
+    }
+
+    @Override
+    protected CloneableTopComponent createCloneableTopComponent() {
+        <strong>AbcDataObject dobj = (AbcDataObject) entry.getDataObject();
+        AbcTopComponent tc = new AbcTopComponent();
+        tc.setDisplayName(dobj.getName());
+        return tc;</strong>
+    }</pre>
+        </li>
+        <li>エディタで <tt>AbcTopComponent</tt> を開き、<tt>TopComponent</tt> ではなく <tt>CloneableTopComponent</tt> を拡張するようにクラスを変更します。
+        <pre class="examplecode">public final class AbcTopComponent extends <strong>CloneableTopComponent</strong> {</pre>
+        </li>
+        <li>クラス修飾子を <tt>private</tt> から <tt>public</tt> に変更します。 
+        <pre class="examplecode"><strong>public</strong> static AbcTopComponent instance;</pre>
+        </li>
+        <li>インポートを修正して変更内容を保存します。</li>
+    </ol>
+    <p>ここで、プロジェクトに「生成物を削除」および「構築」を実行してから、ふたたびモジュールの実行を試行できます。<br/>
+    <img src="../images/tutorials/maven-single/maven-single-newfile-window.png" alt="「プロジェクト」ウィンドウの Abc ファイルとエディタ表示のスクリーンショット" title="「プロジェクト」ウィンドウの Abc ファイルとエディタ表示" class="margin-around b-all"  /></p>
+    <p>abc ファイルを開くと、基本エディタではなく、新しいウィンドウでファイルが開くようになりました。</p>
+
+
+
+
+
+
+    
+   
+    <!--<p>The project also contains other XML files containing metadata about the project such as <tt>profiles.xml</tt>.
+    The <tt>profiles.xml</tt> file specifies the path to the NetBeans installation and is used by the IDE when running the project.
+    -->
+    
+    <!--<p>Unlike the original Ant-based tutorial, you do not specify the platform installation in the wizard.
+    For Maven module suites you need to modify the <tt>&lt;netbeans.installation&gt;</tt> element in the profiles.xml file
+    and explicitly specify the path to the NetBeans platform installation. </p>
+    see https://netbeans.org/bugzilla/show_bug.cgi?id=185941.
+-->
+
+
+ 
+    <p>このチュートリアルでは、Maven 原型から NetBeans モジュールを作成して実行する方法を示しました。ターゲット NetBeans インストールを指定するようにプロジェクト POM を変更し、IDE の「実行」コマンドによってモジュールのインストールおよび IDE の新しいインスタンスの起動が行われるようにする方法を学習しました。また、ファイルの種類および <tt>DataObjects</tt> を扱う方法についても少し学習しましたが、より詳細な情報については、「<a href="https://platform.netbeans.org/tutorials/nbm-filetype_ja.html">NetBeans ファイルの種類のチュートリアル</a>」を参照するようにしてください。ほかの NetBeans プラットフォームアプリケーションおよびモジュール構築の例については、「<a href="https://netbeans.org/kb/trails/platform_ja.html">NetBeans プラットフォームの学習</a>」に一覧表示されている各チュートリアルを参照してください。</p>
+
+
+<!-- ======================================================================================== -->
+
+
+    <h2><a name="nextsteps"></a>関連項目</h2>
+
+    <p>アプリケーションの作成と開発の詳細については、次のリソースを参照してください。</p>
+    <ul>
+        <li><a href="https://netbeans.org/kb/trails/platform_ja.html">NetBeans プラットフォームの学習</a></li>
+        <li><a href="http://bits.netbeans.org/dev/javadoc/">NetBeans API Javadoc</a></li>
+    </ul>
+    <p>NetBeans プラットフォームに関して質問がある場合は、dev@platform.netbeans.org のメーリングリストに投稿していただくか、<a href="https://netbeans.org/projects/platform/lists/dev/archive">NetBeans プラットフォームメーリングリストのアーカイブ</a>を参照してください。</p>
+
+
+    <!-- ======================================================================================== -->
+
+
+
+</body>
+
+</html>

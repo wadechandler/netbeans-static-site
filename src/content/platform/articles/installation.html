@@ -1,0 +1,935 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <title>Installation Structure</title>
+    <link REL="StyleSheet" HREF="https://netbeans.org/netbeans.css" TYPE="text/css">
+    <meta name="TOPIC" content="platform_ide">
+    <meta name="TYPE" content="PROPOSAL">
+    <meta name="AUDIENCE" content="NBDEVELOPER">
+    <meta name="DESCRIPTION" content="NetBeans installation structure shall
+smoothly fit into operating system native packaging and shall
+support multiple products build on top of the NetBeans platform.">
+   <meta name="AUTHOR" content="jtulach@netbeans.org">
+</head>
+<body>
+
+<h1>Installation Structure</h1>
+
+<B>$Revision: 1.2 $</B>
+<BR>
+<B>Changes:</B> available in 
+<a href="https://netbeans.org/source/browse/platform/www/articles/installation.html">CVS</a>
+or in <a href="https://netbeans.org/source/browse/openide/www/proposals/arch/installation.html">older CVS</a>
+<BR>
+<!--
+<B>Status:  </B> Mostly implemented. Check <a href="status.html">status page</a> to get the details.
+-->
+
+<h3>Abstract:</H3>
+
+NetBeans installation structure shall
+smoothly fit into host operating system (the correct packaging) and shall
+support multiple products that are build on top of NetBeans platform and provide
+sufficient framework for compatible development of every product part. This document
+summaries the requirements and describes sample ways to achieve them. After reading
+it you should understand why the installation structure of NetBeans 4.x looks the
+way it looks and also realize what is the best structure and packaging
+for your NetBeans platform based product.
+<P>
+
+<HR>
+
+<h1>Requirements</H1>
+
+<OL>
+    <LI><a name="1bit">There is more <em>products</em> based on NetBeans</a> 
+    (NetBeans IDE, S1S Enterprise Product, S1S Mobile Product, NetAct, 
+    <a href="http://mc4j.sourceforge.net/">mc4j</a>, etc). 
+    That means more separate installations. But the installations shall
+    not duplicate any files, instead they shall share common files
+    between themselves as well as other components in the system.
+    <P>
+    <em>This means that we shall use system delivered <code>xerces</CODE>, 
+    <code>javahelp</CODE> and that there should be just one
+    <code>core.jar</code> and other NetBeans components installed.</em>
+    <P>
+    <LI><a name="layout">The layout of files shall match OS conventions</a>.
+    So bin shall contain just binaries, the files modifiable by system
+    administrator shall be in /etc directory, etc. See issue 
+    <a href="https://netbeans.org/bugzilla/show_bug.cgi?id=32080">32080</a>.
+    <P>
+
+    <LI><a name="reloc">Support for relocatable installations</a>.
+    <em>One shall be able to install the package on server and mount it 
+    on client machines (usually to different location)</EM>. That means the
+    installation cannot contain hardcoded fully qualified paths.
+    <P>
+
+    <LI><a name="compat">Handle incompatible versions</a>.
+    Evolution of any part of the product cannot hurt compatibility 
+    expectations of other parts. When a new version of NetBeans IDE Product
+    is installed, other products like Mobile Product has to continue 
+    to work.
+    <P>
+
+    <LI><a name="au">Relation to AutoUpdate</a>.
+    Different installation methods (RPM packages, AutoUpdate) shall not clash.
+    <P>
+
+</OL>
+
+<HR>
+
+<h1>Content</H1>
+
+<OL>
+   <LI> <a href="#supp">Supported Installation Scenarios</a>
+   <LI> <a href="#logical">Target systems and Logical Layout</a>
+   <LI> <a href="#launcher">Generic Launcher</a>
+   <LI> <a href="#versioning">Versioning of Clusters</a>
+   <LI> <a href="#real">Real Layouts</a>
+   <LI> <a href="#user">User Directory Layout</a>
+   <LI> <a href="#influence">Influence on other parts of the system</a>
+</OL>
+
+<H1><a name="supp">Supported Installation Scenarios</a></H1>
+
+There is a few different, disjoint, ways how NetBeans or any other product based
+on NetBeans can be installed:
+
+<OL>
+    <a name="installation-scenario-unix" ></a>
+    <LI> <b>(Recommended for most Unix users)</b> Install the appropriate packages
+    from your favorite update channel or downloaded from netbeans.org or
+    shipped to you on CD or whatever, in RPM format or similar. Run. If
+    updated packages become available, install them as you would any other
+    software on your operating system. If you like, get extra packages
+    from an "optional" set of less-frequently-used packages. All modules
+    included in the NetBeans Product you are running are enabled. (They had
+    better not do work on startup or suck up RAM or clutter the UI. If
+    they do, they are not product quality.)
+    <P>
+
+    <a name="installation-scenario-webstart" ></a>
+    <LI> <b>(Recommended for casual Windows users, and curious but noncommittal
+    Unix users)</b> Go to netbeans.org and click "Launch NetBeans in Web
+    Start". Have fun (this is under development). A big enterprise might also put a custom
+    configuration on their intranet (available 
+    at <a href="http://installer.netbeans.org/docs/jnlpInstaller.html">installer pages</a>).
+    <P>
+
+    <a name="installation-scenario-windows" ></a>
+    <LI> <b>(Recommended for most Windows users, some power Unix users, and NB
+    developers)</b> Download the ZIP (or .tar.gz or .tar.bz2 or perhaps .exe
+    installer) of NetBeans. Unpack and run. If you want to turn some
+    modules on or off, or get some new modules, or uninstall some modules,
+    or stick some modules in your user directory so you can try them
+    without making changes to your installation, etc., select Tools ->
+    Update Center and go for it.
+</OL>
+
+Each of this scenarios is targeted to a different set of users and provides some
+behaviour that other lacks (usage of native package manager, ability to launch
+from web browser, connection to autoupdate). Not all functionality is
+available in every scenario, there are things that we explicitly do not want to
+support:
+<UL>
+    <LI>Autoupdate and native packaging has to stay separated. It is not 
+    possible for autoupdate to modify or upgrade packages that have been
+    installed by native packager. Both methods can coexist
+    under the assumption that they both update completely different 
+    files/directories.
+    <P>
+
+    <LI>Any user-mode module management when using Web Start. If you click
+    on the .jnlp file, you get some enabled modules; take it or leave it.
+    If you want a different config, set one up - there should be tools
+    available for power users and sys admins to easily create customized
+    NB configurations for JNLP.
+    <P>
+
+    <LI>Explicit module management (Tools -> Options -> Modules) as part of
+    the core UI. This should be a feature of Auto Update, if that is
+    installed (i.e. on Windows or Unix in evaluation mode), and properly
+    integrated with the update functionality (so that Delete really
+    uninstalls NBMs, see issue <a href="https://netbeans.org/bugzilla/show_bug.cgi?id=20323">20323</a>, etc.).
+</UL>
+
+<H1>Solution</H1>
+
+<a name="logical"><H3>Target systems and Logical Layout</H3></a>
+
+We want to provide <em>RPM</em> packages for Linux, <em>Solaris</EM>
+packages for Solaris, some Windows installer and <em>WebStart</EM> support
+for direct download. These variation has to respect the OS rules, but 
+otherwise be as close as possible to each other to simplify crossplatform 
+maintanence problems. In order the hide the differences between various
+platforms and also to describe the common root for layout on each individual
+platform, we start with a definition of a <em>logical layout</em> of the
+idealized installation structure.
+<P>
+Because of the requirement to have different <em>products</em> based on NetBeans
+we have choosen a solution based on multiple installation directories
+(for discussion see 
+<a href="https://netbeans.org/bugzilla/show_bug.cgi?id=27151">issue 27151</a>).
+Different <em>products</em> are composed from a set of <em>clusters</EM>. 
+There will be a <em>NetBeans Platform</EM>, <em>NetBeans IDE</em>,
+<em>NetBeans Enterprise</em>,
+and <em>NetBeans Branding</em> clusters. They will then
+be composed into related products:
+<UL>
+    <LI><b>NetBeans IDE Product</b> - contains the base <em>NetBeans
+        Platform cluster</em>, two clusters providing the basic
+        IDE functionality - <em>NetBeans IDE cluster</em> and
+        <em>NetBeans Enterprise cluster</em>. Moreover it will have
+        its own branding and other non-library parts
+        in its own <em>NetBeans Branding</em> cluster.
+        <P>
+
+    <LI><b>Native Product</b> - contains <em>NetBeans
+        Platform cluster</em> and the <em>NetBeans IDE cluster</em>
+        but it does not include <em>NetBeans Enterprise cluster</EM>
+        as it does not need the functionality at all. The own additions
+        of the product are in its own <em>Native cluster</em>.
+</UL>
+
+Each cluster 
+has its own install directory (<code>$nbplatform</code>, <code>$nbide</CODE>,
+<code>$nbenterprise</code>,
+<code>$nbweb</CODE> and <code>$nbnative</code>) with a following structure:
+<UL>
+    <!-- No bin as it should be in Product RPM.
+    <LI><b>bin</b>: contains executables, does not contain
+    any subdirectories. 
+    <P>
+    -->
+    <LI><b>lib</B>: contains native JNI libraries and basic boot files.
+    The naming policy of
+    the libraries  is in hands of the modules, as that it has worked well enough till now. 
+    If it proves unsufficient following conventions shall
+    be obeyed: <em>There are subdirectories under the <code>lib</code> directory
+    that reflect the architecture (e.g. <code>i386</code>, obtained
+    via <code>System.getProperty ("os.arch")</code>) and possibly also
+    subdirectory identifying the system (e.g. <code>i386/linux</code>, obtained 
+    via <code>System.getProperty ("os.name").toLowerCase ()</code>). When the
+    system is looking for a particular library it scans the deepest directories
+    first and then the shallow ones (<code>lib/i386/linux</code>,
+    <code>lib/i386</code>, <code>lib</code>)</em>.
+    <P>
+    <LI><b>core</b>: contains JAR files that will be placed into the
+    dynamic system classpath when the NetBeans based system is starting. 
+    <P>
+    <LI><b>modules</b>: contains directories and subdirectories with
+    modules. Usual convention is to name module according to its code name
+    base (e.g. org.netbeans.modules.html will be in JAR file org-netbeans-modules-html.jar) 
+    and if the JAR uses <code>Class-Path</code> entry, then put such 
+    extension into <code>ext/</code> subdirectory.
+    <P>
+    <LI><b>config</b>: is a place where configuration data are being stored
+    like Modules/ directory, etc. A view of this directory is visible 
+    as <code>Repository.getDefaultFileSystem()</code> from inside running
+    NetBeans system. 
+    <P>
+    <LI><b>docs</b>: a directory dedicated to documentation, release info,
+    credits.
+</UL>
+Different clusters may contain additional directories under their
+<code>$nbcluster</code>. Their standardization is beyond the scope
+of this paper right now with the exception of generic platform launcher.
+
+<a name="launcher"><H3>Generic Launcher</H3></a>
+
+The <code>$nbplatform</code> cluster is guaranteed to contain 
+<code>$nbplatform/lib/nbexec</code> executable that is supposed to be used
+by final products. Example:
+<p>
+The NetBeans IDE product should provide its own executable
+<code>/usr/bin/netbeans</code> which will locate the 
+<code>$nbplatform/lib/nbexec</CODE> 
+(currently implemented here for 
+<a href="https://netbeans.org/source/browse/ide/launcher/unix/Attic/netbeans?showattic=1">unix</a>
+and here for 
+<a href="https://netbeans.org/source/browse/ide/launcher/windows/Attic/netbeans.cpp?showattic=1">windows</a>)
+executable, read their own configuration files, 
+find out locations of additional clusters and pass 
+<code>--clusters /pathto/nb4.0:/pathto/ide4:/pathto/enterprise7</code> 
+and
+<code>--userdir $HOME/.myproductuserdir</code> to it.
+
+<P>
+The Native Product should have its own launcher called 
+<code>netbeans-native</code> and
+read its own settings, specify its own user directory and list
+of clusters (probably <code>--clusters /pathto/ide6:/pathto/web9</code>
+as the Native product is extension of the base NetBeans IDE without the enterprise part) and 
+pass that information to the generic <code>$nbplatform/lib/nbexec</code>.
+    
+<h4>Configuring the Launcher</h4>
+
+The behaviour of <code>nbexec</code> launcher can be influenced by special
+arguments and environment variables:
+<UL>
+    <LI><b>--clusters</b> - specifies the paths to clusters that shall be 
+    placed on the execution stack (config, modules, configurations, etc.).
+    Individual elements are separated using 
+    <code>java.io.File.pathSeparator</CODE> so for example on Windows it is <q>;</Q>
+    and on Unix <q>:</q></i>
+    <p>
+    <LI><b>--branding</b> - gives the name of branding that shall be used
+    <p>
+    <LI><b>regular parameters</b> - these are end user oriented parameters
+    printed when invoked with --help option:
+    <pre>
+Usage: bin/../platform4/lib/nbexec {options} arguments
+
+General options:
+  --help                show this help
+  --jdkhome &lt;path>      path to Java(TM) 2 SDK, Standard Edition
+  -J&lt;jvm_option&gt;        pass &lt;jvm_option&gt; to JVM
+
+  --cp:p &lt;classpath&gt;    prepend &lt;classpath&gt; to classpath
+  --cp:a &lt;classpath&gt;    append &lt;classpath&gt; to classpath
+
+Core options:
+  --laf &lt;LaF classname&gt; use given LookAndFeel class instead of the default
+  --fontsize &lt;size&gt;     set the base font size of the user interface, in points
+  --locale &lt;language[:country[:variant]]&gt; use specified locale
+  --userdir &lt;path&gt;      use specified directory to store user settings
+    </pre>
+</UL>
+
+<HR>
+<a name="versioning"><h3>Versioning of Clusters</H3></a>
+
+As clusters evolve on a different schedule, 
+there comes a problem of <a href="#compat">compatibility</a>.
+Easy solution is to version location of each version of a cluster. 
+If the <code>$nbplatform</code> includes a revision in its name as for example
+<code>/opt/netbeans/platform3</code> it is easy to release new 
+incompatible version 4.0 and place it into
+<code>/opt/netbeans/platform4</code>. Other clusters then can depend
+on the right version of <code>$nbplatform</CODE>    
+as there can be more than one installed. This has the advantage of avoiding
+incompatibilies, but has the disadvantage of locking you into a release that
+may not have improvements that a newer release might give (performance?).
+The improvements are important, the compatibility even more. The following paragraphs 
+analyze and discuss the rules of compatible development and describe the solution
+that provides the right balance between compatibility and improvements adoption.
+If you are not interested
+in the discussion, just in the conclusion, you may <a href="#versioning-conclusion">jump right
+there</a>.
+
+<h4>Compatible development</H4>
+
+Let's start with simple example. Imagine that there is <em>Native Product
+1.0</em>
+and <em>Web Product 7.1</em> and that:
+<UL>
+    <LI><code>$nbnative</code> cluster (in the Native Product 1.0) needs
+        <code>debugger</code> major (incompatible) version 1 and minor x.y.z (as
+        it does not matter for this example)
+    <LI><code>$nbweb</code> (in the Web Product 7.1) needs <code>debugger</code>
+        major version 2 and minor a.b.c
+    <LI><code>debugger</code> module is provided by the base
+        <code>$nbjava</code>, version 4.3 delivers the <code>debugger</code> major
+        1 (minor u.v.r where u.v.r >= x.y.z so it satisfies the
+        requirements for Native Product 1.0)
+        and version 5.1 provides <code>debugger</CODE> major 2 (and some
+        specification version, which is not important)
+</UL>
+A client wants to use both the <em>Native</em> and <em>Web</EM> product at
+the same time. E.g. install both of them on the same computer, run them
+simultaneously (but not in the same VM) as two different applications. 
+As one product needs <code>debugger</code> major version 1 and second
+major version 2, that means both versions have to be installed at once.
+<P>
+<a name="compat-req-a"><b>Requirement A:</B></a> It is necessary to install more than one incompatible
+version at once. 
+<P>
+<i>Note:
+Version <code>3.1</code> of module <b>A</B> is 
+incompatible with version
+<code>2.8</code> if there exists a module <b>B</B> that depends and runs with
+version <code>2.8</code> of <b>A</B> and does not run with version <code>3.1</code>
+of module <b>A</b>
+(<a href="http://openide.netbeans.org/tutorial/api-design.html#api">more</a>).</I>
+<P>
+A possible solution is to encode the version (or at least major version) 
+of the module in the JAR file. So instead
+of <code>text.jar</code> the module would be named
+<code>debugger-1-1.32.jar</code>. Then multiple versions
+could be installed at once.
+Another possible solution is to place the JAR files into different directories.
+Which means to encode some version number in the directories itself. Again this
+satisfies the requirement that multiple incompatible versions can be installed at once.
+
+<h4>Packaging into RPMs</H4>
+
+Let's now discuss how the module or set of modules will be packaged into
+native package formats. Let's imagine that:
+<UL>
+    <LI>An RPM package <code>m.rpm</CODE> contains some files and also
+    <code>debugger</code> major version 1 and is delivered as part of 
+    the <em>Native Product 1.0</EM>.
+
+    <LI>Another RPM package <code>n.rpm</code> (does not matter whether it is
+    just a different version of <code>m.rpm</code> or has completely different
+    name) contains the <code>debugger</code> major version 2 and is 
+    delivered as part of <em>Web Product 7.1</EM>.
+</UL>
+
+As we have the <a href="#compat-req-a">requirement A</a> which asks for ability 
+to install two versions of the <code>debugger</CODE> at once, we can easily
+deduce that both RPM packages have to be able to coexist at once. But to enable that
+there has to be no conflict between files contained in them. 
+<P>
+<a name="compat-req-1"><b>Observation 1:</B></a> Regardless of the size of native packages, an incompatible
+change in one module means that other parts of the package has to change
+location (pretend incompatible change) as well.
+<P>
+This implies that if we package whole cluster into one RPM and there is an
+incompatible change in one module, which happens nearly every release, all files
+in the RPM has to change location in order to allow coexistence with the
+RPM of previous release. Well, if we do this, then it is better to include the 
+version number directly in the name of the directory, than uselessly mangle
+names of the modules.
+<P>
+
+<a name="compat-product-rpm"><h4>RPM for Product and RPMs for Clusters</H4></a>
+
+Imagine that we want to have the launcher for <em>NetBeans IDE Product</em> in a
+shared location (<code>/usr/bin</CODE>) and we want it to keep the same name
+when new releases are made (<code>/usr/bin/netbeans</code>). 
+<P>
+Can this launcher script be part of the same RPM that contains the
+<code>debugger</CODE> module? Due to <a href="#compat-req-1">observation 1</a>
+it would have to change its name or location if <code>debugger</code> or other
+part of the RPM would change incompatibly. 
+<P>
+That either means to include a version name in the launcher script
+(<code>netbeans35</code>) or keep it in separate RPM which only depends on
+other cluster RPMs.
+<P>
+Better seems to have own RPM for <em>Product</em> that just declares dependencies on
+RPMs for clusters, as this allows separation of compatibility versioning
+(<code>nbjava35-1.0.rpm</CODE> and <code>nbjava36-1.0.rpm</code>) that appear to
+the RPM management system as two different packages, the <em>user visible
+versioning</em> like
+<code>NetBeansIDEProduct-3.5.rpm</code> and
+<code>NetBeansIDEProduct-3.6.rpm</code> that will be treated as updates with
+proper notification. Of course this means to keep compatibility of the launcher script but
+that shall not be as hard nor too important.
+
+<a name="compat-ms"><h4>Impact on Module System</H4></a>
+
+As discussed in previous paragraphs it is possible and desirable to allow
+multiple (incompatible) versions of modules to be installed at once, but due to
+the nature of the system, these versions cannot be enabled at once in one runtime.
+<P>
+In some cases more than one version of the module could be enabled at once,
+but generally this is not possible. As many modules influence the content
+of system file system (via its layer) enabling two similar modules 
+would very likely lead 
+to unresovable clashes in their configuration resources. The module system
+would have to decide which of available versions enable and which not.
+<P>
+This is very similar to UNIX libraries. There can be more version of the same
+library available and different applications can link to the desired version.
+But no application can link to two versions of the library at once, as there
+would be conflicts in the symbol names, etc.
+<p>
+<b>Observation 2:</b>The module system then would need to be modified not 
+to get confused by a presence of more similar modules at once and 
+correctly enable the desired one. 
+<P>
+Moreover it is not exactly clear which version enable and which not. The
+expectation of the <em>Native Product 1.0</em> is to enable <code>debugger</CODE>
+ major 1, as whole product is build around that version. The expectation of 
+<em>Web Product 7.1</EM> are different. It needs <code>debugger</CODE> major 2. 
+How the system is going to know that? By counting the number of dependencies on
+version 1 and 2 and enabling the version that satisfies more modules? This is
+a situation without a winning strategy.
+<P>
+As the compatibility is more important than any possible benefits from new
+incompatible updates, it is better not to do any tricks in module system and
+leave the decision on writers and packagers of the system.
+
+<a name="compat-ext"><h4>External Contributions</H4></a>
+
+Because of the modular nature of NetBeans system it is common that there exists
+a lot of extensions written as modules to the basic functionality of any
+product. There can be a module enhancing the refactoring functionality in Java
+sources contributed by external team which is not part of the base release 
+of <em>NetBeans IDE Project</em>.
+There are two ways how such extension can be contributed and presented to user. 
+<UL>
+    <LI>One can create <b>own product</b>. That means to start with new
+        cluster <code>$javaext</code>, providing the search module and release
+        own product <em>NetBeans Extended IDE</em> that will include 
+        <code>$nbplatform</code>, <code>$nbjava</code>, <code>$nbxml</code> and 
+        <code>$javaext</code> clusters. This way is suitable for major 
+        contributions, simple extensions will rather use a second way.
+        <P>
+    <LI><b>Snake into</b> related cluster. As module extending java
+        functionality is likely to be tight to java it can be added
+        into the <code>$nbjava</code> directory. As such it immediatelly
+        begins to be part of all <em>products</em> using the
+        <code>$nbjava</code>.
+</ul>
+Can such snaking into an cluster break <em>products</em> using that cluster? Not on
+linking or dependencies level, but there might be interferences on functionality
+level (another loader starts to recognize the same file, two editors registered
+for the same mime type, etc.). It is hard to guess the amount of such conflicts,
+it shall not be bigger than our current state when one can autoupdate - download
+modules and install them into products build on NetBeans. Anyway, there is a solution.
+<P>
+Every product defines its own <q>private</q> cluster not designed to be
+used by any other product and all extensions are sneaked into this one
+dedicated to all external contributions to the IDE (the cluster is named <code>nb4.x</code>
+in recent versions of NetBeans). Other products based on the
+<code>$nbjava</code> or <code>$nbenterprise</CODE> clusters do not see and cannot be
+affected by such extensions. 
+<P>
+It is necessary to realize that sneaking a non-autoload module into a cluster
+that is designed for sharing is a bit dangerous. Every product will see such
+added module and the module will be enabled by default. This may mean changes
+in semantics, and that is why it is better (for non-autoload modules) to sneak
+into product private cluster.
+<P>
+There is another related problem to sneaking - <em>uninstallation</em>. 
+If user installs external modules in the <code>$nbjava</code> dir created
+via package installation, then when uninstalling this cluster,
+this may create some problems. Uninstaller will not be able to
+properly clean up the product/cluster installation directories.
+Some files will be left behind. As the installer does not 
+know if its safe to delete these dirs or not.
+
+<a name="compat-restrictions"><h4>Restrictions</H4></a>
+
+Althrough the system based on encoding a compatibility number of a version in a
+cluster location name works sufficiently fine, it still has to be used with a
+care as there is a problem that it does not solve: <em>transitivity of
+incompatible change</em>. 
+<P>
+<em>Example:</em> Let's imagine that <code>$nbide</code> cluster version
+<code>4.8</code> is build on top of <code>$nbplatform</code> version
+<code>3.9</code>. After a while new, incompatible release of platform is
+produced, placed into a separate directory and having a different number
+<code>3.10</code>. When this is noticed by developers working on the
+<code>$nbide</code> product, they decide to rewrite their code to use the new
+version of <code>$nbplatform</code>, but they keep every own API backward
+compatible. Thus they release update to their product that has new version of
+<code>$nbide</code> cluster compatible with <code>4.8</code> (thus still in the
+same directory as previous version) and version <code>3.10</code>
+of <code>$nbplatform</code>. Now we can observe the <em>compatibility 
+transitivity problem</em>.
+<P>
+Because if there is a product (like <code>$nbweb</code>) that was written
+against <code>$nbplatform</code> version <code>3.9</code> and
+<code>$nbide</code> version <code>4.8</code> and is using API interfaces from
+both clusters and relies on their compatibility, it can get broken when 
+new version of IDE Product that depends on <code>$nbplatform 3.10</code> is released.
+The reason is that <code>$nbweb</code> needs version <code>3.9</code> and the
+<code>$nbide</code> needs <code>3.10</code> and they cannot work together. 
+<P>
+The <em>transitivity</em> problem is unwanted, uneliminatable effect. But it is
+easily preventable if developers are careful enough. The only necessary thing
+is to <em>produce an incompatible version</em> whenever any of clusters we depend
+on changes incompatibly. So in the example above, the IDE Product should include
+new incompatible <code>$nbide 4.9</code> instead of pretending compatible
+evolution.
+
+<a name="versioning-conclusion"><h4>Conclusion</H4></a>
+
+<UL>
+    <LI>As not all clusters can commit to do compatible development for now and ever
+    (reality of life)
+    <LI>As two or more versions of the module has to be installed at once
+    (<a href="#compat-req-a">discussed here</a>)
+    <LI>As RPMs carrying incompatible variations have to able to coexist
+    (<a href="#compat-req-1">discussed here</a>)
+    <LI>As having the two versions of a module would complicate the module system
+    (<a href="#compat-ms">discussed here</a>)
+    <LI>As there shall be a Product and Cluster packages
+    (<a href="#compat-product-rpm">discussed here</a>)
+    <LI>As we need extensibility of clusters
+    (<a href="#compat-ext">discussed here</a>)
+
+</UL>
+
+One native package is created for each cluster (platform, java, xml, native,
+web) and places the cluster into a directory containing version
+specification (e.g. <code>/opt/netbeans/platform-3.5</code>). <em>Note: It is
+possible to compose one cluster from multiple RPMs, as will happen in case of
+<a href="#compat-ext">third party contributions</a>, but that does 
+not influence any of conclusions that follow</em>. If a compatible
+update is released, it shares the same native package name and be placed into
+the same directory. Just the native package version is increased. 
+On the other hand, new incompatible release has to be placed
+into its own directory (e.g. <code>/opt/netbeans/platform-3.6</code>) and must 
+allow coexistence with the previous incompatible versions.
+<P>
+It is up to the individual clusters to decide whether they want to develop in
+compatible or incompatible way. Both is possible with all its pros and cons. The
+ability to deliver compatible releases highly depends on correct partitioning of
+clusters. 
+<P>
+The cluster is packaged into one or more RPMs that are designed to keep
+external compatibility as much as possible - for that reason they contain
+the name of the version in their name (<code>nbplatform5</code> vs. <code>nbplatform6</code>), 
+thus allowing different incompatble versions 
+of an cluster to be installed at once. It is possible that the same directory
+is filled with a content of foreign RPMs that just want to provide some
+extensions to the base functionality of such extension.
+<P>
+There is a <em>product</em> RPM containing just the <em>launcher</em> script and
+possibly private product cluster, 
+having references to all clusters that it needs. This product RPM does not
+include compatibility identification as it will evolve in compatible way 
+(also due to the fact that nobody is supposed to depend on it cluster) and
+thus new versions of the product are easily recognizable by native package
+managers and offered for update. Such update will then update all needed
+clusters with their appropriate versions. Removing of useless cluster native
+packages that are not needed anymore would be nice, but is more a task
+for the native packager that should realize that there is a package used by
+nobody.
+
+<h5>Good Practices: Do not package things with different compatibility lifecycle
+together</h5>
+
+In order to minimize the effect of incompatible change, it is better to keep the
+compatibility units in the right size. The lifecycle of <em>Java Support</em> is
+likely very independent from lifecycle of <em>XML Support</em>. If both of them
+are packaged in one <em>cluster</em> and thus share the same <em>compatibility
+domain</em> if one of them makes incompatible change, the other parts have to
+pretend incompatible change as well. This wastes and hurts people who depend on
+a feature in <em>Java Support</em> and have to make changes just because
+something incompatible happened in <em>XML Support</em>. That is why it is
+suggested to separate functionality with unrelated <em>compatibility
+lifecycle</em> into own clusters.
+
+<h5>Good Practices: Separate API modules and GUI modules</h5>
+
+API and GUI are example of interfaces that have exactly different
+<em>compatibility lifecycle</em>. While API has to be kept stable and compatible
+as much as possible, no such restriction is placed on GUI. Minor changes in each
+version are nearly requirement, incompatible changes common. That is why it is
+suggested to separate the modules providing API and those that provide GUI. 
+<P>
+If separated, then the API module can become autoload and can be deprected
+after a while (but still offered for a compatiblity) and after another while
+completely removed. The GUI module can meanwhile change inside out, with a
+possiblity to introduce new API autoload module that replaces the old deprecated
+one. 
+
+<h5>Good Practices: API modules should not register anything</h5>
+
+In order to implement the slow deprecation of an API and its replacement by a
+newer version it is necessary to prevent any clashes that could occur between
+the old and new module. An example of such clash are for example registrations
+in a layer or objects in a lookup. To prevent these problems it is suggested 
+that API modules (which should be
+autoload anyway) do not register anything (or at least much) that could clash
+with their future replacements.
+
+<h5>Good Practices: Do compatible development</h5>
+
+Obviously evolving a module in compatible manner is the best way around all
+problems described here in. It is often better to replace an API with newer
+version while keeping the deprecated one around working well for clients that
+did not manage to migrate.
+<P>
+Breaking compatibility of a cluster every release means that products depending
+on your cluster will never get an updated version or in the best case, you will
+have to produce patches and updates for critical bugs to more incompatible
+versions of a cluster at once. Which is bigger price than one really wants to pay.
+
+<HR>
+<a name="real"><H3>Real Layouts</H3></a>
+
+Here is the mapping of the <a href="#logical">logical layout</a>
+to physical locations on different operating systems. 
+
+<h5>Windows</H5>
+
+The simplest case is Windows. As it lacks any centralized package management at
+all, the physical and logical layouts will remain the same. Each cluster will be
+placed in its own directory (<code>$nbcluster</code> in 
+<cite>c:\Program Files\NetBeans\platform3\</CITE>)
+and the content of its directory will match the logical layout.
+<P>
+Appropriate execution scripts are supposed to be installed into the 
+<code>c:\Program Files\NetBeans\bin</code> directory by the installer of actual
+Product.
+<P>
+Each product installer will mark and register each installed cluster into
+windows or JDK1.4 registry, so other installers are able to find the previously
+installed clusters and reuse them.
+
+<h5>Solaris - workstation install</H5>
+
+As all parts of NetBeans are unbundled (not part of Solaris OS distribution) the
+installation goes into <code>/opt</code> directory. Based on 
+<a href="http://www.pathname.com/fhs/2.2/fhs-3.12.html">
+Unix Filesystem Hierarchy Standard</a>, so for example
+<code>$nbplatform</code> will mainly be <code>/opt/netbeans/platform3/</code> 
+directory to identify the version).
+<UL>
+<!--
+    <LI>The logical <code>$nbcluster/config</CODE>
+    directory shall be mapped to <code>/etc/opt/netbeans/cluster6</code>
+    (where <code>6</CODE> is the version number) directory. 
+    The reason is / and /opt could be separate filesystems, /opt may be
+    read-only and/or remote.
+-->
+    <LI>The  <code>$nbcluster/config</code>, 
+    <code>$nbcluster/lib</code>, <code>$nbcluster/share</code> and
+    <code>$nbcluster/docs</code> are placed
+    under <code>/opt/netbeans/cluster6</CODE>
+</UL>
+<!--
+This will be the default workstation install layout.
+The default locations
+of the other necessary clusters for a launcher script of a product  
+(Web consists of $nbplatform, $nbjava, $nbxml, $nbweb, etc.) shall be hardcoded 
+into each launcher script, but there shall be a way how to override this
+default and specify different location of other necessary clusters. E. g.: 
+<PRE>
+    nbweb - -platformdir /home/yarda/tmp/nbplatform \
+          - -javadir /home/yarda/tmp/nbjava \
+          - -xmldir /home/yarda/tmp/nbxml
+</PRE>
+or some environment variables to allow 
+usage of clusters in non-standard locations. If one of the 
+directory flags is omited, it is being searched in its default location
+(hardcoded in the script).
+-->
+<P>
+The native package for each <em>Product</em> will provide launcher scripts and
+additional icons. Executables shall be installed in <code>/opt/bin</code>.
+
+
+<h5>Solaris - compound install</H5>
+
+There shall be a way how to install the cluster 
+for <em>evaluation purposes</em> or as a <em>shared server installation</EM>. 
+In such kind of install the user shall
+have a way to specify the root <code>$nbcluster</code> directory and the physical
+layout will then exactly reflect the logical one as on Windows.
+<P>
+<i><b>Example:</B> One installs NetBeans into 
+<code>/server/for/clients/soft/netbeans/</CODE> on server and mounts it as 
+<code>/opt/netbeans</CODE> on clients. 
+The directory <code>/opt/netbeans/platform-3.5</code> than contains everything 
+<code>config</code>, <code>lib</code>, <code>boot</code>, <code>modules</code>, <code>docs</code>. </I>
+
+<P>
+The default locations of other needed clusters in launcher script shall use
+relative paths, so if a set of clusters ($nbnative, $nbenterprise, $nbjava, $nbxml) 
+is installed into one server location 
+(<code>/server/for/clients/soft/netbeans/</CODE>) than there is a need of only
+one NFS mount to make all of them available on client systems. Moreover the
+relative paths will continue to be valid, whereever the components are relocated
+to. Of course these default paths shall be overridable by specifying arguments
+or some environment variables to allow 
+usage of clusters in non-standard locations. 
+
+<P>
+The native package for each <em>Product</em> that provides executables shall
+install them to <code>bin</code> directory under the NetBeans server
+installation directory. E. g. <code>/server/for/clients/soft/netbeans/bin</code>
+in the example in previous paragraph.
+
+<P>
+<i><b>Note:</B>
+For Solaris server-based installations, it is better not to edit
+the launch scripts at installation time.  The path to $nbjava may
+be different on the desktops.  Each desktop should mount $nbjava
+and $nbplatform to the default location, or each desktop should
+use an environment variable, or ....
+Also it is better not to complicate the installer by requiring different
+kinds of installations for servers.  The installer shall not need to know if it
+is doing a server or a local install.  No editing
+of scripts at install time.
+</I>
+
+
+<h5>Linux</H5>
+
+The Linux case is the same as Solaris one, just instead of <code>/opt</code>
+we install into <code>/usr/share</code> for everything. In case of
+<code>$nbplatform/lib/nbexec</code> it should be in
+<code>/usr/lib/netbeans/nbexec</code>.
+Instead of <code>/etc/opt</code> we use directly <code>/etc</code>.
+<P>
+Linux <em>Product RPMs</em> will normally install additional things into
+e.g. /etc/X11/applnk/Applications, /usr/share/pixmaps, etc. Typically
+each Product (i.e. the RPM that included the product launcher
+script) would create a set of such files along to the command line launcher.
+
+<h5>ZIP file structure</h5>
+
+For purposes of evaluation and testing a ZIP file can be build every day
+for each product. Such archive would then contain all clusters necessary for the
+product under a common directory with the structure of each cluster exactly
+mirroring its logical one. The product launcher would be in a special
+<code>bin</code> directory. Here is an example of possible structure of
+<em>NetBeans IDE Product</em>:
+
+<PRE>
+netbeans/bin/netbeans
+netbeans/platform4/boot
+netbeans/platform4/modules
+netbeans/platform4/config
+netbeans/ide7/modules
+netbeans/ide7/lib
+netbeans/ide7/config
+etc.
+</PRE>
+
+<HR>
+<a name="user"><H3>User Directory Layout</H3></a>
+
+When running an application based on <em>NetBeans</EM> usually a 
+directory with write access is needed to hold temporary files, caches,
+log files, user modifications, etc. The logical as well as physical structure of such 
+directory mimics the <a href="#logical">logical installation structure</a> plus
+adds few directories where changes are being stored. 
+
+<UL>
+    <LI><b>modules</b>, <b>docs</B>: have the same 
+    meaning as in the common installation. The user can install
+    additional modules here (usually by AutoUpdate because we do not want to
+    mix the native packager installed modules with those installed by
+    AutoUpdate).
+
+    <LI><b>config</b>: contains user modifications to files found in
+    shared <b>config</b> directories as well as those in module's <b>layers</b>
+    
+    <LI><b>var/cache</b>: contains pre-cached information about things 
+    that can be found elsewhere (mostly info about enabled modules, etc.)
+
+    <LI><b>var/log</b>: directory to write logs to. Will contain more than one
+    log file, at least <em>messages</EM>, and older archives <em>messages.1</em>,
+    <em>messages.2</em> like the <code>/var/log</code> directory system does.
+
+    <LI><b>var/cache</b>: directory to keep discardable caching files in. Right
+    now used only by platform to cache informations about enabled modules.
+
+    <LI>There maybe additional directories provided by different clusters in the
+    structure
+    
+</UL>
+
+It is not reasonable to share this directory between different <em>Products</EM> - the
+cache would be useless, the logs would get confusing and also the user
+modifications to the <b>config</B> would could be ambiguous. That is why each
+<em>Product</em> shall define its own directory prefix (based on its name) and
+pass it into the general <code>nbexec</CODE> command (for example using the
+<code>--defaultuserdir</code> parameter). The user can override
+the default during invocation of the
+the product launcher (e.g. <code>nbweb --userdir myuserdir</code>).
+
+<HR>
+<a name="influence"><H3>Influence on other parts of the system</H3></a>
+
+<h4><a name="influence-on-autoupdate">AutoUpdate</a></h4>
+
+AutoUpdate has been  modified to work with clusters on systems where it is
+used to update the whole product (Windows, ZIP installations on UNIX) and allow
+to install module not only as <q>Global</q> but also select the exact location
+where to install among the clusters used by the running product.
+<P>
+When a native package installation is used, AutoUpdate is restricted from
+accessing the directories/clusters under the control of native package manager.
+Which usually means to update just user directory.
+<P>
+Localization of updater must be possible. The proposed solution is to pass the 
+branding and cluster directories from a product launcher directly to updater so
+it can in its early stages know the right language or branding variant.
+<!-- Nice to have:
+<P>
+Structure of NBMs needs to be enhanced so the AutoUpdate will know into which 
+cluster this NBM belongs. The NBM will either
+contain more folders or there has to be tag in the info file which will
+specify the cluster. Someone has to add the tag or the folder and
+updater has to read it. This is change in both Updater and NBM build
+process. (Notice that this only applies if we still allow AU to update
+the shared directory). The old NBMs have to be handled somehow (only user dir
+install?).
+-->
+
+<h5>Detailed Functional Analysis</h5>
+
+<OL>
+    <LI>Regardless of how the product is installed, user is allowed to 
+    autoupdate to his user directory (if the autoupdate is present, e.g. it 
+    is not in webstart version). If that happens, the modules in user 
+    dir takes precedence over system one (if it is newer).
+
+    <LI>If the product is installed from <a href="#installation-scenario-unix">
+    RPM or solaris package</a> and 
+    possibly also from WindowsInstaller, the autoupdate is not able to 
+    update those clusters. This is signaled by existing 
+    <code>$nbcluster/.noautoupdate</code> file. In such case the 
+    autoupdate must not touch the directories. 
+
+    <LI>If the product or its part is not installed using native 
+    installation method (packages), the autoupdate is technically able to 
+    update these clusters. It will recognize them by non existance of 
+    <code>$nbcluster/.noautoupdate</code> (this is likely to be created by RPMs
+    and other native packagers). In order to work correctly the AutoUpdate needs to
+    decide which cluster the to be installed NBM belongs. If the NBM represents
+    <b>an update</b>, it should be put into the same cluster where the original
+    NBM was. If the NBM is new and user would like to install it globally, 
+    the module is installed into the "highest" - e.g. private 
+    cluster (in case of NetBeans nb4.x), as it represents the
+    product private cluster and thus the influence of an NBM installed 
+    this way on other products is minimal - more likely zero.
+</OL>
+
+<h5>Hotfix Example</h5>
+
+The most desired use of AutoUpdate is for delivering hotfixes. So let's present a 
+small example of how that could be done. Imagine we want to deliver new version
+of the <b>editor module</b> to our users.
+<p>
+First thing to do is to create an NBM file and make it available on one of our
+AutoUpdate centers. Users running on any platform, using any kind of installation
+method (but <a href="#installation-scenario-webstart">
+WebStart</a>) can see it and without any restrictions install in their 
+user directory. As the user directory takes precedence over shared install
+locations, the new <b>editor module</b> will be activated for those users.
+This is exactly as it works in version 3.6.
+<p>
+Users that used <a href="#installation-scenario-windows">
+windows or ZIP installation</a> style, will have a chance to select global
+installation of the NBM file and replace the <b> editor module</b> in <code>ide4</code> 
+cluster (as it was already installed). 
+<p>
+Those that are using <a href="#installation-scenario-unix">UNIX installation</a>
+based on native packages will not be able to install NBM file globally, as it would 
+clash with native RPM databases. Instead they will connect to their favourite
+RPM distribution server (urpmi, apt, yum - something like AutoUpdate for RPMs) 
+and download and upgrade the native package that contains <b>editor module</b>.
+This requires those who are producing NBMs to also produce RPMs and Solaris 
+packages or patches and make them available on suitable distribution channels.
+
+<h4><a name="influence-module-system">Module System</a></H4>
+
+There is the <a href="#1bit">requirement 1</a> that components installed in separate
+native packages (javahelp, xalan, tomcat). In order to solve it we will need to
+use simlinks or enhance the module
+system to recognize not only files .jar, but also files <code>.library</code>
+that would contain full path to the set of JAR files that they reference. That
+way the clusters need not contain all their JAR files, but could reference other
+system components. This is tracked as issue 
+<a href="https://netbeans.org/bugzilla/show_bug.cgi?id=53898">53898</a>.
+
+<HR>
+
+Comments to <a href="mailto:nbdev@netbeans.org">nbdev@netbeans.org</A> please.
+
+</body>
+</html>

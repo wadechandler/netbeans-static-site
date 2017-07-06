@@ -1,0 +1,417 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<!-- -*- xhtml -*- -->
+  <title>Tutorial de integra&ccedil;&atilde;o do gerador de c&oacute;digo para a plataforma NetBeans 6.0, 6.1, 6.5</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="gwielenga@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A short guide to using the Nodes API.">
+<!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+	<h1>Tutorial de integra&ccedil;&atilde;o do gerador de c&oacute;digo </h1>
+
+<p>Este tutorial mostra como escrever um m&oacute;dulo que integre novos itens no recurso de gera&ccedil;&atilde;o de c&oacute;digo do NetBeans, que &eacute; exibido quando voc&ecirc; clica em Alt-Insert em um editor. 
+
+   </p><p><b>Conte&uacute;do</b></p>
+   
+       <img  src="../images/articles/65/netbeans-stamp65.gif" class="stamp" width="114" height="114" alt="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.5" title="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.5"> </p>
+      <ul class="toc">
+  <li><a href="#intro">Introdu&ccedil;&atilde;o &agrave; integra&ccedil;&atilde;o do gerador de c&oacute;digo</a></li>
+  <li><a href="#creating">Criando o projeto do m&oacute;dulo </a></li>
+  <li><a href="#use">Usando o assistente do Provedor de gerador de c&oacute;digo</a></li>
+  <li><a href="#code">Codificando a integra&ccedil;&atilde;o do gerador de c&oacute;digo</a></li>
+  <li><a href="#install">Instalando e testando a funcionalidade</a></li>
+  <li><a href="#share">Criando um bin&aacute;rio que pode ser compartilhado</a></li>
+       </ul>
+         
+<p><b>Para seguir este tutorial, voc&ecirc; precisa do software e dos recursos listados nesta tabela.</b></p>
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software ou recurso</th>
+                <th class="tblheader" scope="col">Vers&atilde;o necess&aacute;ria</th>
+            </tr> 
+           <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">vers&atilde;o 6.5 Java</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Vers&atilde;o 6 ou<br/>vers&atilde;o 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+ <p class="tips">Opcionalmente, para fins de solu&ccedil;&atilde;o de problemas, voc&ecirc; pode <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=11179">baixar a amostra completa</a> e inspecionar os c&oacute;digos-fonte.
+    
+
+
+</p><h2 class="tutorial"><a name="intro"></a>Introdu&ccedil;&atilde;o &agrave; integra&ccedil;&atilde;o do gerador de c&oacute;digo</h2>
+
+<p>O recurso Gerador de c&oacute;digo, introduzido no NetBeans IDE 6.5, consiste em uma lista de itens que aparece quando voc&ecirc; pressiona Alt-Insert. Cada item gera c&oacute;digo no editor.
+
+</p><p></p><p align="left"><img border="1" src="../images/tutorials/code-generator/code-generator-5.png" alt="Resultado implantado">
+
+
+<!-- ===================================================================================== -->
+
+</p><h2 class="tutorial"><a name="creating"></a>Criando o projeto do m&oacute;dulo </h2>
+      
+<p>Nesta se&ccedil;&atilde;o, usaremos um assistente para criar a estrutura de c&oacute;digo-fonte que todo m&oacute;dulo NetBeans precisa. A estrutura do c&oacute;digo-fonte consiste em determinadas pastas em locais espec&iacute;ficos e em um conjunto de arquivos que sempre s&atilde;o necess&aacute;rios. Por exemplo, cada m&oacute;dulo NetBeans requer uma pasta <tt>nbproject</tt>, que cont&eacute;m os metadados do projeto, e um arquivo <tt>layer.xml</tt>, para registro de declara&ccedil;&atilde;o de itens como janelas e bot&otilde;es da barra de ferramentas.
+
+</p><ol>
+          
+	      <li>Escolha Arquivo &gt; Novo projeto (Ctrl-Shift-N). Em Categorias, selecione M&oacute;dulos do NetBeans. Em Projetos, selecione M&oacute;dulo   e clique em Pr&oacute;ximo.</li>
+	<li>No painel Nome e localiza&ccedil;&atilde;o, digite <tt>DemoCodeGenerator</tt> em Nome do projeto. Altere a Localiza&ccedil;&atilde;o do projeto para qualquer diret&oacute;rio no computador, como <tt>c:\meusmodulos</tt>. Deixe o bot&atilde;o de op&ccedil;&atilde;o M&oacute;dulo independente selecionado. O painel agora deve ter esta apar&ecirc;ncia:
+
+<p></p><p align="left"><img border="1" src="../images/tutorials/code-generator/code-generator-1.png" alt="Etapa 1 do assistente para Nova Projeto.">
+ </p><p>Clique em Pr&oacute;ximo.
+
+</p></li><li>No painel Configura&ccedil;&atilde;o b&aacute;sica de m&oacute;dulos, digite <tt>org.netbeans.modules.demo</tt> como o Nome base de c&oacute;digo. Marque a caixa de verifica&ccedil;&atilde;o &quot;Gerar camada XML&quot; e deixe o pacote de localiza&ccedil;&atilde;o e a camada XML onde est&atilde;o, para que eles sejam armazenados em um pacote com o nome <tt>org/netbeans/modules/demo</tt>. O painel agora deve ter esta apar&ecirc;ncia:
+
+<p></p><p align="left"><img border="1" src="../images/tutorials/code-generator/code-generator-2.png" alt="Etapa 2 do assistente para Novo projeto">
+
+</p></li><li>Clique em Terminar.</li></ol>
+
+<p> O IDE cria o projeto <tt>DemoCodeGenerator</tt>. O projeto cont&eacute;m todos os metadados de projeto e fontes, como o script de constru&ccedil;&atilde;o Ant do projeto. O projeto se abre no IDE. Voc&ecirc; pode ver a estrutura l&oacute;gica na janela Projetos (Ctrl-1) e a estrutura de arquivos na janela Arquivos (Ctrl+2). 
+
+
+      <br />
+
+<!-- ===================================================================================== -->
+</p><h2><a name="use"></a>Usando o assistente do Provedor de gerador de c&oacute;digo</h2>
+
+<p>Nesta se&ccedil;&atilde;o, usaremos um assistente para criar a classe stub e entradas de camada necess&aacute;rias para come&ccedil;ar a integra&ccedil;&atilde;o com o recurso Gerador de c&oacute;digo.
+
+  
+ </p><ol>
+	
+	 <li>Clique com o bot&atilde;o direito do mouse no n&oacute; do projeto e escolha Novo &gt; Outro.  Na caixa de di&aacute;logo Novo arquivo, escolha Desenvolvimento de m&oacute;dulo &gt; Gerador de c&oacute;digo, como mostrado abaixo:
+<p></p><p align="left"><img border="1" src="../images/tutorials/code-generator/code-generator-3.png" alt="Assistente do gerador de c&oacute;digo.">
+              </p></li>
+	      <li>No painel Gerador do novo c&oacute;digo, defina o seguinte:
+        <p></p><ul>
+            <li><b>Nome da classe.</b> Especifica o nome da classe do stub que o assistente ir&aacute; gerar. Digite &quot;DemoCodeGenerator&quot; neste campo.
+            </li><li><b>Pacote.</b> Especifica o pacote em que a classe do stub ser&aacute; gerada. Selecione &quot;org.netbeans.modules.demo&quot; da lista suspensa.
+            </li><li><b>Tipo MIME.</b> Especifica o tipo MIME ao qual a integra&ccedil;&atilde;o do gerador de c&oacute;digo ser&aacute; aplicada. Digite &quot;x-java&quot; neste campo.
+            </li><li><b>Gerar CodeGeneratorContextProvider.</b> Adiciona outros objetos &agrave; pesquisa do gerador de c&oacute;digo. Deixe esta caixa de verifica&ccedil;&atilde;o desmarcada.
+          </li></ul>
+          <p>Agora voc&ecirc; deve ver o seguinte:
+</p><p></p><p align="left"><img border="1" src="../images/tutorials/code-generator/code-generator-4.png" alt="Modelo de pesquisa r&aacute;pida">
+          
+</p></li><li>Clique em Terminar.
+
+<p></p><p>A janela Projetos agora deve ter esta apar&ecirc;ncia:
+
+</p><p></p><p align="left"><img border="1" src="../images/tutorials/code-generator/code-generator-6.png" alt="Janela Projetos finais."></p></li>
+</ol>
+      <p>No arquivo <tt>layer.xml</tt>, voc&ecirc; deve ver o seguinte:
+      
+</p><pre>&lt;filesystem&gt;
+    &lt;folder name=&quot;Editors&quot;&gt;
+        &lt;folder name=&quot;text&quot;&gt;
+            &lt;folder name=&quot;x-java&quot;&gt;
+                &lt;folder name=&quot;CodeGenerators&quot;&gt;
+                    &lt;file name=&quot;org-netbeans-modules-demo-DemoCodeGenerator$Factory.instance&quot;/&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/filesystem&gt;</pre>      
+
+<p>A classe gerada deve ter a seguinte apar&ecirc;ncia:
+
+</p><pre>public class DemoCodeGenerator implements CodeGenerator {
+
+    JTextComponent textComp;
+
+    /**
+     * 
+     * @param context containing JTextComponent and possibly other items 
+     * registered by {@link CodeGeneratorContextProvider}
+     */
+    private DemoCodeGenerator(Lookup context) { 
+    // Good practice is not to save Lookup outside ctor
+        textComp = context.lookup(JTextComponent.class);
+    }
+
+    public static class Factory implements CodeGenerator.Factory {
+
+        public List<? extends CodeGenerator> create(Lookup context) {
+            return Collections.singletonList(new DemoCodeGenerator(context));
+        }
+    }
+
+    /**
+     * The name which will be inserted inside Insert Code dialog
+     */
+    public String getDisplayName() {
+        return &quot;Sample Generator&quot;;
+    }
+
+    /**
+     * This will be invoked when user chooses this Generator from Insert Code
+     * dialog
+     */
+    public void invoke() {
+    }
+    
+}</pre>
+
+
+      <br />
+    
+    <!-- ======================================================================================= -->
+      
+      <h2><a name="code"></a>Codificando a integra&ccedil;&atilde;o do gerador de c&oacute;digo</h2>
+<p>Em seguida, implementaremos a API. As classes da API s&atilde;o as seguintes:</p>
+
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Classe</th>
+                <th class="tblheader" scope="col">Descri&ccedil;&atilde;o</th>
+            </tr>
+            <tr>
+                <td class="tbltd1">JavaSource</td>
+                <td class="tbltd1">Para ser feita...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">CancellableTask</td>
+                <td class="tbltd1">Para ser feita...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">WorkingCopy</td>
+                <td class="tbltd1">Para ser feita...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">CompilationUnitTree</td>
+                <td class="tbltd1">Para ser feita...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">TreeMaker</td>
+                <td class="tbltd1">Para ser feita...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">ClassTree</td>
+                <td class="tbltd1">Para ser feita...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">ModifiersTree</td>
+                <td class="tbltd1">Para ser feita...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">VariableTree</td>
+                <td class="tbltd1">Para ser feita...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">TypeElement</td>
+                <td class="tbltd1">Para ser feita...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">ExpressionTree</td>
+                <td class="tbltd1">Para ser feita...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">MethodTree</td>
+                <td class="tbltd1">Para ser feita...</td>
+            </tr>
+            
+        </tbody>
+    </table>
+    
+<p></p><p>Abaixo, definiremos depend&ecirc;ncias nos m&oacute;dulos necess&aacute;rios e depois as implementaremos no seu pr&oacute;prio m&oacute;dulo.
+
+</p><div class="indent">
+    
+    <ol>
+        
+        <li>Clique com o bot&atilde;o direito do mouse no projeto, escolha Propriedades e defina as 4 depend&ecirc;ncias a seguir no painel Bibliotecas:
+        
+     <p></p><p align="left"><img border="1" src="../images/tutorials/code-generator/code-generator-7.png" alt="Defina depend&ecirc;ncias." /> 
+        
+        </p><p><b>Observa&ccedil;&atilde;o:</b> voc&ecirc; ir&aacute; notar que &quot;Biblioteca do editor 2&quot; e &quot;API de utilit&aacute;rios&quot; foram definidas automaticamente pelo Assistente do gerador de c&oacute;digo. Nas outras duas depend&ecirc;ncias, &quot;Wrapper da API Javac&quot; e &quot;C&oacute;digo-fonte Java&quot;, voc&ecirc; precisar&aacute; ser capaz de gerar novos trechos de c&oacute;digo Java atrav&eacute;s da nova integra&ccedil;&atilde;o do Gerador de c&oacute;digo.
+        
+        </p></li><li>Abra a classe gerada.
+        
+        </li><li>Modifique o m&eacute;todo <tt>invoke()</tt> da seguinte maneira:
+    
+<pre>public void invoke() {
+    try {
+        Document doc = textComp.getDocument();
+        JavaSource javaSource = JavaSource.forDocument(doc);
+        CancellableTask task = new CancellableTask&lt;WorkingCopy&gt;() {
+            public void run(WorkingCopy workingCopy) throws IOException {
+                workingCopy.toPhase(Phase.RESOLVED);
+                CompilationUnitTree cut = workingCopy.getCompilationUnit();
+                TreeMaker make = workingCopy.getTreeMaker();
+                for (Tree typeDecl : cut.getTypeDecls()) {
+                    if (Tree.Kind.CLASS == typeDecl.getKind()) {
+                        ClassTree clazz = (ClassTree) typeDecl;
+                        ModifiersTree methodModifiers = 
+                                make.Modifiers(Collections.&lt;Modifier&gt;singleton(Modifier.PUBLIC), 
+                                Collections.&lt;AnnotationTree&gt;emptyList());
+                        VariableTree parameter = 
+                                make.Variable(make.Modifiers(Collections.&lt;Modifier&gt;singleton(Modifier.FINAL), 
+                                Collections.&lt;AnnotationTree&gt;emptyList()), 
+                                &quot;arg0&quot;, 
+                                make.Identifier(&quot;Object&quot;), 
+                                null);
+                        TypeElement element = workingCopy.getElements().getTypeElement(&quot;java.io.IOException&quot;);
+                        ExpressionTree throwsClause = make.QualIdent(element);
+                        MethodTree newMethod = 
+                                make.Method(methodModifiers, 
+                                &quot;writeExternal&quot;, 
+                                make.PrimitiveType(TypeKind.VOID), 
+                                Collections.&lt;TypeParameterTree&gt;emptyList(), 
+                                Collections.singletonList(parameter), 
+                                Collections.&lt;ExpressionTree&gt;singletonList(throwsClause), 
+                                &quot;{ throw new UnsupportedOperationException(\&quot;Not supported yet.\&quot;) }&quot;, 
+                                null);
+                        ClassTree modifiedClazz = make.addClassMember(clazz, newMethod);
+                        workingCopy.rewrite(clazz, modifiedClazz);
+                    }
+                }
+            }
+            public void cancel() {
+            }
+        };
+        ModificationResult result = javaSource.runModificationTask(task);
+        result.commit();
+    } catch (Exception ex) {
+        Exceptions.printStackTrace(ex);
+    }
+}</pre>
+ 
+ </li><li>Certifique-se de que as seguintes senten&ccedil;as import sejam declaradas:
+ 
+<pre>import com.sun.source.tree.AnnotationTree;
+import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.ModifiersTree;
+import com.sun.source.tree.Tree;
+import com.sun.source.tree.TypeParameterTree;
+import com.sun.source.tree.VariableTree;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeKind;
+import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
+import org.netbeans.api.java.source.CancellableTask;
+import org.netbeans.api.java.source.JavaSource;
+import org.netbeans.api.java.source.JavaSource.Phase;
+import org.netbeans.api.java.source.ModificationResult;
+import org.netbeans.api.java.source.TreeMaker;
+import org.netbeans.api.java.source.WorkingCopy;
+import org.netbeans.spi.editor.codegen.CodeGenerator;
+import org.netbeans.spi.editor.codegen.CodeGeneratorContextProvider;
+import org.openide.util.Exceptions;
+import org.openide.util.Lookup;</pre> 
+ 
+ </li></ol>
+    </div>
+
+      
+    <!-- ======================================================================================= -->
+
+<h2><a name="install"></a>Instalando e testando a funcionalidade</h2>
+<p>Agora vamos instalar o m&oacute;dulo e usar a integra&ccedil;&atilde;o do recurso gerador de c&oacute;digo. O IDE utiliza um script de constru&ccedil;&atilde;o Ant para construir e instalar seu m&oacute;dulo.   O script de constru&ccedil;&atilde;o &eacute; criado quando o projeto &eacute; criado.</p>
+<div class="indent">
+
+
+      <ol>
+	      <li>Na janela Projetos, clique com o bot&atilde;o direito do mouse no projeto e escolha Executar.
+	      <p></p><p>Uma nova inst&acirc;ncia do IDE &eacute; iniciada e instala o m&oacute;dulo de integra&ccedil;&atilde;o do gerador de c&oacute;digo. 
+               </p></li><li>Pressione Alt-Insert e voc&ecirc; ver&aacute; o novo item inclu&iacute;do:
+<p></p><p align="left"><img border="1" src="../images/tutorials/code-generator/code-generator-5.png" alt="Resultado implantado">
+		 </p></li><li>Clique em um item e o c&oacute;digo ser&aacute; inserido.
+       </li></ol>          
+   </div>
+      <br />
+    
+<!-- ======================================================================================= -->
+
+<h2><a name="share"></a>Criando um bin&aacute;rio de m&oacute;dulo que pode ser compartilhado</h2>
+
+<p>Agora que o m&oacute;dulo est&aacute; conclu&iacute;do, voc&ecirc; pode permitir que ele seja utilizado por outras pessoas. Para isso, voc&ecirc; precisa criar um arquivo &quot;NBM&quot; (m&oacute;dulo NetBeans) bin&aacute;rio e distribui-lo. 
+
+</p><div class="indent">
+  
+      <ol>
+	      <li>Na janela Projetos, clique com o bot&atilde;o direito do mouse no projeto e escolha Criar NBM.
+
+	      <p></p><p>O arquivo NBM &eacute; criado e voc&ecirc; pode visualiz&aacute;-lo na janela Arquivos (Ctrl+-2):
+	      </p></li><li>Disponibilize-o para outras pessoas, por exemplo, atrav&eacute;s do <a href="http://plugins.netbeans.org/PluginPortal/">Portal de plug-in do NetBeans</a>. O destinat&aacute;rio deve usar o Gerenciador de plug-ins (Ferramentas &gt; Plug-ins) para instal&aacute;-lo.
+       </li></ol>
+ 
+    </div>
+
+
+<!-- ======================================================================================== -->
+
+
+  <br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Quick%20Search%20Integration%20Tutorial">Envie-nos seus coment&aacute;rios</a></div>
+<br style="clear:both;" />
+  
+  
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Pr&oacute;ximas etapas</h2>
+
+<p>Para obter mais informa&ccedil;&otilde;es sobre a cria&ccedil;&atilde;o e o desenvolvimento de m&oacute;dulos do NetBeans, consulte os seguintes recursos: 
+  </p><ul>
+	  <li><a href="https://platform.netbeans.org/index.html">P&aacute;gina inicial da Plataforma NetBeans </a></li>
+	  <li><a href="https://netbeans.org/download/dev/javadoc/">Lista de APIs do NetBeans (Vers&atilde;o de desenvolvimento atual)</a></li>
+  <li><a href="https://platform.netbeans.org/tutorials">Outros tutoriais relacionados</a></li></ul>
+  </p>
+  
+  <hr><p></p><p>
+<!-- ======================================================================================== -->
+<!-- 
+<h2><a name="version"></a>Versioning </h2>
+<p>
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+         19 July 2008
+      </td>
+      <td>
+      Initial version.
+      </td>
+  </tr>
+ </tbody>
+</table>
+-->
+</p></body>
+</html>

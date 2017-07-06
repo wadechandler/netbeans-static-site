@@ -1,0 +1,222 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head><link rel="stylesheet" href="../../../print.css" type="text/css" media="print">
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+    <title>Creating RESTful Service Clients in NetBeans Modules  - NetBeans IDE Tutorial</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="KEYWORDS" content="NETBEANS, TUTORIAL, GUIDE, USER, DOCUMENTATION, WEB SERVICE, WEB SERVICES, REST, RESTFUL">
+    <meta name="description"
+          content="Use NetBeans IDE's built-in Jersey RESTful webservice support to create a RESTful 
+          service client inside a NetBeans module or Java application.">
+<link rel="stylesheet" href="../../../netbeans.css"></head>
+<body>
+    <h1>Creating RESTful Service Clients in NetBeans Modules</h1>
+    
+    <p>Starting in NetBeans IDE 6.9, native REST support is  available in NetBeans Module projects. You can now directly generate    RESTful client code in a NetBeans module. You can also insert Jersey RESTful client code in a Java or Java Web application. </p>
+<p>In this tutorial, you create a NetBeans platform application that consumes the Twitter What Are You Doing service, displaying a list of your Twitter friends'  status messages. First you create the platform application. You select the libraries needed in the application. Then you create a NetBeans module. Finally, you add a RESTful client and some basic display elements to the module. The client uses OAuth authorization.</p>
+<p class="notes"><strong>Note:</strong> To use the procedure described in this tutorial with a Java or Java Web project, skip the section on Creating a Platform Application and create a Java or Java Web application instead of a NetBeans Module. Ignore any directions that are specific to NetBeans modules. If you are creating a Java application, you can use most of the design in <a href="#design-window">Designing the Window</a> in a JFrame + JPanel. If you are using a Java Web application, you have to design your own JSP or JSF.</p>
+<p class="notes"><strong>Note:</strong> You can follow the procedure in this tutorial with another RESTful web service than the Twitter service, if you have the URL for that service's WADL. You only need to register the service in the IDE. To register a service, open the Services window, right-click the Web Services node, and select Add Web Service. </p>
+<p><b>Contents</b></p>
+    <img src="../../../images_www/articles/70/netbeans-stamp-70-71-72.gif" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.9-7.1" title="Content on this page applies to NetBeans IDE 6.9-7.1">
+    <ul>
+        <!--    <li><a href="#Exercise_0">Exercise 0: Install and configure the tutorial environment</a></li>-->
+        <li><a href="#create-platform-app"> 
+                Creating the Platform Application
+        </a></li>
+        <li><a href="#create-module"> 
+Creating the Client Module        </a></li>
+        <li><a href="#design-window">Designing the Window</a></li>
+        <li><a href="#more-exercises">More Exercises</a></li>
+        <li><a href="#seealso">See Also</a></li>
+    </ul>
+    
+    
+    
+<p><b>To follow this tutorial, you need the following software and resources.</b></p>
+    
+    <table>
+  <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a target="_blank" href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">Java EE download bundle</td>
+          </tr>
+            <tr>
+                <td class="tbltd1"><a target="_blank" href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit (JDK)</a></td>
+                <td class="tbltd1">version 6 or version 7</td>
+          </tr>               
+            
+            
+      </tbody>
+    </table>
+<h2><a name="create-platform-app"></a> Creating the Platform Application</h2>
+    <p>You can add NetBeans IDE libraries to a NetBeans Platform Application. In this section, you create the platform application and add the necessary libraries.</p>
+    <p>&nbsp;</p>
+    <p><strong>To create the module suite:</strong></p>
+    <ol>
+      <li>Click New Project (Ctrl-Shift-N on Linux and Windows, &#8984;-Shift-N on MacOS). The New Project wizard opens.</li>
+      <li>Select the NetBeans Modules category. Then select the NetBeans Platform Application project. Click Next.</li>
+      <li>Name the project RestfulClientPlatformApp. Choose a location for the project. Accept the other default settings and click Finish. The RestfulClientPlatformApp project appears in the Projects window.</li>
+      <li>In the Projects window, right-click the RestfulClientPlatformApp project node and select Properties. The Properties dialog opens.</li>
+      <li>In the Properties dialog, select the Libraries category. Note that only the Platform libraries are included.</li>
+      <li>Expand the node for the Enterprise libraries. Tick the Included box for the RESTful Web Service Libraries.<br>
+      <img src="../../../images_www/articles/73/websvc/jersey-rcp-client/suite-rest-libraries.png" alt="Suite properties showing RESTful WS Libraries selected for inclusion" height="421" width="600" class="margin-around"></li>
+      <li>The Resolve button is highlighted in red, because the RESTful Web Service Libraries depend on other libraries that are not included in the suite. Click the Resolve button to include those libraries.</li>
+      <li>Click OK. The platform application is ready for you to create the client module.</li>
+</ol>
+    <h2><a name="create-module"></a>Creating the Client Module</h2>
+<p>In just a few steps, you create a module that serves as a client for the Twitter What Are You Doing service. Twitter services are registered &quot;out of the box&quot; in the NetBeans IDE web service manager. You can add additional</p>
+<p><strong>To create the module and the client functionality:</strong></p>
+<ol>
+  <li>In the Projects window, right-click the Modules subnode of the RestfulClientPlatformApp and select Add New... The New Module Project wizard opens.</li>
+  <li>Name the module TwitterClientModule. Accept the default settings in the other fields and click Next. The Basic Module Configuration panel opens.</li>
+  <li>Give the code name base an arbitrary name, such as <tt>org.my.twitter.friends</tt>. Accept the default settings in the other fields and click Finish. TwitterClientModule now appears in the Projects window, under the Modules node of the platform application.</li>
+  <li>Right-click the TwitterClientModule node and select Open Project. A TwitterClientModule node now appears at the root level of the Projects window.<br>
+  <img src="../../../images_www/articles/73/websvc/jersey-rcp-client/module-root-node.png" height="205" width="254" alt="Projects window showing TwitterClientModule root node" class="margin-around"></li>
+  <li>Select  the new, root-level TwitterClientModule node. Launch the New File wizard (Ctrl-N/&#8984;-N, or New File icon, or context menu of the node). </li>
+  <li>In the New File wizard, select the Web Services category and the RESTful Java Client file type. Click Next. The New RESTful Java Client panel opens.</li>
+  <li>Name the class TwitterClient and give it an arbitrary package name, or select the code name base you previously created. <br>
+  <img src="../../../images_www/articles/73/websvc/jersey-rcp-client/new-rest-client-wiz-noresource.png" alt="New RESTful Client wizard showing class and package name" height="429" width="600" class="margin-around"></li>
+  <li>Under Select  the REST resource, select IDE Registered. Click Browse and browse for Twitter &gt; Twitter OAuth &gt;  [statuses] &gt; [friends_timeline.{format}]. Select this resource and click OK.<br>
+  <img src="../../../images_www/articles/73/websvc/jersey-rcp-client/browse-rest-resources.png" alt="The friends_timeline rest resource selected in the Available REST Resources dialog" height="512" width="430" class="margin-around">
+  <p class="notes"><strong>Note:</strong> You can register additional web services in the IDE. Go to the Services window, right-click the Web Services node, and choose Add Web Service. You can add a local file or a RESTful URL.<br>
+  <img src="../../../images_www/articles/73/websvc/jersey-rcp-client/register-ws.png" width="215" height="120" class="margin-around b-right b-bottom" alt="Add Web Service option for Web Services manager, Services window"></p></li>
+  <li>OAuth is automatically selected as the authentication type. Accept all defaults and click Finish.<br>
+  <img src="../../../images_www/articles/73/websvc/jersey-rcp-client/new-rest-client-wiz-complete.png" alt="Completed new RESTful Client wizard" height="475" width="585" class="margin-around"></li>
+  <li>A warning dialog opens. The dialog asks if you want to generate java artifacts from XML schema references in the WADL file. Click Yes.</li>
+  <li>Another warning may appear asking you to add modules to the classpath. Click OK.<br><img src="../../../images_www/articles/73/websvc/jersey-rcp-client/dependencies-warning.png" alt="Warning dialog about missing dependencies" width="538" height="213" class="margin-around"></li>
+  <li>If you need to add modules to the classpath, right-click the TwitterClientModule node and open its Project Properties. Go to the Libraries section, and add the modules with the Add Dependency button. This button opens a list of module dependencies to browse.<br>
+  <img src="../../../images_www/articles/73/websvc/jersey-rcp-client/add-dependencies.png" alt="Twitter Client Module properties window, Libraries section" width="596" height="452" class="margin-around"></li>
+</ol>
+<p>The TwitterClient class is generated and opens in the editor.   TheTwitterClient class is  complex and contains the following   fields, methods and inner classes:</p>
+<ul>
+  <li><tt>CONSUMER_KEY</tt>: Consumer Key string</li>
+  <li><tt>CONSUMER_SECRET</tt>: Consumer Sectret string</li>
+  <li><tt>initOAuth()</tt>: method for OAuh intitialization</li>
+  <li><tt>getFriendsTimeline()</tt>: method corresponding to HTTP method: getFriendsTimeline (from the REST resource) </li>
+  <li><tt>makeOAuthRequestUnique()</tt>: useful for multiple API calls in one session</li>
+  <li><tt>login</tt>: used to login to the Twitter Application (forces the authorization). This method calls two more generated methods, <tt>getOAuthAccessToken</tt> and <tt>getOAuthRequestToken</tt>.</li>
+</ul>
+<p> Next you get OAuth keys from Twitter and add them to TwitterClient.</p>
+<h2>Getting OAuth Keys from Twitter</h2>
+<p>In order for the NetBeans Platform application to access Twitter data, you need to get CUSTOMER and CUSTOMER_SECRET keys, along with a verification string, from Twitter. Twitter uses OAuth authorization, which requires these keys. However, OAuth is set up with the expectation that it will be called by a web application on a server. In order to get the authorization keys, you register a &quot;dummy&quot; web application.</p>
+
+  <p><b>To get the OAuth keys from Twitter:</b></p>
+  <ol>
+  <li>Open a browser. Go to the <a target="_blank" href="http://twitter.com/apps">Twitter &gt; Applications</a> page and click <a target="_blank" href="http://twitter.com/apps/new">Register a new application </a>. You need to be logged into a Twitter account. Make sure you are logged into the correct account, if you have multiple accounts.</li>
+  
+  <li>Type <tt>NB Platform Friends Application</tt> in the <strong>Application Name</strong> text field.</li>
+  
+  <li>Type a description into the <strong>Description</strong> field. This is required. You can type something like &quot;NetBeans Platform application calling the friends_timeline operation.&quot;</li>
+  <li>Type an arbitrary URL into the <strong>Application Website</strong> field.</li>
+  <li>In the <strong>Application Type</strong> option, select the Client radio button.</li>
+
+  <li>In the <strong>Default Access Type </strong>option, select the Read and Write radio button. </li>
+  <li>Leave other options default and press Save. A browser page opens with the details of the application you registered. The important details are the <strong>Consumer key</strong> and <strong>Consumer secret</strong>.</li>
+  <li>Copy the Consumer key from the browser. In the IDE, locate the line where <tt>CONSUMER_KEY</tt> is set. Paste the value of the consumer key between the quotation marks. <br><img src="../../../images_www/articles/73/websvc/jersey-rcp-client/keys-in-twitter-client.png" alt="TwitterClient showing CONSUMER_KEY and CONSUMER_SECRET location" width="467" height="220" class="margin-around"></li>
+  <li>Copy and paste the Consumer secret key from the browser into TwitterClient. Save your changes.</li>
+</ol>
+  
+<h2><a name="design-window"></a>Designing the Window</h2>
+<p>To complete the project, add a window. Populate the window with UI components and add actions so that clicking a button, for example, will show a list of friends' statuses.</p>
+<p><strong>To design the window:</strong></p>
+<ol>
+  <li>In the Projects window, right-click the module's node and select New &gt; Window. The New Window wizard opens with the Basic Settings panel.</li>
+  <li>In the Basic Settings panel, select the <tt>editor</tt> window position, select Open on Application Start, and click Next. The Name, Icon and Location panel opens.</li>
+  <li>In the Class Name Prefix field, type <tt>twitterFriendsStatus</tt>. Select the <tt>org.my.twitter.friends</tt> package. Click Finish.
+  <br><img src="../../../images_www/articles/73/websvc/jersey-rcp-client/new-window-wiz.png" alt="Name, Icon and Location panel of New Window wizard, showing class name prefix and package name" height="453" width="600" class="margin-around"></li>
+  <li>The <tt>twitterFriendsStatusTopComponent</tt> file opens in the Design view. A palette of Swing UI components opens on the right.<br>
+  <img src="../../../images_www/articles/73/websvc/jersey-rcp-client/empty-window.png" alt="Design view of new window and Palette of swing components, with no components added yet" height="407" width="587" class="margin-around"></li>
+  <li>Drag the following GUI elements into the design area:
+  
+    <table width="527" border="1">
+    <tbody>
+      <tr>
+        <th width="79" class="tblheader" scope="col">Component</th>
+        <th width="135" class="tblheader" scope="col">Display text</th>
+        <th width="291" class="tblheader" scope="col">Settings</th>
+      </tr>
+      <tr>
+        <td>Button</td>
+        <td>Get Friends' Statuses</td>
+        <td><p>Change variable name to getStatusesButton.</p>
+          <p>Unselect &quot;enabled&quot; property </p>
+          <p><img src="../../../images_www/articles/73/websvc/jersey-rcp-client/unselected-enabled-prop.png" alt="Unselected 'enabled' property" width="115" height="18">          </p>
+          </td>
+      </tr>
+      <tr>
+        <td>Button</td>
+        <td>Log in</td>
+        <td>Change variable name to loginButton</td>
+      </tr>
+      <tr>
+        <td>Scroll pane</td>
+        <td>--</td>
+        <td>&nbsp;</td>
+      </tr>
+      <tr>
+        <td>Text area</td>
+        <td>--</td>
+        <td>Drag into scroll pane</td>
+      </tr>
+      </tbody>
+    </table>
+    <p>Resize the text area/scroll pane and align the buttons as you like. <br>
+  <img src="../../../images_www/articles/73/websvc/jersey-rcp-client/designed-window.png" alt="Design view of new window showing completed window" height="415" width="536" class="margin-around"></li>
+  <li>Double-click the Login button. The IDE generates an action method for the button, and the editor switches to the Source view with the action method focused. </li>
+  <li>Type or copy the following code into the body of the login button action method. This code launches the method for logging the application into Twitter, enables the getStatuses button, and disables the login button. The application only needs to log in once. Note that TwitterClient does not need to be instantiated to call its login method. 
+    <pre class="examplecode">private void loginButtonActionPerformed(java.awt.event.ActionEvent evt) {                                   
+   TwitterClient.login();
+   getStatusesButton.setEnabled(true);
+   loginButton.setEnabled(false);
+} </pre></li>
+  <li>Double-click the getStatuses button. The IDE generates an action method for the button, and the editor switches to the Source view with the action method focused. <br>
+  </li>
+  <li>Paste or type the following handling code into the body of the getStatuses button action method. This code instantiates the TwitterClient and initializes OAuth, using the tokens that  the <tt>login</tt> method created. The code then calls <tt>getFriendsTimeline</tt>, gets a list of Statuses, 
+adds a line with the username and text for each status to a String, and passes the String to the text area.
+    <pre class="examplecode">private void getStatusesButtonActionPerformed(java.awt.event.ActionEvent evt) {                                         <br>    TwitterClient client = new TwitterClient(&quot;xml&quot;);<br>    client.initOAuth();<br>    Statuses response = client.getFriendsTimeline(Statuses.class, null, null, null, &quot;10&quot;);<br>    response.getStatus().size();<br>    String text = &quot;&quot;;<br>    for (StatusType st : response.getStatus()) {<br>        text += st.getUser().getName() + &quot;:  &quot; + st.getText() + &quot;\n&quot;;<br>    }<br>    jTextArea1.setText(text);<br>}     </pre>
+  </li>
+  <li>The code has some warning icons for classes that aren't found. Press Ctrl-Shift-I (&#8984;-Shift-I on MacOS). The Fix All Imports dialog opens. Select the <tt>twitter.twitteroauth.twitterresponse </tt>classes. Click OK.<br>
+  <img src="../../../images_www/articles/73/websvc/jersey-rcp-client/fix-imports.png" alt="Fix All Imports dialog showing the correct classes to import" height="227" width="573" class="margin-around"></li>
+</ol>
+<p>The application is now complete. Run the RestfulClientPlatformApp, and a NetBeans platform appears with your designed window in the Output section. Click Log In, and a dialog opens with a link to click for you to authorize  the application to access data.</p>
+<p><img src="../../../images_www/articles/73/websvc/jersey-rcp-client/oauth-auth-dialog.png" alt="Dialog for authorizing OAuth to pass data to application" width="501" height="167" class="margin-around"></p>
+<p>Click the link, and a browser page opens with Twitter asking if you want to allow your application to access Twitter data. Click Allow, and the page refreshes with a PIN. Copy the PIN and paste it into the authentication dialog's verifier string field. Click OK.</p>
+<p>The Log In button is now disabled, and the Get Friends' Statuses button is enabled. Click Get Friends' Statuses , and a list of your Twitter friends' latest status messages appears.</p>
+<img src="../../../images_www/articles/73/websvc/jersey-rcp-client/running-app.png" alt="Running application showing status messages" height="384" width="533" class="margin-around">
+
+
+<h2><a name="more-exercises"></a>More Exercises</h2>
+<p>Here are a few more ideas for you to explore:</p>
+<ul>
+  <li>Add another window to the module, using other methods in the friends_timeline API.</li>
+  <li>Add another module to the project, using a different Twitter resource.</li>
+  <li>Explore the Facebook Module Sample at New Project &gt; Samples &gt; NetBeans Modules &gt; Facebook Module Sample<br style="clear:both;" >
+  <br>
+  <div class="feedback-box" ><a href="/about/contact_form.html?to=3&amp;subject=Feedback:%20RESTful%20Service%20Clients%20in%20NetBeans%20Modules">Send Feedback on This Tutorial</a></div>
+
+    <!-- ======================================================================================= -->
+  </li>
+</ul>
+<h2><a name="seealso"></a>See Also</h2>
+    
+    <p>For more information about using NetBeans IDE to develop Java EE applications, see the following resources:    </p>
+    <ul>    
+        <li><a href="../../docs/websvc/rest.html">Getting Started with RESTful Web Services</a></li>
+        <li><a target="_blank" href="http://platform.netbeans.org/tutorials/nbm-quick-start.html">NetBeans Platform Quick Start</a></li>
+        <li><a href="../../docs/websvc/wsit.html">Advanced Web Service Interoperability</a></li>
+        <li><a href="../../trails/web.html">Web Services Learning Trail</a></li>
+        <li><a target="_blank" href="https://netbeans.org/kb/trails/platform.html">NetBeans Platform Learning Trail</a></li>
+    </ul>
+<p>To send comments and suggestions, get support, and keep informed about the latest
+        developments on the NetBeans IDE Java EE development features, <a href="../../../community/lists/top.html">join
+    the nbj2ee@netbeans.org mailing list</a>.</p>
+    <p>To send comments and suggestions, get support, and keep informed on topics connected with developing RCP applications on the NetBeans platform, <a href="../../../community/lists/top.html">join
+    the dev@platform.netbeans.org mailing list</a>.</p>
+</body>

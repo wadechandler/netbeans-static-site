@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html><head>
+
+
+        <link rel="stylesheet" href="../../../print.css" type="text/css" media="print"><title>JAXBによるWSDLのJavaへのバインディング - NetBeans IDE</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="KEYWORDS" content="NETBEANS, TUTORIAL, GUIDE, USER, DOCUMENTATION, WEB SERVICE, WEB SERVICES, SOAP, METRO, WSDL, JAVA, JAXB, JAX-WS">
+
+        <meta name="description" content="This tutorial shows how to use NetBeans IDE 7.0-7.4
+              to work with Java Architecture for XML Binding (JAXB) to generate Java classes based on XML documents.">
+        <link rel="stylesheet" href="../../../netbeans.css"></head><body>
+        <h1>JAXBによるWSDLのJavaへのバインディング</h1>
+
+        <p><a href="http://www.oracle.com/technetwork/articles/javase/index-140168.html" target="_blank">JAXB (Java Architecture for XML Binding API)</a>を使用すると、Javaプログラミング言語で書かれたアプリケーションからXMLドキュメントに簡単にアクセスできるようになります。JAXBは、XMLドキュメントのデータにアクセスするための、SAXまたはDOMパーサーの使用にかわる方法です。JAXBを使用してXMLドキュメントにアクセスする場合、最初にスキーマに相当する一連のJavaクラスにXMLドキュメントの<a href="http://www.oracle.com/technetwork/articles/javase/index-140168.html#binsch" target="_blank">スキーマを<em>バインド</em></a>します。その後、<a href="http://www.oracle.com/technetwork/articles/javase/index-140168.html#unmars" target="_blank">XMLドキュメントを<em>アンマーシャリング</em></a>します。ドキュメントのアンマーシャリングとは、ドキュメントの内容と構成を表すコンテンツ・オブジェクトのツリーを作成することを意味します。</p>
+        <p>また、JAXBを使用してXMLドキュメントをビルドすることもできます。JAXBを使用してXMLドキュメントをビルドするには、最初に、ビルドするXMLドキュメントの<a href="http://www.oracle.com/technetwork/articles/javase/index-140168.html#binsch2" target="_blank">スキーマをバインド</a>します。その後、<a href="http://www.oracle.com/technetwork/articles/javase/index-140168.html#crtree" target="_blank">コンテンツ・ツリーを作成</a>します。最後に、<a href="http://www.oracle.com/technetwork/articles/javase/index-140168.html#mars">コンテンツ・ツリーを<em>マーシャリング</em></a>してXMLドキュメントにします。</p>
+        <p><a href="http://www.oracle.com/technetwork/articles/javase/index-140168.html" target="_blank">Java Architecture for XML Binding API</a>の次の図に、JavaアプリケーションからXMLドキュメントにアクセスする処理とXMLドキュメントをビルドする処理の両方を示します。</p>
+        <p><img alt="JavaからXMLにアクセスまたはXMLを作成するためのJAXB処理を示す図" src="../../../images_www/articles/72/websvc/jaxb/xml_schema_fig1.PNG" style=" "><br>
+        </p>
+
+        <p>このチュートリアルではJAXBのためのNetBeans IDEツール・サポートを示します。このチュートリアルでは、具体的に次の3点を学びます。 </p>
+        <ul>
+
+            <li>IDEでウィザードを使用して、XMLドキュメントのスキーマをそのスキーマに相当する一連のJavaクラスにバインドし、ドキュメントをそれらのクラスにアンマーシャリングする方法。 </li>
+            <li>JAXBで生成されたクラスをアプリケーション・コード内で使用する方法。</li>
+            <li>JavaコードをXMLスキーマ・ドキュメントにマーシャリングする方法。  </li>
+        </ul>
+
+        <p>JAXBアーキテクチャおよびJAXBそのものに関する詳細は、<a href="http://java.sun.com/webservices/docs/2.0/tutorial/doc/" target="_blank">Java Webサービスのチュートリアル</a>の<a href="http://download.oracle.com/docs/cd/E17802_01/webservices/webservices/docs/2.0/tutorial/doc/JAXBWorks.html#wp100322" target="_blank">第2章: XMLスキーマおよびJavaクラスのバインディング</a>および<a href="http://download.oracle.com/docs/cd/E17802_01/webservices/webservices/docs/2.0/tutorial/doc/JAXBUsing.html#wp78319" target="_blank">第3章: JAXBの使用</a>を参照してください。 </p>
+
+        <p><b>目次</b></p>
+
+        <img alt="このページの内容は、NetBeans IDE 7.2、7.3および7.4に適用されます" class="stamp" src="../../../images_www/articles/72/netbeans-stamp-74-73-72.png" title="このページの内容は、NetBeans IDE 7.2、7.3および7.4に適用されます">
+        <ul>
+
+            <li><a href="#Exercise_1"> XMLドキュメントからのJavaオブジェクトの生成</a></li>
+            <li><a href="#Exercise_2"> JAXBウィザードの出力の確認</a></li>
+            <li><a href="#Exercise_3">JavaコードからXMLスキーマ・ドキュメントへのマーシャリング</a></li>
+        </ul>
+
+        <p><b>このチュートリアルに従うには、次のソフトウェアとリソースが必要です。</b></p>
+
+        <table>
+
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                    <th class="tblheader" scope="col">必須バージョン</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                    <td class="tbltd1"> Java EEダウンロード・バンドル </td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit (JDK)</a> </td>
+                    <td class="tbltd1">バージョン7またはバージョン6</td>
+                </tr>
+                                <tr>
+                    <td class="tbltd1">このチュートリアルで使用するWSDLファイル</td>
+                    <td><a href="http://www.netbeans.org/files/documents/4/2518/CreditReportSimple.wsdl">CreditReportSimple.wsdl</a></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p class="notes">TomcatおよびGlassFishサーバーは、どちらもNetBeans IDEのWebおよびJava EEの配布とともにインストールできます。または、<a href="https://glassfish.java.net/download.html">GlassFishサーバーのダウンロード・ページ</a>か<a href="http://tomcat.apache.org/download-60.cgi">Apache Tomcatのダウンロード・ページ</a>からダウンロードすることもできます。</p>
+
+        <!-- ===================================================================================== -->
+        <h2><a name="Exercise_1"></a><!--Exercise 1: --> XMLドキュメントからのJavaオブジェクトの生成</h2>
+
+        <p>この課題の目標は、プロジェクトを作成し、XMLドキュメントからJavaオブジェクトを生成することです。</p>
+
+        <ol>
+
+            <li><a href="http://www.netbeans.org/files/documents/4/2518/CreditReportSimple.wsdl" target="_blank">CreditReportSimple.wsdl</a>をダウンロードし、選択した場所にこれを保存します。<br>
+            </li>
+            <li>「ファイル」>「新規プロジェクト」を選択します。「カテゴリ」から「Java」を選択します。「プロジェクト」で「Javaアプリケーション」を選択して、「次」をクリックします。</li>
+            <li>「プロジェクト名」に「<tt>JseSimpleClientReport</tt>」と入力して「終了」をクリックします。「プロジェクト」ウィンドウにJseSimpleClientReportプロジェクトが表示されます。</li>
+            <li>「プロジェクト」ウィンドウで「<tt>JseSimpleClientReport</tt>」ノードを右クリックし、「新規」>「その他」>「XML」>「JAXBバインディング」を選択します。「次」をクリックします。新規JAXBバインディング・ウィザードが表示されます。<br><img alt="JAXBウィザード" border="1" class="margin-around" src="../../../images_www/articles/72/websvc/jaxb/jaxb-wiz-1.png">
+                <p>このウィザードの設定は、次の目的のために使用されます。</p>
+                <ul>
+                    <li><b>バインディング名。</b>新しいJAXBバインディングを識別するために使用される名前を指定します。</li>
+                    <li><b>プロジェクト。</b>現在のプロジェクトの名前を表示します。</li>
+                    <li><b>スキーマ・ファイル。</b>作業対象のファイルは、ローカルまたはオンラインのどちらでも使用できます。</li>
+                    <li><b>スキーマ・タイプ。</b>次のXMLスキーマ言語がサポートされます。
+                        <ul>
+                            <li><a href="http://www.w3.org/XML/Schema" target="_blank"><b>XMLスキーマ</b></a></li>
+                            <li><a href="http://relaxng.org/" target="_blank"><b>Relax NG</b></a> - 簡易なXMLスキーマ言語。XML構文 </li>
+                            <li><a href="http://relaxng.org/" target="_blank"><b>Relax NG Compact</b></a> - 簡易なXMLスキーマ言語。非XML構文</li>
+                            <li><b>XML DTD - </b>XMLスキーマよりも古い選択肢<br></li>
+                            <li><b><a href="http://www.w3.org/TR/wsdl" style="font-weight: bold;">WSDL</a> - </b>Webサービス記述言語。SOAPベースのWebサービスを定義するためのXMLスキーマ言語。<br>
+                            </li>
+                        </ul>
+                    </li>
+                    <li><b>パッケージ名。</b>Javaオブジェクトの生成先となるパッケージを指定します。</li>
+                    <li><b>コンパイラ・オプション。</b>Java EE 7チュートリアルの<a href="http://docs.oracle.com/javaee/7/tutorial/doc/">該当箇所</a>で説明しているように、多くのコンパイラ・オプションが使用できます。ただし、JAXBウィザードに関しては、次の項目のみが該当し、ウィザードのチェックボックスを使用して設定できます。
+                        <ul>
+                            <li><b>nv。</b>入力スキーマの厳密な検証を実行しません。デフォルトでは、ソース・スキーマの厳密な検証は、処理前に実行されます。これはバインディング・コンパイラが<i>何の検証も実行しない</i>という意味ではないことに注意してください。単に厳密でない検証を実行するという意味です。</li>
+                            <li><b>読取り専用。</b>コンパイラが、生成されるJavaソースに読取り専用のマークを付けるようにします。デフォルトでは、コンパイラは、生成するJavaソース・ファイルを書込み保護しません。</li>
+                            <li><b>npa。</b><tt>**/package-info.java</tt>へのパッケージ・レベルの注釈の生成を抑制します。このスイッチを使用すると、生成されたコードが、他の生成されたクラスにこれらの注釈を取り込みます。</li>
+                            <li><b>詳細。</b>進捗情報や警告など、コンパイラの出力を最大にします。</li>
+                            <li><b>非表示。</b>進捗情報や警告など、コンパイラの出力を無効にします。</li>
+                        </ul>
+                    </li>
+                    <li><b>拡張の使用。</b>デフォルトでは、コンパイラはJAXB仕様の互換性の章で説明されているルールを厳密に実行します。またデフォルト(厳密)モードでは、この仕様で定義されたバインディング・カスタマイズのみを使用するように制限されます。このオプションにより、JAXBベンダー拡張の使用が許可されます。</li>
+                    <li><b>バインディング・ファイルの使用。</b>1つまたは複数のJAXBバインディング・カスタマイズ・ファイルをインポートおよび編集できます。</li>
+                    <li><b>カタログ・ファイルの使用。</b>OASISカタログ・ファイルをインポートおよび編集できます。</li>
+                </ul>
+            </li>
+            <li>「バインディング名」に「<tt>CreditReport</tt>」と入力します。</li>
+            <li>「スキーマ・ファイル」で「ローカル・ファイル・システムから選択」を選択します。「参照」をクリックし、このチュートリアルの開始時にダウンロードしたWSDLファイルを参照します。</li>
+            <li>「スキーマ・タイプ」ドロップダウン・メニューで「WSDL」を選択します(IDEによって自動的に選択されている場合を除く)。
+                <p class="alert"><strong>注意: </strong>WSDLスキーマのサポートは試験段階であり、WSDLスキーマをアクティブ化するには-wsdlオプションを使用する必要があることを示す警告が表示される場合があります。この警告は無視してください。</p></li>
+            <li>「パッケージ名」に<tt>org.netbeans.j2ee.wsdl.creditreport</tt>と入力します。次のように表示されます。<img alt="入力されたJAXBウィザード" border="1" class="margin-around" src="../../../images_www/articles/72/websvc/jaxb/jaxb-wiz-2.png" title="入力されたJAXBウィザード"></li>
+            <li>「終了」をクリックします。</li>
+        </ol>
+
+        <p>IDEは、指定されたXMLドキュメントからJavaオブジェクトを生成します。次の項では、IDEでJavaオブジェクトを確認します。 </p>
+
+        <h2><a name="Exercise_2"></a>JAXBウィザードの出力の確認</h2>
+
+        <p>この課題の目標は、NetBeans IDEのツールに慣れ、JAXBウィザードの出力を処理することです。</p>
+
+        <ol>
+
+            <li>プロジェクトがビルドされるたびにIDEが再生成する他のアーティファクトと同様、Javaオブジェクトは<tt>build</tt>フォルダに生成されます。「ファイル」ウィンドウを開き、生成されたJavaオブジェクトの場所に移動します。これらのJavaオブジェクトは「プロジェクト」ウィンドウの「生成されたソース」ノードにも表示されます。<br><img alt="生成されたJavaプロジェクトを表示する「プロジェクト」ビューと「ファイル」ビュー" border="1" class="margin-around" src="../../../images_www/articles/72/websvc/jaxb/gen-src.png" title="生成されたJavaプロジェクトを表示する「プロジェクト」ビュー"></li>
+            <li>次のように、「プロジェクト」ウィンドウでは、WSDLファイルを格納している新しいノードも表示されます。「CreditReport」ノードを右クリックすると再びウィザードが開き、先ほど指定した設定を変更できることに注意してください。<br><img alt="「JAXBオプションを変更」オプションを表示しているCreditReportのコンテキスト・メニュー" class="margin-around" src="../../../images_www/articles/72/websvc/jaxb/change-jaxb-options.png" title="「JAXBオプションを変更」オプションを表示しているCreditReportのコンテキスト・メニュー">
+                
+          </li>
+            <li>
+              <p>ウィザードで設定を変更したとしても、次のようにすればJavaオブジェクトを再生成できます。<br><img alt="「Javaコードを再生成」オプションを表示している「JAXBバインディング」のコンテキスト・メニュー" class="margin-around" src="../../../images_www/articles/72/websvc/jaxb/regen-code.png" title="「Javaコードを再生成」オプションを表示している「JAXBバインディング」のコンテキスト・メニュー"></p>
+            </li>
+            <li>「WSDL」ファイルを右クリックし、「開く」を選択します。ドキュメントがエディタに表示されます。<br>
+            </li>
+        </ol>
+
+        <p>XMLドキュメントでIDEが生成する内容について把握できたので、次はこれまで紹介したツールを使用して、生成したJavaオブジェクトから何か実用的な処理をしてみます。<!-- ===================================================================================== -->
+        </p>
+
+        <h2><a name="Exercise_1"></a><!--Exercise 2: --> JavaコードからXMLスキーマへのマーシャリング </h2>
+
+        <p>この課題の目標は、IDEが生成したファイルとコードで何か実用的な処理をすることです。生成されたいずれかのJavaオブジェクトになんらかの値を設定し、IDEの「出力」ウィンドウに表示されるXMLスキーマ・ドキュメントにオブジェクトをマーシャリングします。</p>
+
+        <ol>
+
+            <li>新規Javaアプリケーション・ウィザードが生成したメイン・クラスを開きます。デフォルトでは、このクラスにはプロジェクトの名前<tt>JseSimpleClientReport.java</tt>が付けられます。生成されたルートJAXBクラスの1つである<tt>CreditReport</tt>を<tt>main</tt>メソッドの本文で宣言します。
+                <pre class="examplecode">public static void main(String[] args) {<br>     CreditReport cr = new CreditReport(); <br>}</pre>
+            </li>
+          <li>警告アイコンが表示されます。マウスをこのアイコンの上に移動すると、IDEが<tt>CreditReport</tt>クラスを見つけられないことを示すツールチップが表示されます。警告アイコンを左クリックし、IDEでインポート文を追加するオプションを選択します。</li>
+            <li><tt>main</tt>メソッドの本文で「cr」と入力します。IDEによって、このJAXBアーティファクトに関連するコード補完が行われます(システムによっては、[Ctrl]-[Space]を押す必要があります)。<br><img alt="コード補完のオプション" border="1" class="margin-around" src="../../../images_www/articles/72/websvc/jaxb/jaxb-codecompletion.png" title="コード補完のオプション"></li>
+            <li>次のように、いくつかの値をJAXBクラスで設定します(<tt>java.math.BigInteger</tt>のインポート文を追加)。
+                <pre class="examplecode">    cr.setFirstName("Butros Butros");<br>    cr.setLastName("Gali");<br>    cr.setDob("1930/05/30");<br>    cr.setScore("900");<br>    cr.setSsn("123-45-6789");<br><br>    cr.setLatestAddress1("2500 Some Ave");<br>    cr.setLatestAddress2("Suite 5000");<br>    cr.setCity("New York");<br>    cr.setState("New York");<br>    cr.setCountry("USA");<br>    cr.setPostalCode("NY 12345-6789");<br><br>    cr.setCurrency("USD");<br>    cr.setLiability(BigInteger.valueOf(2000000));<br>    cr.setLiquidAssests(BigInteger.valueOf(3000000));<br>    cr.setImmovableAssests(BigInteger.valueOf(5000000));<br>                </pre>
+            </li>
+            <li><tt>main</tt>メソッドの本文で、挿入した値の下に「jaxbm」という文字を入力します。これらの文字は「<a href="http://www.oracle.com/technetwork/articles/javase/index-140168.html#mars" target="_blank">JAXB Marshalling</a>」を表します。次のように表示されます。<br><img alt="赤い下線付きのjaxbmを表示しているエディタのスニペット" border="1" class="margin-around" src="../../../images_www/articles/72/websvc/jaxb/jaxb-template.png" title="赤い下線付きのjaxbmを表示しているエディタのスニペット">
+                <p>入力した文字はJavaプログラミング言語の構文に従っていないため、赤い下線が表示されます。ただし、次のステップで使用するNetBeansのコード・テンプレートになります。</p> <p class="notes">NetBeansにはJAXBアンマーシャリング用のコード・テンプレートもあります。この省略名は「jaxbu」です。</p>
+            </li>
+            <li>[Tab]キーを押します。
+                <p>「jaxbm」の文字が拡張され、コード・スニペットが表示されます。</p>
+                <pre class="examplecode">try {<br>    javax.xml.bind.JAXBContext jaxbCtx = javax.xml.bind.JAXBContext.newInstance(cr.getClass().getPackage().getName());<br>    javax.xml.bind.Marshaller marshaller = jaxbCtx.createMarshaller();<br>    marshaller.setProperty(javax.xml.bind.Marshaller.JAXB_ENCODING, "UTF-8"); //NOI18N<br>    marshaller.setProperty(javax.xml.bind.Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);<br>    marshaller.marshal(cr, System.out);<br>} catch (javax.xml.bind.JAXBException ex) {<br>    // XXXTODO Handle exception<br>    java.util.logging.Logger.getLogger("global").log(java.util.logging.Level.SEVERE, null, ex); //NOI18N<br>}</pre>
+                <p class="alert"><b>警告:</b> コード・テンプレートの拡張は慎重に行ってください。スペースを追加してから[Tab]を押したり、誤入力したフレーズを修正してから[Tab]を押したりすることはできません。[Tab]を押すことができるのは、フレーズを正しく入力した場合のみです。誤入力をした場合は、入力していたフレーズを削除し、フレーズ全体を入力し直してください。 </p>
+            </li>
+            <li>プロジェクト・ノードを右クリックし、「実行」を選択してアプリケーションを実行します。出力ウィンドウに、次のように表示されます。<br><img alt="クライアント・レポートの出力" border="1" class="margin-around" src="../../../images_www/articles/72/websvc/jaxb/jaxb-output.png" title="クライアント・レポートの出力"></li>
+        </ol>
+
+        <br>
+
+        <div class="feedback-box"><a href="/about/contact_form.html?to=3&amp;subject=Feedback:%20JAXB%20Wizard%20in%20NetBeans%20IDE">ご意見をお寄せください</a></div>
+
+        <br style="clear: both;">
+
+        <!-- ======================================================================================= -->
+        <h2><a name="seealso"></a>関連項目</h2>
+
+        <p>NetBeans IDEを使用したJava EEアプリケーションの開発方法の詳細は、次のリソースを参照してください。 </p>
+
+        <ul>
+
+            <li><a href="../../docs/websvc/jax-ws.html">JAX-WS Webサービスについて</a></li>
+            <li><a href="../../docs/websvc/client.html">JAX-WS Webサービス・クライアントの開発</a></li>
+            <li><a href="../../docs/websvc/rest.html">RESTful Webサービスについて</a></li>
+            <li><a href="../../docs/websvc/wsit.html">高度なWebサービス相互運用性</a></li>
+            <li><a href="../../trails/web.html">Webサービスの学習</a></li>
+        </ul>
+
+        <p><a href="../../../community/lists/top.html">nbj2ee@netbeans.orgメーリング・リスト</a>に登録することによって、NetBeans IDE Java EE開発機能に関するご意見やご提案を送信したり、サポートを受けたり、最新の開発情報を入手したりできます。</p>
+
+    </body></html>

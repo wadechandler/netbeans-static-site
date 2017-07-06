@@ -1,0 +1,1663 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>NetBeans Server-Skeleton Module Tutorial for NetBeans Platform 6.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../netbeans.css"> 
+
+</head>
+<body>
+
+<h1>NetBeans Server-Skeleton Module Tutorial</h1>
+
+
+<p>This tutorial is intended to ease the <i>initial</i> phase of developing NetBeans modules that provide
+ support for web deployment servers, such as the Tomcat Web Server or the Sun Java System Application Server.
+ It provides the code
+ for a skeleton server module, together with a detailed procedure for creating it from scratch and a full
+ description of each of its parts. 
+ 
+ <p>Since this is "just" a <i>skeleton</i> module, server-specific features
+  that relate to starting and stopping, deploying, undeploying, and property customization are not covered here. However, after you create and 
+ install the skeleton server module, you will have enough functionality to be able to register a new deployment server in the
+ Server Manager and assign it to an application via the New Project wizard and the Project Properties dialog box. And, you will
+ have a working framework on top of which you can build your own server module for the NetBeans IDE. 
+ 
+ <!--<p>At the end of the tutorial,
+ you will be pointed to comparable deployment servers in NetBeans CVS, which you can explore to see how server-specific
+features are implemented elsewhere.</p>-->
+
+<p>The following topics are covered below:</p>
+<ul>
+  <li><a href="#gettingtoknowthesample">Getting to Know the Sample</a></li>
+  <ul>
+  <li><a href="#installing">Installing the Software</a></li>
+    <li><a href="#installing-sample">Installing the Sample</a></li>	
+  <li><a href="#introducing-sample">Introducing the Sample</a></li>	
+  <li><a href="#introducing-sources">Introducing the Sources</a></li>
+  </ul>
+  <li><a href="#settingupthemoduleproject">Setting Up the module Project</a></li>
+  <ul>
+  <li><a href="#creatingthemoduleproject">Creating the module Project</a></li>
+  <li><a href="#specifying">Specifying the module's Dependencies</a></li>
+  </ul>
+  <li><a href="#creatingandgettingtoknowthemainfiles">Creating the Factory Classes</a></li>
+  <ul>
+    <li><a href="#MyDeploymentFactory"><tt>MyDeploymentFactory.java</tt></a>
+    <li><a href="#MyJ2eePlatformFactory"><tt>MyJ2eePlatformFactory.java</tt></a>
+    <li><a href="#MyOptionalFactory"><tt>MyOptionalFactory.java</tt></a>
+    <li><a href="#MyConfigurationFactory"><tt>MyConfigurationFactory.java</tt></a>
+    <li><a href="#MyRegistryNodeFactory"><tt>MyRegistryNodeFactory.java</tt></a>
+  </ul>	
+   <li><a href="#creatingandgettingtoknowtheimplementationfiles">Creating the Implementation Classes</a></li>
+  <ul>
+    <li><a href="#MyDeploymentManager"><tt>MyDeploymentManager.java</tt></a>
+    <li><a href="#MyInstantiatingIterator"><tt>MyInstantiatingIterator.java</tt></a>
+    <li><a href="#MyJ2eePlatformImpl"><tt>MyJ2eePlatformImpl.java</tt></a>
+    <li><a href="#MyStartServer"><tt>MyStartServer.java</tt></a>
+    <li><a href="#WarDeploymentConfiguration"><tt>WarDeploymentConfiguration.java</tt></a>
+    <li><a href="#MyInstanceNode"><tt>MyInstanceNode.java</tt></a>
+  </ul>	
+  <li><a href="#finetuning">Setting Up the Supporting Resources</a></li>
+  <li><a href="#building">Building and Installing the Module</a></li>
+ <!-- <li><a href="#addingserverspecific">Adding Server-Specific Code</a></li>-->
+  
+
+</ul>
+
+<p>For more information on working with NetBeans modules, see the <a href="https://netbeans.org/kb/trails/platform.html">
+NetBeans Module and Rich-Client Application tutorials page</a> on the NetBeans website. If you have questions, visit the 
+ <a href="http://wiki.netbeans.org/wiki/view/NetBeansDeveloperFAQ"> NetBeans Developer FAQ</a> or use the feedback link
+ at the top of this page.</p>
+
+<br />
+<!-- ===================================================================================== -->
+<h2><a name="gettingtoknowthesample"></a>Getting to Know the Sample</h2>
+<p>Before you start writing the module, you have to make sure you have all of the necessary software.
+ In addition, you might want to play with the sample before building it yourself. Getting to know the
+ sample lets you know what you are in for during the rest of this tutorial!</p>
+<div class="indent">
+
+ <p><h3 class="tutorial"><a name="installing-software"></a>Installing the Software</h3>
+   
+    
+      <p>Before you begin, you need to install the following software on your 
+        computer:</p>
+<ul>
+    <li>The J2SE(TM) Development Kit (JDK), version 5.0 or compatible 
+    (<a href="http://java.sun.com/javase/downloads/index.jsp">download the 
+    most recent JDK</a>).</li>
+        <li>NetBeans IDE 6.0 (<a href="http://download.netbeans.org/netbeans/6.0/final/">download</a>).
+    </ul>  
+ <br />
+
+    <h3 class="tutorial"><a name="installing-sample"></a>Installing the Sample</h3>
+<p>Take the following steps to install the sample:
+<ol><li>Download the Server Plugin Template from the Plugin Portal:
+
+<p><p><p><a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=5274">http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=5274</a>.
+
+<li>In the IDE, choose File &gt; New Project and look in the Samples | NetBeans Modules
+category. You should see the "My Server Module Template" there:
+<p><p><p><img border="1" src="../../images/tutorials/myserver/60-new-project-wizard.png" alt="Sample in New Project wizard.">
+<li>Complete the wizard. You should now see the following module project structure in the Projects window:
+<p><p><p><img border="1" src="../../images/tutorials/myserver/60-projects-window.png" alt="Projects window">
+<li>In the Projects window, right-click the "My Server Module"
+ project node and choose Install/Reload in Target Platform. The target
+ instance of the IDE opens and the module is installed. Alternatively, if you want to
+ install the module in the current instance of the IDE, choose Install/Reload in Development IDE instead.</ol>
+ 
+ <p>The module is now installed. In the next section, we look at the features provided
+  by the server skeleton.
+
+ <h3 class="tutorial"><a name="introducing-sample"></a>Introducing the Sample</h3>
+ <p>In this section, we explore the features provided by the server skeleton plugin. You will see
+ what the framework provides and, in the process, what you will need to add to turn the skeleton
+ into a full server plugin.
+<ol>
+<li>Choose Tools &gt; Servers, click Add Server, and notice that a new server is available:
+<p><p><p><img src="../../images/tutorials/myserver/60-choose-server.png" border="1" alt="Choose my server.">
+<li>Select "My Server" and type a name, such as "Test Server", in the Name field:
+<p><p><img border="1" src="../../images/tutorials/myserver/60-add-server-instance2.png" alt="Set instance properties.">
+<li>Click Next. The basis of an installation form implementation is displayed:
+<p><p><img border="1" src="../../images/tutorials/myserver/60-add-server-instance.png" alt="Set instance properties.">
+<p><p>See <a href="#MyInstantiatingIterator"><tt>MyInstantiatingIterator.java</tt></a> for related code details.
+<li>Click Finish. A new node appears in the Servers list and the basis of a customizer implementation is displayed in the 
+ main part of the panel:
+<p><p><img border="1" src="../../images/tutorials/myserver/60-add-server-instance3.png" alt="Set customizer properties.">
+<p><p>See <a href="#MyInstanceNode"><tt>MyInstanceNode.java</tt></a> for related code details.
+<li>Click Close. Open the Services window (Ctrl-5) and notice the new "Test Server" node under the Servers node. When you right-click the node, the
+ basis of your menu implementation is displayed:
+<p><p><img border="1" src="../../images/tutorials/myserver/60-runtime-window.png" alt="Runtime window.">
+
+<p>Even though the skeleton server cannot be started, you can assign it as a target server
+ to an application, as shown in the next step.
+<li>Assign the server as an application's target server, either while creating the web application
+ or afterwards, while customizing it:
+<ul><p><li>Choose File &gt; New Project (Ctrl-Shift-N). Under Categories, select Web and under Projects select
+ Web Application. Click Next. In the Name and Location panel, notice that the Server drop-down includes the
+ new server instance:
+<p><p><img border="1" src="../../images/tutorials/myserver/60-name-and-location-panel.png" alt="Name and location panel."></li>
+
+<li>Right-click an existing web application and choose Properties. The Project Properties dialog box opens. In the Run panel, 
+ notice that the Server drop-down includes the
+ new server type:
+<p><p><img border="1" src="../../images/tutorials/myserver/60-run-panel.png" alt="Run panel."></li></ul>
+</p>
+</ol>
+
+<p>Now that you know exactly what functionality the skeleton server provides, let's look at the 
+skeleton server's sources!</p>
+
+<h3 class="tutorial"><a name="introducing-sources"></a>Introducing the Sources</h3>
+
+<p>The sample consists of factory classes, implementation classes, and supporting files. <p>Below,
+ each are introduced in turn:</p>
+
+
+<ul><li><p><b>Factory Classes.</b> The module uses the Factory pattern to instantiate the implementation classes. The module's factories
+ are highlighted in the illustration below:
+<p><p><img border="1" src="../../images/tutorials/myserver/60-projects-window-factories.png" alt="Main files.">
+<p>The factories are introduced in alphabetical order:
+  <p><table width="76%" border="1">
+
+    <tbody><tr>
+      <td>
+	<div align="left"><b>File</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Description</b></div>
+
+      </td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt><a href="#MyDeploymentFactory">MyDeploymentFactory.java</a></tt></td>
+      <td>
+
+An implementation of the <tt><a href="http://java.sun.com/j2ee/1.4/docs/api/javax/enterprise/deploy/spi/factories/DeploymentFactory.html">DeploymentFactory</a></tt> interface, which produces instances of <tt><a href="http://java.sun.com/j2ee/1.4/docs/api/javax/enterprise/deploy/spi/DeploymentManager.html">DeploymentManager</a></tt> interface implementations, such as <a href="#MyDeploymentManager"><tt>MyDeploymentManager</tt></a>.
+
+
+</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt><a href="#MyJ2eePlatformFactory">MyJ2eePlatformFactory.java</a></tt></td>
+
+      <td>
+An implementation of the <tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-j2eeserver/org/netbeans/modules/j2ee/deployment/plugins/api/J2eePlatformFactory.html">J2eePlatformFactory</a></tt> abstract class, which produces instances of <tt><a href="http://www.netbeans.org/download/dev/javadoc/org-netbeans-modules-j2eeserver/org/netbeans/modules/j2ee/deployment/plugins/api/J2eePlatformImpl.html">J2eePlatformImpl</a></tt> abstract class implementations, such as <a href="#MyJ2eePlatformImpl"><tt>MyJ2eePlatformImpl</tt></a>.
+
+
+
+      </td>
+    </tr>
+
+    <tr>
+      <td align="left" valign="top"><tt><a href="#MyOptionalFactory">MyOptionalFactory.java</a></tt></td>
+      <td>
+
+An implementation of the <tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-j2eeserver/org/netbeans/modules/j2ee/deployment/plugins/api/OptionalDeploymentManagerFactory.html">OptionalDeploymentManagerFactory</a></tt> abstract class. Although its name implies that it 
+is <i>optional</i>, it isn't. You need to at least implement its methods for starting, stopping, and
+ registering the server in the IDE. Therefore, the <tt><a href="#MyOptionalFactory">MyOptionalFactory</a></tt> class produces instances of the
+ <a href="#MyStartServer"><tt>MyStartServer</tt></a> and <a href="#MyInstantiatingIterator"><tt>MyInstantiatingIterator</tt></a> implementation classes.</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt><a href="#MyConfigurationFactory">MyConfigurationFactory.java</a></tt></td>
+      <td>
+          An implementation of the <tt>ModuleConfigurationFactory</tt> class, which returns deployment-specific instances. For example,
+          here the <a href="#WarDeploymentConfiguration"><tt>WarDeploymentConfiguration</tt></a> class is returned,
+          with a specific configuration for the creation and deployment of a WAR archive.
+</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt><a href="#MyRegistryNodeFactory">MyRegistryNodeFactory.java</a></tt></td>
+      <td>
+An implementation of the <tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-j2eeserver/org/netbeans/modules/j2ee/deployment/plugins/api/RegistryNodeFactory.html">RegistryNodeFactory</a></tt> interface. The purpose of this factory is to
+  produce one or more registry nodes, which in this case is <a href="#MyInstanceNode"><tt>MyInstanceNode</tt></a>, 
+ as user interface representations in the Services window.
+</td>
+    </tr>
+
+    </tbody>
+  </table>
+
+<li><p><b>Implementation Classes.</b> The implementation classes are instantiated by the factories. The module's implementation
+ classes are highlighted in the illustration below:
+<p><p><img border="1 "src="../../images/tutorials/myserver/60-projects-window-mainfunctionality.png" alt="Main files.">
+<p>The implementation classes are introduced in alphabetical order:
+  <p><table width="76%" border="1">
+
+    <tbody><tr>
+      <td>
+	<div align="left"><b>File</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Description</b></div>
+
+      </td>
+    </tr>
+     
+    <tr>
+      <td align="left" valign="top"><a href="#MyDeploymentManager"><tt>MyDeploymentManager.java</tt></a></td>
+      <td>
+
+A dummy implementation of the <tt><a href="http://java.sun.com/j2ee/1.4/docs/api/javax/enterprise/deploy/spi/DeploymentManager.html">DeploymentManager</a></tt> interface, which does nothing.
+ It is up to you to provide the necessary server-specific implementation features.
+
+
+</td>
+    </tr>
+   
+
+    <tr>
+      <td align="left" valign="top"><a href="#MyInstantiatingIterator"><tt>MyInstantiatingIterator.java</tt></a></td>
+      <td>
+
+Creates a wizard for the registration of new server type instances in the IDE. The current
+ implementation lets the user specify the Display Name only; other properties are 
+ hardcoded in order to keep the implementation as simple as possible.
+
+
+
+</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><a href="#MyJ2eePlatformImpl"><tt>MyJ2eePlatformImpl.java</tt></a></td>
+      <td>
+An implementation of <tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-j2eeserver/org/netbeans/modules/j2ee/deployment/plugins/api/J2eePlatformImpl.html">J2eePlatformImpl</a></tt>, which is used to describe the target environment that
+ J2EE applications are built against and subsequently deployed to. It provides a set of server 
+libraries, supported module types, and J2EE specification versions.
+</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><a href="#MyStartServer"><tt>MyStartServer.java</tt></a></td>
+      <td>
+An implementation of the <tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-j2eeserver/org/netbeans/modules/j2ee/deployment/plugins/api/StartServer.html">StartServer</a></tt> abstract class. Its purpose is to provide ability to start, 
+ stop, and determine the state of the server.
+</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><a href="#WarDeploymentConfiguration"><tt>WarDeploymentConfiguration.java</tt></a></td>
+      
+      <td>
+ An implementation of several classes which, together, configure deployment-specific instances. For example,
+here WAR deployment is handled.</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><a href="#MyInstanceNode"><tt>MyInstanceNode.java</tt></a></td>
+      <td>
+Represents the new server in the Services window. The <tt>j2eeserver</tt> module, however, 
+ adds to each node a set of default features, such as the capability to display the running status and
+ a default set of menu items.
+    </tr>
+
+    </tbody>
+  </table>
+
+<li><p><b>Supporting Resources.</b> The module's supporting resources are highlighted in the illustration below:
+<p><p><img border="1" src="../../images/tutorials/myserver/60-projects-window-supporting.png" alt="Supporting files.">
+<p>The supporting resources in the Java packages are introduced in alphabetical order below:
+  <p><table width="76%" border="1">
+
+    <tbody><tr>
+      <td>
+	<div align="left"><b>File</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Description</b></div>
+
+      </td>
+    </tr>
+   
+    <tr>
+	    <td align="left" valign="top"><tt><a href="#Bundle.properties">Bundle.properties</a></tt></td>
+
+      <td>
+This is a standard Java properties file, which uses the syntax <tt>Key=Value</tt>. Keys are
+code names for things that appear in the source code, with values designating those
+things which will be displayed to the user.
+This file is useful for localization. For example, by creating a properties file such
+as <tt>Bundle_ja.properties</tt>, and filling all the values with Japanese, this module will automatically display
+everything in Japanese, if the
+user is running the IDE in Japanese mode.
+
+      
+      </td>
+
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt><a href="#layer.xml">layer.xml</a></tt></td>
+
+      <td>
+       Registers the new server type in the NetBeans filesystem. 
+      </td>
+    </tr>
+ <tr>
+      <td align="left" valign="top"><tt><a href="#nbdep.xml">nbdep.xml</a></tt></td>
+
+      <td>
+       Specifies the icon to be used in the Services window,
+ the URL for obtaining the disconnected <tt>DeploymentManager</tt> instance, the
+ <tt>container-limitation element</tt> that specifies what kind of deployments are supported,
+ and the context path.
+      </td>
+    </tr>
+
+    <tr>
+	    <td align="left" valign="top"><tt><a href="#server.gif">server.gif</a></tt></td>
+
+      <td>
+	Icon for the new server type's node in the IDE.
+      </td>
+
+    </tr>
+
+    </tbody>
+  </table>
+
+
+<p>For basic information each of the Important Files, see the 
+ <a href="https://netbeans.org/kb/articles/quickstart-nbm.html">Introduction to NetBeans Module Development</a>.</ul>
+<p>We have now looked at the features provided by the server skeleton and at each of the
+ files that you need to create it from scratch. Let's now go through the whole process from
+  start to finish, during which we will recreate the whole server skeleton. At the end, we will
+   look at further resources worth exploring when building your own server implementation on top
+    of the server skeleton.</p>
+      </div>
+<br />
+
+<!-- ===================================================================================== -->
+<h2><a name="settingupthemoduleproject"></a>Setting Up the module Project</h2>
+<p>The first step in creating a server module is setting up your project in the IDE.
+The IDE provides a wizard that 
+sets up the source structure and all the basic files
+ needed when you start creating a module.</p>
+<div class="indent">
+
+<h3 class="tutorial"><a name="creatingthemoduleproject"></a>Creating the Module Project</h3>
+      <ol>
+	<li>Choose File &gt; New Project. Under Categories, select NetBeans Modules. Under Projects, 
+ select Module Project. Click Next.</li>
+	<li>In the Name and Location panel, type <tt>My Server Module</tt> in Project Name.
+ Change the
+Project Location to any directory on your computer. Leave the Standalone Module radiobutton
+ selected. If not selected, select the Set as Main Project checkbox.
+ Click Next.
+
+<li>In the Basic Module Configuration panel, replace <tt>org.yourorghere.myservermodule</tt> in Code Name Base 
+with <tt>org.netbeans.modules.j2ee.myservermodule</tt>. Leave <tt>My Server Module</tt> as the Module Display Name.
+ Change the location of the localizing bundle and XML layer, so that they will be stored in a
+ package with the name <tt>org.netbeans.modules.j2ee.myserver.resources</tt>. Click Finish.</ol>
+
+<p> The IDE creates the <tt>My Server Module</tt>
+project. The project contains all of your sources and
+project metadata, such as the project's Ant build script. The project
+opens in the IDE. You can view its logical structure in the Projects window (Ctrl-1) and its
+file structure in the Files window (Ctrl-2). 
+
+<p>For basic information on each of the files created by the New Project wizard, see the 
+ <a href="https://platform.netbeans.org/tutorials/quickstart-nbm.html">Introduction to NetBeans Module Development</a>.
+
+<h3 class="tutorial"><a name="specifying"></a>Specifying the Module's Dependencies</h3>
+
+<p>You will need to subclass several classes that belong to NetBeans APIs. 
+ Each has to be declared as a module dependency. Use the Project Properties dialog box for this purpose, as shown below.
+      <ol>
+	<li>In the Projects window, right-click the <tt>My Server Module</tt> project and choose Properties.
+ In the Project Properties dialog box, click Libraries.
+<li>For each of the APIs displayed in the list below, click "Add..." in the Libraries panel, 
+ select the name from the Module list, and then click OK to confirm it:
+
+<p><p><p align="left"><img src="../../images/tutorials/myserver/60-libraries-panel.png" border="1" alt="Basic Module Configuration panel."></li>
+	
+<li>Click OK to exit the Project Properties dialog box.
+<li>In the Projects window, double-click Project Metadata and note that the APIs you selected have been
+ declared as module dependencies.</li>
+
+      </ol>
+
+
+      </div>
+      <br />
+
+<!-- ===================================================================================== -->
+
+<h2><a name="creatingandgettingtoknowthemainfiles"></a>Creating the Factory Classes</h2>
+<p>The implementation classes are implemented by the factories. In this section, you will create and examine each of them:
+ <ul>
+    <li><a href="#MyDeploymentFactory"><tt>MyDeploymentFactory.java</tt></a>
+    <li><a href="#MyJ2eePlatformFactory"><tt>MyJ2eePlatformFactory.java</tt></a>
+    <li><a href="#MyOptionalFactory"><tt>MyOptionalFactory.java</tt></a>
+    <li><a href="#MyConfigurationFactory"><tt>MyConfigurationFactory.java</tt></a>
+    <li><a href="#MyRegistryNodeFactory"><tt>MyRegistryNodeFactory.java</tt></a>
+  </ul>	
+ 
+<div class="indent">
+<h3 class="tutorial"><a name="MyDeploymentFactory"></a>MyDeploymentFactory.java</h3>
+
+
+<p>The <tt>MyDeploymentFactory</tt> class is an implementation of <tt><a href="http://java.sun.com/j2ee/1.4/docs/api/javax/enterprise/deploy/spi/factories/DeploymentFactory.html">DeploymentFactory</a></tt>, which produces instances of the <a href="#MyDeploymentManager"><tt>MyDeploymentManager</tt></a> implementation class.</p>
+<p>The following are the interesting methods in this class:
+
+<ul>
+<li><tt><a href="http://java.sun.com/j2ee/1.4/docs/api/javax/enterprise/deploy/spi/factories/DeploymentFactory.html#handlesURI(java.lang.String)">handlesURI()</a>.</tt> Determines whether the given <tt>MyDeploymentFactory</tt> can handle the specifed URI.
+<li><tt><a href="http://java.sun.com/j2ee/1.4/docs/api/javax/enterprise/deploy/spi/factories/DeploymentFactory.html#getDeploymentManager(java.lang.String,%20java.lang.String,%20java.lang.String)">getDeploymentManager()</a>.</tt> Creates a <tt>connected</tt> <tt>DeploymentManager</tt> instance. This instance provides access
+ to J2EE resources.
+<li><tt><a href="http://java.sun.com/j2ee/1.4/docs/api/javax/enterprise/deploy/spi/factories/DeploymentFactory.html#getDisconnectedDeploymentManager(java.lang.String)">getDisconnectedDeploymentManager()</a>.</tt> Creates a <tt>disconnected</tt> <tt>DeploymentManager</tt> instance. This instance provides
+ access to configuration support.
+</ul>
+
+<p>Our new server instance will use the <tt>deployer:myserver</tt> prefix so that the URL 
+ used to obtain a connected deployment manager looks
+like this: <tt>deployer:myserver:localhost:8080</tt>.
+<p>Do the following to create the <tt>MyDeploymentFactory</tt> class:
+
+<ol>
+<li>Right-click the <tt>org.netbeans.modules.j2ee.myserver</tt> node and choose New &gt; Other. Under
+ Categories, choose Java Classes. Under File Types, choose Java Class. 
+ Click Next and type <tt>MyDeploymentFactory</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+<li>Replace the default code with the code below:
+<pre class="examplecode">package org.netbeans.modules.j2ee.myserver;
+
+import javax.enterprise.deploy.shared.factories.DeploymentFactoryManager;
+import javax.enterprise.deploy.spi.DeploymentManager;
+import javax.enterprise.deploy.spi.exceptions.DeploymentManagerCreationException;
+import javax.enterprise.deploy.spi.factories.DeploymentFactory;
+import org.openide.ErrorManager;
+import org.openide.util.NbBundle;
+
+public class MyDeploymentFactory implements DeploymentFactory {
+    
+    public static final String URI_PREFIX = "deployer:myserver"; // NOI18N
+    private static DeploymentFactory instance;
+    
+    public static synchronized DeploymentFactory create() {
+        if (instance == null) {
+            instance = new MyDeploymentFactory();
+            DeploymentFactoryManager.getInstance().registerDeploymentFactory(instance);
+        }
+        return instance;
+    }
+    
+    public boolean handlesURI(String uri) {
+        return uri != null && uri.startsWith(URI_PREFIX);
+    }
+    
+    public DeploymentManager getDeploymentManager(String uri, String uname, String passwd) throws DeploymentManagerCreationException {
+        if (!handlesURI(uri)) {
+            throw new DeploymentManagerCreationException("Invalid URI:" + uri); // NOI18N
+        }
+        return new MyDeploymentManager();
+    }
+    
+    public DeploymentManager getDisconnectedDeploymentManager(String uri) throws DeploymentManagerCreationException {
+        if (!handlesURI(uri)) {
+            throw new DeploymentManagerCreationException("Invalid URI:" + uri); // NOI18N
+        }
+        return new MyDeploymentManager();
+    }
+    
+    public String getProductVersion() {
+        return "0.1"; // NOI18N
+    }
+    
+    public String getDisplayName() {
+        return NbBundle.getMessage(MyDeploymentFactory.class, "TXT_DisplayName"); // NOI18N
+    }
+}</pre>
+
+</ol>
+<h3 class="tutorial"><a name="MyJ2eePlatformFactory"></a>MyJ2eePlatformFactory.java</h3>
+<p>The <tt>MyJ2eePlatformFactory</tt> class is an implementation of the <tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-j2eeserver/org/netbeans/modules/j2ee/deployment/plugins/api/J2eePlatformFactory.html">J2eePlatformFactory</a></tt> class.
+The implementation is very simple&#8212;it produces instances of the <a href="#MyJ2eePlatformImpl"><tt>MyJ2eePlatformImpl</tt></a> class.
+<p>Do the following to create the <tt>MyJ2eePlatformFactory</tt> class:
+<ol>
+<li>Right-click the <tt>org.netbeans.modules.j2ee.myserver</tt> node, choose New &gt; Java Class,
+ and type <tt>MyJ2eePlatformFactory</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+<li>Replace the default code with the code below:
+
+<pre class="examplecode">package org.netbeans.modules.j2ee.myserver;
+
+import javax.enterprise.deploy.spi.DeploymentManager;
+import org.netbeans.modules.j2ee.deployment.plugins.spi.J2eePlatformFactory;
+import org.netbeans.modules.j2ee.deployment.plugins.spi.J2eePlatformImpl;
+
+public class MyJ2eePlatformFactory extends J2eePlatformFactory {    
+    public J2eePlatformImpl getJ2eePlatformImpl(DeploymentManager dm) {
+        return new MyJ2eePlatformImpl();
+    }
+}</pre>
+
+</ol>
+
+
+<h3 class="tutorial"><a name="MyOptionalFactory"></a>MyOptionalFactory.java</h3>
+
+
+<p>The <tt>MyOptionalFactory</tt> class is an implementation of <tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-j2eeserver/org/netbeans/modules/j2ee/deployment/plugins/api/OptionalDeploymentManagerFactory.html">OptionalDeploymentManagerFactory</a></tt>. 
+ Despite its name, this factory class is <i>not</i> optional. At least two methods need to be implemented:
+
+<ul>
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-j2eeserver/org/netbeans/modules/j2ee/deployment/plugins/api/OptionalDeploymentManagerFactory.html#getStartServer(javax.enterprise.deploy.spi.DeploymentManager)">getStartServer()</a>.</tt> Starts and stops the server.
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-j2eeserver/org/netbeans/modules/j2ee/deployment/plugins/api/OptionalDeploymentManagerFactory.html#getAddInstanceIterator()">getAddInstanceIterator()</a>.</tt> Creates the wizard for registering the server in the IDE.
+</ul>
+
+<p>The other two methods are not implemented here:
+<ul>
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-j2eeserver/org/netbeans/modules/j2ee/deployment/plugins/api/OptionalDeploymentManagerFactory.html#getIncrementalDeployment(javax.enterprise.deploy.spi.DeploymentManager)">getIncrementalDeployment()</a>.</tt> Creates <tt>IncrementalDeployment</tt>, which offers an
+alternative way, which is more convenient for development..
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-j2eeserver/org/netbeans/modules/j2ee/deployment/plugins/api/OptionalDeploymentManagerFactory.html#getFindJSPServlet(javax.enterprise.deploy.spi.DeploymentManager)">getFindJSPServlet()</a>.</tt> Creates <tt>FindJSPServlet</tt>, 
+ which lets modules specify the location of servlets generated for JSPs.
+</ul>
+
+<p>Do the following to create the MyOptionalFactory class:
+
+<ol>
+<li>Right-click the <tt>org.netbeans.modules.j2ee.myserver</tt> node, choose New &gt; Java Class,
+ and type <tt>MyOptionalFactory</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+<li>Replace the default code with the code below:
+<pre class="examplecode">package org.netbeans.modules.j2ee.myserver;
+
+import javax.enterprise.deploy.spi.DeploymentManager;
+import org.netbeans.modules.j2ee.deployment.plugins.spi.FindJSPServlet;
+import org.netbeans.modules.j2ee.deployment.plugins.spi.IncrementalDeployment;
+import org.netbeans.modules.j2ee.deployment.plugins.spi.OptionalDeploymentManagerFactory;
+import org.netbeans.modules.j2ee.deployment.plugins.spi.StartServer;
+import org.openide.WizardDescriptor.InstantiatingIterator;
+
+public class MyOptionalFactory extends OptionalDeploymentManagerFactory {
+    
+    public StartServer getStartServer(DeploymentManager dm) {
+        return new MyStartServer();
+    }
+
+    public IncrementalDeployment getIncrementalDeployment(DeploymentManager dm) {
+        return null;
+    }
+
+    public FindJSPServlet getFindJSPServlet(DeploymentManager dm) {
+        return null;
+    }
+
+    public InstantiatingIterator getAddInstanceIterator() {
+        return new MyInstantiatingIterator();
+    }
+    
+}</pre>
+
+</ol>
+
+<h3 class="tutorial"><a name="MyConfigurationFactory"></a>MyConfigurationFactory.java</h3>
+<p>The <tt>MyConfigurationFactory</tt> class is an implementation of the <tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-j2eeserver/org/netbeans/modules/j2ee/deployment/plugins/spi/config/ModuleConfigurationFactory.html">ModuleConfigurationFactory</a></tt> class.
+The implementation is very simple&#8212;it produces instances of the <a href="#WarDeploymentConfiguration"><tt>WarDeploymentConfiguration</tt></a> class.
+<p>Do the following to create the <tt>MyConfigurationFactory</tt> class:
+<ol>
+<li>Right-click the <tt>org.netbeans.modules.j2ee.myserver</tt> node, choose New &gt; Java Class,
+ and type <tt>MyConfigurationFactory</tt> in Class Name. In the Package field, specify
+ that the class should be created in a new package called <tt>org.netbeans.modules.j2ee.myserver.config</tt>.
+ Click Finish. The new Java class opens in the Source Editor.
+<li>Replace the default code with the code below:
+
+<pre class="examplecode">package org.netbeans.modules.j2ee.myserver.config;
+
+import org.netbeans.modules.j2ee.deployment.common.api.ConfigurationException;
+import org.netbeans.modules.j2ee.deployment.devmodules.api.J2eeModule;
+import org.netbeans.modules.j2ee.deployment.plugins.spi.config.ModuleConfiguration;
+import org.netbeans.modules.j2ee.deployment.plugins.spi.config.ModuleConfigurationFactory;
+
+public class MyConfigurationFactory implements ModuleConfigurationFactory {
+    
+    public ModuleConfiguration create(J2eeModule j2eeModule) throws ConfigurationException {
+        if (J2eeModule.WAR == j2eeModule.getModuleType()) {
+            return new WarDeploymentConfiguration(j2eeModule);
+        }
+        // TODO implement config for EAR and EJB, if supported:
+        return null;
+    }
+
+}</pre>
+
+</ol>
+
+
+<h3 class="tutorial"><a name="MyRegistryNodeFactory"></a>MyRegistryNodeFactory.java</h3>
+
+<p>The <tt>MyRegistryNodeFactory</tt> class is an implementation of <tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-j2eeserver/org/netbeans/modules/j2ee/deployment/plugins/api/RegistryNodeFactory.html">RegistryNodeFactory</a></tt>. The purpose of this factory is to
+  produce server and target nodes, which are used as user interface representations in the Services window.
+Since the new server type only has one target and its Admin Server is therefore also a target server, 
+ you do not need to implement the target node.
+
+<ol>
+<li>Right-click the <tt>org.netbeans.modules.j2ee.myserver</tt> node, choose New &gt; Java Class,
+ and type <tt>MyRegistryNodeFactory</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+<li>Replace the default code with the code below:
+<pre class="examplecode">package org.netbeans.modules.j2ee.myserver.nodes;
+
+import org.netbeans.modules.j2ee.deployment.plugins.api.RegistryNodeFactory;
+import org.openide.nodes.Children;
+import org.openide.nodes.Node;
+import org.openide.util.Lookup;
+
+public class MyRegistryNodeFactory implements RegistryNodeFactory {
+    
+    public Node getTargetNode(Lookup lookup) {
+        return null;
+    }
+    
+    public Node getManagerNode(Lookup lookup) {
+        return new MyInstanceNode(lookup);
+    }    
+}</pre>
+
+
+</ol>
+
+
+      </div>
+<br />
+
+<!-- ===================================================================================== -->
+
+<h2><a name="creatingandgettingtoknowthemainfiles"></a>Creating the Implementation Classes</h2>
+<p>The implementation classes are implemented by the factories. In this section, you will create and examine each of them:
+ <ul>
+    <li><a href="#MyDeploymentManager"><tt>MyDeploymentManager.java</tt></a>
+    <li><a href="#MyInstantiatingIterator"><tt>MyInstantiatingIterator.java</tt></a>
+    <li><a href="#MyJ2eePlatformImpl"><tt>MyJ2eePlatformImpl.java</tt></a>
+    <li><a href="#MyStartServer"><tt>MyStartServer.java</tt></a>
+    <li><a href="#WarDeploymentConfiguration"><tt>WarDeploymentConfiguration.java</tt></a>
+    <li><a href="#MyInstanceNode"><tt>MyInstanceNode.java</tt></a>
+  </ul>	
+ 
+<div class="indent">
+
+    
+<h3 class="tutorial"><a name="MyDeploymentManager"></a>MyDeploymentManager.java</h3>
+
+<p>A dummy implementation of the <tt><a href="http://java.sun.com/j2ee/1.4/docs/api/javax/enterprise/deploy/spi/DeploymentManager.html">DeploymentManager</a></tt> interface, which does nothing.
+ It is up to you to provide the various server-specific implementation features.
+
+<ol>
+<li>Right-click the <tt>org.netbeans.modules.j2ee.myserver</tt> node and choose New &gt; Other. Under
+ Categories, choose Java Classes. Under File Types, choose Java Class. 
+ Click Next and type <tt>MyDeploymentManager</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+
+<li>Replace the default code with the code below:
+
+<pre class="examplecode">package org.netbeans.modules.j2ee.myserver;
+
+import java.io.File;
+import java.io.InputStream;
+import java.util.Locale;
+import javax.enterprise.deploy.model.DeployableObject;
+import javax.enterprise.deploy.shared.DConfigBeanVersionType;
+import javax.enterprise.deploy.shared.ModuleType;
+import javax.enterprise.deploy.spi.DeploymentConfiguration;
+import javax.enterprise.deploy.spi.DeploymentManager;
+import javax.enterprise.deploy.spi.Target;
+import javax.enterprise.deploy.spi.TargetModuleID;
+import javax.enterprise.deploy.spi.exceptions.DConfigBeanVersionUnsupportedException;
+import javax.enterprise.deploy.spi.exceptions.InvalidModuleException;
+import javax.enterprise.deploy.spi.exceptions.TargetException;
+import javax.enterprise.deploy.spi.status.ProgressObject;
+
+public class MyDeploymentManager implements DeploymentManager {
+
+    public ProgressObject distribute(Target[] target, File file, File file2) 
+            throws IllegalStateException {
+        return null;
+    }
+
+    public DeploymentConfiguration createConfiguration(DeployableObject deployableObject) 
+            throws InvalidModuleException {
+        return null;
+    }
+
+    public ProgressObject redeploy(TargetModuleID[] targetModuleID, InputStream 
+            inputStream, InputStream inputStream2) 
+            throws UnsupportedOperationException, IllegalStateException {
+        return null;
+    }
+
+    public ProgressObject distribute(Target[] target, InputStream inputStream, 
+            InputStream inputStream2) throws IllegalStateException {
+        return null;
+    }
+
+    public ProgressObject distribute(Target[] target, ModuleType type, 
+            InputStream inputStream, InputStream inputStream2) 
+            throws IllegalStateException {
+        return null;
+    }
+
+    public ProgressObject undeploy(TargetModuleID[] targetModuleID) 
+            throws IllegalStateException {
+        return null;
+    }
+
+    public ProgressObject stop(TargetModuleID[] targetModuleID) 
+            throws IllegalStateException {
+        return null;
+    }
+
+    public ProgressObject start(TargetModuleID[] targetModuleID) 
+            throws IllegalStateException {
+        return null;
+    }
+
+    public Target[] getTargets() throws IllegalStateException {
+        return null;
+    }
+
+    public void release() {
+    }
+
+    public boolean isRedeploySupported() {
+        return false;
+    }
+
+    public TargetModuleID[] getAvailableModules(ModuleType moduleType, 
+            Target[] target) throws TargetException, IllegalStateException {
+        return null;
+    }
+
+    public TargetModuleID[] getNonRunningModules(ModuleType moduleType, 
+            Target[] target) throws TargetException, IllegalStateException {
+        return null;
+    }
+
+    public TargetModuleID[] getRunningModules(ModuleType moduleType, 
+            Target[] target) throws TargetException, IllegalStateException {
+        return null;
+    }
+
+    public ProgressObject redeploy(TargetModuleID[] targetModuleID, 
+            File file, File file2) throws UnsupportedOperationException, IllegalStateException {
+        return null;
+    }
+
+    public void setLocale(Locale locale) throws UnsupportedOperationException {
+        throw new UnsupportedOperationException(
+                "This method should never be called! No need to implement this."); // NOI18N
+    }
+
+    public boolean isLocaleSupported(Locale locale) {
+        throw new UnsupportedOperationException(
+                "This method should never be called! No need to implement this."); // NOI18N
+    }
+
+    public void setDConfigBeanVersion(DConfigBeanVersionType dConfigBeanVersionType) 
+            throws DConfigBeanVersionUnsupportedException {
+        throw new UnsupportedOperationException(
+                "This method should never be called! No need to implement this."); // NOI18N
+    }
+
+    public boolean isDConfigBeanVersionSupported(DConfigBeanVersionType dConfigBeanVersionType) {
+        throw new UnsupportedOperationException(
+                "This method should never be called! No need to implement this."); // NOI18N
+    }
+
+    public Locale getCurrentLocale() {
+        throw new UnsupportedOperationException(
+                "This method should never be called! No need to implement this."); // NOI18N
+    }
+
+    public DConfigBeanVersionType getDConfigBeanVersion() {
+        throw new UnsupportedOperationException(
+                "This method should never be called! No need to implement this."); // NOI18N
+    }
+
+    public Locale getDefaultLocale() {
+        throw new UnsupportedOperationException(
+                "This method should never be called! No need to implement this."); // NOI18N
+    }
+
+    public Locale[] getSupportedLocales() {
+        throw new UnsupportedOperationException(
+                "This method should never be called! No need to implement this."); // NOI18N
+    }
+
+}</pre>
+
+</ol>
+
+
+<h3 class="tutorial"><a name="MyInstantiatingIterator"></a>MyInstantiatingIterator.java</h3>
+
+<p>The <tt>MyInstantiatingIterator</tt> class is used to create a wizard for registration of the new server in the IDE. 
+The implementation described below lets you specify the display name only. Here, all the
+ other properties are hard coded to keep the 
+implementation as simple as possible.
+
+<p>Notice the URL variable used in the <tt>instantiate()</tt> method. It is passed to the <tt>InstanceProperties.createInstanceProperties()</tt> method, 
+which does the actual server registration. The URL parameter is the same as the one used by the <tt>DeploymenManager</tt>. 
+ This way we ensure that our server controls the newly created server instance. 
+
+
+<ol>
+<li>Right-click the <tt>org.netbeans.modules.j2ee.myserver</tt> node, choose New &gt; Java Class,
+ and type <tt>MyInstantiatingIterator</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+<li>Replace the default code with the code below:
+<pre class="examplecode">package org.netbeans.modules.j2ee.myserver;
+
+import java.awt.Component;
+import java.awt.Label;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
+import javax.swing.JPanel;
+import javax.swing.event.ChangeListener;
+import org.openide.WizardDescriptor;
+import org.openide.WizardDescriptor.Panel;
+import org.openide.util.HelpCtx;
+import org.netbeans.modules.j2ee.deployment.plugins.api.InstanceProperties;
+import org.openide.DialogDisplayer;
+import org.openide.ErrorManager;
+import org.openide.NotifyDescriptor;
+import org.openide.util.NbBundle;
+
+
+public class MyInstantiatingIterator implements WizardDescriptor.InstantiatingIterator {
+    
+    private final static String PROP_DISPLAY_NAME = "ServInstWizard_displayName"; // NOI18N
+
+        
+    private InstallPanel panel;
+    private WizardDescriptor wizard;
+    
+    public void removeChangeListener(ChangeListener l) {
+    }
+
+    public void addChangeListener(ChangeListener l) {
+    }
+
+    public void uninitialize(WizardDescriptor wizard) {
+    }
+
+    public void initialize(WizardDescriptor wizard) {
+        this.wizard = wizard;
+    }
+
+    public void previousPanel() {
+    }
+
+    public void nextPanel() {
+    }
+
+    public String name() {
+        return NbBundle.getMessage(MyInstantiatingIterator.class, "MSG_InstallerName");
+    }
+
+    public Set instantiate() throws IOException {
+           Set result = new HashSet();       
+           String displayName = getDisplayName();
+           String url         = "deployer:myserver:localhost:8080"; // NOI18N
+           String username    = "username"; // NOI18N
+           String password    = "password"; // NOI18N
+           try {
+               InstanceProperties ip = InstanceProperties.createInstanceProperties(
+                       url, username, password, displayName);
+               result.add(ip);
+           } catch (Exception ex) {
+               DialogDisplayer.getDefault().notify(new NotifyDescriptor.Message(
+                        NbBundle.getMessage(MyInstantiatingIterator.class, "MSG_CreateFailed", displayName),
+                        NotifyDescriptor.ERROR_MESSAGE));
+           }
+           return result;
+    }
+
+    public boolean hasPrevious() {
+        return false;
+    }
+
+    public boolean hasNext() {
+        return false;
+    }
+
+    public Panel current() {
+        if (panel == null) {
+            panel = new InstallPanel();
+        }
+        return panel;
+    }
+    
+    private String getDisplayName() {
+        return (String)wizard.getProperty(PROP_DISPLAY_NAME);
+    }
+    
+    private static class InstallPanel implements WizardDescriptor.Panel {
+        public void removeChangeListener(ChangeListener l) {
+        }
+
+        public void addChangeListener(ChangeListener l) {
+        }
+
+        public void storeSettings(Object settings) {
+        }
+
+        public void readSettings(Object settings) {
+        }
+
+        public boolean isValid() {
+            return true;
+        }
+
+        public HelpCtx getHelp() {
+            return HelpCtx.DEFAULT_HELP;
+        }
+
+        public Component getComponent() {
+            JPanel panel = new JPanel();
+            panel.add(new Label("&lt; Put your installation form implementation here! &gt;")); // NOI18N
+            return panel;
+        }
+    }
+}
+</ol><p>
+
+
+
+<h3 class="tutorial"><a name="MyJ2eePlatformImpl"></a>MyJ2eePlatformImpl.java</h3>
+
+<p>The <tt>MyJ2eePlatformImpl</tt> class is an implementation of <tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-j2eeserver/org/netbeans/modules/j2ee/deployment/plugins/api/J2eePlatformImpl.html">J2eePlatformImpl</a></tt>, which is used to describe the target environment that
+ J2EE applications are built against and subsequently deployed to. It provides a set of server 
+libraries, supported module types, and J2EE specification versions. 
+
+<p>Note: Since the current implementation of <tt>MyJ2eePlatformImpl.java</tt> does not provide the J2EE API libraries, 
+ your Web or EJB project will not compile, unless you provide those explicitly in the Libraries panel of the Project Properties dialog box.
+
+<ol>
+<li>Right-click the <tt>org.netbeans.modules.j2ee.myserver</tt> node, choose New &gt; Java Class,
+ and type <tt>MyJ2eePlatformImpl</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+<li>Replace the default code with the code below:
+
+<pre class="examplecode">package org.netbeans.modules.j2ee.myserver;
+
+import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
+import org.netbeans.api.java.platform.JavaPlatform;
+import org.netbeans.api.java.platform.JavaPlatformManager;
+import org.netbeans.modules.j2ee.deployment.devmodules.api.J2eeModule;
+import org.netbeans.modules.j2ee.deployment.plugins.spi.J2eePlatformImpl;
+import org.netbeans.spi.project.libraries.LibraryImplementation;
+
+import org.openide.util.NbBundle;
+import org.openide.util.Utilities;
+
+public class MyJ2eePlatformImpl extends J2eePlatformImpl {
+        
+    public boolean isToolSupported(String toolName) {
+        return false;
+    }
+
+    public File[] getToolClasspathEntries(String toolName) {
+        return new File[0];
+    }
+
+    public Set getSupportedSpecVersions() {
+        Set result = new HashSet();
+        result.add(J2eeModule.J2EE_14);
+        //result.add(J2eeModule.JAVA_EE_5);
+        return result;
+    }
+
+    public java.util.Set getSupportedModuleTypes() {
+        Set result = new HashSet();
+        //result.add(J2eeModule.EAR);
+        result.add(J2eeModule.WAR);
+        //result.add(J2eeModule.EJB);
+        return result;
+    }
+
+    public java.io.File[] getPlatformRoots() {
+        return new File[0];
+    }
+
+    public LibraryImplementation[] getLibraries() {
+        return new LibraryImplementation[0];
+    }
+
+    public java.awt.Image getIcon() {
+        return Utilities.loadImage("org/netbeans/modules/j2ee/myserver/resources/server.gif"); // NOI18N
+
+    }
+
+    public String getDisplayName() {
+        return NbBundle.getMessage(MyJ2eePlatformImpl.class, "MSG_MyServerPlatform");
+    }
+    
+    public Set getSupportedJavaPlatformVersions() {
+        Set versions = new HashSet();
+        versions.add("1.4"); // NOI18N
+        versions.add("1.5"); // NOI18N
+        return versions;
+    }
+    
+    public JavaPlatform getJavaPlatform() {
+        return JavaPlatformManager.getDefault().getDefaultPlatform();
+    }
+    
+}</pre>
+
+
+</ol>
+
+
+
+
+<h3 class="tutorial"><a name="MyStartServer"></a>MyStartServer.java</h3>
+
+
+<p>The <tt>MyStartServer</tt> class is an implementation of the <tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-j2eeserver/org/netbeans/modules/j2ee/deployment/plugins/api/StartServer.html">StartServer</a></tt> interface. Its purpose is to provide ability to start, 
+ stop, and determine the state of the server. The current implementation says that the server is always stopped and it cannot be started. 
+ The server-specific implementation is left up to you to complete for the server in question.
+
+<ol>
+<li>Right-click the <tt>org.netbeans.modules.j2ee.myserver</tt> node, choose New &gt; Java Class,
+ and type <tt>MyStartServer</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+<li>Replace the default code with the code below:
+
+<pre class="examplecode">package org.netbeans.modules.j2ee.myserver;
+
+import javax.enterprise.deploy.spi.Target;
+import javax.enterprise.deploy.spi.status.ProgressObject;
+import org.netbeans.modules.j2ee.deployment.plugins.api.ServerDebugInfo;
+import org.netbeans.modules.j2ee.deployment.plugins.spi.StartServer;
+
+public class MyStartServer extends StartServer {
+    
+    public ProgressObject <span class="java-layer-method">startDebugging(Target target) {
+        return null;
+    }
+
+    public boolean <span class="java-layer-method">isDebuggable(Target target) {
+        return false;
+    }
+
+    public boolean <span class="java-layer-method">isAlsoTargetServer(Target target) {
+        return true;
+    }
+
+    public ServerDebugInfo <span class="java-layer-method">getDebugInfo(Target target) {
+        return null;
+    }
+
+    public boolean <span class="java-layer-method">supportsStartDeploymentManager() {
+        return false;
+    }
+
+    public ProgressObject <span class="java-layer-method">stopDeploymentManager() {
+        return null;
+    }
+
+    public ProgressObject <span class="java-layer-method">startDeploymentManager() {
+        return null;
+    }
+
+    public boolean <span class="java-layer-method">needsStartForTargetList() {
+        return false;
+    }
+
+    public boolean <span class="java-layer-method">needsStartForConfigure() {
+        return false;
+    }
+
+    public boolean <span class="java-layer-method">needsStartForAdminConfig() {
+        return false;
+    }
+
+    public boolean <span class="java-layer-method">isRunning() {
+        return false;
+    }
+}</pre>
+
+</ol><p>
+
+<h3 class="tutorial"><a name="WarDeploymentConfiguration"></a>WarDeploymentConfiguration.java</h3>
+
+
+<p>The <tt>WarDeploymentConfiguration</tt> class is an implementation of several classes that
+ provide specific deployment functionality for a particular configuration. Here, the configuration
+ in question is WAR deployment. Alternatively, deployment could be in the form of an EJB or EAR
+ archive. In each case, you would need to implement a class similar to the one below.
+<ol>
+<li>Right-click the <tt>org.netbeans.modules.j2ee.myserver.config</tt> node, choose New &gt; Java Class,
+ and type <tt>WarDeploymentConfiguration</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+<li>Replace the default code with the code below:
+
+<pre class="examplecode">package org.netbeans.modules.j2ee.myserver.config;
+
+import java.io.OutputStream;
+import org.netbeans.modules.j2ee.deployment.common.api.ConfigurationException;
+import org.netbeans.modules.j2ee.deployment.devmodules.api.J2eeModule;
+import org.netbeans.modules.j2ee.deployment.plugins.spi.config.ContextRootConfiguration;
+import org.netbeans.modules.j2ee.deployment.plugins.spi.config.DeploymentPlanConfiguration;
+import org.netbeans.modules.j2ee.deployment.plugins.spi.config.ModuleConfiguration;
+import org.openide.util.Lookup;
+import org.openide.util.lookup.Lookups;
+
+public class WarDeploymentConfiguration implements ModuleConfiguration, 
+        ContextRootConfiguration, DeploymentPlanConfiguration {
+
+    private final J2eeModule module;
+
+    public WarDeploymentConfiguration(J2eeModule module) {
+        this.module = module;
+        // TODO server specific deployment descriptor 
+        //should be created (if neccessary) and loaded
+    }
+
+    public J2eeModule getJ2eeModule() {
+        return module;
+    }
+
+    public Lookup getLookup() {
+        return Lookups.fixed(new Object[] {this});
+    }
+
+    public void dispose() {
+
+    }
+
+    public String getContextRoot() throws ConfigurationException {
+        // TODO implement reading of the context root
+        return "/mypath"; // NOI18N
+    }
+
+    public void setContextRoot(String arg0) throws ConfigurationException {
+        // TODO implement storing of the context root
+    }
+
+    public void save(OutputStream os) throws ConfigurationException {
+        // TODO implement storing of the deployment plan
+    }
+
+}</pre>
+
+</ol><p>
+
+
+<h3 class="tutorial"><a name="MyInstanceNode"></a>MyInstanceNode.java</h3>
+
+<p>The <tt>MyInstanceNode</tt> class represents instances of the new server type as a node in the Services window. 
+ A default set of features is added to the node&#8212;these features display the server's status and provide default menu items
+ such as <tt>Start</tt>, <tt>Refresh</tt>, and <tt>Remove</tt>. This is done by a standard filter node 
+ that exists on top of the node provided by the module. The <tt>MyInstanceNode</tt> class defines a dummy customizer 
+ implementation which is displayed in the Tools menu's Server Manager.
+
+<ol>
+<li>Right-click the <tt>org.netbeans.modules.j2ee.myserver.nodes</tt> node, choose New &gt; Java Class,
+ and type <tt>MyInstanceNode</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+<li>Replace the default code with the code below:
+
+<pre class="examplecode">package org.netbeans.modules.j2ee.myserver.nodes;
+
+import java.awt.Component;
+import java.awt.Label;
+import javax.swing.JPanel;
+import org.openide.nodes.AbstractNode;
+import org.openide.nodes.Children;
+import org.openide.nodes.Node;
+import org.openide.util.Lookup;
+import org.openide.util.NbBundle;
+
+public class MyInstanceNode extends AbstractNode implements Node.Cookie {
+    
+    private static String ICON_BASE = "org/netbeans/modules/j2ee/myserver/resources/server.gif"; <span class="java-block-comment">// NOI18N
+    
+    public MyInstanceNode(Lookup lookup) {
+        super(new Children.Array());
+        getCookieSet().add(this);
+        setIconBaseWithExtension(ICON_BASE);
+    }
+    
+    public String getDisplayName() {
+        return NbBundle.getMessage(MyInstanceNode.class, "TXT_MyInstanceNode");
+    }
+    
+    public String getShortDescription() {
+        return "http://localhost:8080"; // NOI18N
+    }
+    
+    public javax.swing.Action[] getActions(boolean context) {
+        return new javax.swing.Action[]{};
+    }
+    
+    public boolean hasCustomizer() {
+        return true;
+    }
+    
+    public Component getCustomizer() {
+        JPanel panel = new JPanel();
+        panel.add(new Label("&lt; Put your customizer implementation here! &gt;")); <span class="java-block-comment">// NOI18N
+        return panel;
+    }
+}</pre>
+
+
+
+
+</ol>
+
+      </div>
+<br />
+
+<!-- ===================================================================================== -->
+
+<h2><a name="finetuning"></a>Setting Up the Supporting Files</h2>
+<p>Once you have coded the main files, you must register your module in the <tt>layer.xml</tt> file and in the
+ <tt>nbdep.xml</tt> file. You must also define labels and texts you want to display to the user, using
+ the <tt>Bundle.properties</tt> files.</p>
+<div class="indent">
+
+<h3 class="tutorial">Registering the New Server in the NetBeans Filesystem</h3>
+<p>Registration involves two XML files: firstly, the layer XML file that all NetBeans modules use
+ to register their features to the NetBeans Platform; secondly, a small XML file that all
+ deployment servers need to specify their functionality to the server infrastructure.
+<ol><a name="layer.xml"></a><li>Add the following entry between the <tt>&lt;filesystem&gt;</tt> tags in the <tt>layer.xml</tt> file:
+
+<pre class="examplecode">&lt;folder name="J2EE"&gt;
+    &lt;folder name="DeploymentPlugins"&gt;
+        &lt;folder name="MyServer"&gt;
+
+            &lt;file name="Descriptor" url="nbdep.xml"/&gt;
+
+            &lt;file name="Factory.instance"&gt;
+                &lt;attr name="instanceCreate" methodvalue="org.netbeans.modules.j2ee.myserver.MyDeploymentFactory.create"/&gt;
+                &lt;attr name="instanceClass" stringvalue="org.netbeans.modules.j2ee.myserver.MyDeploymentFactory"/&gt;
+                &lt;attr name="instanceOf" stringvalue="javax.enterprise.deploy.spi.factories.DeploymentFactory"/&gt;
+            &lt;/file&gt;
+
+            &lt;file name="RegistryNodeFactory.instance"&gt;
+                &lt;attr name="instanceClass" stringvalue="org.netbeans.modules.j2ee.myserver.nodes.MyRegistryNodeFactory"/&gt;
+                &lt;attr name="instanceOf" stringvalue="org.netbeans.modules.j2ee.deployment.plugins.spi.RegistryNodeFactory"/&gt;
+            &lt;/file&gt;
+
+            &lt;file name="J2eePlatformFactory.instance"&gt;
+                &lt;attr name="instanceCreate" newvalue="org.netbeans.modules.j2ee.myserver.MyJ2eePlatformFactory"/&gt;
+                &lt;attr name="instanceClass" stringvalue="org.netbeans.modules.j2ee.myserver.MyJ2eePlatformFactory"/&gt;
+                &lt;attr name="instanceOf" stringvalue="org.netbeans.modules.j2ee.deployment.plugins.spi.J2eePlatformFactory"/&gt;
+            &lt;/file&gt;
+
+            &lt;file name="OptionalFactory.instance"&gt;
+                &lt;attr name="instanceCreate" newvalue="org.netbeans.modules.j2ee.myserver.MyOptionalFactory"/&gt;
+                &lt;attr name="instanceClass" stringvalue="org.netbeans.modules.j2ee.myserver.MyOptionalFactory"/&gt;
+                &lt;attr name="instanceOf" stringvalue="org.netbeans.modules.j2ee.deployment.plugins.spi.OptionalDeploymentManagerFactory"/&gt;
+            &lt;/file&gt;
+
+            &lt;file name="ModuleConfigurationFactory.instance"&gt;
+                &lt;attr name="instanceClass" stringvalue="org.netbeans.modules.j2ee.myserver.config.MyConfigurationFactory"/&gt;
+                &lt;attr name="instanceOf" stringvalue="org.netbeans.modules.j2ee.deployment.plugins.spi.config.ModuleConfigurationFactory"/&gt;
+            &lt;/file&gt;
+
+            &lt;folder name="DeploymentFileNames"&gt;
+                &lt;folder name="WAR"&gt;
+                    &lt;file name="WEB-INF\myserver-web.xml"/&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt;
+
+        &lt;/folder&gt;
+
+    &lt;/folder&gt;
+
+&lt;/folder&gt;</pre>
+
+<a name="nbdep.xml"></a><li>Right-click <tt>org.netbeans.modules.j2ee.myserver.resources</tt> and choose New &gt; Other. Under categories,
+ select XML. Under File Types, select XML Document. Click Next. Type <tt>nbdep</tt> in File Name, click Next and then
+ click Finish. Replace the content of <tt>nbdep.xml</tt> with the following code: 
+
+<pre class="examplecode">    &lt;netbeans-deployment&gt;
+   
+        &lt;!--
+        The icon element contains a path to the icon to be used to present the server
+        in the server registry.
+        --&gt;
+        &lt;icon&gt;org/netbeans/modules/j2ee/myserver/resources/server&lt;/icon&gt;
+   
+        &lt;!--
+        The disconnected-string element contains the String parameter to DeploymentFactory.getDisconnectedDeploymentManager()
+        --&gt;
+        &lt;disconnected-string&gt;deployer:myserver&lt;/disconnected-string&gt;
+
+        &lt;!--
+        The container-limitation element modifies a plugin to say that not all j2ee deployments are valid.
+        For example, a web-only server would include
+        &lt;container-limitation&gt; &lt;war-deploy/&gt; &lt;/container-limitation&gt;
+        to indicate that only war deployments are accepted.
+        If a container-limitation element is not present, all j2ee deployments are assumed valid.
+        If a container-limitation element is present, then only j2ee deployment types explicitly
+        mentioned are allowed.
+        --&gt;
+        &lt;container-limitation&gt;
+          &lt;war-deploy/&gt;
+        &lt;/container-limitation&gt;
+
+        &lt;web-context-root&gt;
+          &lt;xpath&gt;/&lt;/xpath&gt;
+          &lt;prop-name&gt;contextRoot&lt;/prop-name&gt;
+        &lt;/web-context-root&gt;
+    
+    &lt;/netbeans-deployment&gt;</pre></ol>
+
+
+<a name="Bundle.properties"></a><h3 class="tutorial">Localizing the module</h3>
+<p>The module is localized using <tt>Bundle.properties</tt> files. 
+A <tt>Bundle.properties</tt> file provides
+ language-specific strings for the user interface provided by other files in the package. When you used the New Project wizard
+ to create the module, the IDE created a <tt>Bundle.properties</tt> file in the 
+  <tt>org.netbeans.modules.j2ee.myserver.resources</tt> package. Now you will add <tt>key=value</tt> pairs
+ to the IDE-generated <tt>Bundle.properties</tt> file and create two additional <tt>Bundle.properties</tt> files
+ for the other packages.
+<ol><li>In <tt>org.netbeans.modules.j2ee.myserver.resources</tt>, 
+add the following properties to the <tt>Bundle.properties</tt> file:
+
+<pre class="examplecode">OpenIDE-Module-Name=My Server Module
+OpenIDE-Module-Display-Category=J2EE
+OpenIDE-Module-Short-Description=My Server Module
+OpenIDE-Module-Long-Description=My Server Module</pre>
+
+<li>Right-click <tt>org.netbeans.modules.j2ee.myserver</tt> and choose New &gt; Other. Under Categories,
+ select Other. Under File Types, select Properties File. Click Next. Type <tt>Bundle</tt> in File Name and then
+ click Finish. Add the following properties to the <tt>Bundle.properties</tt> file:
+
+<pre class="examplecode">TXT_DisplayName=My Server
+MSG_InstallerName=My Server Installer
+MSG_CreateFailed=Cannot create {0} server instance.
+MSG_MyServerPlatform=My Server Platform</pre>
+
+<li>Create another <tt>Bundle.properties</tt> file in the <tt>org.netbeans.modules.j2ee.myserver.nodes</tt> package, and 
+add the following properties to it:
+
+<pre class="examplecode">TXT_MyInstanceNode=My Server Instance
+TXT_MyTargetNode=My Target Instance</pre>
+
+
+</ol>
+
+<a name="server.gif"></a><h3 class="tutorial">Getting the Icon</h3>
+
+<p>Make sure that you have a 16x16 pixel icon
+ named <tt>server.gif</tt> in the <tt>org.netbeans.modules.j2ee.myserver.resources</tt> package. 
+
+
+      </div>
+      <br />
+<!-- ======================================================================================= -->
+
+<h2><a name="building"></a>Building and Installing the Module</h2>
+<p>The IDE uses an Ant build script to build and install your module. The build script is created for you
+when you create the module project.</p>
+<div class="indent">
+	<h3 class="tutorial">Installing the Server-Skeleton Module</h3>
+
+      
+	      <p>In the Projects window, right-click the <tt>My Server Module</tt> project and choose Install/Reload
+	      in Target Platform. 
+	      <p>The module is built and installed in the target IDE or Platform. The target IDE or Platform opens so that you
+	      can try out your new module. The default target IDE or Platform is the 
+	      installation used by the current instance of the development IDE. Note that when you run your module, you will be using 
+ a temporary test user directory, not the development IDE's user directory. 
+
+       <h3 class="tutorial">Using the Server-Skeleton Module</h3>
+<p>Once you have installed your server plugin, use it as outlined below.
+	<ol>
+
+<li>Choose Tools &gt; Server Manager, click Add Server and notice that a new server is available:
+<p><p><img border="1" src="../../images/tutorials/myserver/60-choose-server.png" alt="Choose my server.">
+</p><p></p></li>
+
+		
+	      <li>Use the module as described in <a href="#introducing-sample">Introducing the Sample</a>.
+      </ol>
+ 
+   </div>
+
+<!-- ======================================================================================== 
+
+<h2><a name="addingserverspecific"></a>Adding Server-Specific Code</h2>
+
+<p>Before adding server-specific code, have a look at how others have done it.
+  <ol>
+	  <li>Download the open-source server modules for JBoss, WebLogic, and WebSphere, following the instructions found
+	   on the <a href="http://serverplugins.netbeans.org/">Server Plugins Project</a> page.</li>
+	   <li>Open the sources of one or more of the downloaded server modules in the IDE and browse through them. For example,
+	   if you open the sources of the JBoss module, the Projects window looks as follows:
+	   <p><p><img src="../../images/tutorials/myserver/jboss-server.png" alt="JBoss server in Projects window.">
+	   <p>Note that in the illustration above, the selected files are those that are discussed in this tutorial.
+	   </li>
+	   <li>Examine the sources, using this tutorial and the <a href="https://netbeans.org/download/dev/javadoc/">NetBeans API List (Current Development Version)</a> to help you.</li>
+	   
+           <p>Here are some j2eeserver API classes worth looking at:
+           
+           <p><ul><li><b>IncrementalDeployment.</b> 
+            This interface allows modules to use 
+            incremental deployment instead of the standard JSR-88 deployment.
+            <li><b>UISupport.</b> 
+            This class provides support for showing the server 
+            output in the Output window along with the toolbar 
+            with the server state management actions.</ul>
+           
+           <li>Create your own server module!
+  
+  </ol>-->
+    
+ <br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Server%20Skeleton%20Module%20Tutorial">Send Us Your Feedback</a></div>
+<br style="clear:both;" />
+<!-- ======================================================================================== -->
+
+
+<h2><a name="version"></a>Versioning and Known Issues in this Tutorial</h2>
+  
+<p>
+
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+         25 June 2005
+      </td>
+      <td>
+         Initial version
+      </td>
+  </tr>
+    <tr>
+      <td>
+         2
+      </td>
+      <td>
+         4 July 2006
+      </td>
+      <td>
+         Updated for NetBeans IDE 5.5, using diff from Stepan Herold.
+         Also: changed the download to the new module,
+         changed all screenshots, changed instances of "plugin" and "plug-in", where
+         relevant to "module", cleaned up a lot. <p><p>Following files are new or have undergone change
+         for 5.5:
+         <ul>
+             <li>New: ConfigurationSupportImpl.java and MyConfiguration.java</li>
+             <li>Deleted: DeploymentPlanSplitter.java</li>
+             <li>Changed: MyDeploymentManager.java, MyJ2eePlatformImpl.java, MyInstanceNode.java,
+             layer.xml, project.xml</li>
+            
+         </ul>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         3
+      </td>
+      <td>
+         10 August 2006
+      </td>
+      <td>
+         <ul>
+             <li>Changed forward slash to backward slash in <tt>layer.xml</tt>
+             <li>Added period at end of his paragraph...
+         </ul>
+      </td>
+  </tr>
+   <tr>
+      <td>
+         4
+      </td>
+      <td>
+	     21 January 2008
+      </td>
+      <td>
+	     <ul>
+                  <li>Began updating to 6.0.
+                  <li>Put corrected 6.0 server plugin in the Plugin Portal
+                  <li>Changed pics.
+                   <li>List of changes from 5.5 to 6.0:
+             
+<ul>             
+    <li>changed imports (e.g., in <tt>MyJ2eePlatformFactory.java</tt> and
+    in <tt>MyOptionalFactory.java</tt> and <tt>MyStartServer.java</tt>) and layer.xml (most interfaces moved to spi.*)
+<li>removed <tt>ConfigurationSupportImpl.java</tt> and <tt>MyConfiguration.java</tt> (we don't use this approach anymore)
+<li>added <tt>config</tt> package with <tt>MyConfigurationFactory.java</tt> (configured in
+layer.xml) and <tt>WarDeploymentConfiguration.java</tt> (this is the new way -
+providing the cookie through lookup)
+<li>server framework "supports" only WAR modules
+<li>some methods in <tt>MyDeploymentManager.java</tt> marked as not needed to be implemented
+<li>several other minor changes
+</ul>
+<li>Completed everything, only the items under issue 7 below remain open.
+              </ul>
+      </td>
+  </tr>
+  </tbody>
+</table>
+
+<p></p>
+
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <b>Issue Number</b>
+      </td>
+      <td>
+	<b>Description</b>
+      </td>
+      <td>
+	<b>Status</b>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+	      Code and tutorial itself need to be reviewed. Code needs to be tested
+	      on multiple platforms. (Created on Windows XP, tested nowhere else yet. Tried
+	      to avoid potential problems by avoiding spaces in names, etc.)
+      </td>
+      <td>
+	      Done.
+      </td>
+  </tr>
+  <tr>
+      <td>
+         2
+      </td>
+      <td>
+	      Tutorial needs to be updated once Phase III and IV are complete.
+      </td>
+      <td>
+	      Done.
+      </td>
+  </tr>
+ <tr>
+      <td>
+         3
+      </td>
+      <td>
+	      Some APIs used in this tutorial have deprecated methods. This will
+	      produce errors in the Output window, but should not impact functioning
+	      of module.
+      </td>
+      <td>
+	      Fixed.
+      </td>
+  </tr>
+<tr>
+      <td>
+         4
+      </td>
+      <td>
+	      JSR 88 is helpful in understanding this module. However, this
+	      JSR not yet been referred to in this tutorial.
+      </td>
+      <td>
+	      To be fixed.
+      </td>
+  </tr>
+<tr>
+      <td>
+         5
+      </td>
+      <td>
+	      Javadoc links not yet provided for all classes and methods used in this module,
+	      although most have been done already.
+      </td>
+      <td>
+	      To be fixed.
+      </td>
+  </tr>
+  <tr>
+      <td>
+         6
+      </td>
+      <td>
+	      Open questions, specific to version 2 of this tutorial:
+              <ul>
+                  <li>How to make the server skeleton support Java EE 5? (Annotations, no deployment descriptors?)</li>
+                  <li>Previous version was possible to select Start/Stop/etc. Why not anymore?</li>
+                  <li>Migration path?</li>
+                  <li>Why no more deploymentplansplitter?</li>
+                  <li>Why now deployment descriptor goes to WEB-INF instead of META-INF?</li>
+                  <li>Why has DeploymentFileNames in layer.xml moved?</li>
+                  <li>Picture of JBoss at end to be changed too (does it use MyConfiguration.java, etc?)</li>
+              </ul>
+      </td>
+      <td>
+	      To be answered.
+      </td>
+  </tr>
+  <tr>
+      <td>
+         7
+      </td>
+      <td>
+	      Open questions, specific to the 6.0 version of this tutorial:
+              <ul>
+                  <li>Where is the related Javadoc?</li>
+                  <li>Why do several methods in MyDeploymentManager.java not need to be implemented?</li>
+                  <li>Which server implementation in the NetBeans sources can be used as "next steps" screenshot?
+                   Put the "Adding Server-Specific Code" back once it is clear what needs to go here.</li>
+                  <li>Need some kind of diagram to illustrate how all the pieces above fit together.
+              </ul>
+      </td>
+      <td>
+	      To be answered.
+      </td>
+  </tr>
+  
+  </tbody>
+</table><p></p>
+<hr><p></p>
+</body>
+</html>

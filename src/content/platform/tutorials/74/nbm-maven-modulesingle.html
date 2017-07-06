@@ -1,0 +1,451 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>NetBeans Platform File Type Tutorial Using Maven</title>
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+        <meta name="AUDIENCE" content="NBUSER"/>
+        <meta name="TYPE" content="ARTICLE"/>
+        <meta name="EXPIRES" content="N"/>
+        <meta name="indexed" content="y"/>
+        <meta name="description" content="A short demonstration of how
+              to use Maven to create an editor."/>
+        <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+    <body>
+
+        <h1>NetBeans Platform File Type Tutorial Using Maven</h1>
+
+        <p>This document demonstrates how to create a NetBeans module
+            from a Maven archetype
+            and build and install the module in NetBeans IDE or any other application
+            on the NetBeans Platform.
+            In this tutorial, you will create a module project
+            that when installed enables you to recognize a new type of file
+            in your projects. The module also creates a menu action that 
+            is available when the user right-click a file conforming
+            to the new file type.
+        </p>
+
+        <p>This document is based on the Ant-based <a href="https://platform.netbeans.org/tutorials/nbm-filetype.html">NetBeans File Type Tutorial</a>
+            and can be used to learn some of the differences between using Ant and Maven to develop NetBeans modules.
+            After you understand the differences, you can easily proceed through other
+            tutorials on the <a href="https://netbeans.org/kb/trails/platform.html">NetBeans Platform Learning Trail</a>.</p>
+
+        <p><b>Contents</b></p>
+        <p><img src="../images/articles/74/netbeans_stamp_74_73_72.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 7.1" title="Content on this page applies to NetBeans IDE 7.1"/></p>
+
+        <ul class="toc">
+            <li><a href="#01">Creating the Module Project</a></li>
+            <li><a href="#01b">Recognizing the File Type</a></li>
+            <li><a href="#02">Building and Running the Module Project</a></li>
+            <li><a href="#03">Adding an Action for the File Type</a></li>
+        </ul>
+
+        <p><b>To follow this tutorial, you need the software and resources listed in the following table.</b></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Software or Resource</th>
+                    <th class="tblheader" scope="col">Version Required</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://download.netbeans.org/">NetBeans IDE</a></td>
+                    <td class="tbltd1">version 7.1</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                    <td class="tbltd1">version 7 or above</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong class="notes">Note:</strong> You do not need to download Maven because it
+            is bundled with the IDE. Optionally, use your own download of Maven, in which
+            case use the Options window to configure your Maven settings.</p>
+
+        <p>Before starting this tutorial you may want to familiarize yourself with
+            the following introductory Maven documentation:</p>
+        <ul>
+            <li><a href="http://wiki.netbeans.org/MavenBestPractices">Best Practices for Maven in NetBeans IDE</a></li>
+            <li><a href="http://www.sonatype.com/books/maven-book/reference/introduction.html">Chapter 1. Introducing Apache Maven</a>
+                (from <a href="http://www.sonatype.com/books/maven-book/reference/public-book.html">Maven: The Definitive Guide</a>)</li>
+        </ul>
+
+        <!-- =================================================================== -->
+        <!-- +++++++++++++++ Configuring Maven +++++++++++++++++++++++++++++++++ 
+        
+            <h2><a name="config"></a>Using Maven with the IDE</h2>
+            <p>If this is your first Maven project you will want to familiarize yourself with the Maven configuration settings
+            and the Maven Repository Browser.</p>
+        
+            <div class="indent">
+                <a name="config1"></a>
+                <h3>Configuring Maven Options</h3>
+                <p>You can use the Maven tab in the Options window to configure the behavior of Maven in the IDE and to check
+                that your configuration is correct.</p>
+        
+                <ol>
+                    <li>Select the Miscellaneous category in the Options window and click the Maven tab.</li>
+                    <li>Specify the location of your local Maven installation (requires 2.0.9 or newer).</li>
+                    <li>Check that the location of the local Maven repository is correct.</li>
+                    <li>Click OK.</li>
+                </ol>
+                <p>In most cases, if your Maven configuration is typical the information in the Options window should already be correct.</p>
+        
+                <p class="notes"><strong>Note.</strong> Maven support is activated as part of the Java SE feature set.
+                If the Maven tab is not available in the Options window, confirm that Java SE is activated by creating a Java application.</p>
+        
+                <h3><a name="config2"></a>Viewing the Maven Repositories</h3>
+                <p>The artifacts that are used by Maven to build all your projects are stored in your local Maven repository.
+                When an artifact is declared as a project dependency, the artifact is downloaded to your local repository
+                from one of the registered remote repositories.</p>
+        
+                <p>The NetBeans repository and several well-known indexed Maven repositories are registered and listed in the Repository Browser window by default.
+                The NetBeans repository contains most of the public artifacts necessary for you to build your project.
+                You can use the Maven Repository Browser to view the contents of your local and remote repositories.
+                You can expand the Local Repository node to see the artifacts that are present locally.
+                The artifacts listed under the NetBeans repository nodes can be added as project dependencies, but not all of
+                them are present locally. They are only added to the Local Repository when they are declared as project
+                dependencies.</p>
+        
+                <p>To open the Maven Repository Browser:</p>
+                <ul>
+                    <li>Choose Window &gt; Other &gt; Maven Repository Browser from the main menu.<br/>
+                    <img src="../images/tutorials/maven-quickstart68/maven-nbm-netbeans-repo.png" alt="Screenshot of Maven Repository Browser" title="Screenshot of Maven Repository Browser" class="margin-around b-all" />
+        
+                    </li>
+                </ul>
+            </div>
+        
+        -->
+        <!-- =================================================================== -->
+        <!-- ++++++++++++++++++++++ Creating the Module ++++++++++++++++++++++++ -->
+
+        <h2><a name="01"></a>Creating the Module Project</h2>
+        <p>In this section you create a NetBeans module project from a Maven archetype.</p>
+        <ol>
+            <li><p>Open the New Project wizard and choose NetBeans Module in the Maven category:</p>
+                <p><img src="../images/tutorials/maven-single/71/pic1.png" alt="Module wizard 1" title="Module wizard 1" class="margin-around b-all" />
+                </p>
+                <p>Click Next.</p></li>
+            <li><p>Type <strong>AbcFileTypeSupport</strong> in Project Name and specify
+                    a location for storing the project:</p>
+                <p>
+                    <img src="../images/tutorials/maven-single/71/pic2.png" alt="Module wizard 2" title="Module wizard 2" class="margin-around b-all" />
+                </p>
+                <p>Click Next. Specify the NetBeans API version you want to use. Click Finish.</p>
+            </li>
+        </ol>
+        <p>When you click Finish, the IDE creates the AbcFileTypeSupport project:</p>
+        <p><img src="../images/tutorials/maven-single/71/pic4.png" alt="Module wizard 4" title="Module wizard 2" />
+        </p>
+        <p>If you look in the POM, shown above, you can see that Maven will use the
+            <tt><a href="http://maven.apache.org/plugins/maven-jar-plugin/">maven-jar-plugin</a></tt> to build the JAR and the
+            <tt><a href="http://mojo.codehaus.org/nbm-maven-plugin/">nbm-maven-plugin</a></tt> will package the JAR as a
+            NetBeans Module (<tt>nbm</tt>).</p>
+
+        <pre class="examplecode">&lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+
+&lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+&lt;artifactId&gt;AbcFileTypeSupport&lt;/artifactId&gt;
+&lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+<b>&lt;packaging&gt;nbm&lt;/packaging&gt;</b>
+
+&lt;name&gt;AbcFileTypeSupport&lt;/name&gt;
+
+&lt;properties&gt;
+    &lt;project.build.sourceEncoding&gt;UTF-8&lt;/project.build.sourceEncoding&gt;
+&lt;/properties&gt;
+
+&lt;repositories&gt;
+    &lt;!--
+    Repository hosting NetBeans modules, especially APIs.
+    Versions are based on IDE releases, e.g.: RELEASE691
+    To create your own repository, use: nbm:populate-repository
+    --&gt;
+    &lt;repository&gt;
+        &lt;id&gt;netbeans&lt;/id&gt;
+        &lt;name&gt;NetBeans&lt;/name&gt;
+        &lt;url&gt;http://bits.netbeans.org/maven2/&lt;/url&gt;
+        &lt;snapshots&gt;
+            &lt;enabled&gt;false&lt;/enabled&gt;
+        &lt;/snapshots&gt;
+    &lt;/repository&gt;
+&lt;/repositories&gt;
+
+&lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.netbeans.api&lt;/groupId&gt;
+        &lt;artifactId&gt;org-netbeans-api-annotations-common&lt;/artifactId&gt;
+        &lt;version&gt;RELEASE71-BETA&lt;/version&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;
+
+&lt;build&gt;
+    &lt;plugins&gt;
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+            <b>&lt;artifactId&gt;nbm-maven-plugin&lt;/artifactId&gt;</b>
+            &lt;version&gt;3.6&lt;/version&gt;
+            &lt;extensions&gt;true&lt;/extensions&gt;
+        &lt;/plugin&gt;
+
+        &lt;plugin&gt;
+            &lt;!-- NetBeans 6.9+ requires JDK 6 --&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+            &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+            &lt;version&gt;2.3.2&lt;/version&gt;
+            &lt;configuration&gt;
+                &lt;source&gt;1.6&lt;/source&gt;
+                &lt;target&gt;1.6&lt;/target&gt;
+            &lt;/configuration&gt;
+        &lt;/plugin&gt;
+
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+            <b>&lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;</b>
+            &lt;version&gt;2.3.1&lt;/version&gt;
+            &lt;configuration&gt;
+                &lt;!-- to have the jar plugin pickup the nbm generated manifest --&gt;
+                &lt;useDefaultManifestFile&gt;true&lt;/useDefaultManifestFile&gt;
+            &lt;/configuration&gt;
+        &lt;/plugin&gt;
+    &lt;/plugins&gt;
+&lt;/build&gt;</pre>
+
+
+        <h2><a name="01b"></a>Recognizing the File Type</h2>
+
+        <p>In this section you will use the New File Type wizard to create the files for
+            recognizing a new file type named <tt>.abc</tt>.</p>
+
+        <ol>
+            <li><p>Right-click the project node in the Projects window and
+                    choose New &gt; File Type. Click Next.</p></li>
+            <li><p>In the File Recognition panel, type <strong>text/x-abc</strong> 
+                    for the MIME Type and <strong>.abc .ABC</strong> for the Filename
+                    Extension:
+                </p>
+                <p><img src="../images/tutorials/maven-single/71/pic5.png" alt="Module wizard 1" title="Module wizard 1" class="margin-around b-all" />
+                </p>
+                <p>Click Next.</p>
+            </li>
+            <li><p>Type <strong>Abc</strong> as the Class Name Prefix.
+                    Click Browse and select a
+                    16x16 pixel image file as the new file type's icon.</p>
+                <p class="tips">If you don't have an image
+                    available, just save this image <tt><a href="../images/tutorials/maven-crud/abc16.png">abc16.png</a></tt> (&nbsp;<img src="../images/tutorials/maven-crud/abc16.png" alt="16x16 icon image" title="16x16" />&nbsp;)
+                    to your system and select the image after clicking Browse.</p>
+                <p><img src="../images/tutorials/maven-single/71/pic6.png" alt="Module wizard 1" title="Module wizard 1" class="margin-around b-all" />
+                </p>
+                <p>Click Finish.</p>
+            </li>
+        </ol>
+
+        <p>When you click Finish, the IDE creates the files shown below:</p>
+        <p><img src="../images/tutorials/maven-single/71/pic7.png" alt="Module wizard 1" title="Module wizard 1" /></p>
+
+        <p class="tips">For more details on the files that the IDE created, see
+            <a href="http://wiki.netbeans.org/DevFaqDataObject">What is a DataObject</a> and the section on
+            <a href="nbm-filetype.html#recognizing">Recognizing Abc Files</a> in the 
+            Ant-Based <a href="nbm-filetype.html">File Type Integration Tutorial</a>.</p>
+
+        <!-- =================================================================== -->
+        <!-- ++++++++++++++++++++++ Running the  Module ++++++++++++++++++++++++ -->
+        <h2><a name="02"></a>Building and Running the Project</h2>
+
+        <p>To install the module, you first need to build and run it.</p>
+        <ol>
+            <li><p>Right-click the project node and choose Build.</p></li>
+            <li><p>Right-click the project node and choose Run.
+                    The IDE launches with the new module installed.
+                    To confirm that the new module is working correctly, create a
+                    new project and then use the New File wizard
+                    to create an <tt>abc</tt> file:</p>
+                <p><img src="../images/tutorials/maven-single/71/pic8.png" alt="Module wizard 1" title="Module wizard 1" /></p>
+
+                <p>For example, you can create a simple Java application
+                    and then open the New File wizard and
+                    choose the Empty Abc file type in the Other category.</p>
+                <p class="tips">When you create the new file, specify a source package if you want to see the file in the Projects window.
+                    By default the wizard for the new file type will create the file at the root level of the project.</p>
+            </li>
+            <li><p>After you create the new abc file you can see that the file is displayed in the Projects window with the icon for the file type.
+                    If you open the file in the editor you can see that
+                    the contents of the new file were generated from the file template.<br/>
+                </p>
+                <p><img style="border:1px solid black" src="../images/tutorials/maven-single/71/pic9.png" alt="Module wizard 1" title="Module wizard 1" /></p>
+                <p>Click the "Visual" tab and you will see the GUI panel
+                    created by the New File Type wizard:</p>
+                <p><img style="border:1px solid black" src="../images/tutorials/maven-single/71/pic91.png" alt="Module wizard 1" title="Module wizard 1" /></p>
+            </li></ol>
+        <p>You can see that your file type is now recognized by the application. In
+            the next section, we'll create a new action for our file type, which
+            will be available when the user right-click on a file
+            conforming to the type in the Projects window.</p>
+
+        <!-- =================================================================== -->
+        <!-- +++++++++++++++++++++++ Adding an Action ++++++++++++++++++++++++++ -->
+        <h2><a name="03"></a>Adding an Action for the File Type</h2>
+        <p>In this section you will add an action that can be invoked from
+            the popup menu when the user right-clicks the node of a file
+            conforming to your new file type.</p>
+
+        <ol>
+            <li><p>Right-click the AbcFileTypeSupport project and choose New &gt; Action.
+                In the Action Type panel, select Conditionally Enabled and
+                type <strong>AbcDataObject</strong> for
+                the Cookie Class, which specifies the type that
+                needs to be in the Lookup for the Action to be enabled:</p>
+                <p><img style="border:1px solid black" src="../images/tutorials/maven-single/71/pic92.png" alt="Module wizard 1" title="Module wizard 1" /></p>
+                <p>Click Next.</p>
+            </li>
+            <li><p>Select Edit in the Category drop-down list and deselect Global Menu Item.
+                Select File Type Context Menu Item and select <strong>text/x-abc</strong> in the Content 
+                Type drop-down list:</p>
+                <p><img style="border:1px solid black" src="../images/tutorials/maven-single/71/pic93.png" alt="Module wizard 1" title="Module wizard 1" /></p>
+                <p>Click Next.</p>
+            </li>
+            <li><p>Type <strong>MyAction</strong> as the Class Name 
+                    and <strong>My Action</strong> as the Display Name:</p>
+                <p><img style="border:1px solid black" src="../images/tutorials/maven-single/71/pic94.png" alt="Module wizard 1" title="Module wizard 1" /></p>
+                <p>Click Finish.</p>
+                <p>When you click Finish, <tt>MyAction.java</tt> is created in the <tt>com.mycompany.abcfiletype</tt> source package:</p>
+
+                <pre class="examplecode">package com.mycompany.abcfiletypesupport;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.awt.ActionRegistration;
+import org.openide.util.NbBundle.Messages;
+
+@ActionID(category = "Edit",
+id = "com.mycompany.abcfiletypesupport.MyAction")
+@ActionRegistration(displayName = "#CTL_MyAction")
+@ActionReferences({
+    @ActionReference(path = "Loaders/text/x-abc/Actions", position = 0)
+})
+@Messages("CTL_MyAction=My Action")
+public final class MyAction implements ActionListener {
+
+    private final AbcDataObject context;
+
+    public MyAction(AbcDataObject context) {
+        this.context = context;
+    }
+
+    public void actionPerformed(ActionEvent ev) {
+        // TODO use context
+    }
+    
+}</pre></li>
+
+
+                <li><p>Let's now make the Action a bit more meaningful. We'll add some code for the action. 
+                    In this example you will add some code that uses <tt>DialogDisplayer</tt> to open a dialog box
+                    when the action is invoked from the popup menu.</p>
+                    <p>Modify the <tt>actionPerformed(ActionEvent ev)</tt> method in <tt>MyAction.java</tt> to open a dialog when My Action is invoked.</p>
+                <pre class="examplecode">@Override
+public void actionPerformed(ActionEvent ev) {
+   <strong>FileObject f = context.getPrimaryFile();
+   String displayName = FileUtil.getFileDisplayName(f);
+   String msg = "This file is " + displayName + ".";
+   NotifyDescriptor nd = new NotifyDescriptor.Message(msg);
+   DialogDisplayer.getDefault().notify(nd);</strong>
+}</pre>
+            </li>
+            <li><p>Fix the missing import statements (Ctrl-Shift-I) 
+                    and then confirm that your import statements are as shown below:</p>
+            
+                <pre class="examplecode">package com.mycompany.abcfiletypesupport;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.awt.ActionRegistration;
+import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
+import org.openide.util.NbBundle.Messages;
+
+@ActionID(category = "Edit",
+id = "com.mycompany.abcfiletypesupport.MyAction")
+@ActionRegistration(displayName = "#CTL_MyAction")
+@ActionReferences({
+    @ActionReference(path = "Loaders/text/x-abc/Actions", position = 0)
+})
+@Messages("CTL_MyAction=My Action")
+public final class MyAction implements ActionListener {
+
+    private final AbcDataObject context;
+
+    public MyAction(AbcDataObject context) {
+        this.context = context;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent ev) {
+        FileObject f = context.getPrimaryFile();
+        String displayName = FileUtil.getFileDisplayName(f);
+        String msg = "This file is " + displayName + ".";
+        NotifyDescriptor nd = new NotifyDescriptor.Message(msg);
+        DialogDisplayer.getDefault().notify(nd);
+    }
+    
+}</pre>
+            
+            
+            
+            </li>
+        
+            <li><p>You can now try out the module to confirm that the new action works correctly.</p>
+        <p class="notes"><strong>Note.</strong> To run the module you will first need to clean and build the module.</p>
+        <p>When you right-click on a node of the <tt>abc</tt> file type you will see that My Action is one of the items in the popup menu.</p>
+                <p><img src="../images/tutorials/maven-single/71/pic95.png" alt="Module wizard 1" title="Module wizard 1" /></p>
+            </li>
+        </ol>
+        <p>This tutorial demonstrated how to create and run a NetBeans module 
+            that you created from a Maven Archetype.
+            You also learned a little about how to work with file types, but for more details you should look at
+            the Ant-Based <a href="https://platform.netbeans.org/tutorials/nbm-filetype.html">NetBeans File Type Tutorial</a>.
+            For more examples on how to build NetBeans Platform applications and modules,
+            see the tutorials listed in 
+            the <a href="https://netbeans.org/kb/trails/platform.html">NetBeans Platform Learning Trail</a>.</p>
+
+
+        <!-- ======================================================================================== -->
+        <div class="feedback-box"><a name="feedback"></a>
+            <a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20NetBeans%20Module%20File%20Type%20Tutorial%20Using%20Maven%207.1">
+                Send Us Your Feedback</a></div>
+
+        <p>&nbsp;</p>
+        <!-- ======================================================================================== -->
+
+
+        <h2><a name="nextsteps"></a>See Also</h2>
+
+        <p>For more information about creating and developing applications, see the following resources.</p>
+        <ul>
+            <li><a href="https://netbeans.org/kb/trails/platform.html">NetBeans Platform Learning Trail</a></li>
+            <li><a href="http://bits.netbeans.org/dev/javadoc/">NetBeans API Javadoc</a></li>
+        </ul>
+        <p>If you have any questions about the NetBeans Platform, feel free
+            to write to the mailing list, dev@platform.netbeans.org, or view the
+            <a href="https://netbeans.org/projects/platform/lists/dev/archive">NetBeans Platform mailing list archive</a>.</p>
+
+
+        <!-- ======================================================================================== -->
+
+
+
+    </body>
+
+</html>

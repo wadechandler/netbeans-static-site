@@ -1,0 +1,566 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>Lexer Migration Guide</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="gwielenga@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A short guide to using the Lexer API.">
+<!--      Copyright (c) 2005 Sun Microsystems, Inc. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>Lexer Migration Guide</h1>
+
+<p>
+<div style="border: 1px solid rgb(14, 27, 85); padding: 10px 30px; background-color: rgb(231, 231, 231); margin-left: 60px; margin-right: 40px;">
+    Please note that this tutorial is <b>obsolete</b>. Go here instead:<p>
+    <a href="http://wiki.netbeans.org/How_to_create_support_for_a_new_language">http://wiki.netbeans.org/How_to_create_support_for_a_new_language</a>
+</div>
+
+<p>This document shows you how to migrate from an implementation of
+<tt>org.netbeans.editor.Syntax</tt> to an implementation of <tt>org.netbeans.api.lexer</tt>.
+ At the end of this document, you will have a NetBeans module that
+  provides syntax highlighting for Manifest files. You will have tokens
+   for the 'name', 'colon', and 'value'
+ in manifest entries and each will have a distinct color, as illustrated below:
+
+<p><img src="../../images/tutorials/mf_syntax/result1.png" alt="Highlighted manifest file">
+
+<p>The starting point of this migration guide is the 
+<a href="https://platform.netbeans.org/tutorials/nbm-mfsyntax.html">NetBeans Manifest File Syntax Highlighting Module Tutorial</a>,
+which implements the <tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/editor/Syntax.html">org.netbeans.editor.Syntax</a></tt> class. To migrate from
+  an implementation of that class to an implementation of <tt>org.netbeans.api.lexer</tt>,
+   you will need to replace the files listed in the left column in the table below
+    with those listed in the right column:
+   
+   
+
+<p><table width="76%" border="1">
+
+    <tbody><tr>
+      <td>
+	<div align="left"><b>Pre-Lexer</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Lexer</b></div>
+
+      </td>
+    </tr>
+     <tr>
+         <td align="left" valign="top"><tt>ManifestEditorKit.java</tt> extends
+         <tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor/org/netbeans/modules/editor/NbEditorKit.html">NbEditorKit</a></tt></a></td>
+    <td><tt>ManifestEditorKit.java</tt> extends <tt>LexerEditorKit</tt></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt>ManifestSyntax.java</tt> extends
+      <tt>org.netbeans.editor.Syntax</tt></a></td>
+    <td><tt>ManifestLexer.java</tt> extends <tt>org.netbeans.spi.lexer.Lexer</tt></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt>ManifestTokenContext.java</tt>
+      extends <tt>org.netbeans.editor.TokenContext</tt></a></td>
+      <td><tt>ManifestTokenId.java</tt> extends <tt>org.netbeans.api.lexer.TokenId</tt></td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt>ManifestEditorKit.java</tt></td>
+      <td>Not needed.</td>
+    </tr>
+     <tr>
+      <td align="left" valign="top"><tt>ManifestSettingsInitializer.java</tt></td>
+      <td>Not needed.</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt>org.netbeans.modules.manifestsupport.options</tt></td>
+      <td>Not needed.</td>
+    </tr>
+    </tbody>
+  </table><p>
+
+
+
+<p>The following topics are covered in this document:</p>
+<ul>
+  <li><a href="#setting-up">Setting Up</a></li>
+  <ul>
+  <li><a href="#installing-software">Installing the Software</a></li>
+<li><a href="#installing-sample">Installing the Sample</a></li>
+ 
+  </ul>
+  <li><a href="#migrating">Migrating the Module</a></li>
+  <ul>
+    <li><a href="#tokenizing">Migrating the Tokens</a>
+    <li><a href="#syntaxing">Migrating the Lexical Analyzer</a>
+   <li><a href="#bundle">Migrating the Bundle.properties File</a>
+      <li><a href="#layer">Migrating the XML Layer</a>
+ </ul>
+ 
+  <li><a href="#building">Building and Installing the Module</a></li>
+ <li><a href="#explore">Exploring Further</a></li>
+  
+
+</ul>
+<p><a name="top"></a>Once the software is installed, the migration can be complete in 15 minutes.
+
+<p>For more information on creating NetBeans plug-in modules, see the <a href="https://platform.netbeans.org/index.html">
+NetBeans Development Project home</a> on the NetBeans website. If you have questions, visit the 
+ <a href="http://wiki.netbeans.org/wiki/view/NetBeansDeveloperFAQ">NetBeans Developer FAQ</a> or use the feedback link
+ at the top of this page.</p>
+
+
+
+<!-- ===================================================================================== -->
+<h2><a name="gettingtoknowthesample"></a>Setting Up</h2>
+<p>Before you start writing the module, you have to make sure you have all of the necessary software.
+ In addition, you might want to play with the sample before building it yourself.</p>
+<div class="indent">
+
+ <h3 class="tutorial"><a name="installing-software"></a>Installing the Software</h3>
+   
+    
+      <p>Before you begin, you need to install the following software on your 
+        computer:</p>
+<ul>
+     <li>NetBeans IDE 5.5, together with the Lexer modules provided by the Update Center (to come)
+  or Milestone 5 (or later) of NetBeans IDE 6.0 </li>
+    <li>Java Standard Development Kit (JDK&trade;) version 
+      1.4.2 (<a href="http://java.sun.com/j2se/1.4.2/download.html">download</a>) 
+      or 5.0 (<a href="http://java.sun.com/j2se/1.5.0/download.jsp">download</a>)</li>
+  </ul>   
+
+    <h3 class="tutorial"><a name="installing-sample"></a>Installing the Sample</h3>
+<p>Take the following steps to install the sample:
+<ol><li>Download and unzip <a href="https://netbeans.org/files/documents/4/583/ManifestSupport.zip">ManifestSupport.zip</a>.
+<li>In the IDE, choose File > Open Project and browse to the folder that contains the unzipped file.
+ Open the module project. The files that we will deal with are in the main package,
+ <tt>org.netbeans.modules.manifestsupport</tt>:
+<p><p><img src="../../images/tutorials/mf_syntax/migrate1.png" alt="Final Projects window"></p></p>
+<li>Right-click the project node and choose Project Properties. In the Sources panel,
+ change the source level to 1.5. In the Libraries panel, add dependencies on Lexer
+ and Lexer to Editor Bridge and Plain Editor Library.</ol>
+
+ 
+<!-- ===================================================================================== -->
+  
+<h2><a name="migrating"></a>Migrating the Module</h2>
+
+<p>After taking the preparatory steps above, you need to change four files
+ and delete several others. The files to be changed are listed below, with
+ explanations after the code listing and, in some cases, within the code
+ listings themselves. After that a list of files to be deleted is provided.</p>
+    
+    
+<div class="indent">
+	<p><h3 class="tutorial"><a name="tokenizing"></a>Migrating the Tokens</h3>
+
+<p>Do the following:
+<ol>
+<li><b>Migrate the file.</b> Refactor <tt>ManifestTokenContext</tt> to <tt>ManifestTokenId</tt>.
+ Replace the code with the following:
+
+<pre class=examplecode>package org.netbeans.modules.manifestsupport;
+
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.Map;
+import org.netbeans.api.lexer.Language;
+import org.netbeans.api.lexer.TokenId;
+import org.netbeans.spi.lexer.LanguageHierarchy;
+import org.netbeans.spi.lexer.Lexer;
+import org.netbeans.spi.lexer.LexerRestartInfo;
+
+/**
+ *
+ * @author Administrator
+ */
+public enum ManifestTokenId implements TokenId {
+
+    // The token ids may be assigned to categories and the coloring information
+    // may then be assigned directly to a tokenId.name() e.g. "NAME"
+    // or to a token category e.g. "separator"
+    NAME(null),
+    COLON("separator"),
+    VALUE(null),
+    END_OF_LINE("whitespace");
+
+    private String primaryCategory;
+   
+    private ManifestTokenId(String primaryCategory) {
+        this.primaryCategory = primaryCategory;
+    }
+    
+    public String primaryCategory() {
+        return primaryCategory;
+    }
+
+    private static final Language&lt;ManifestTokenId&gt; language = new LanguageHierarchy&lt;ManifestTokenId&gt;() {
+
+        protected String mimeType() {
+            return "text/x-java-jar-manifest";
+        }
+
+        protected Collection&lt;ManifestTokenId&gt; createTokenIds() {
+            return EnumSet.allOf(ManifestTokenId.class);
+        }
+        
+        protected Map&lt;String,Collection&lt;ManifestTokenId&gt;&gt; createTokenCategories() {
+            return null;
+        }
+
+        protected Lexer&lt;ManifestTokenId&gt; createLexer(LexerRestartInfo&lt;ManifestTokenId&gt; info) {
+            return new ManifestLexer(info);
+        }
+
+    }.language();
+
+    public static Language&lt;ManifestTokenId&gt; language() {
+        return language;
+    }
+
+}</pre></li>
+
+<li><b>Understand the file.</b> This Java class specifies a token for each item in the Manifest file with which we want to
+ work. Each distinct item in a Manifest file is a token:
+ 'NAME', 'COLON', and 'VALUE'. In addition, there is also a token for the end of the line, because we need to
+ work with the end of the line&#8212;the end of the line
+ determines where a value ends and the next name begins. We can also assign tokens to categories
+  and then bind colors to categories. For example, above COLON is assigned to the category
+   'separator', while END_OF_LINE is assigned to the category 'whitespace'. If the example was not
+    so simple, we would probably assign multiple tokens to the same category, which is superfluous
+     here.
+
+</ol>
+<h3 class="tutorial"><a name="migrating"></a>Migrating the Lexical Analyzer</h3>
+<p>Do the following:
+<ol>
+<li><b>Migrate the file.</b> Refactor <tt>ManifestSyntax</tt> 
+    to <tt>ManifestLexer</tt>. Replace the default code with the following:
+
+<pre class=examplecode>package org.netbeans.modules.manifestsupport;
+
+import org.netbeans.api.lexer.Token;
+import org.netbeans.spi.lexer.Lexer;
+import org.netbeans.spi.lexer.LexerInput;
+import org.netbeans.spi.lexer.LexerRestartInfo;
+import org.netbeans.spi.lexer.TokenFactory;
+
+public class ManifestLexer implements Lexer&lt;ManifestTokenId&gt; {
+    
+    private static final int EOF = LexerInput.EOF;
+
+    // Lexer internal states - preferably small integers for more compact token storage
+    private static final int INIT = 0;
+    private static final int AFTER_COLON = 1;
+    private static final int AFTER_NAME = 2;
+
+    private LexerInput input;
+    
+    private TokenFactory&lt;ManifestTokenId&gt; tokenFactory;
+    
+    private int state;
+    
+    public Object state() {
+		// autoconversion uses Integer.valueOf() which caches &lt;-127,127&gt;
+        return state;
+    }
+
+    public ManifestLexer(LexerRestartInfo&lt;ManifestTokenId&gt; info) {
+        this.input = info.input();
+        this.tokenFactory = info.tokenFactory();
+		this.state = (info.state() != null) ? (Integer)info.state() : INIT;
+    }
+    
+    public Token&lt;ManifestTokenId&gt; nextToken() {
+        int c = input.read();
+        switch (state) {
+            case INIT:
+                return nextTokenInit(c);
+            case AFTER_COLON:
+                return nextTokenAfterColon(c);
+            case AFTER_NAME:
+                return nextTokenAfterName(c);
+            default:
+                throw new IllegalStateException();
+        }
+    }
+        
+    private Token&lt;ManifestTokenId&gt; nextTokenInit(int c) {
+        switch (c) {
+            case ':': // ":"
+                state = AFTER_COLON;
+                return token(ManifestTokenId.COLON);
+            case '\r':
+                input.consumeNewline(); // continue to '\n' handling
+            case '\n':
+                //state = INIT;
+                return token(ManifestTokenId.END_OF_LINE);
+            case EOF: // no chars -&gt; finish lexing by returning null
+                return null;
+            default: // Name follows
+                return finishName(c);
+        }
+    }
+
+    private Token&lt;ManifestTokenId&gt; nextTokenAfterColon(int c) {
+        switch (c) {
+            case ':': // ":"
+                state = AFTER_COLON;
+                return token(ManifestTokenId.COLON);
+            case '\r':
+                input.consumeNewline(); // continue to '\n' handling
+            case '\n':
+                state = INIT;
+                return token(ManifestTokenId.END_OF_LINE);
+            case EOF: // no chars -&gt; finish lexing by returning null
+                return null;
+            default:
+                return finishValue(c);
+        }
+    }
+
+    private Token&lt;ManifestTokenId&gt; nextTokenAfterName(int c) {
+        switch (c) {
+            case ':': // ":"
+                state = AFTER_COLON;
+                return token(ManifestTokenId.COLON);
+            case '\r':
+                input.consumeNewline(); // continue to '\n' handling
+            case '\n':
+                state = INIT;
+                return token(ManifestTokenId.END_OF_LINE);
+            case EOF: // no chars -&gt; finish lexing by returning null
+                return null;
+            default:
+                throw new IllegalStateException();
+        }
+    }
+
+    private Token&lt;ManifestTokenId&gt; finishName(int c) {
+        while (true) {
+            switch (c) {
+                case ':':
+                case '\r':
+                case '\n':
+                case EOF:
+                    input.backup(1);
+                    state = AFTER_NAME;
+                    return token(ManifestTokenId.NAME);
+            }
+            c = input.read();
+        }
+    }
+
+    private Token&lt;ManifestTokenId&gt; finishValue(int c) {
+        while (true) {
+            switch (c) {
+                case '\r':
+                case '\n':
+                case EOF:
+                    input.backup(1);
+                    state = INIT;
+                    return token(ManifestTokenId.VALUE);
+            }
+            c = input.read();
+        }
+    }
+
+    private Token&lt;ManifestTokenId&gt; token(ManifestTokenId id) {
+        Token&lt;ManifestTokenId&gt; t = tokenFactory.createToken(id);
+        return t;
+    }
+    
+    public void release() {
+    }
+
+}</pre></li>
+
+<li><b>Understand the file.</b> This Java class tells the IDE which part of the text is which token.
+It does this by starting in an initial state and sequentially looking at each character in the text 
+and deciding if it stays in that state, moves to another state, or announces that a token was found. 
+
+</ol>
+
+
+<h3 class="tutorial"><a name="bundle"></a>Migrating the <tt>Bundle.properties</tt> File</h3>
+
+<p>Your <tt>Bundle.properties</tt> file, which is in the same package as the
+ previous two classes, should have this content:
+ 
+<pre class=examplecode>#Layer.xml entries for fonts & colors in Options window:
+NetBeans=NetBeans
+NAME=Name
+VALUE=Value
+COLON=Colon
+separator=Separator
+whitespace=Whitespace</pre>
+
+<h3 class="tutorial"><a name="layer"></a>Migrating the XML Layer</h3>
+
+<p>This is how your new Lexer implementation should be registered:
+
+<pre class=examplecode>&lt;folder name="Editors"&gt;
+    &lt;folder name="text"&gt;
+        &lt;folder name="x-java-jar-manifest"&gt;
+            &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.myorg.manifestfiletype.Bundle"/&gt;
+            &lt;folder name="NetBeans"&gt;
+                &lt;folder name="Defaults"&gt;
+                    &lt;file name="coloring.xml" url="resources/NetBeans-Manifest-fontsColors.xml"&gt;
+                        &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.netbeans.modules.manifestsupport.Bundle"/&gt;
+                    &lt;/file&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt; 
+            &lt;folder name="CityLights"&gt;
+                &lt;folder name="Defaults"&gt;
+                    &lt;file name="coloring.xml" url="resources/CityLights-Properties-fontsColors.xml"&gt;
+                        &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.netbeans.modules.manifestsupport.Bundle"/&gt;
+                    &lt;/file&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt;
+            &lt;file name="language.instance"&gt;
+                &lt;attr name="instanceCreate" methodvalue="org.netbeans.modules.manifestsupport.ManifestTokenId.language"/&gt;
+                &lt;attr name="instanceOf" stringvalue="org.netbeans.api.lexer.Language"/&gt;
+            &lt;/file&gt;
+            &lt;file name="EditorKit.instance"&gt;
+                &lt;attr name="instanceCreate" methodvalue="org.netbeans.modules.lexer.editorbridge.LexerEditorKit.create"/&gt;
+                &lt;attr name="instanceClass" stringvalue="org.netbeans.modules.lexer.editorbridge.LexerEditorKit"/&gt;
+            &lt;/file&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;
+
+&lt;folder name="OptionsDialog"&gt;
+    &lt;folder name="PreviewExamples"&gt;
+        &lt;folder name="text"&gt;
+            &lt;file name="x-java-jar-manifest" url="resources/ManifestExample"/&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+
+
+
+<h3 class="tutorial"><a name="syntaxcoloring"></a>Finishing Up</h3>
+
+<p>Do the following:
+<ol>
+<li><b>Delete <tt>ManifestEditorKit</tt>.</b> You do not need this anymore,
+ because of the LexerEditorKit registered in the XML layer. Right-click 
+  the <tt>ManifestSettingsInitializer.java</tt>
+ file and choose Delete.
+<li><b>Delete <tt>ManifestSettingsInitializer</tt>.</b> You do not need this anymore,
+ because initizialiatio is done through the XML layer. Right-click 
+  the <tt>ManifestSettingsInitializer.java</tt>
+ file and choose Delete.
+ <li><b>Change the installer.</b> Previously, you used a module installer to call
+  the <tt>ManifestSettingsInitializer</tt>. You no longer have it, so there
+   is no need to call it. In <tt>RestoreColoring.java</tt>, delete the
+     <tt>addInitializer()</tt> method and remove it from the <tt>restored()</tt> method.
+     <li><b>Delete the Options package.</b> Delete <tt>org.netbeans.modules.manifestsupport.options</tt>.
+</ol>
+
+
+
+
+<h2><a name="building"></a>Building and Installing the Module</h2>
+<p>The IDE uses an Ant build script to build and install your module. The build script is created for you
+when you create the module project.</p>
+<div class="indent">
+
+	<h3 class="tutorial">Installing and Testing the NetBeans Module</h3>
+	<p>
+      <ol>
+	      <li>In the Projects window, right-click the <tt>ManifestSupport</tt> project and choose Install/Reload
+	      in Target Platform. 
+	      <p>The module is built and installed in the target IDE or Platform. The target IDE or Platform opens so that you
+	      can try out your new module. The default target IDE or Platform is the 
+	      installation used by the current instance of the development IDE. Note that when you run your module, you will be using 
+ a temporary test user directory, not the development IDE's user directory. 
+ <li>Choose File &gt; New Project (Ctrl-Shift-N). Create a new Java application project
+ or a new Plug-in Module project. Open the project's Manifest file in the Source Editor
+ and notice the syntax highlighting. 
+</ol>	<p>
+ 
+
+      
+
+      
+<!-- ===================================================================================== -->
+<br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Lexer%20Migration%20Guide">Send Us Your Feedback</a></div>
+<br style="clear:both;" />
+
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Next Steps</h2>
+
+<p>For more information about creating and developing NetBeans modules, see the following resources: 
+  <ul>
+	  <li><a href="https://platform.netbeans.org/index.html">Module Developer's Resources</a></li>
+	  <li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API List (Current Development Version)</a></li>
+	  <li><a href="http://apisupport.netbeans.org/new-apisupport.html">New API Support-Proposal</a></li></ul>
+  </p>
+  
+  <hr>
+<!-- ======================================================================================== -->
+
+<h2><a name="version"></a>Versioning </h2>
+  
+<p>
+
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+ <tr>
+      <td>
+	 1
+      </td>
+      <td>
+         5 November 2006
+      </td>
+      <td><ul>
+	      <li>Initial version.
+      </td>
+  </tr>
+  <tr>
+      <td>
+	 2
+      </td>
+      <td>
+         12 December 2006
+      </td>
+      <td><ul>
+	      <li>Removed editorkit. Not necessary anymore. LexerEditorkit is declared in layer XML.
+              <li>Added migration of Bundle.properties and XML layer.
+              <li>Changed token ID class and Lexer class, to reflect latest state of the implementation.
+      </td>
+  </tr>
+   <tr>
+      <td>
+	 3
+      </td>
+      <td>
+         13 December 2006
+      </td>
+      <td><ul>
+	      <li>Removed the Options package. (Forgot to do that yesterday.)
+              <li>Small tweaks.
+      </td>
+  </tr>
+  
+  </tbody>
+  </table>
+</body>
+</html>

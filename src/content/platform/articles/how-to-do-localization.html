@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>Localizing a Plug-in Module</title>
+  <link rel="stylesheet" type="text/css"
+ href="https://netbeans.org/netbeans.css">
+  <meta name="topic" content="autoupdate">
+  <meta name="type" content="article">
+  <meta name="audience" content="nbdeveloper">
+  <meta name="description" content="Localizing a Plug-in Module">
+  <meta name="author" content="jrechtacek@netbeans.org">
+  <meta name="indexed" content="y">
+  <style type="text/css">
+q {quotes: "\201C" "\201D" "\2018" "\2019"}
+  </style>
+</head>
+<body>
+<h1>Localizing a Plug-in Module</h1>
+
+<p>What can we do if want to localize a module:
+</p>
+<ul>
+  <li> Prepare a module <b>directly localized</b>, i.e. contains the
+localizing bundles in module's jar or </li>
+  <li> Prepare a <b>module</b> and <b>its localizing update</b> and
+distribute together via AutoUpdate or </li>
+  <li> Prepare a localizing update for a already installed module (e.g.
+a module from NetBeans distribution) and distribute <b>only this
+localization</b> via AutoUpdate. </li>
+</ul>
+<p>The first way is easy but not so handy, localization or branding
+should be separated out the functional code, should have own placement
+in files layout.
+</p>
+<p>The other ways uses the AutoUpdate to provide module's localization.
+As said in <a href="update-descriptor-specification.html">Understanding AutoUpdate Descriptors</a>
+each update can be a functional update (or a new module) or module's
+localization. The functional update are described by <a
+ href="update-descriptor-specification.html#section-UpdateDescriptorSpecification-Manifest">manifest</a> element,
+the localizing updates are described by <a
+ href="update-descriptor-specification.html#section-UpdateDescriptorSpecification-L10n">l10n</a> element in AutoUpdate Descriptor.
+</p>
+<h4> <tt>l10n</tt></h4>
+<p>The <tt>l10n</tt> is a sub-element of parent <tt>module</tt>
+element. The attributes of the <tt>module</tt> element <b>must
+specify what module's</b> it is localization, <tt>codenamebase</tt>
+attribute is acting as module identification.
+</p>
+<p><i>That means if I have a (unlocalized) module <b><tt>org-myorg-module</tt></b>
+and have prepared module's localization <b><tt>org-myorg-module_cs</tt></b>
+then <tt>module</tt> attribute <tt>codenamebase</tt> is <tt>org.myorg.module</tt>
+and <tt>l10n</tt> element has the attributes <tt>langcode</tt> <tt>cs</tt>
+and <tt>module_spec_version</tt> <tt>1.0</tt>.</i>
+</p>
+<pre>&lt;!ELEMENT l10n EMPTY&gt;<br>&lt;!ATTLIST l10n   langcode             CDATA #IMPLIED<br>                 brandingcode         CDATA #IMPLIED<br>                 module_spec_version  CDATA #IMPLIED<br>                 module_major_version CDATA #IMPLIED<br>                 OpenIDE-Module-Name  CDATA #IMPLIED<br>                 OpenIDE-Module-Long-Description CDATA #IMPLIED&gt;<br></pre>
+<ul>
+  <li> <tt>langcode</tt> and <tt>brandingcode</tt> specify for what
+locale and branding are good for, e.g. <tt>langcode</tt> is <tt>cs</tt>
+for Czech localization </li>
+  <li> <tt>module_spec_version</tt> and <tt>module_major_version</tt>
+specify for what version of module are targeted. </li>
+  <li> <tt>OpenIDE-Module-Name</tt> - localized name of the module. </li>
+  <li> <tt>OpenIDE-Module-Long-Description</tt> - localized
+description of the module. Both of them are shown in the <tt>Update
+Center Wizard</tt>. </li>
+</ul>
+<h4 id="section-HowToDoLocalization-HowItWorks"> How it works?</h4>
+<p>Each module contains some stuff as subject for localization or
+branding, this stuff must be separated out of sources and stored either
+in bundles or in gifs/pngs/etc. Thus localizing update contains only a
+jar with bundles and images and must contain a descriptor what module
+will be localized.
+</p>
+<ul>
+  <li> <b>jar file</b>: jar file must have as same structure of
+folders as module what we want to localized, e.g. if the <tt>org-myorg-module</tt>
+looks like: </li>
+</ul>
+<pre><br>org --- myorg --- module --- Action.class<br>                         --- Bundle.properties<br>                         --- Icon.gif<br></pre>
+then its localizing jar (<i>for Czech locale <tt><b>cs</b></tt></i>)
+must have the structure
+<pre>org --- myorg --- module --- Bundle_cs.properties<br>                         --- Icon_cs.gif<br></pre>
+<ul>
+  <li> <b>descriptor</b>: The localizing update descriptor specify in <tt><b>l10n</b></tt>
+element for what module and what version is the localization addressed.
+  </li>
+</ul>
+<p>Suppose we have a localizing update <tt>org-myorg-module_cs</tt>.
+What can to do with it:
+</p>
+<ul>
+  <li> install it via <tt><b>AutoUpdate</b></tt> as single update of
+already installed <tt>org-myorg-module</tt> or </li>
+  <li> install localization and module together. </li>
+</ul>
+<tt><b>AutoUpdate</b></tt> client checks the active locale and finds
+localizing update for all being selected modules, it means that if we
+have <b>chosen</b> <tt><b>org-myorg-module</b></tt> and <tt><b>cs</b></tt>
+locale <b>active</b> then the client will find across all enabled <tt><b>Update
+Centers</b></tt> Czech localization by module <tt>code-name</tt> and
+version. If found ant then select it too. In this example should found <tt><b>org-myorg-module_cs</b></tt>
+and select it.
+<br><p>
+<h4 id="section-HowToDoLocalization-ExampleModuleAndItsLocalization">Example
+module and its localization</h4>
+<p>Example module <b>Hello</b> (<tt>org-myorg-module</tt> code-name)
+adds to Help menu a dummy item <b>Hello</b> i.e. uses one label which
+can localized, see Module's NBM at <a
+ href="org-myorg-module.nbm">org-myorg-module.nbm</a>.
+</p>
+<p>Update Descriptor of this functional module looks as:
+</p>
+<pre>&lt;?xml version="1.0" encoding="UTF-8"?&gt;<br>&lt;!DOCTYPE module PUBLIC "-//NetBeans//DTD Autoupdate Module Info 2.3//EN" "https://netbeans.org/dtds/autoupdate-info-2_3.dtd"&gt;<br>&lt;module codenamebase="org.myorg.module"<br>        homepage=""<br>        https://platform.netbeans.org/org-myorg-module.nbm"<br>        license="no-license.txt"<br>        downloadsize="0"<br>        needsrestart="false"<br>        moduleauthor=""<br>        releasedate="2006/02/16"<br>&gt;<br>  &lt;manifest OpenIDE-Module="org.myorg.module/1"<br>            OpenIDE-Module-Implementation-Version="060216"<br>            OpenIDE-Module-Long-Description="Real module Hello installs Hello menu item into Help menu."<br>            OpenIDE-Module-Module-Dependencies="org.openide.util &amp;gt; 6.9.0.1"<br>            OpenIDE-Module-Name="module"<br>            OpenIDE-Module-Requires="org.openide.modules.ModuleFormat1"<br>            OpenIDE-Module-Specification-Version="1.0"<br>  /&gt;<br>  &lt;license name="no-license.txt"&gt;&lt;![CDATA[[NO LICENSE SPECIFIED]<br>]]&gt;&lt;/license&gt;<br><br>&lt;/module&gt;<br><br></pre>
+<p>Czech localization <b>Ahoj</b> (<tt>org-myorg-module_cs</tt>)
+see at <a href="org-myorg-module_cs.nbm">org-myorg-module_cs.nbm</a>.
+</p>
+<p>It's localizing update descriptor looks like this:
+</p>
+<pre><br>&lt;?xml version="1.0" encoding="UTF-8"?&gt;<br>&lt;!DOCTYPE module PUBLIC "-//NetBeans//DTD Autoupdate Module Info 2.3//EN" "https://netbeans.org/dtds/autoupdate-info-2_3.dtd"&gt;<br>&lt;module codenamebase="org.myorg.module"<br>        distribution="https://platform.netbeans.org/articles/org-myorg-module_cs.nbm"<br>        license="no-license.txt"<br>        downloadsize="0"<br>        needsrestart="false"&gt;<br>  &lt;l10n <br>        langcode="cs"<br>        module_major_version="1"<br>        module_spec_version="1.0"<br>        OpenIDE-Module-Name="Ahoj"<br>        OpenIDE-Module-Long-Description="Czech localization of module Hello. Will localize name of Hello menu item in Help menu."<br>  /&gt;<br>  &lt;license name="no-license.txt"&gt;<br>&lt;![CDATA[[NO LICENSE SPECIFIED]<br>]]&gt;<br>  &lt;/license&gt;<br><br>&lt;/module&gt;<br><br></pre>
+<p>Both sample modules are declared by <tt><b>Update Center</b></tt>
+at <a href="localization_example.xml">localization_example.xml</a>.
+</p>
+<p>If you do want to try out this example then just create new one
+Update Center. Open <tt><b>Options</b></tt> panel, switch into <tt><b>Advanced
+options</b></tt>, expand <tt>IDE Configuration</tt> | <tt>System</tt>
+| <tt>Autoupdate Types</tt>. In popup menu of <tt><b>Autoupdate Types</b></tt>
+invoke <tt>New</tt>, it creates new Update Center. Set <a
+ href="https://platform.netbeans.org/articles/localization_example.xml">http://platform.netbeans.org/articles/localization_example.xml</a>
+into <tt><b>URL</b></tt>
+field. Then you can connect this <tt>Update Center</tt> in <tt>Update
+Center Wizard</tt>.
+Also you have to run the IDE with <tt><b>cs</b></tt> locale, i.e.
+start IDE with <tt>--locale cs</tt> option.
+</p>
+<p>If you install only <tt>Hello</tt> module then new <tt>Hello</tt>
+menu item in <tt>Help</tt> menu. If you install also <tt>Ahoj</tt>
+localization then the <tt>Hello</tt> menu will easy change to <tt>Ahoj</tt>
+menu item. If you will start the IDE with an another locale then the
+original <tt>Hello</tt> menu item should be there.
+</p>
+
+<!-- ======================================================================================== -->
+
+<h2><a name="version"></a>Versioning </h2>
+<div class="indent">
+<p>
+
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+ <tr>
+
+      <td>
+	 1
+      </td>
+      <td>
+         3 March 2005
+      </td>
+      <td>Initial version
+      </td>
+  </tr>
+
+ <tr>
+
+      <td>
+	 2
+      </td>
+      <td>
+         7 March 2005
+      </td>
+      <td>Use simplier locale <tt>cs</tt> instead of <tt>cs_CZ</tt>
+      </td>
+  </tr>
+
+  </tbody>
+  </table>
+
+</body>
+</html>

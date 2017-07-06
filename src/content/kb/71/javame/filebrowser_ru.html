@@ -1,0 +1,234 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+
+<HTML>
+<HEAD>
+<TITLE>Пользовательские компоненты Visual Mobile Designer: создание обозревателя файлов мобильного устройства &mdash; учебный курс по NetBeans Java ME</TITLE>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+<link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+<meta name="author" content="Karol Harelzak">
+</HEAD>
+
+<BODY>
+<a name="top"></a>
+<H1>Пользовательские компоненты Visual Mobile Designer: создание обозревателя файлов мобильного устройства</H1>
+<p>Visual Mobile Designer (VMD) &mdash; это графический интерфейс в NetBeans Mobility, который позволяет проектировать мобильные приложения, используя перетаскиваемые компоненты. VMD позволяет определять порядок действий в приложении и проектировать графический интерфейс пользователя с использованием компонентов среды IDE или компонентов, разработанных программистом. VMD содержит множество стандартных компонентов интерфейса пользователя, которыми можно воспользоваться для создания приложений, таких как списки, предупреждения, формы и изображения. Он также содержит особые компоненты, упрощающие создание более сложных функций, таких как экран ожидания, заставка, элемент таблицы и других.</p>
+<p>Обозреватель файлов &mdash; это особый компонент, предоставляющий интерфейс пользователя для работы с файловой системой устройства. Он имеет набор основных функций для обзора содержимого памяти устройств. Этот компонент работает с интерфейсом API FileConnection, входящим в <a href="http://jcp.org/en/jsr/detail?id=75">спецификацию JSR-75</a> PDA Optional Packages для платформы Java ME. JSR-75 не входит в спецификацию MIDP 2.0, поэтому это собственный компонент можно использовать только с устройствами, поддерживающими JSR-75.</p>
+<P>Из данного учебного курса вы узнаете, как пользоваться компонентом &quot;Обозреватель файлов&quot; в мобильных приложениях для устройств, поддерживающих JSR-75. Вы познакомитесь с основными особенностями компонентов, научитесь искать содержимое в памяти устройства и отображать содержимое в выбранных текстовых файлах. Кроме особого компонента &quot;Обозреватель файлов&quot;, мы будем использовать два других компонента MIDP: Заставка и TextBox. 
+</P>
+
+<p><b>Содержание</b></p>
+ <img  src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" class="stamp" alt="Содержимое этой страницы применимо к среде IDE NetBeans 6.9 или более поздних версий" title="Содержимое этой страницы применимо к среде IDE NetBeans 6.9 или более поздних версий" >
+  <ul class="class">
+   <li><a href="#sample-app">Установка и выполнение демонстрационного приложения</a></li>
+   <li><a href="#create-app">Создание приложения с особым компонентом &quot;Обозреватель файлов&quot;</a><div>
+<ul>
+	<LI><A HREF="#create">Создание проекта FileBrowserExample Project</A> 
+	</LI>
+	<LI><A HREF="#add">Добавление пакетов и визуального мидлета в проект FileBrowserExample Project</A> 
+	</LI>
+	<LI><A HREF="#addcomponent">Добавление компонентов в проект FileBrowserExample</A> 
+	</LI>
+	<LI><A HREF="#addcommands">Добавление команд в проект FileBrowserExample</A> 
+	</LI>
+	<LI><A HREF="#connect">Подключение компонентов для создания последовательности действий</A> 
+	</LI>
+	<LI><A HREF="#insert">Вставка предварительного действия в исходный код</A> 
+	</LI>
+	<LI><A HREF="#run">Выполнение проекта</A> 
+	</LI>
+</ul></div></li>
+   <li><a href="#javadoc-filebrowser">Документация Java о компоненте обозревателя файлов</a></li>
+   <li><a href="#see-also">Дополнительные сведения</a></li>
+  </ul>
+<p><b>Для выполнения инструкций данного учебного курса вам потребуются приведённые ниже программное обеспечение и ресурсы.</b></p>
+
+<table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Программное обеспечение или ресурс</th>
+                <th class="tblheader" scope="col">Требуемая версия</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">Среда IDE NetBeans с Java ME</a></td>
+                <td class="tbltd1">6.9 или более поздняя</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Комплект для разработки приложений на языке Java</a> (JDK)</td>
+                <td class="tbltd1">6 или 7</td>
+            </tr>      
+        </tbody>
+</table>
+
+<a name="sample-app"></a>
+<H2>Установка и выполнение демонстрационного приложения</H2>
+<P>Перед тем как приступить к учебному курсу можно ознакомиться с окончательным результатом этой работы. 
+</P>
+<P>Для установки приложения FileBrowserExample выполните следующие действия.</P>
+<OL>
+	<LI>Загрузите архив <A HREF="https://netbeans.org/projects/samples/downloads/download/Samples/Mobile/filebrowserexample.zip">filebrowserexample.zip. </A>
+	</LI>
+	<LI>Распакуйте файл. 
+	</LI>
+	<LI>В среде IDE выберите <tt>Файл</tt> &gt; <tt>Открыть проект</tt> и найдите папку, содержащую распакованные файлы проекта <tt>FileBrowserExample</tt>.</LI>
+	<li>Нажмите кнопку &quot;Open Project&quot;.<br>	
+	Окно &quot;Проекты&quot; должно выглядеть следующим образом. 
+	<p class="align-center"><IMG SRC="../../../images_www/articles/71/mobility/filebrowser/projects.png" NAME="graphics1" ALT="Окно &quot;Проекты&quot; с открытым проектом FileBrowserExample" BORDER=1>
+  </p></li>
+	<LI>В окне &quot;Проекты&quot; щелкните правой кнопкой мыши узел проекта и выберите команду <tt>Выполнить проект</tt> (или нажмите клавишу F6). После запуска приложения откроется окно эмулятора, отображающее это приложение, которое выполняется в эмуляторе устройства по умолчанию. 
+	</LI>
+	<LI>В окне эмулятора нажмите кнопку под элементом &quot;Launch.&quot; <BR>В окне эмулятора отображается компонент &quot;Заставка&quot; и затем &quot;Обозреватель файлов&quot;, как показано ниже. 
+	<p class="align-center"><IMG SRC="../../../images_www/articles/71/mobility/filebrowser/file-browser_wtk.png" NAME="graphics2" ALT="Эмулятор WTK 2.5 с примером приложения &quot;Обозреватель файлов&quot;" BORDER=1>
+  </p></li>
+</OL>
+<UL>
+	<LI>Перемещайте курсор вверх и вниз для перехода по доступным файлам и папкам. 
+	</LI>
+	<LI>Для открытия папки или файла нажмите кнопку под элементом &quot;Select&quot;. 
+	</LI>
+	<LI>Для закрытия приложения нажмите кнопку под элементом &quot;Exit&quot;. 
+	</LI>
+</UL>
+<p class="align-center"><a href="#top">В начало</a></p>
+<a name="create-app"></a>
+<H2>Создание приложения с собственным компонентом &quot;Обозреватель файлов&quot; 
+</H2>
+<P>Теперь, когда вы видели компонент &quot;Обозреватель файлов&quot; в действии, мы вернемся назад к созданию этого приложения. Для создания приложения выполните следующие действия. 
+</P>
+<OL>
+	<LI><A HREF="#create">Создайте проект FileBrowserExample</A> 
+	</LI>
+	<LI><A HREF="#add">Добавьте пакеты и визуальный мидлет в проект FileBrowserExample</A> 
+	</LI>
+	<LI><A HREF="#addcomponent">Добавьте компоненты в проект FileBrowserExample</A> 
+	</LI>
+	<LI><A HREF="#addcommands">Добавьте команды в компоненты TextBox и &quot;Обозреватель файлов&quot;</A> 
+	</LI>
+	<LI><A HREF="#connect">Соедините компоненты для создания последовательности действий в приложении</A>. 
+	</LI>
+	<LI><A HREF="#insert">Вставьте метод loadTextFile в исходный код</A> 
+	</LI>
+	<LI><A HREF="#run">Запустите проект</A>. 
+	</LI>
+</OL>
+<H3><A NAME="create"></A>Создание проекта FileBrowserExample</H3>
+<OL>
+	<LI>Выберите <tt>Файл</tt> &gt; <tt>Создать проект (Ctrl-Shift-N)</tt>. В разделе &quot;Категории&quot; выберите JavaME. В разделе &quot;Проекты&quot; выберите &quot;Приложение Mobile&quot; и нажмите кнопку &quot;Далее&quot;. 
+	</LI>
+	<LI>В поле &quot;Имя проекта&quot; введите <CODE>FileBrowserExample</CODE>. В поле &quot;Project Location&quot; укажите локальный каталог. Теперь мы будем называть этот каталог <tt>$PROJECTHOME</tt>. 
+	</LI>
+	<LI>Снимите флажок с параметра &quot;Create Hello MIDlet&quot;. Нажмите кнопку &quot;Далее&quot;. 
+	</LI>
+	<LI>В качестве платформы эмулятора оставьте Sun Java Wireless Toolkit. Нажмите кнопку &quot;Далее&quot;. 
+	</LI>
+	<LI>Нажмите кнопку &quot;Готово&quot;.  
+	<p class="notes"><b>Примечание.</b> В папке проекта хранятся все исходные коды и метаданные проекта, такие как сценарий Ant проекта. Само приложение отображается в окне &quot;Flow Design&quot; в Visual Mobile Designer. </p></LI>
+	
+</OL>
+<H3><A NAME="add"></A>Добавление пакетов и визуального мидлета в проект FileBrowserExample</H3>
+<OL>
+	<LI>Выберите проект <CODE>FileBrowserExample</CODE> в окне &quot;Проекты&quot;, затем нажмите <tt>Файл</tt> &gt; <tt>Создать файл (Ctrl-N)</tt>. В разделе &quot;Категории&quot; выберите &quot;Java Classes&quot;. В разделе &quot;File Types&quot; выберите &quot;Java Package&quot;. Нажмите кнопку &quot;Далее&quot;. 
+	</LI>
+	<LI>В поле &quot;Имя пакета&quot; введите <CODE>filebrowserexample</CODE>. Нажмите кнопку &quot;Готово&quot;.  
+	</LI>
+	<LI>Выберите пакет <CODE>filebrowserexample</CODE> в окне проекта, затем выберите <tt>Файл</tt> &gt; <tt>Создать файл (Ctrl-N)</tt>. В разделе &quot;Categories&quot; выберите &quot;MIDP&quot;. В разделе &quot;File Types&quot; выберите &quot;Visual MIDlet&quot;. Нажмите кнопку &quot;Далее&quot;. 
+	</LI>
+	<LI>В полях &quot;Имя мидлета&quot; и &quot;Имя класса MIDP&quot; введите <CODE>FileBrowserExample</CODE>. Нажмите кнопку &quot;Готово&quot;.  
+	</LI>
+
+
+</OL>
+<H3><A NAME="addcomponent"></A>Добавление компонентов в проект FileBrowserExample</H3>
+<OL>
+	<LI>Переключите свой мидлет на окно Flow Designer. Перетащите следующие компоненты из Палитры компонентов в окно Flow Designer. 
+	
+	<UL>
+		<LI>Splash Screen;</LI>
+		<LI>TextBox;</LI>
+		<LI>Обозреватель файлов.</LI>
+	</UL></LI>
+	<LI>Щелкните элемент splashScreen и в окне &quot;Свойства&quot; измените свойство Text с <tt>null</tt> на <tt>File Browser Example</tt>. 
+	</LI>
+</OL>
+<H3><A NAME="addcommands"></A>Добавление команд в проект FileBrowserExample</H3>
+<OL>
+	<LI>Откройте окно Flow Designer. 
+	</LI>
+	<LI>Выберите команду &quot;Exit&quot; из раздела &quot;Commands&quot; в окне &quot;Component Palette&quot;. Перетащите ее в окно Flow Designer (компонент fileBrowser). 
+	</LI>
+	<LI>Выберите команду &quot;Back&quot; в разделе &quot;Commands&quot; палитры компонентов и перетащите ее в компонент the textBox. 
+	</LI>
+</OL>
+<H3><A NAME="connect"></A>Подключение компонентов для создания последовательности действий приложения</H3>
+<div>
+	<p>В окне Flow Design щелкните элемент &quot;Start Point&quot; на мобильном устройстве и перетащите его в компонент spalshScreen. Аналогичным образом соедините другие компоненты, как показано на следующем рисунке.</p>
+	<p class="align-center"><IMG SRC="../../../images_www/articles/71/mobility/filebrowser/file-flow.png" NAME="graphics3" ALT="Окно Flow Designer с компонентами, соединенными с помощью командных строк"  BORDER=1>
+  </p>
+</div>
+<H3><A NAME="insert"></A>Вставка предварительного действия в исходный код</H3>
+<OL>
+	<LI>Перейдите в окно &quot;Source&quot;. 
+	</LI>
+	<LI>
+	  Вставьте следующий код в конец исходного кода. Этот метод отвечает за чтение выбранных файлов: 
+	<br>
+	<PRE>    /** 
+    * Read file
+    */ 
+    private void readFile() {
+        try {
+            FileConnection textFile = fileBrowser.getSelectedFile();
+            getTextBox().setString(&quot;&quot;);
+            InputStream fis = textFile.openInputStream();
+            byte[] b = new byte[1024];
+            int length = fis.read(b, 0, 1024);
+            fis.close();
+            if (length &gt; 0) {
+                textBox.setString(new String(b, 0, length));
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+    </PRE></LI>
+	<LI><P>Найдите метод <tt>commandAction</tt> в исходном коде.<BR>
+	Вставьте <CODE>readFile();</CODE> в раздел предварительного действия <CODE>FileBrowser.SELECT_FILE_COMMAND</CODE> (right after: <CODE>if (command == FileBrowser.SELECT_FILE_COMMAND)</CODE>, где присутствует комментарий: <CODE>//write pre-action code here)</CODE>. </p>
+	</LI>
+</OL>
+<H3><A NAME="run"></A> Выполнение проекта</H3>
+<div>
+	<p>
+	  Для выполнения главного проекта нажмите клавишу &lt;F6&gt; или выберите <tt>Выполнить</tt> &gt; <tt>Выполнить главный проект</tt>.
+	</p>
+</div>
+<p class="align-center"><a href="#top">В начало</a></p>
+<a name="javadoc-filebrowser"></a>
+<H2>Документация Java о компоненте &quot;Обозреватель файлов&quot;</H2>
+
+<P>Среда NetBeans IDE предоставляет интерфейс API Документация Java для компонента &quot;Обозреватель файлов&quot;, а также других компонентов, используемых в VMD. Для ознакомления с документацией Java для компонента &quot;Обозреватель файлов&quot; выполните следующие действия.</P>
+<OL>
+<li>Поместите курсор в компонент <tt>FileBrowser</tt> в исходном коде и нажмите сочетание клавиш Ctr-Shift-Space (или выберите <tt>Исходный файл</tt> &gt; <tt>Показать документацию</tt>).<br>
+Во всплывающем меню отобразится документация Java для этого элемента. </li>
+<li>Для просмотра подробной информации о компоненте <tt>FileBrowser</tt> в вашем веб-обозревателе во всплывающем меню щелкните значок &quot;Показать документацию во внешнем веб-обозревателе&quot; (<img src="../../../images_www/articles/71/mobility/filebrowser/show-doc-button.png" alt="Показать документацию во внешнем веб-обозревателе">).</li>
+
+	
+</OL>
+<p class="align-center"><a href="#top">В начало</a></p>
+
+<div class="feedback-box"><a href="/about/contact_form.html?to=6&subject=NetBeans%20Java%20ME%20Custom%20Component:%20File%20Browser">Мы ждем ваших отзывов</a></div><br style="clear:both;" >
+<a name="see-also"></a>
+<h2>Дополнительные сведения</h2>
+<UL>
+ <li><a href="smscomposer.html">Особые компоненты Visual Mobile Designer: создание приложения редактора сообщений SMS</a></li>
+ <li><a href="loginscreen.html">Особые компоненты Visual Mobile Designer: создание мобильных экранов входа в систему</a></li>
+ <li><a href="pimbrowser.html">Особые компоненты Visual Mobile Designer: создание приложения для управления персональной информацией</a></li>
+ <li><a href="splashscreen.html">Особые компоненты Visual Mobile Designer: использование экранов заставок в приложениях Java ME</a></li>
+ <li><a href="waitscreen.html">Особые компоненты Visual Mobile Designer: создание экранов ожидания для мобильных приложений</a></li>
+<li><a href="tableitem.html">Особые компоненты Visual Mobile Designer: использование элементов таблицы в приложениях Java ME</a></li> <li><a href="http://wiki.netbeans.org/VisualMobileDesignerPalatteReference">Справочная информация: руководство по компонентам Palette в Visual Mobile Designer</a></li>
+</UL>
+<p class="align-center"><a href="#top">В начало</a></p>
+</BODY>
+</HTML>

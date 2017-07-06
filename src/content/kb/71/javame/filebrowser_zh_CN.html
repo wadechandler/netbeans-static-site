@@ -1,0 +1,235 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+
+<HTML>
+<HEAD>
+<TITLE>可视 Mobile 设计器定制组件：创建移动设备文件浏览器 - NetBeans Java ME 教程</TITLE>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+<link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+<meta name="author" content="Karol Harelzak">
+</HEAD>
+
+<BODY>
+<a name="top"></a>
+<H1>可视 Mobile 设计器定制组件：创建移动设备文件浏览器</H1>
+<p>可视 Mobile 设计器 (Visual Mobile Designer, VMD) 是 NetBeans Mobility 中的图形界面，您可以在该界面中使用拖放式组件设计 Mobile 应用程序。通过 VMD，您可以使用 IDE 提供的组件或您自己设计的组件定义应用程序流和设计 GUI。VMD 包含很多标准用户界面 (User Interface, UI) 组件，您可以使用这些组件创建应用程序，如 &quot;Lists&quot;（列表）、&quot;Alerts&quot;（警报）、&quot;Forms&quot;（表单）、&quot;Images&quot;（图像）。它还包含一些定制组件，用于简化创建较复杂功能的过程，例如 &quot;Wait Screen&quot;（等待屏幕）、&quot;Splash Screens&quot;（闪屏）和 &quot;Table Items&quot;（表项）等。</p>
+<p>&quot;File Browser&quot;（文件浏览器）是一个定制组件，提供了使用设备文件系统所需的用户界面。它还提供了基本功能，用以浏览设备存储内存的内容。该组件使用 FileConnection API，它包含在适用于 Java ME 平台的 PDA 可选包的 <a href="http://jcp.org/en/jsr/detail?id=75">JSR-75 规范</a>中。JSR-75 不是 MIDP 2.0 规范的一部分，这就是为什么只能在支持 JSR-75 的设备上使用该定制组件的原因。</p>
+<P>本教程介绍如何在支持 JSR-75 的设备的 Mobile 应用程序中使用 &quot;File Browser&quot;（文件浏览器）组件。您将了解这些组件的基本功能，如何浏览设备内存存储的内容以及如何显示所选文本文件的内容。除了 &quot;File Browser&quot;（文件浏览器）定制组件以外，我们还使用其他两个 MIDP 组件：&quot;Splash Screen&quot;（闪屏）和 &quot;Text Box&quot;（文本框）。 
+</P>
+
+
+<p><b>目录</b></p>
+ <img  src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" class="stamp" alt="本页上的内容适用于 NetBeans IDE 6.9 或更高版本" title="本页上的内容适用于 NetBeans IDE 6.9 或更高版本" >
+  <ul class="class">
+   <li><a href="#sample-app">安装并运行样例应用程序</a></li>
+   <li><a href="#create-app">使用 &quot;File Browser&quot;（文件浏览器）定制组件创建应用程序</a><div>
+<ul>
+	<LI><A HREF="#create">创建 FileBrowserExample 项目</A> 
+	</LI>
+	<LI><A HREF="#add">在 FileBrowserExample 项目中添加包和 Visual MIDlet</A> 
+	</LI>
+	<LI><A HREF="#addcomponent">在 FileBrowserExample 中添加组件</A> 
+	</LI>
+	<LI><A HREF="#addcommands">在 FileBrowserExample 中添加命令</A> 
+	</LI>
+	<LI><A HREF="#connect">连接组件以创建应用程序流</A> 
+	</LI>
+	<LI><A HREF="#insert">在源代码中插入操作前代码</A> 
+	</LI>
+	<LI><A HREF="#run">运行项目</A> 
+	</LI>
+</ul></div></li>
+   <li><a href="#javadoc-filebrowser">&quot;File Browser&quot;（文件浏览器）组件的 Javadoc</a></li>
+   <li><a href="#see-also">另请参见</a></li>
+  </ul>
+<p><b>要学习本教程，您需要具备下列软件和资源。</b></p>
+
+<table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">软件或资源</th>
+                <th class="tblheader" scope="col">要求的版本</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">带有 Java ME 的 NetBeans Beans</a></td>
+                <td class="tbltd1">版本 6.9 或更高版本</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit</a> (JDK)</td>
+                <td class="tbltd1">版本 6 或版本 7</td>
+            </tr>      
+        </tbody>
+</table>
+
+<a name="sample-app"></a>
+<H2>安装并运行样例应用程序</H2>
+<P>开始之前，您可能希望查看本教程的最终结果。 
+</P>
+<P>请执行下列步骤以安装 FileBrowserExample 应用程序：</P>
+<OL>
+	<LI>下载 <A HREF="https://netbeans.org/projects/samples/downloads/download/Samples/Mobile/filebrowserexample.zip">filebrowserexample.zip</A>。
+	</LI>
+	<LI>解压缩该文件。 
+	</LI>
+	<LI>在 IDE 中，选择 &quot;File&quot;（文件）&gt; &quot;Open Project&quot;（打开项目），然后浏览至包含 <tt>FileBrowserExample</tt> 项目的解压缩文件的文件夹。<tt></tt><tt></tt></LI>
+	<li>单击 &quot;Open Project&quot;（打开项目）。<br>	
+	&quot;Projects&quot;（项目）窗口应如下所示： 
+	<p class="align-center"><IMG SRC="../../../images_www/articles/71/mobility/filebrowser/projects.png" NAME="graphics1" ALT="打开了 FileBrowserExample 的 &quot;Projects&quot;（项目）窗口" BORDER=1>
+  </p></li>
+	<LI>在 &quot;Projects&quot;（项目）窗口中，右键单击该项目节点，然后选择 &quot;Run Project&quot;（运行项目）（或按 F6 键）。<tt></tt>当应用程序运行时，将会打开一个仿真器窗口，其中显示了在缺省设备仿真器中运行的应用程序。 
+	</LI>
+	<LI>在仿真器窗口中，单击 &quot;Launch&quot; 下面的按钮。<BR>仿真器将显示 &quot;Splash Screens&quot;（闪屏）组件，然后显示文件浏览器，如下所示： 
+	<p class="align-center"><IMG SRC="../../../images_www/articles/71/mobility/filebrowser/file-browser_wtk.png" NAME="graphics2" ALT="显示样例文件浏览器应用程序的 WTK 2.5 仿真器" BORDER=1>
+  </p></li>
+</OL>
+<UL>
+	<LI>将光标上移或下移以在可用的文件和文件夹中导航。 
+	</LI>
+	<LI>单击 &quot;Select&quot; 下方的按钮以打开文件夹或文件。 
+	</LI>
+	<LI>单击 &quot;Exit&quot; 下面的按钮以关闭应用程序。 
+	</LI>
+</UL>
+<p class="align-center"><a href="#top">返回页首</a></p>
+<a name="create-app"></a>
+<H2>使用 &quot;File Browser&quot;（文件浏览器）定制组件创建应用程序 
+</H2>
+<P>现在，您已看到运行中的 &quot;File Browser&quot;（文件浏览器）组件，接下来让我们从头开始创建此应用程序。要创建该应用程序，请执行以下操作： 
+</P>
+<OL>
+	<LI><A HREF="#create">创建 FileBrowserExample 项目</A> 
+	</LI>
+	<LI><A HREF="#add">在 FileBrowserExample 项目中添加包和 Visual MIDlet</A> 
+	</LI>
+	<LI><A HREF="#addcomponent">在 FileBrowserExample 中添加组件</A> 
+	</LI>
+	<LI><A HREF="#addcommands">在 &quot;Text Box&quot;（文本框）和 &quot;File Browser&quot;（文件浏览器）组件中添加命令</A> 
+	</LI>
+	<LI><A HREF="#connect">连接组件以创建应用程序流</A> 
+	</LI>
+	<LI><A HREF="#insert">在源代码中插入 loadTextFile 方法</A> 
+	</LI>
+	<LI><A HREF="#run">运行项目</A> 
+	</LI>
+</OL>
+<H3><A NAME="create"></A>创建 FileBrowserExample 项目</H3>
+<OL>
+	<LI>选择 &quot;File&quot;（文件）&gt; &quot;New Project&quot;（新建项目）（Ctrl-Shift-N 组合键）。<tt></tt><tt></tt>在 &quot;Categories&quot;（类别）下，选择 &quot;JavaME&quot;。在 &quot;Projects&quot;（项目）下，选择 &quot;Mobile Application&quot;（Mobile 应用程序），然后单击 &quot;Next&quot;（下一步）。 
+	</LI>
+	<LI>在 &quot;Project Name&quot;（项目名称）字段中输入 <CODE>FileBrowserExample</CODE>。将Project Location（项目位置）更改为系统中的某个目录。从现在开始，我们将此目录称为 <tt>$PROJECTHOME</tt>。 
+	</LI>
+	<LI>取消选中 &quot;Create Hello MIDlet&quot;（创建 Hello MIDlet）复选框。单击 &quot;Next&quot;（下一步）。 
+	</LI>
+	<LI>将 &quot;Sun Java Wireless Toolkit&quot; 保留为选定的仿真器平台。单击 &quot;Next&quot;（下一步）。 
+	</LI>
+	<LI>单击 &quot;Finish&quot;（完成）。 
+	<p class="notes"><b>注意：</b>该项目文件夹中包含所有源代码和项目 meta 数据，如项目的 Ant 脚本。应用程序本身显示在可视 Mobile 设计器的 &quot;Flow&quot;（流）设计窗口中。 </p></LI>
+	
+</OL>
+<H3><A NAME="add"></A>在 FileBrowserExample 项目中添加包和 Visual MIDlet</H3>
+<OL>
+	<LI>在 &quot;Project&quot;（项目）窗口中选择 <CODE>FileBrowserExample</CODE> 项目，然后选择 &quot;File&quot;（文件）&gt; &quot;New File&quot;（新建文件）（Ctrl-N 组合键）。<tt></tt><tt></tt>在 &quot;Categories&quot;（类别）下，选择 &quot;Java Classes&quot;（Java 类）。在 &quot;File Types&quot;（文件类型）下，选择 &quot;Java Package&quot;（Java 包）。单击 &quot;Next&quot;（下一步）。 
+	</LI>
+	<LI>在 &quot;Package Name&quot;（包名）字段中输入 <CODE>filebrowserexample</CODE>。单击 &quot;Finish&quot;（完成）。 
+	</LI>
+	<LI>在 &quot;Project&quot;（项目）窗口中选择 <CODE>filebrowserexample</CODE> 包，然后选择 &quot;File&quot;（文件）&gt; &quot;New File&quot;（新建文件）（Ctrl-N 组合键）。<tt></tt><tt></tt>在 &quot;Categories&quot;（类别）下，选择 &quot;MIDP&quot;。在 &quot;File Types&quot;（文件类型）下，选择 &quot;Visual MIDlet&quot;。单击 &quot;Next&quot;（下一步）。 
+	</LI>
+	<LI>在 &quot;MIDlet Name&quot;（MIDlet 名称）和 &quot;MIDP Class Name&quot;（MIDP 类名）字段中输入 <CODE>FileBrowserExample</CODE>。单击 &quot;Finish&quot;（完成）。 
+	</LI>
+
+
+</OL>
+<H3><A NAME="addcomponent"></A>在 FileBrowserExample 中添加组件</H3>
+<OL>
+	<LI>将 Visual MIDlet 切换至 &quot;Flow&quot;（流）设计器窗口。将以下组件从 &quot;Component Palette&quot;（组件面板）拖放至 &quot;Flow&quot;（流）设计器中： 
+	
+	<UL>
+		<LI>Splash Screen（闪屏）</LI>
+		<LI>Text Box（文本框）</LI>
+		<LI>File Browser（文件浏览器）</LI>
+	</UL></LI>
+	<LI>单击 &quot;splashScreen&quot;，然后在 &quot;Properties&quot;（属性）窗口中，将 &quot;Text&quot;（文本）属性值从 <tt>null</tt> 更改为 <tt>File Browser Example</tt>。 
+	</LI>
+</OL>
+<H3><A NAME="addcommands"></A>在 FileBrowserExample 中添加命令</H3>
+<OL>
+	<LI>打开 &quot;Flow&quot;（流）设计器窗口。 
+	</LI>
+	<LI>从 &quot;Component Palette&quot;（组件面板）的 &quot;Commands&quot;（命令）类别中选择 &quot;Exit Command&quot;（退出命令）。将其拖放至 &quot;Flow&quot;（流）设计器窗口中（fileBrowser 组件）。 
+	</LI>
+	<LI>从 &quot;Component Palette&quot;（组件面板）的 &quot;Commands&quot;（命令）类别中选择 &quot;Back Command&quot;（后退命令），然后将其拖放至 textBox 组件中。 
+	</LI>
+</OL>
+<H3><A NAME="connect"></A>连接组件以创建应用程序流</H3>
+<div>
+	<p>在 &quot;Flow&quot;（流）设计窗口中，单击 &quot;Mobile Device&quot;（移动设备）上的“起点”并将其拖至 spalshScreen 组件上。采用相同的方法，按照下图所示连接各个组件。</p>
+	<p class="align-center"><IMG SRC="../../../images_www/articles/71/mobility/filebrowser/file-flow.png" NAME="graphics3" ALT="显示包含由命令行连接的组件的 &quot;Flow&quot;（流）设计器"  BORDER=1>
+  </p>
+</div>
+<H3><A NAME="insert"></A>在源代码中插入操作前代码</H3>
+<OL>
+	<LI>切换至 &quot;Source&quot;（源）窗口。 
+	</LI>
+	<LI>
+	  将以下代码插入到源代码的末尾。以下方法负责读取所选的文件： 
+	<br>
+	<PRE>    /** 
+    * Read file
+    */ 
+    private void readFile() {
+        try {
+            FileConnection textFile = fileBrowser.getSelectedFile();
+            getTextBox().setString(&quot;&quot;);
+            InputStream fis = textFile.openInputStream();
+            byte[] b = new byte[1024];
+            int length = fis.read(b, 0, 1024);
+            fis.close();
+            if (length &gt; 0) {
+                textBox.setString(new String(b, 0, length));
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+    </PRE></LI>
+	<LI><P>在源代码中找到 <tt>commandAction</tt> 方法：<BR>
+	将 <CODE>readFile();</CODE> 插入到 <CODE>FileBrowser.SELECT_FILE_COMMAND</CODE> 的操作前代码部分中（紧靠 <CODE>if (command == FileBrowser.SELECT_FILE_COMMAND)</CODE>后面，其中显示 <CODE>//write pre-action code here</CODE>）： </p>
+	</LI>
+</OL>
+<H3><A NAME="run"></A>运行项目</H3>
+<div>
+	<p>
+	  按 &lt;F6&gt; 键以运行主项目，或者选择 &quot;Run&quot;（运行）&gt; &quot;Run Main Project&quot;（运行主项目）。<tt></tt><tt></tt>
+	</p>
+</div>
+<p class="align-center"><a href="#top">返回页首</a></p>
+<a name="javadoc-filebrowser"></a>
+<H2>&quot;File Browser&quot;（文件浏览器）组件的 Javadoc</H2>
+
+<P>NetBeans IDE 提供了 &quot;File Browser&quot;（文件浏览器）组件以及可在 VMD 中使用的其他组件的 API Javadoc。要阅读 &quot;File Browser&quot;（文件浏览器）组件的 Javadoc，请完成以下步骤：</P>
+<OL>
+<li>将光标放在源代码中的 <tt>FileBrowser</tt> 组件上，然后按 Ctr-Shift-空格组合键（或选择 &quot;Source&quot;（源）&gt; &quot;Show Documentation&quot;（显示文档））。<tt></tt><tt></tt><br>
+此时将在弹出式窗口中显示该元素的 Javadoc。 </li>
+<li>在弹出式窗口中单击 &quot;Show documentation in external web browser&quot;（在外部 Web 浏览器中显示文档）图标 (<img src="../../../images_www/articles/71/mobility/filebrowser/show-doc-button.png" alt="&quot;Show documentation in external web browser&quot;（在外部 Web 浏览器中显示文档）">)，以便在浏览器中查看有关 <tt>FileBrowser</tt> 组件的详细信息。</li>
+
+	
+</OL>
+<p class="align-center"><a href="#top">返回页首</a></p>
+
+<div class="feedback-box"><a href="/about/contact_form.html?to=6&subject=NetBeans%20Java%20ME%20Custom%20Component:%20File%20Browser">请将您的反馈发送给我们</a></div><br style="clear:both;" >
+<a name="see-also"></a>
+<h2>另请参见</h2>
+<UL>
+ <li><a href="smscomposer.html">可视 Mobile 设计器定制组件：创建 SMS 编写器应用程序</a></li>
+ <li><a href="loginscreen.html">可视 Mobile 设计器定制组件：创建 Mobile 登录屏幕</a></li>
+ <li><a href="pimbrowser.html">可视 Mobile 设计器定制组件：创建个人信息管理器应用程序</a></li>
+ <li><a href="splashscreen.html">可视 Mobile 设计器定制组件：在 Java ME 应用程序中使用闪屏</a></li>
+ <li><a href="waitscreen.html">可视 Mobile 设计器定制组件：为 Mobile 应用程序创建等待屏幕</a></li>
+<li><a href="tableitem.html">可视 Mobile 设计器定制组件：在 Java ME 应用程序中使用表项</a></li> <li><a href="http://wiki.netbeans.org/VisualMobileDesignerPalatteReference">参考：可视 Mobile 设计器组件面板指南</a></li>
+</UL>
+<p class="align-center"><a href="#top">返回页首</a></p>
+</BODY>
+</HTML>

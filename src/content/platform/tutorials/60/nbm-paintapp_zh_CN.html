@@ -1,0 +1,757 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <!--Attention: No screenshots have been added yet.  JB -->     
+ 
+ <head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+    <link rel="stylesheet" type="text/css" href="../../../netbeans.css"> 
+ 
+    <title>
+        针对 NetBeans 平台 6.0 的 NetBeans 平台绘图应用程序教程
+    </title>
+
+<link rel="shortcut icon" href="https://netbeans.org/favicon.ico" type="image/x-icon" >
+
+<meta name="keywords" content="NetBeans, IDE, Platform, free, open source, developer" >
+
+<h1>NetBeans 平台绘图应用程序教程</h1>
+
+<p>本教程介绍了一些有关使用 NetBeans IDE 在 NetBeans 平台上开发富客户端 (rich client) 应用程序的基础知识。在 NetBeans 平台上开发应用程序时，实际上就是在 NetBeans IDE 的核心上进行开发。IDE 中与您的应用程序无关的所有模块均排除在外，只保留一些有用的模块。通过重用 IDE 核心中提供的现成功能，您可以节省许多时间和精力。 
+
+    </p><p><b>目录</b></p>
+   
+      <img  src="../../images/articles/60/netbeans-stamp60-61.gif" class="stamp" width="114" height="114" alt="本页上的内容适用于 NetBeans IDE 6.1" title="">本页上的内容适用于 NetBeans IDE 6.1 </p>
+      <ul class="toc">
+     <li><a href="#intro">绘图应用程序简介</a></li>
+     <li><a href="#setup">设置绘图应用程序</a></li>
+     <ul>
+         <li><a href="#creatingModuleSuite">创建模块套件</a></li>
+         <li><a href="#creatingLibWrapModule">创建库包装模块项目</a></li>
+         <li><a href="#creatingModProj">创建模块项目</a></li>
+         <li><a href="#specifyingModProjDep">指定模块项目的依赖关系</a></li>
+     </ul>
+     <li><a href="#impMod">创建并嵌入画布</a></li>
+     <ul>
+         <li><a href="#creatingCanv">创建画布</a></li>
+         <li><a href="#prepTopComp">准备 TopComponent 类</a></li>
+         <li><a href="#initTopComp">初始化 TopComponent 类</a></li>
+         <li><a href="#fillSkelMeth">填充框架方法</a></li>
+         <li><a href="#savingImage">将图像保存到硬盘</a></li>
+     </ul>
+     <li><a href="#defNew">创建 &quot;New Canvas&quot; 菜单项</a></li>
+     <li><a href="#defSave">创建 &quot;Save Canvas&quot; 菜单项</a></li>
+     <li><a href="#wrappingUp">包装</a></li>
+     <li><a href="#creatingDist">创建分发</a></li>
+       </ul>
+         
+<p><b>要学习本教程，您需要具备下表中列出的软件和资源。</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">软件或资源</th>
+                <th class="tblheader" scope="col">要求的版本</th>
+            </tr> 
+           <tr>
+                <td class="tbltd1">NetBeans IDE</td>
+                <td class="tbltd1"><a href="http://download.netbeans.org/netbeans/6.1/final/">版本 6.1</a> 或<br>
+                版本 6.0</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">Java Developer Kit (JDK)</td>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">版本 6</a> 或<br>
+                版本 5</td>
+            </tr>
+        </tbody>
+    </table>
+
+ <p><a name="intro"></a></p><h2>绘图应用程序简介</h2>
+
+<p>本教程旨在帮助您尽快入门。您将在 NetBeans 平台上创建并安装一个简单的应用程序。通过该应用程序，用户可以在屏幕上绘图并保存结果：<br>
+
+ </p><p><a name="sampleImage"></a><img border="1" src="../../images/tutorials/paintapp/result-without-menus-60.png" alt="完成后的应用程序的图像">
+
+</p><p>该初始版本还远非一个完善的绘图应用程序，它只是演示了一个在 NetBeans 平台上创建应用程序的非常简单的示例。 
+
+</p><p><b class="notes">注意：</b>如果您希望了解 NetBeans 模块（而不是富客户端 (rich client) 应用程序），则 <a href="nbm-google.html">NetBeans 插件快速入门</a>教程更适合您。 
+
+ </p><p>在本教程中，我们重新创建一个作为样例随 IDE 一起提供的应用程序。要查看最终产品，或者要在完成本教程的过程中解决疑难问题，请从“新建项目”向导中如下所示的位置获取样例：</p>
+  
+  <p align="left"><img border="1" src="../../images/tutorials/paintapp/sample-in-new-project-60.png" alt="“名称和位置”面板">
+
+ 
+ </p><p><a name="setup"></a></p><h2>设置绘图应用程序</h2>
+
+<p>在本节中，您将创建应用程序的结构。首先，需要创建一个代表应用程序的模块套件项目。该应用程序依赖于库，因此您将创建一个包含库的 JAR 文件的库包装模块项目。最后，创建包含代码的模块项目。
+ 
+</p><div class="indent">
+    
+<p><a name="creatingModuleSuite"></a></p><h3 class="tutorial">创建模块套件</h3>
+
+<p>模块套件相当于一个应用程序，它是一组可以协同工作以产生特定结果的模块。通过使用模块套件，您可以指定自己的闪屏（标记）、应用程序名称以及要使用的 NetBeans 模块的类型和数量。此外，您还可以利用一些操作，如创建 ZIP 分发和构建 Java WebStart (JNLP) 应用程序，它们是确保其他用户能够使用您的应用程序的重要工具。
+</p><ol>
+	<li>选择“文件”&gt;“新建项目”。在“类别”下选择“NetBeans 模块”。在“项目”下，选择“模块套件”项目，然后单击“下一步”。</li>
+	<li>在“名称和位置”面板的“项目名称”中键入 <tt>PaintApp</tt>。将项目位置更改为计算机上的任意目录。将“设置为主项目”复选框保留为选中状态：<br><br>
+
+<p align="left"><img border="1" src="../../images/tutorials/paintapp/newmodulesuite-60.png" alt="“名称和位置”面板">
+
+ </p><p>单击“完成”。
+
+      </p></li>
+
+<p>新的模块套件项目将在 IDE 中打开。该项目在“项目”窗口中包含一个节点。此节点（“模块”节点）用于将模块项目和库包装模块项目手动地添加到模块套件项目中。使用模块项目向导或库包装模块项目向导时，可以自动将创建的模块添加到模块套件项目中。
+
+</p><p></p><h3 class="tutorial"><a name="creatingLibWrapModule"></a>创建库包装模块项目</h3>
+
+<p>库包装模块是这样一个模块，其 JAR 文件不包含任何代码，它只是一个指向库的指针。该模块会将库转换为 NetBeans 模块，这样 NetBeans 类加载器系统的所有保护措施都会应用于该库，您无需对原始的 JAR 文件执行修改。然后您的应用程序就可以依赖于库了，就好像该库只是另外一个 NetBeans 模块一样。此外，如果库存在更新的版本，则只需为包装库分发单个的 NetBeans 模块 (NetBeans Module, NBM) 文件即可，无需分发其他任何内容。
+
+</p><p><b class="notes">注意：</b>在 NetBeans 平台上构建应用程序的一个优点是：其用户界面基于 Java 的标准用户界面工具包 Swing。由于 Swing 已被广泛使用了很长时间，因此许多 Swing 组件都可以在应用程序中重用。在本教程中，您将重用现有的颜色选择器 JavaBean（可以在 NetBeans CVS 中的 <tt>contrib/coloreditor</tt> 下找到其源代码）。该 JAR 文件名为 <tt>ColorChooser.jar</tt>。您可以从<a href="https://colorchooser.dev.java.net/">此处</a>下载库。将其保存到文件系统中的任意位置。请执行以下操作为 <tt>ColorChooser.jar</tt> 文件创建库包装模块：
+  </p><ol>
+<li>选择“文件”&gt;“新建项目”。在“类别”下选择“NetBeans 模块”。在“项目”下，选择“库包装模块”项目，然后单击“下一步”。</li>
+<li>在“名称和位置”面板的“库”文本框中，键入 <tt>ColorChooser.jar</tt> 的路径，或者浏览到它所在的位置。
+</li><li>将“许可证”文本字段保留为空。如果希望分发完整的产品，则应该包括外部库的许可证文件。
+ </li><li>单击“下一步”，就会看到以下内容：</p>
+
+<p align="left"><img border="1" src="../../images/tutorials/paintapp/newmodulesuite-library-60.png" alt="“名称和位置”面板">
+
+</p><p>再次单击“下一步”，然后单击“完成”。</p></li>
+
+
+<h3 class="tutorial"><a name="creatingModProj"></a>创建模块项目</h3>
+ <p>现在，您需要使用一个模块来包含将要编写的实际代码。 
+     </p><ol>
+	<li>选择“文件”&gt;“新建项目”。在“类别”下选择“NetBeans 模块”。在“项目”下选择“模块”项目，然后单击“下一步”。</li>
+	<li>在“名称和位置”面板的“项目名称”中键入 <tt>Paint</tt>。将项目位置更改为计算机上的任意目录。确保“添加到模块套件中”单选按钮处于选定状态，并在“模块套件”下拉列表中选定了 <tt>PaintApp</tt> 模块套件。选中“设置为主项目”复选框。单击“下一步”。
+
+ </li><li>在“基本模块配置”面板中，将“代码名称基”中的 <tt>yourorghere</tt> 更改为 <tt>netbeans</tt>，这样完整的名称将变为 <tt>org.netbeans.paint</tt>。让“模块显示名称”保留为 <tt>Paint</tt>。并保留“本地化包”和“XML 层”的位置不变，以便将它们存储在名为 <tt>org.netbeans.paint</tt> 的包中。这些文件将执行以下操作：
+ <ul>
+ <li><b>本地化包。</b>为国际化指定特定于语言的字符串。</li>
+ <li><b>XML 层。</b>在 NetBeans 系统中注册菜单和工具栏按钮等项。 
+</li>
+ </ul>
+
+
+<p>单击“完成”。</p></li>
+
+<p> IDE 将创建 <tt>Paint</tt> 项目。该项目包含所有源代码和项目 meta 数据，如项目的 Ant 生成脚本。此项目将会在 IDE 中打开。您可以在“项目”窗口 (Ctrl-1) 中查看其逻辑结构，在“文件”窗口 (Ctrl-2) 中查看其文件结构。例如，“项目”窗口应如下所示：</p>
+
+<p align="left"><img src="../../images/tutorials/paintapp/initial-proj-window60.png" border="1" alt="“项目”窗口的逻辑结构">
+
+
+</p><p>除了本地化包和 XML 层以外，此项目还包括以下重要文件：
+ </p><ul>
+ <li><b>模块清单。</b>声明项目是一个模块。此外，它还设定了一些特定于模块的设置，如 XML 层的位置、本地化包的位置以及模块版本。
+ </li><li><b>生成脚本。</b>提供一个位置，供您创建自己的 Ant 目标并覆盖在 <tt>nbproject/build-impl.xml</tt> 中指定的 Ant 目标。
+ </li><li><b>项目 Meta 数据。</b>包含一些信息，如项目的类型、内容、平台、类路径、依赖关系以及项目命令与 Ant 脚本中的目标之间的映射。
+
+</li></ul>
+<p>您在本教程中不需要修改其中的任何文件。
+
+</li>
+
+</p><p></p><h3 class="tutorial"><a name="specifyingModProjDep"></a>指定模块项目的依赖关系</h3>
+
+
+
+<p>您需要根据一些属于 <a href="https://netbeans.org/download/dev/javadoc/">NetBeans API</a> 的类创建子类。此外，该项目还依赖于 <tt>ColorChooser.jar</tt> 文件。由于所有 NetBeans API 都是由模块实现的，因此完成这两个任务实际上就意味着：将某些模块添加到保证我们的模块正常运行所需的模块列表中。
+  </p><ol>
+	  <li>在“项目”窗口中右键单击 <tt>Paint</tt> 项目节点，然后选择“属性”。将打开“项目属性”对话框。在“类别”下单击“库”。</li>
+	
+ <li>对于下表中列出的每个 API，单击“添加依赖关系...”，然后在“过滤器”文本框中开始键入要创建子类的类名称。<br><br>  
+ 
+ <p><table width="76%" border="1">
+ <tbody>
+   <tr>
+ <td>
+	<div align="left"><b>类</b></div>
+      </td>
+      <td>
+        <div align="left"><b>API</b></div>
+      </td>
+     
+      <td>
+	<div align="left"><b>用途</b></div>
+      </td>
+  </tr>
+    <tr>
+<td><tt>ColorChooser</tt></td>
+		<td><tt>ColorChooser</tt></td>
+
+                <td>所创建的颜色选择器组件的库包装模块</td>
+            </tr>
+            <tr>
+<td><tt>DataObject</tt></td>
+		<td><tt>数据系统 API</tt></td>
+
+                <td>包含 DataObject 类的 NetBeans 模块</td>
+            </tr>
+            <tr>
+<td><tt>DialogDisplayer</tt></td>
+		<td><tt>对话框 API</tt></td>
+ 
+                <td>用于创建并显示用户通知（对话框的描述）</td>
+            </tr>
+            <tr>
+ <td><tt>AbstractFile</tt></td>
+		<td><tt>文件系统 API</tt></td>
+
+                <td>提供了以统一方式访问文件的通用 API</td>
+            </tr>
+            <tr>
+<td><tt>AbstractNode</tt></td>
+		<td><tt>节点 API</tt></td>
+
+                <td>用作 NetBeans 中进行对象可视化的主要工具</td>
+            </tr>
+            <tr>
+<td><tt>StatusDisplayer</tt></td>
+		<td><tt>UI 实用程序 API</tt></td>
+
+                <td>用于编写主窗口中状态栏的 StatusDisplayer 类</td>
+            </tr>
+            <tr>
+<td><tt>WeakListeners</tt></td>
+		<td><tt>实用程序 API</tt></td>
+
+                <td>包含 WeakListeners 类</td>
+            </tr>
+            <tr>
+<td><tt>TopComponent</tt></td>
+		<td><tt>窗口系统 API</tt></td>
+
+                <td>包含 TopComponent JPanel 类</td>
+            </tr>
+  
+  </tbody>
+</table>
+ 
+ </p><p>上表中的第一列列出了将在本教程中创建子类的所有类。在每种情况下，当在“过滤器”中键入类名时，可观察到“模块”列表的选择范围逐渐缩小。使用表的第二列可以从缩小的“模块”列表中选取适当的 API（对于 <tt>ColorChooser</tt>，应选取库），然后单击“确定”以确认选择：
+
+</p><p align="left"><img border="1" src="../../images/tutorials/paintapp/libfilter-60.png" alt="initial-proj-window">
+
+</p></li><li>单击“确定”退出“项目属性”对话框。
+</li><li>在“项目”窗口中，如果尚未展开 &quot;Paint&quot; 模块的项目节点，请将其展开。然后展开“重要文件”节点，再双击“项目 Meta 数据”节点。请注意，您所选择的 API 已声明为与该模块具有依赖关系。
+
+
+    </li></ol>
+    </ol></ol></ol></div><br>
+    <h2><a name="impMod"></a>创建并嵌入画布</h2> 
+       
+
+ <div class="indent">
+   <h3 class="tutorial"><a name="creatingCanv"></a>创建画布</h3>
+    <p>下一步将创建用户可以在上面绘图的实际组件。对于本教程，您将使用一个纯 Swing 组件，因此，让我们跳过该组件的实现细节，只利用它的最终版本。在此面板的源代码中，将使用您已为其创建库包装模块的颜色选择器 Bean，当您运行完成的应用程序时，会在用于编辑图像的面板的工具栏中看到它。</p>
+    <ol type="1">
+	<li>在“项目”窗口中，展开 <tt>Paint</tt> 节点，然后展开“源包”节点，再右键单击 <tt>org.netbeans.paint</tt> 节点。选择“新建”&gt;“Java 类”。</li>
+	<li>在“类名”中输入 <tt>PaintCanvas</tt>。请确保“包”中列出的是 <tt>org.netbeans.paint</tt>。单击“完成”。将在源代码编辑器中打开 <tt>PaintCanvas.java</tt>。
+	</li><li>将文件的缺省内容替换为<a target="source" href="https://platform.netbeans.org/guide/tutorials/paintTutorial/PaintCanvas.java">此处</a>的内容。如果为包指定 <tt>org.netbeans.paint</tt> 以外的名称，请在源代码编辑器中更正包名。</li> 
+    </ol>
+  
+    <p></p><h3 class="tutorial"><a name="prepTopComp"></a>准备 TopComponent 类</h3>
+
+<p></p><p>现在您将编写第一个与 <a href="https://netbeans.org/download/dev/javadoc/">NetBeans API</a> 交互的类。它是一个 <tt><a href="http://www.netbeans.org/download/dev/javadoc/org-openide-windows/org/openide/windows/TopComponent.html">TopComponent</a></tt> 类。<tt>TopComponent</tt> 类正是一个 NetBeans 的窗口系统知道如何与其进行交互的 <tt>JPanel</tt> 类，因此可以将其置于主窗口中的标签化容器内。
+
+ </p><ol type="1">
+		<li>在“项目”窗口中，展开 <tt>Paint</tt> 节点，然后展开“源包”节点，再右键单击 <tt>org.netbeans.paint</tt> 节点。选择“新建”&gt;“Java 类”。</li>
+       在“类名”中输入 <tt>PaintTopComponent</tt>。请确保“包”中列出的是 <tt>org.netbeans.paint</tt>。单击“完成”。将在源代码编辑器中打开 <tt>PaintTopComponent.java</tt>。
+        <li>在该文件的顶部附近，将类声明改为以下代码：
+            <pre class="examplecode">    public class PaintTopComponent extends TopComponent implements ActionListener, ChangeListener {</pre></li>
+        <li>按 Ctrl-Shift-I 组合键修复导入，然后在对话框中单击“确定”。IDE 会将所需的 import 包声明置于文件顶部。</p> 
+	<p>请注意刚刚输入的类声明下面的红线。将光标放置在该行上，您会注意到其左侧空白处显示了一个灯泡图标。单击该灯泡图标（或按 Alt-Enter 组合键），如下所示：
+
+</p><p><img border="1" src="../../images/tutorials/paintapp/lightbulb-60.png" alt="灯泡图标。">
+
+</p><p>选择“实现所有抽象方法”。IDE 将生成两个方法框架 - <tt>actionPerformed()</tt> 和 <tt>stateChanged()</tt>。您将在本教程的后面部分填充这些方法。</p></li>
+	<li>将以下三个变量声明添加到 <tt>PaintTopComponent</tt> 类的顶部，然后修复 import 语句 (Ctrl-Shift-I)。
+        <pre class="examplecode">    private PaintCanvas canvas = new PaintCanvas(); //The component the user draws on
+    private JComponent preview; //A component in the toolbar that shows the paintbrush size
+    private static int ct = 0; //A counter you use to provide names for new images</pre></li>
+        <li>现在需要实现两个样板方法。第一个方法通知窗口系统在应用程序关闭时忽略打开的窗口；第二个方法提供一个基本字符串作为组件的唯一字符串 ID。每个 <tt>TopComponent</tt> 都有一个唯一的字符串 ID，此 ID 在保存 <tt>TopComponent</tt> 时使用。在 <tt>PaintTopComponent</tt> 类中插入以下两个方法：
+<pre class="examplecode">    public int getPersistenceType() {
+        return PERSISTENCE_NEVER;
+    }
+
+    public String preferredID() {
+        return &quot;Image&quot;;
+    }</pre></li>
+    </ol>
+
+<p>该类现在应如下所示：
+
+</p><pre class="examplecode">public class PaintTopComponent extends TopComponent implements ActionListener, ChangeListener {
+    
+    private PaintCanvas canvas = new PaintCanvas(); //The component the user draws on
+    private JComponent preview; //A component in the toolbar that shows the paintbrush size
+    private static int ct = 0; //A counter you use to provide names for new images
+    
+    public PaintTopComponent() {
+    }
+    
+    public void actionPerformed(ActionEvent arg0) {
+        throw new UnsupportedOperationException(&quot;Not supported yet.&quot;);
+    }
+    
+    public void stateChanged(ChangeEvent arg0) {
+        throw new UnsupportedOperationException(&quot;Not supported yet.&quot;);
+    }
+    
+    public int getPersistenceType() {
+        return PERSISTENCE_NEVER;
+    }
+    
+    public String preferredID() {
+        return &quot;Image&quot;;
+    }
+    
+}</pre>
+        
+    <h3 class="tutorial"><a name="initTopComp"></a>初始化 TopComponent 类</h3>
+  
+<p>在本节中，我们添加初始化用户界面的代码。
+ 
+</p><ol type="1">
+    <li>填充 IDE 在类的顶部附近所创建的构造函数，然后修复 import 语句 (Ctrl-Shift-I)：
+       
+<pre class="examplecode">    public PaintTopComponent() {
+
+        initComponents();
+
+        String displayName = NbBundle.getMessage(
+                PaintTopComponent.class,
+                &quot;UnsavedImageNameFormat&quot;,
+                new Object[] { new Integer(ct++) }
+        );
+
+        setDisplayName(displayName);
+
+    }</pre></li>
+
+<p>此处的代码非常简单。首先调用的是尚未编写的方法 <tt>initComponents()</tt>，该方法用于在 <tt>TopComponent</tt> 中添加一个工具栏和一个 PaintCanvas。由于尚未编写该方法，因此它下面会显示一条红线。如前面所述，单击灯泡图标（或按 Alt-Enter 组合键），并接受建议的内容：
+
+</p><p><img border="1" src="../../images/tutorials/paintapp/lightbulb-initcomponents-60.png" alt="灯泡图标。">
+
+</p><p>将为您生成 <tt>initComponents()</tt> 方法框架。
+
+
+	</p><li>在“项目”窗口中展开 <tt>org.netbeans.paint</tt> 包。双击 <tt>Bundle.properties</tt> 文件，以便在源代码编辑器中将其打开。将以下代码行添加到该文件的末尾： 
+    <pre class="examplecode">    UnsavedImageNameFormat=Image {0}</pre>
+<p>此代码用于指定在用户保存一个新的图像文件之前，应用程序中标识此图像的文本。例如，当用户第一次在完成的应用程序中单击 &quot;New Canvas&quot; 时，源代码编辑器的上方将显示一个带有文本 'Image 0' 的标签。确保保存此文件，然后再继续。
+</p></li></ol>
+
+
+<h3 class="tutorial"><a name="fillSkelMeth"></a>填充框架方法</h3>
+
+<p>在本节中，我们将编写应用程序用户界面的代码。还可以使用 IDE 的 GUI 生成器以可视方式设计布局。
+
+   </p><ol>
+
+<li><tt>initComponents()</tt> 方法用于安装面板中的组件，以便用户可以与其进行交互。在上一节，已在 <tt>PaintTopComponent.java</tt> 类中生成了它的框架方法。请按如下所示填充该方法：
+
+<pre class="examplecode">    private void initComponents() {
+
+        setLayout(new BorderLayout());
+        JToolBar bar = new JToolBar();
+
+        ColorChooser fg = new ColorChooser();
+        preview = canvas.createBrushSizeView();
+
+        //Now build our toolbar:
+
+        //Make sure components don't get squished:
+        Dimension min = new Dimension(32, 32);
+        preview.setMaximumSize(min);
+        fg.setPreferredSize(new Dimension(16, 16));
+        fg.setMinimumSize(min);
+        fg.setMaximumSize(min);
+
+        JButton clear = new JButton(
+          	    NbBundle.getMessage(PaintTopComponent.class, &quot;LBL_Clear&quot;));
+
+        JLabel fore = new JLabel(
+         	    NbBundle.getMessage(PaintTopComponent.class, &quot;LBL_Foreground&quot;));
+
+        fg.addActionListener(this);
+        clear.addActionListener(this);
+
+        JSlider js = new JSlider();
+        js.setMinimum(1);
+        js.setMaximum(24);
+        js.setValue(canvas.getDiam());
+        js.addChangeListener(this);
+
+        fg.setColor(canvas.getColor());
+
+        bar.add(clear);
+        bar.add(fore);
+        bar.add(fg);
+        JLabel bsize = new JLabel(
+     	    NbBundle.getMessage(PaintTopComponent.class, &quot;LBL_BrushSize&quot;));
+
+        bar.add(bsize);
+        bar.add(js);
+        bar.add(preview);
+
+        JLabel spacer = new JLabel(&quot;   &quot;); //Just a spacer so the brush preview
+        //isn't stretched to the end of the
+        //toolbar
+
+        spacer.setPreferredSize(new Dimension(400, 24));
+        bar.add(spacer);
+
+        //And install the toolbar and the painting component:
+        add(bar, BorderLayout.NORTH);
+        add(canvas, BorderLayout.CENTER);
+        
+    }</pre></li>
+    <p>按 Ctrl-Shift-I 组合键生成所需的 import 语句。 
+
+</p><li>填充您生成的另外两个方法。它们用于侦听 <tt>PaintTopComponent</tt> 类： 
+<pre class="examplecode">    public void actionPerformed(ActionEvent e) {
+
+        if (e.getSource() instanceof JButton) {
+           canvas.clear();
+        } else if (e.getSource() instanceof ColorChooser) {
+           ColorChooser cc = (ColorChooser) e.getSource();
+           canvas.setPaint (cc.getColor());
+        }
+        
+        preview.paintImmediately(0, 0, preview.getWidth(), preview.getHeight());
+        
+    }</pre>
+
+<pre class="examplecode">    public void stateChanged(ChangeEvent e) {
+
+        JSlider js = (JSlider) e.getSource();
+        canvas.setDiam (js.getValue());
+        preview.paintImmediately(0, 0, preview.getWidth(), preview.getHeight());
+        
+    }</pre>
+</li>
+        <li>在 <tt>Bundle.properties</tt> 文件的末尾添加以下键值对：
+<pre class="examplecode">
+    LBL_Clear = Clear
+    LBL_Foreground = Foreground 
+    LBL_BrushSize = Brush Size
+</pre>
+<p>确保保存此文件，然后再继续。
+
+</p></li>
+</ol>
+    
+<h3 class="tutorial"><a name="savingImage"></a>将图像保存到硬盘</h3>
+
+<p>在新的应用程序中，允许用户保存所创建的图像是一个非常好的想法。在 <tt>PaintTopComponent</tt> 类中包括以下代码可激活此功能。</p>
+
+ <ol type="1">
+    <li>在 <tt>PaintTopComponent</tt> 类中插入以下代码：
+
+<pre class="examplecode">    public void save() throws IOException {
+
+        if (getDisplayName().endsWith(&quot;.png&quot;)) {
+	    doSave(new File(getDisplayName()));
+        } else {
+	    saveAs();
+        }
+        
+    }</pre>
+
+<pre class="examplecode">    public void saveAs() throws IOException {
+
+        JFileChooser ch = new JFileChooser();
+        if (ch.showSaveDialog(this) == JFileChooser.APPROVE_OPTION &amp;&amp; ch.getSelectedFile() != null) {
+
+	    File f = ch.getSelectedFile();
+            
+	    if (!f.getPath().endsWith(&quot;.png&quot;)) {
+	        f = new File(f.getPath() + &quot;.png&quot;);
+	    }
+            
+	    if (!f.exists()) {
+            
+	        if (!f.createNewFile()) {
+		    String failMsg = NbBundle.getMessage(
+		             PaintTopComponent.class,
+			    &quot;MSG_SaveFailed&quot;, new Object[] { f.getPath() }
+	            );
+		    JOptionPane.showMessageDialog(this, failMsg);
+		    return;
+	        }
+                
+	    } else {
+	        String overwriteMsg = NbBundle.getMessage(
+		    PaintTopComponent.class,
+                    &quot;MSG_Overwrite&quot;, new Object[] { f.getPath() }
+	        );
+                
+	        if (JOptionPane.showConfirmDialog(this, overwriteMsg)
+	        != JOptionPane.OK_OPTION) {
+		    return;
+	        }
+                
+	    }
+            
+	    doSave(f);
+            
+        }
+        
+    }</pre>
+
+<pre class="examplecode">    private void doSave(File f) throws IOException {
+
+        BufferedImage img = canvas.getImage();
+        ImageIO.write(img, &quot;png&quot;, f);
+        String statusMsg = NbBundle.getMessage(PaintTopComponent.class,
+            &quot;MSG_Saved&quot;, new Object[] { f.getPath() });
+        StatusDisplayer.getDefault().setStatusText(statusMsg);
+        setDisplayName(f.getName());
+        
+    }</pre></li>
+
+    <li>将以下代码行添加到 <tt>Bundle.properties</tt> 文件中：
+<pre class="examplecode">    MSG_SaveFailed = Could not write to file {0}
+    MSG_Overwrite = {0} exists.  Overwrite?
+    MSG_Saved = Saved image to {0}</pre>
+
+<p>确保保存此文件，然后再继续。
+
+</p></li>
+
+    <li>按 Ctrl-Shift-I 组合键修复 import 语句。您会注意到 <tt>File</tt> 类有两个全限定名称。请选择 <tt>java.io.File</tt> 选项。
+</li></ol>
+
+</div><br>
+<h2><a name="defNew"></a>创建 &quot;New Canvas&quot; 菜单项</h2>
+
+<p>使用“模块开发”文件模板，可以创建基本的模块功能。使用文件模板时，IDE 将在 <tt>layer.xml</tt> 文件中注册您创建的项。使用向导创建文件模板后，您可以使用 <a href="https://netbeans.org/download/dev/javadoc/">NetBeans API</a> 继续开发模块。
+
+
+      </p><ol>
+	<li>在“项目”窗口中右键单击 Paint 模块的项目节点，然后选择“新建”&gt;“文件/文件夹”。在“新建文件”向导中的“类别”下选择“NetBeans 模块开发”，然后在“文件类型”下选择“操作”。单击“下一步”。</li>
+
+<li>在“操作类型”面板中，接受缺省设置。单击“下一步”。
+</li><li>在“GUI 注册”面板中，选择“全局菜单项”，然后选择“全局工具栏按钮”。设置以下值：
+<p>
+</p><ul><li><b>类别：</b>编辑
+</li><li><b>菜单：</b>文件
+</li><li><b>位置：</b>您需要的任何位置！ 
+</li><li><b>工具栏：</b>文件
+</li><li><b>位置：</b>您需要的任何位置！ 
+</li></ul>
+<p><b class="notes">注意：</b>将操作置于什么位置并不重要，只要在“文件”菜单和“文件”工具栏中即可。
+</p><p>您现在应该看到如下所示的屏幕：
+</p><p align="left"><img src="../../images/tutorials/paintapp/newcanvasaction-60.png" alt="“GUI 注册”面板。">
+
+</p><p>单击“下一步”。
+</p></li><li>在“名称、图标和位置”面板的“类名”中键入 <tt>NewCanvasAction</tt>，并在“显示名称”中键入 <tt>New Canvas</tt>。 
+
+<p>在“图标”中，粘贴以下图标（右键单击该图标，然后将其保存在 <tt>org.netbeans.paint</tt> 文件夹中）：<img src="../../images/tutorials/paintapp/new_icon.png" alt="New Canvas 图标。">
+
+  </p></li><li>单击“完成”。</p>
+
+<p>IDE 将在 <tt>org.netbeans.paint</tt> 中创建 <tt>NewCanvasAction.java</tt>，并在源代码编辑器中将其打开。以下是您应该看到的内容（单击链接可查看相关的 NetBeans API Javadoc）：
+
+</p><pre class="examplecode">    package org.netbeans.paint;
+
+    import <a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/HelpCtx.html">org.openide.util.HelpCtx</a>;
+    import <a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/NbBundle.html">org.openide.util.NbBundle</a>;
+    import <a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/actions/CallableSystemAction.html">org.openide.util.actions.CallableSystemAction</a>;
+
+    public final class NewCanvasAction extends CallableSystemAction {
+
+       public void <a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/actions/CallableSystemAction.html#performAction()">performAction()</a> {
+   	// TODO implement action body
+       }
+
+       public String <a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/actions/SystemAction.html#getName()">getName()</a> {
+       	return NbBundle.getMessage(NewCanvasAction.class, &quot;CTL_NewCanvasAction&quot;);
+       }
+    
+       protected String <a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/actions/SystemAction.html#iconResource()">iconResource()</a> {
+        return &quot;org/netbeans/paint/new_icon.png&quot;;
+       }
+    
+       public HelpCtx <a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/actions/SystemAction.html#getHelpCtx()">getHelpCtx()</a> {
+        return HelpCtx.DEFAULT_HELP;
+       }
+
+       protected boolean <a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/actions/CallableSystemAction.html#asynchronous()">asynchronous()</a> {
+        return false;
+       }
+       
+    }</pre>
+
+
+
+<p>IDE 按照“GUI 注册”面板中指定的设置在 <tt>layer.xml</tt> 文件中将操作类注册为一个菜单项和一个工具栏按钮。
+
+
+</p></li><li>在源代码编辑器中，打开 <tt>NewCanvasAction.java</tt> 并按如下所示填充 <tt>performAction()</tt> 方法：
+ 
+
+<pre class="examplecode">    public void performAction() {
+
+        PaintTopComponent tc = new PaintTopComponent();
+	tc.open();
+	tc.requestActive();       
+        
+    }</pre>
+   <p>该方法的作用只是创建一个图像编辑组件的新实例、打开该实例（使其显示在主窗口中），以及通过向其发送键盘焦点和选择其标签来激活该实例。
+  </p></li>
+
+  <h2 class="tutorial"><a name="defSave"></a>创建 &quot;Save Canvas&quot; 菜单项</h2>
+
+  <p>像上一节一样，使用“新建操作”向导来创建一个菜单项，但这次是用来保存图像。
+   
+ </p><ol>
+	<li>在“项目”窗口中右键单击 Paint 模块的项目节点，然后选择“新建”&gt;“文件/文件夹”。在“新建文件”向导中的“类别”下选择“NetBeans 模块开发”，然后在“文件类型”下选择“操作”。单击“下一步”。</li>
+
+<li>在“操作类型”面板中，接受缺省设置。单击“下一步”。
+</li><li>在“GUI 注册”面板中，选择“全局菜单项”，然后选择“全局工具栏按钮”。设置以下值：
+<p>
+</p><ul><li><b>类别：</b>编辑
+</li><li><b>菜单：</b>文件
+</li><li><b>位置：</b>您需要的任何位置！ 
+</li><li><b>工具栏：</b>文件
+</li><li><b>位置：</b>您需要的任何位置！
+</li></ul>
+<p><b class="notes">注意：</b>将操作置于什么位置并不重要，只要在“文件”菜单和“文件”工具栏中即可。
+
+
+</p><p>单击“下一步”。
+</p></li><li>在“名称、图标和位置”面板的“类名”中键入 <tt>SaveCanvasAction</tt>，并在“显示名称”中键入 <tt>Save Canvas</tt>。 </p>
+
+<p>在“图标”中，粘贴以下图标（右键单击该图标，然后将其保存到 <tt>org.netbeans.paint</tt> 文件夹中）：<img src="../../images/tutorials/paintapp/save_icon.png" alt="Save Canvas 图标。">
+
+  </p></li><li>单击“完成”。</p>
+
+<p>IDE 将在 <tt>org.netbeans.paint</tt> 中创建 <tt>SaveCanvasAction.java</tt>，并在源代码编辑器中将其打开。 
+
+</p></li><li>在源代码编辑器中，确保打开 <tt>SaveCanvasAction.java</tt>，然后按如下所示填充 <tt>performAction()</tt> 方法：
+ 
+
+<pre class="examplecode">    public void performAction() {
+
+        TopComponent tc = TopComponent.getRegistry().getActivated();
+        
+        if (tc instanceof PaintTopComponent) {
+        
+	    try {
+	       	((PaintTopComponent) tc).saveAs();
+            } catch (IOException ioe) {
+                ErrorManager.getDefault().notify (ioe);
+            }
+            
+        } else {
+        
+            //Theoretically the active component could have changed
+            //between the time the menu item or toolbar button was
+            //pressed and when the action was invoked.  Not likely,
+            //but theoretically possible
+            Toolkit.getDefaultToolkit().beep();
+            
+        }               
+        
+    }</pre>
+  <p>按 Ctrl-Shift-I 组合键生成所需的 import 语句： 
+  </p><p><img border="1" src="../../images/tutorials/paintapp/fiximports-60.png" alt="修复导入。">
+
+</p></li><li>通过修改类声明来添加属性更改侦听程序：
+
+<pre class="examplecode">    public final class SaveCanvasAction extends CallableSystemAction implements PropertyChangeListener {</pre>
+
+<p>再次出现红线。按 Alt-Enter 组合键以调用灯泡图标并选择建议的内容：
+
+</p><p><img border="1" src="../../images/tutorials/paintapp/lightbulb-listener1-60.png" alt="lightbulb-listener1">
+
+</p><p>再次出现红线。重复以上步骤并接受建议的内容：
+
+</p><p><img border="1" src="../../images/tutorials/paintapp/lightbulb-listener2-60.png" alt="lightbulb-listener2">
+
+</p><p>按如下所示，填充生成的 <tt>propertyChange()</tt> 方法：
+
+</p><pre class="examplecode">    public void propertyChange(PropertyChangeEvent evt) {
+
+        if (TopComponent.Registry.PROP_ACTIVATED.equals(evt.getPropertyName())){
+	    updateEnablement();
+        }
+        
+    }</pre><p>
+        
+    </p><p>当出现红线时，单击 Alt + Enter 组合键可以使 IDE 在 <tt>SaveCanvasAction</tt> 类中创建 <tt>updateEnablement()</tt> 方法。</p>
+
+<p>接下来，定义 <tt>updateEnablement()</tt> 方法：
+
+</p><pre class="examplecode">    private void updateEnablement() {
+
+        setEnabled(TopComponent.getRegistry().getActivated()
+        instanceof PaintTopComponent);
+
+    }</pre><p>
+
+</p><p>最后，定义构造函数：
+
+</p><pre class="examplecode">    public SaveCanvasAction() {  
+
+        TopComponent.getRegistry().addPropertyChangeListener (
+	    WeakListeners.propertyChange(this,
+	    TopComponent.getRegistry()));
+       
+        updateEnablement();
+        
+    }</pre>
+    
+    <p>当出现红线时，单击 Alt + Enter 组合键可以使 IDE 导入 <tt>org.openide.util.WeakListeners</tt>。</p>
+
+<p>代码的主要目的在于添加属性更改侦听程序。<tt>TopComponent.Registry</tt> 是系统中所有打开的 <tt>TopComponents</tt>（即所有打开的标签）的注册表。我们的目的是要对该注册表进行侦听以获知其更改，并根据焦点所在的对象启用和禁用操作。
+
+</p><p><b class="notes">注意：</b>您在此调用的是 <tt>WeakListeners.propertyChange()</tt>，而不是直接连接属性更改侦听程序。这样做的目的在于：生成的属性更改侦听程序对操作造成的影响较弱。实际上，只要该应用程序是打开的，您的操作就会处于活动状态，因此，作为一种最佳做法（同时出于前瞻性的考虑），当您打算连接侦听程序，但又不存在中断调用侦听程序的代码时，建议使用弱化的侦听程序。否则，将会出现潜在的内存泄漏 - 由于注册表在其侦听程序列表中一直保存着对该操作的引用，因此不会对该操作进行垃圾回收。
+
+  </p></li>
+
+<p>以下是您现在应该在“项目”窗口中看到的内容：
+
+</p><p><img border="1" src="../../images/tutorials/paintapp/final-proj-window-60.png" alt="“项目”窗口的最终视图">
+
+ </p><h2><a name="wrappingUp"></a>包装</h2>
+ <p>当然，您希望创建的是应用程序，而不是 IDE - 因此，您最后可以执行几个步骤来排除不需要的 IDE 模块和用户界面元素。首先，为您的应用程序创建一个闪屏，然后删除不需要的模块，最后创建一个 ZIP 分发和一个 JNLP 应用程序。
+
+</p><ol>
+	<li>运行 <tt>PaintApp</tt> 项目。该应用程序启动后，将主屏幕适当缩小，然后绘制一个闪屏。使用“保存”按钮保存该闪屏。 </li>
+    <li>在原始项目中，右键单击 <tt>PaintApp</tt> 节点，选择“属性”，然后在“项目属性”对话框中单击“生成”。</li> 
+
+    <li>选择“创建独立的应用程序”。现在可以指定标记名称（将是 IDE 可以为您生成的启动器名称）和应用程序标题（将显示在应用程序的标题栏中）。缺省情况下，您会看到以下内容：</p>
+
+<p><img border="1" src="../../images/tutorials/paintapp/splashscreen1-60.png" alt="闪屏">
+     
+       </p></li><li>单击“闪屏”。浏览到您的闪屏。如果没有闪屏，可以使用<a href="https://platform.netbeans.org/images/tutorials/paintapp/splash.gif">此闪屏</a>。单击“确定”将其添加到应用程序中：</li>
+<p><img border="1" src="../../images/tutorials/paintapp/splashscreen-60.png" alt="闪屏">
+
+</p><li>单击“库”，展开 <tt>platform7</tt> 节点。这是包含将与您的 Paint 应用程序捆绑在一起的模块的唯一群集。选中的模块将包括进来，未选中的模块则排除在外。请注意，许多模块已被排除在外。有一个模块您需要手动排除：<tt>Core UI</tt>。现在就通过取消选中该模块将其手动排除。</p>
+
+  <p>现在，在 Paint 模块的 <tt>layer.xml</tt> 文件中，将以下标记添加到 &quot;Menu&quot; 文件夹中。这些标记用于删除 Paint 应用程序不需要的 &quot;GoTo&quot; 和 &quot;View&quot; 菜单。</p>
+
+ <pre class="examplecode">&lt;file name=&quot;GoTo_hidden&quot;/&gt;
+&lt;file name=&quot;View_hidden&quot;/&gt;</pre>
+
+<p>或者，也可以删除 <tt>layer.xml</tt> 文件的 <tt>&lt;上下文中的此层&gt;</tt> 节点中的文件夹，而不是手动添加上述标记。为此，请展开 <tt>&lt;上下文中的此层&gt;</tt>，然后展开 &quot;Menu Bar&quot; 节点。右键单击 &quot;GoTo&quot; 和 &quot;View&quot; 节点，然后从弹出式菜单中选择“删除”。
+
+</p></li><li>最后，再次运行该应用程序，请注意观察闪屏。应用程序启动后，您可以看到标题栏中将显示您所指定的标题。此外，还少了很多菜单项、工具栏按钮和其他功能：<br><br>
+
+<p><img border="1" src="../../images/tutorials/paintapp/result-without-menus-60.png" alt="无菜单的结果">
+
+</p></li>
+
+<h2 class="tutorial"><a name="creatingDist"></a>创建分发</h2>
+<p>
+现在该选择分发介质了。右键单击 <tt>PaintApp</tt> 节点，并选择“生成 ZIP 分发”，以便将整个应用程序连同所有需要的模块和文件一起打包为一个 zip 文件。此外，还可以选择“生成 JNLP 应用程序”来创建 JavaWebStart&trade; 版本的应用程序，您可以将该版本的应用程序放到 Web 服务器上，并直接通过 Web 页链接到该应用程序（您需要设置正确的 URL - 生成的描述符使用 file: 协议才能在本地对可通过 Web 启动的分发执行测试）。
+   
+   
+</p><p>以上就是本教程的内容！至此，您已在 NetBeans 平台上构建了第一个完整的应用程序。下一站：<a href="https://platform.netbeans.org/tutorials/60/nbm-feedreader.html">NetBeans 平台 6.0 Feed Reader 教程</a>。
+
+<br>
+</p><div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback: NetBeans Platform 6.0 Paint Application Tutorial">请将您的意见和建议发送给我们</a></div>
+<br style="clear:both;" />
+<hr>
+</ol></ol></ol></body>
+</head></html>

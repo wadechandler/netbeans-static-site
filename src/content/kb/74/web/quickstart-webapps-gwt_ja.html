@@ -1,0 +1,670 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <meta name="author" content="geertjan.wielenga@sun.com, troy.giunipero@sun.com">
+        <meta name="description" content="A short guide to using the Google Web Toolkit in NetBeans IDE">
+        <meta name="keywords" content="NetBeans, IDE, integrated development environment,
+            GWT, Google Web Toolkit, framework, frameworks, web application">
+
+        <link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+        <link rel="stylesheet" type="text/css" href="../../../lytebox.css" media="screen">
+        <script type="text/javascript" src="../../../images_www/js/lytebox-compressed.js"></script>
+
+        <title>Google Web Toolkitフレームワーク入門 - NetBeans IDE 6.xチュートリアル</title>
+    </head>
+
+    <body>
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+
+        <h1>Google Web Toolkitフレームワーク入門</h1>
+
+        <p>Google Web Toolkit (GWT)は、開発者がJavaを使用して高性能のAJAXアプリケーションを簡単に作成できるようにする、オープン・ソースのWeb開発フレームワークです。GWTを使用すると、フロント・エンドをJavaで記述し、ソース・コードをコンパイルして高度に最適化されたブラウザ準拠のJavaScriptとHTMLを生成できます。「最新のWebアプリケーションの作成は、面倒でエラーの発生しやすいプロセスです。90%の時間がブラウザの癖への対応に費やされ、JavaScriptにモジュール性がないためにAJAXコンポーネントの共有、テスト、再利用は壊れやすくて困難です。そのようなことではいけません」と<a href="http://code.google.com/webtoolkit/">Google Web Toolkitサイト</a>に書かれています。</p>
+
+        <p>このチュートリアルでは、上記の原則が実際のアプリケーションにどのように適用されるかを学習します。同時に、NetBeans IDEのGWTサポートの概要を学び、これらの機能のいくつかを使用する単純なアプリケーションをビルドします。</p>
+
+        <p><strong>目次</strong></p>
+
+        <p><img alt="このページの内容は、NetBeans IDE 6.xから7.0に適用されます" class="stamp" src="../../../images_www/articles/71/netbeans-stamp-71-72-73.png" title="このページの内容は、NetBeans IDE 6.xから7.0に適用されます" /="/"></p>
+
+        <ul class="toc">
+            <li><a href="#setup">環境の設定</a>
+                <ul>
+                    <li><a href="#creating">GWTアプリケーションのソース構造の作成</a>
+                    <li><a href="#examining">GWTアプリケーションのソース構造の確認</a>
+                </ul></li>
+            <li><a href="#random-quote">AJAXランダム引用文ジェネレータの作成</a>
+                <ul>
+                    <li><a href="#generating-stubs">サービス・スタブの生成</a>
+                    <li><a href="#examining-stubs">生成されたクラスの確認</a>
+                    <li><a href="#extending-stubs">生成されたクラスの拡張</a>
+                    <li><a href="#customizing">外観のカスタマイズ</a>
+                </ul></li>
+            <li><a href="#compile-debug">コンパイルとデバッグ</a></li>
+            <li><a href="#conclusion">まとめ</a></li>
+            <li><a href="#seeAlso">関連項目</a></li>
+        </ul>
+
+        <p><strong>このチュートリアルを完了するには、次のソフトウェアとリソースが必要です。</strong></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                    <th class="tblheader" scope="col">必須バージョン</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDEのJavaバンドル版</a></td>
+                    <td class="tbltd1">バージョン6.x</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit (JDK)</a></td>
+                    <td class="tbltd1">バージョン5またはそれ以降</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1">GlassFishサーバー<br><em class="indent margin-around">または</em><br>Tomcatサーブレット・コンテナ</td>
+                    <td class="tbltd1">v3またはOpen Source Edition 3.0.1<br><em class="margin-around indent">&nbsp;</em><br>バージョン6.x</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://code.google.com/webtoolkit/">Google Web Toolkit (GWT)</a></td>
+                    <td class="tbltd1">バージョン1.5またはそれ以降</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://gwt4nb.dev.java.net/">NetBeans GWTプラグイン</a></td>
+                    <td class="tbltd1">バージョン2.x</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong class="notes">注意: </strong></p>
+
+        <ul>
+            <li>Javaダウンロード・バンドルでは、GlassFishサーバーとApache Tomcatサーブレット・コンテナ6.0.xをオプションでインストールできます。このチュートリアルの手順に従うには、これらのいずれかをインストールする必要があります。</li>
+
+            <li>NetBeans GWTプラグインは、<a href="https://gwt4nb.dev.java.net/">https://gwt4nb.dev.java.net/</a>からダウンロードするかわりに、IDEのプラグイン・マネージャから直接ダウンロードしてインストールできます。次に示すように、メイン・メニューから「ツール」>「プラグイン」を選択し、プラグインをインストールします。<br><img alt="プラグイン・マネージャに表示されたGWTプラグイン" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/plugin-manager.png" title="プラグイン・マネージャに表示されたGWTプラグイン"><br> IDEでフレームワーク・プラグインをインストールする手順の詳細は、<a href="../../docs/web/framework-adding-support_ja.html">Webフレームワークのサポートの追加</a>を参照してください。</li>
+
+            <li>このチュートリアル用の<a href="https://netbeans.org/projects/samples/downloads/download/Samples%252FJava%2520Web%252FHelloGWT.zip">機能するサンプル・アプリケーション</a>およびGWTを使用する<a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=4537">他のアプリケーション</a>をダウンロードできます。</li>
+
+            <li>GWTの詳細は、<a href="http://code.google.com/webtoolkit/">http://code.google.com/webtoolkit/</a>を参照してください。IDEでのGWTのサポートの詳細は、<a href="https://gwt4nb.dev.java.net/">https://gwt4nb.dev.java.net/</a>を参照してください。GWTに精通している場合は、GWTプラグイン・プロジェクトへのコードに参加してみてください。</li>
+
+            <li>このチュートリアルでは、『<a href="http://www.packtpub.com/google-web-toolkit-GWT-Java-AJAX/book">Google Web Toolkit: GWT Java AJAX Programming</a>』(Prabhakar Chaganti著、<a href="http://www.packtpub.com/">Packt Publishing</a>発行、2007年2月)で紹介されている例のいくつかを使用します。</li>
+        </ul>
+
+
+        <br>
+        <h2 id="setup">環境の設定</h2>
+
+        <p>まず、IDEを使用して基本的なソース構造を生成します。完成したら、GWTの内部の仕組みを理解するために詳細を調べることができます。</p>
+
+        <ul>
+            <li><a href="#creating">GWTアプリケーションのソース構造の作成</a>
+            <li><a href="#examining">GWTアプリケーションのソース構造の確認</a>
+        </ul>
+
+        <div class="indent">
+
+            <h3 id="creating">GWTアプリケーションのソース構造の作成</h3>
+
+            <p>作成するアプリケーションのソース構造には、GWT JARファイル、GWTモジュール・プロジェクト構成ファイルに加えて、Javaエントリ・ポイントなどのいくつかの標準アーティファクトが含まれている必要があります。IDEを使用しているため、これらすべてのファイルを手動で作成する必要はありません。かわりに、ウィザードを使用します。特に、新規Webアプリケーション・ウィザードの最後のパネルは、GWTアプリケーションの作成において非常に役立ちます。</p>
+
+            <ol>
+                <li>「ファイル」>「新規プロジェクト」([Ctrl]-[Shift]-[N]、Macの場合は[&#8984]-[Shift]-[N])を選択します。「カテゴリ」から「Web」(または「Java Web」)を選択します。「プロジェクト」で「Webアプリケーション」を選択します。「次」をクリックします。</li>
+
+                <li>ステップ2の「名前と場所」で、「プロジェクト名」に「<code>HelloGWT</code>」と入力します。プロジェクトの場所は、コンピュータ上のパスを「プロジェクトの場所」フィールドに入力しても指定できます。「次」をクリックします。</li>
+
+                <li>「サーバーと設定」ステップでは、IDEに登録済のいずれかのサーバーを選択します。IDEのインストール時にTomcatまたはGlassFishサーバーを含めた場合は、それらがドロップダウン・リストに表示されます。<br><br><span class="tips">IDEにサーバーを登録するには、「追加」ボタンをクリックして、登録処理の手順を指示するウィザードを開きます。</span></li>
+
+                <li>使用しているJavaのバージョンを指定します。「次」をクリックします。
+
+                    <p><strong class="notes">注意: </strong>このチュートリアルでは、GWTバージョン1.5以降がサポートされます。GWT 1.4はJava EE 5をサポートしていないため、このバージョンを使用している場合は、「Java EEバージョン」を1.4に設定する必要があります。そうしないと、たとえば、Java EE 5注釈によってコンパイル・エラーが発生します。</p></li>
+
+                <li>「フレームワーク」ステップでは、GWTを選択します。<br><img alt="新規プロジェクト・ウィザードの「フレームワーク」パネルに表示されたGWT" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/frameworks-panel.png" title="新規プロジェクト・ウィザードの「フレームワーク」パネルに表示されたGWT"><br> GWTフレームワークを選択すると、次のフィールドが使用可能になります。
+
+                    <ul>
+                        <li><strong>GWTインストール・フォルダ</strong>: このチュートリアルの冒頭でGoogle Web Toolkitをダウンロードしたフォルダへのパスを指定します。間違ったパスを指定した場合は、赤いエラー・メッセージが表示され、ウィザードは完了しません。</li>
+
+                        <li><strong>GWTモジュール</strong>: ウィザードの完了時にIDEで生成されるプロジェクト・モジュールの名前と場所を指定します。プロジェクト・モジュールは、GWTアプリケーションを構成するXMLファイルです。たとえば、モジュールがロードされたときにGWTによってインスタンス化されるクラスを指定するために使用されます。ウィザードのこのフィールドによって、アプリケーションのメイン・パッケージも決まります。デフォルトでは、メイン・パッケージは<code>org.yournamehere</code>、プロジェクト・モジュールは<code>Main</code>です。このチュートリアルでは、デフォルトのエントリのままにします。</li>
+                    </ul></li>
+
+                <li>「終了」をクリックします。IDEによって<code>HelloGWT</code>プロジェクトが作成されます。このプロジェクトには、ソース、ライブラリ、プロジェクトのAntビルド・スクリプトなどのプロジェクト・メタデータがすべて含まれます。IDEでプロジェクトが開きます。ファイル構造を「ファイル」ウィンドウ([Ctrl]-[2]、Macの場合は[&#8984]-[2])で、論理構造を「プロジェクト」ウィンドウ([Ctrl]-[1]、Macの場合は[&#8984]-[1])で表示できます。<br><img alt="HelloGWTプロジェクトが表示された「プロジェクト」ウィンドウ" class="margin-around" src="../../../images_www/articles/72/web/gwt/projects-win-init.png" title="HelloGWTプロジェクトが表示された「プロジェクト」ウィンドウ"></li>
+
+                <li>「プロジェクト」ウィンドウでプロジェクト・ノードを右クリックし、「実行」を選択します。アプリケーションがビルドされ、Webアーカイブ(WAR)が作成されます。それがサーバーにデプロイされます。サーバーが実行されていない場合は起動します。コンピュータのデフォルトのブラウザが開き、アプリケーションの開始ページが表示されます。<br><img alt="ブラウザに表示されたHello GWTメッセージ" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/hello-gwt.png" title="ブラウザに表示されたHello GWTメッセージ"><br>ボタンをクリックすると、下のテキストが消えます。<br><img alt="ボタンの下のテキストが消える" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/click-me.png" title="ボタンの下のテキストが消える"></li>
+            </ol>
+
+            <p>次の項では、生成されたファイルを詳細に調査し、上記の単純なアプリケーションがどのように作成されたかを調べます。</p>
+
+
+            <h3 id="examining">GWTアプリケーションのソース構造の確認</h3>
+
+            <p>IDEの新規Webアプリケーション・ウィザードによっていくつかのソース・ファイルが作成されました。ファイルを調べて、それらがGWTアプリケーションのコンテキスト内で互いにどのように関連しているかを確認しましょう。</p>
+
+            <ul>
+                <li><strong><code>Main.gwt.xml</code></strong>: プロジェクトのルート・パッケージに含まれている、プロジェクト・モジュールのXMLファイルは、GWTプロジェクトに必要な完全なアプリケーション構成を保持するXMLファイルです。ウィザードで生成されるデフォルトのプロジェクト・モジュールは次のようになります。
+
+<pre class="examplecode">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;module&gt;
+        &lt;inherits name=&quot;com.google.gwt.user.User&quot;/&gt;
+        &lt;entry-point class=&quot;org.yournamehere.client.MainEntryPoint&quot;/&gt;
+        &lt;!-- Do not define servlets here, use web.xml --&gt;
+&lt;/module&gt;</pre>
+
+                    <p>デフォルトのプロジェクト・モジュール内の要素は次のとおりです。</p>
+
+                    <ul>
+                        <li><code><strong>inherits</strong></code>: このモジュールに継承されるモジュールを指定します。この単純な例では、GWTフレームワークに組み込まれている<code>User</code>モジュールで提供される機能のみを継承します。アプリケーションがより複雑になると、モジュール継承によって機能の一部を簡単に効率よく再利用できます。</li>
+                        <li><code><strong>entry-point</strong></code>: モジュールがロードされたときにGWTフレームワークによってインスタンス化されるクラスを指します。</li>
+                    </ul>
+
+                    <strong class="notes">注意: </strong>詳細は、<a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideOrganizingProjects.html#DevGuideModuleXml">プロジェクトの編成: モジュールXMLファイル</a>を参照してください。</li>
+
+                <li><strong><code>MainEntryPoint.java</code></strong>: <code>Main.gwt.xml</code>で指定されている、アプリケーションのメイン・エントリ・ポイントを指定するクラスです。このクラスは、<a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/core/client/EntryPoint.html"><code>EntryPoint</code></a>クラスを拡張し、GWTモジュールがフレームワークでロードされたときにインスタンス化され、その<code>onModuleLoad()</code>メソッドが自動的にコールされます。ウィザードで生成されるデフォルトのエントリ・ポイントは次のようになります。
+
+<pre class="examplecode">package org.yournamehere.client;
+
+import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.ClickListener;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.Widget;
+
+public class MainEntryPoint implements EntryPoint {
+
+    /** Creates a new instance of MainEntryPoint */
+    public MainEntryPoint() {
+    }
+
+    /**
+        The entry point method, called automatically by loading a module
+        that declares an implementing class as an entry-point
+    */
+    public void onModuleLoad() {
+        final Label label = new Label(&quot;Hello, GWT!!!&quot;);
+        final Button button = new Button(&quot;Click me!&quot;);
+
+        button.addClickListener(new ClickListener(){
+            public void onClick(Widget w) {
+                label.setVisible(!label.isVisible());
+            }
+        });
+
+        RootPanel.get().add(button);
+        RootPanel.get().add(label);
+    }
+
+}</pre>
+
+                    上記のスニペットで、<a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/core/client/EntryPoint.html"><code>EntryPoint</code></a>のデフォルトの<code>onModuleLoad()</code>メソッドは、次のコンポーネントをアプリケーションに追加します。
+
+                    <ul>
+                        <li><code><strong>Label</strong></code>: 新しいGWT <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/Label.html"><code>Label</code></a>が作成され、「<code>Hello, GWT!!!</code>」というテキストが表示されます。コードの最後の行<code>RootPanel.get().add(label)</code>により、ラベルが<a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/RootPanel.html"><code>RootPanel</code></a>に追加されます。</li>
+
+                        <li><code><strong>Button</strong></code>: 新しいGWT<a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/Button.html"><code>Button</code></a>が作成され、「<code>Click me!</code>」というテキストとともに、<a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/ClickListener.html"><code>ClickListener</code></a>で実装されるボタン・リスナーが表示されます。このボタン・リスナーは、ボタンがクリックされたときにラベルを非表示にするように指定します。
+
+                            <pre class="examplecode">public void onClick(Widget w) {
+    label.setVisible(!label.isVisible());
+}</pre>
+                            コードの最後から2番目の行により、ボタンが<a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/RootPanel.html"><code>RootPanel</code></a>に追加されます。
+
+                            <pre class="examplecode">RootPanel.get().add(button)</pre></li>
+                    </ul></li>
+
+                <li><strong><code>welcomeGWT.html</code></strong>: アプリケーションの指定の開始ファイルである、生成されたHTMLホスト・ページです。<code>web.xml</code>ファイルは、<code>welcome-file</code>要素を使用して、このホスト・ページがアプリケーションのデプロイ時にブラウザに表示される最初のページであることを指定します。ホスト・ページは、JavaScriptソース・コードへのパスを参照し、アプリケーションのスタイル・シートを参照できます。ウィザードで生成されるデフォルトのホスト・ページは次のようになります。
+
+<pre class="examplecode">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot;&gt;
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;meta name='gwt:module' content='org.yournamehere.Main=org.yournamehere.Main'&gt;
+        &lt;title>Main&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;script language=&quot;javascript&quot; src=&quot;org.yournamehere.Main/org.yournamehere.Main.nocache.js&quot;&gt;&lt;/script&gt;
+    &lt;/body&gt;
+&lt;/html&gt;</pre>
+
+                    上記のスニペットの<code>meta</code>タグと<code>script</code>タグは、GWTにとって特別な意味を持ちます。
+
+                    <ul>
+                        <li><code><strong>meta</strong></code>: アプリケーションのプロジェクト・ディレクトリを指します。このタグは、HTMLページとアプリケーションの間のリンクを提供します。</li>
+
+                        <li><code><strong>script</strong></code>: GWTフレームワークのJavaScriptファイルからコードをインポートします。このファイルには、GWTフレームワークのブートストラップに必要なコードが含まれています。プロジェクト・モジュール内の構成を使用し、エントリ・ポイントをコンパイルすることによって作成されたJavaScriptを動的にロードして、アプリケーションを表示します。JavaScriptファイルは、アプリケーションをホストされたモードで実行したとき、またはアプリケーションをコンパイルしたときに、GWTフレームワークによって生成されます。</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+
+        <br>
+        <h2 id="random-quote">AJAXランダム引用文ジェネレータの作成</h2>
+
+        <p>この項では、ランダムな引用文をWebページに表示します。この例のアプリケーションで、GWTアプリケーションの様々なコンポーネントに慣れることができます。ランダムな引用文は、サーバーに保存されている引用文のリストから選択されます。アプリケーションは、サーバーによって提供されるランダムな引用文を毎秒取得し、真のAJAXスタイルでWebページに表示するため、ユーザーがページをリフレッシュする必要はありません。</p>
+
+        <p>この機能の作成プロセスでは、GWT RPC (<a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideServerCommunication.html#DevGuideRemoteProcedureCalls">Remote Procedure Call</a>)サービスを利用します。</p>
+
+        <ul>
+            <li><a href="#generating-stubs">サービス・スタブの生成</a>
+            <li><a href="#examining-stubs">生成されたクラスの確認</a>
+            <li><a href="#extending-stubs">生成されたクラスの拡張</a>
+            <li><a href="#customizing">外観のカスタマイズ</a>
+        </ul>
+
+        <div class="indent">
+
+            <h3 id="generating-stubs">サービス・スタブの生成</h3>
+
+            <p>NetBeans GWTプラグインには、<a href="http://code.google.com/docreader/#p=google-web-toolkit-doc-1-5&s=google-web-toolkit-doc-1-5&t=DevGuideRemoteProcedureCalls">RPC</a>サービスを作成するためのウィザードがあります。このウィザードは基本的なサービス・クラスを生成します。ここでは、GWT RPCサービス・ウィザードについて紹介します。</p>
+
+            <ol>
+                <li>IDEのメイン・ツールバーにある「新規ファイル」(<img alt="「新規ファイル」アイコン" src="../../../images_www/articles/72/web/gwt/new-file-icon.png">)アイコンをクリックします。新規ファイル・ウィザードの「Google Web Toolkit」カテゴリに、「GWT RPCサービス」という名前のファイル・テンプレートが表示されます。<br><img alt="GWT RPCサービス・ウィザードの最初のパネル" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/gwt-service.png" title="GWT RPCサービス・ウィザードの最初のパネル"><br>「GWT RPCサービス」を選択し、「次」をクリックします。
+
+                <li>必要に応じて、生成されるファイルを格納するサブパッケージを入力します。このチュートリアルでは、「サブパッケージ」フィールドに「<code>sampleservice</code>」と入力します。<br><img alt="GWT RPCサービス・ウィザードの2番目のパネル" class="margin-around b-all" id="usageExample" src="../../../images_www/articles/72/web/gwt/gwt-service2.png" title="GWT RPCサービス・ウィザードの2番目のパネル"><br><strong class="notes">注意: </strong>このステップで「使用例クラスを作成」オプションを選択したままにすると、IDEで<a href="#GWTServiceUsageExample"><code>GWTServiceUsageExample</code></a>クラスを生成でき、サービスの呼出しに使用できます。
+
+                <li>「終了」をクリックします。新規GWT RPCサービス・ウィザード(上のイメージ)に表示されているファイルが生成され、「プロジェクト」ウィンドウが変更を反映して自動的に更新されます。<br><img alt="新規作成されたファイルを表示するように更新された「プロジェクト」ウィンドウ" class="margin-around" src="../../../images_www/articles/72/web/gwt/projects-window.png" title="新規作成されたファイルを表示するように更新された「プロジェクト」ウィンドウ">
+                </li>
+            </ol>
+
+
+            <h3 id="examining-stubs">生成されたクラスの確認</h3>
+
+            <p>GWT RPCサービス・ウィザードによっていくつかのソース・ファイルが作成されます。ここでは、ファイルを調べて、それらがGWTサービスのコンテキスト内で互いにどのように関連しているかを確認します。</p>
+
+            <p class="tip">GWTサービス・クラスの詳細は、<a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideServerCommunication.html#DevGuideCreatingServices">Creating Services</a>を参照してください。</p>
+
+            <ul>
+                <li><a name="GWTService"></a><code><strong>GWTService</strong></code>: サービスのクライアント側の定義です。このインタフェースは<a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/rpc/RemoteService.html">RemoteService</a>タグ・インタフェースを拡張します。
+
+<pre class="examplecode">
+package org.yournamehere.client.sampleservice;
+
+import com.google.gwt.user.client.rpc.RemoteService;
+import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
+
+@RemoteServiceRelativePath(&quot;sampleservice/gwtservice&quot;)
+public interface GWTService extends RemoteService {
+    public String myMethod(String s);
+}</pre></li>
+
+                <li><a name="GWTServiceImpl"></a><code><strong>GWTServiceImpl</strong></code>: <code>GWTService</code>インタフェースを実装し、ランダムな引用文をRPC経由で取得する機能を提供するサーブレットです。
+
+<pre class="examplecode">
+package org.yournamehere.server.sampleservice;
+
+import com.google.gwt.user.server.rpc.RemoteServiceServlet;
+
+import org.yournamehere.client.sampleservice.GWTService;
+
+public class GWTServiceImpl extends RemoteServiceServlet implements GWTService {
+
+    public String myMethod(String s) {
+        // Do something interesting with 's' here on the server.
+        return &quot;Server says: &quot; + s;
+    }
+
+}</pre></li>
+
+                <li><a name="GWTServiceAsync"></a><code><strong>GWTServiceAsync</strong></code>: 元の<code>GWTService</code>インタフェースに基づく非同期インタフェースです。サーバーとクライアントの間の非同期通信を有効にするコールバック・オブジェクトを提供します。
+
+<pre class="examplecode">
+package org.yournamehere.client.sampleservice;
+
+import com.google.gwt.user.client.rpc.AsyncCallback;
+
+public interface GWTServiceAsync {
+    public void myMethod(String s, AsyncCallback&lt;String&gt; callback);
+}</pre></li>
+
+                <li><a name="GWTServiceUsageExample"></a><code><strong>GWTServiceUsageExample</strong></code>: テスト用クライアントとして生成されたサンプル・ユーザー・インタフェースです。サービスを呼び出すために使用できます。
+
+<pre class="examplecode">
+package org.yournamehere.client.sampleservice;
+
+import com.google.gwt.core.client.GWT;
+
+import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.rpc.ServiceDefTarget;
+
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.Widget;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.VerticalPanel;
+
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
+
+public class GWTServiceUsageExample extends VerticalPanel {
+    private Label lblServerReply = new Label();
+    private TextBox txtUserInput = new TextBox();
+    private Button btnSend = new Button(&quot;Send to server&quot;);
+
+    public GWTServiceUsageExample() {
+        add(new Label(&quot;Input your text: &quot;));
+        add(txtUserInput);
+        add(btnSend);
+        add(lblServerReply);
+
+        // Create an asynchronous callback to handle the result.
+        final AsyncCallback&lt;String&gt; callback = new AsyncCallback&lt;String&gt;() {
+            public void onSuccess(String result) {
+                lblServerReply.setText(result);
+            }
+
+            public void onFailure(Throwable caught) {
+                lblServerReply.setText(&quot;Communication failed&quot;);
+            }
+        };
+
+        // Listen for the button clicks
+        btnSend.addClickHandler(new ClickHandler(){
+            public void onClick(ClickEvent event) {
+                // Make remote call. Control flow will continue immediately and later
+                // 'callback' will be invoked when the RPC completes.
+                getService().myMethod(txtUserInput.getText(), callback);
+            }
+        });
+    }
+
+    public static GWTServiceAsync getService() {
+        // Create the client proxy. Note that although you are creating the
+        // service interface proper, you cast the result to the asynchronous
+        // version of the interface. The cast is always safe because the
+        // generated proxy implements the asynchronous interface automatically.
+
+        return GWT.create(GWTService.class);
+    }
+}</pre></li>
+            </ul>
+
+            <p>次に、エントリ・ポイント・クラスを変更して、<code>GWTServiceUsageExample</code>オブジェクトをインスタンス化することによってサービスを呼び出します。前の項で、<a href="#usageExample">GWT RPCウィザードで「使用例クラスを作成」オプションを選択した</a>ため、<code>GWTServiceUsageExample</code>クラスが作成されています。</p>
+
+            <ol>
+                <li>アプリケーションのメイン・エントリ・ポイント(<code>MainEntryPoint.java</code>)の<code>onModuleLoad()</code>メソッドで、GWTの<code>Label</code>と<code>Button</code>を除去し、<code>GWTServiceUsageExample</code>の新しいインスタンスを<code>RootPanel</code>に追加します。
+
+<pre class="examplecode">
+public void onModuleLoad() {
+     RootPanel.get().add(new GWTServiceUsageExample());
+}</pre>
+
+                    <strong class="notes">注意: </strong><code>onModuleLoad()</code>メソッドを変更した後、<code>sampleservice.GWTServiceUsageExample</code>クラスにインポート文を追加する必要があります。これを行うには、エディタの左の列で、<code>GWTServiceUsageExample()</code>メソッドが表示される場所に表示されるヒントをクリックし、「<code>org.yournamehere.client.sampleservice.GWTServiceUsageExample</code>をインポートに追加」を選択します。<br><img alt="エディタに表示された「インポートを修正」サポート" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/fix-import.png" title="エディタに表示された「インポートを修正」サポート"></li>
+
+                <li><a name="allYouNeed"></a>「プロジェクト」ウィンドウでプロジェクト・ノードを右クリックし、「実行」を選択します。サーバーが実行されていない場合は起動します。プロジェクトがコンパイル(この場合は再コンパイル)され、サーバーにデプロイされます。ブラウザが開き、テキスト・フィールドが表示されます。メッセージを入力し、ボタンをクリックします。ラベルおよび送信したメッセージが表示されます。<br><img alt="ユーザーのメッセージが表示されたブラウザ出力" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/all-you-need.png" title="ユーザーのメッセージが表示されたブラウザ出力">
+                </li>
+            </ol>
+
+            <p>IDEのGWT RPCウィザード使用してGWT RPCサービスが正しく作成されました。さらに、<code>GWTServiceUsageExample</code>インスタンスをアプリケーションのメイン・エントリ・ポイントの<code>onModuleLoad()</code>メソッドに追加して、実行時にアプリケーションからサービスが呼び出されるようにしました。次の項では、生成されたクラスを拡張することによってサービスをカスタマイズし、HTMLホスト・ページにスタイル・シートを添付します。</p>
+
+
+            <h3 id="extending-stubs">生成されたクラスの拡張</h3>
+
+            <p>この項では、前の項で調べたクラスを調整および拡張します。この項が終わると、機能するAJAXランダム引用文ジェネレータが完成します。</p>
+
+            <ol>
+                <li><a href="#GWTServiceImpl"><code>GWTServiceImpl</code></a>は、作成中のサービスを実装するサーブレットです。
+
+                    <p class="tips">アプリケーションの<code>web.xml</code>デプロイメント・ディスクリプタを開くと、サーブレットの宣言とマッピングがすでに追加されていることがわかります。</p>
+
+                    <pre class="examplecode">&lt;servlet&gt;
+    &lt;servlet-name&gt;GWTService&lt;/servlet-name&gt;
+    &lt;servlet-class&gt;org.yournamehere.server.sampleservice.GWTServiceImpl&lt;/servlet-class&gt;
+&lt;/servlet&gt;
+&lt;servlet-mapping&gt;
+    &lt;servlet-name&gt;GWTService&lt;/servlet-name&gt;
+    &lt;url-pattern&gt;/org.yournamehere.Main/sampleservice/gwtservice&lt;/url-pattern&gt;
+&lt;/servlet-mapping&gt;</pre>
+
+
+                    <code>GWTServiceImpl</code>クラスに、サービス固有の論理を含む<code>GWTService</code>インタフェースを実装します。ランダム引用文ジェネレータを作成するには、次のコードを<code>GWTServiceImpl</code>に追加します。
+
+<pre class="examplecode">
+public class GWTServiceImpl extends RemoteServiceServlet implements GWTService {
+
+    private Random randomizer = new Random();
+    private static final long serialVersionUID = -15020842597334403L;
+    private static List quotes = new ArrayList();
+
+    static {
+        quotes.add(&quot;No great thing is created suddenly - Epictetus&quot;);
+        quotes.add(&quot;Well done is better than well said - Ben Franklin&quot;);
+        quotes.add(&quot;No wind favors he who has no destined port - Montaigne&quot;);
+        quotes.add(&quot;Sometimes even to live is an act of courage - Seneca&quot;);
+        quotes.add(&quot;Know thyself - Socrates&quot;);
+    }
+
+    public String myMethod() {
+        return (String) quotes.get(randomizer.nextInt(5));
+    }
+
+}</pre>
+
+                    <strong class="notes">注意: </strong>IDEのエディタ内で任意の場所を右クリックし、「インポートを修正」を選択すると、IDEによって正しいインポート文が作成されます。そのとき、<a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/Random.html"><code>com.google.gwt.user.client.Random</code></a>ではなく必ず<code>java.util.Random</code>を選択してください。<br><img alt="「すべてのインポートを修正」ダイアログ" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/fix-all-imports.png" title="「すべてのインポートを修正」ダイアログ"></li>
+
+
+                <li>生成された使用例クラス(<a href="#GWTServiceUsageExample"><code>GWTServiceUsageExample</code></a>)からサービスを呼び出すかわりに、アプリケーションのエントリ・ポイント・クラス(<code>MainEntryPoint</code>)から直接呼び出すようにします。まず、<code>GWTServiceUsageExample</code>の<code>getService()</code>メソッドをコピーし、<code>MainEntryPoint</code>に貼り付けます。変更場所は<strong>太字</strong>で示されています。
+
+<pre class="examplecode">public class MainEntryPoint implements EntryPoint {
+
+    /**
+     * Creates a new instance of MainEntryPoint
+     */
+    public MainEntryPoint() {
+    }
+
+    <strong>public static GWTServiceAsync getService() {
+        // Create the client proxy. Note that although you are creating the
+        // service interface proper, you cast the result to the asynchronous
+        // version of the interface. The cast is always safe because the
+        // generated proxy implements the asynchronous interface automatically.
+
+        return GWT.create(GWTService.class);
+    }</strong>
+
+    ...</pre></li>
+
+                <li>エディタ上で右クリックし、「インポートを修正」を選択します。次の3つのインポート文が<code>MainEntryPoint</code>に追加されます。
+
+        <pre class="examplecode">import com.google.gwt.core.client.GWT;
+import org.yournamehere.client.sampleservice.GWTService;
+import org.yournamehere.client.sampleservice.GWTServiceAsync;</pre></li>
+
+                <li>エントリ・ポイント・クラスの<code>onModuleLoad()</code>メソッドを次のように変更します。
+
+<pre class="examplecode">/**
+ * The entry point method, called automatically by loading a module
+ * that declares an implementing class as an entry-point
+ */
+
+public void onModuleLoad() {
+
+    final Label quoteText = new Label();
+
+    Timer timer = new Timer() {
+
+        public void run() {
+            //create an async callback to handle the result:
+            AsyncCallback callback = new AsyncCallback() {
+
+                public void onFailure(Throwable arg0) {
+                    //display error text if we can't get the quote:
+                    quoteText.setText("Failed to get a quote");
+                }
+
+                public void onSuccess(Object result) {
+                    //display the retrieved quote in the label:
+                    quoteText.setText((String) result);
+                }
+            };
+            getService().myMethod(callback);
+        }
+    };
+
+    timer.scheduleRepeating(1000);
+    RootPanel.get().add(quoteText);
+
+}</pre></li>
+
+                <li>エディタ上で右クリックし、「インポートを修正」を選択します。そのとき、必ず<a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/Timer.html"><code>com.google.gwt.user.client.Timer</code></a>と<a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/index.html?com/google/gwt/user/client/ui/Label.html"><code>com.google.gwt.user.client.ui.Label</code></a>を選択してください。<br><img alt="「すべてのインポートを修正」ダイアログ" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/fix-all-imports2.png" title="「すべてのインポートを修正」ダイアログ">
+
+                    
+                    </li>
+                <li>クラス<code>GWTServiceUsageExample</code>を削除します。それはコンパイルされなくなります。アプリケーションはサービスをメイン・エントリ・ポイント・クラスからコールできるため、サービスを呼び出すための<code>GWTServiceUsageExample</code>使用例クラスは必要なくなりました。</li>
+
+                <li><a href="#GWTService"><code>GWTService</code></a>と<a href="#GWTServiceAsync"><code>GWTServiceAsync</code></a>の生成されたスタブには、<code>myMethod()</code>のStringパラメータがありましたが、ランダム引用文ジェネレータには必要ありません。<br><br><code>GWTService</code>クラスで、このStringパラメータを<code>myMethod()</code>から除去し、次のようなインタフェースにします。
+
+<pre class="examplecode">
+public interface GWTService extends RemoteService {
+    public String myMethod();
+}</pre></li>
+
+                <li>非同期サービス(<code>GWTServiceAsync</code>)のメソッド署名は、<code>GWTService</code>のものと一致する必要があります(ただし、最後のパラメータとして<code>AsyncCallback</code>オブジェクトを含む)。したがって、Stringパラメータを<code>myMethod()</code>から除去して、次のようなインタフェースにします。
+
+<pre class="examplecode">
+public interface GWTServiceAsync {
+    public void myMethod(AsyncCallback callback);
+}</pre>
+
+                    <span class="tips">非同期サービス・インタフェースの詳細は、公式GWTドキュメントの<a href="http://code.google.com/webtoolkit/doc/latest/tutorial/clientserver.html">非同期コールの実行</a>および<a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideServerCommunication.html#DevGuideGettingUsedToAsyncCalls">非同期コールに慣れる</a>を参照してください。</span></li>
+
+                <li>プロジェクトを実行します。アプリケーションがデプロイされ、ブラウザが開くと、毎秒新しい引用文がサーバーから受信されることがわかります。<br><img alt="ブラウザに表示されたAJAX引用文ジェネレータ" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/browser-quote.png" title="ブラウザに表示されたAJAX引用文ジェネレータ">
+                </li>
+            </ol>
+
+            <p>次の項では、スタイル・シートを適用して引用文の外観を変更します。</p>
+
+            <a name="customizing"></a>
+            <h3>外観のカスタマイズ</h3>
+
+            <p>この項では、HTMLホスト・ページにスタイル・シートを添付します。また、エントリ・ポイント・クラスでそれを参照します。具体的には、エントリ・ポイント・クラスでラベルのスタイル名をスタイル・シート内のスタイル名に設定します。実行時に、GWTによってラベルにスタイルが適用され、カスタマイズされたラベルがブラウザに表示されます。</p>
+
+            <ol>
+                <li><code>welcomeGWT.css</code>というスタイル・シートを作成します。ファイルを作成するには、「プロジェクト」ウィンドウで「Webページ」ノードを右クリックし、「新規」>「その他」を選択します。新規ファイル・ウィザードが表示されます。</li>
+
+                <li>「カテゴリ」から「Web」を選択し、「ファイル・タイプ」から「Cascading Style Sheet」を選択します。ウィザードを完了すると、新しい空のファイルがエディタで開きます。</li>
+
+                <li>次に示す新しいスタイル・シートの<code>quoteLabel</code>セレクタを作成します。
+
+<pre class="examplecode">
+.quoteLabel {
+    color: white;
+    display: block;
+    width: 450px;
+    padding: 2px 4px;
+    text-decoration: none;
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    border: 1px solid;
+    border-color: black;
+    background-color: #704968;
+    text-decoration: none;
+}</pre>
+
+                    これで、スタイル・シート・エディタに次のように表示されるはずです。<br><img alt="エディタに表示されたCSSプレビュー" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/css-preview.png" title="エディタに表示されたCSSプレビュー">
+
+                    <p class="tips">CSSプレビューとスタイル・ビルダーを表示するには、メイン・メニューから「ウィンドウ」>「その他」を選択します。</p></li>
+
+                <li>アプリケーションの開始ページ(<code>welcomeGWT.html</code>)からスタイル・シートにリンクします。同時に、アプリケーションをユーザーに紹介するテキストを追加します。HTMLページの新しい部分は<strong>太字</strong>で強調表示されています。
+
+<pre class="examplecode">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot;&gt;
+
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;meta name='gwt:module' content='org.yournamehere.Main=org.yournamehere.Main'&gt;
+        <strong>&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;welcomeGWT.css&quot;&gt;</strong>
+
+        &lt;title&gt;Main&lt;/title&gt;
+    &lt;/head&gt;
+
+    &lt;body&gt;
+        &lt;script language=&quot;javascript&quot; src=&quot;org.yournamehere.Main/org.yournamehere.Main.nocache.js&quot;&gt;&lt;/script&gt;
+
+        <strong>&lt;p&gt;This is an AJAX application that retrieves a random quote from
+            the Random Quote service every second. The data is retrieved
+            and the quote updated without refreshing the page!&lt;/p&gt;</strong>
+
+    &lt;/body&gt;
+&lt;/html&gt;</pre></li>
+
+                <li>エントリ・ポイント・クラス(<code>MainEntryPoint.java</code>)の<code>onModuleLoad()</code>メソッド内に、成功時はスタイル・シートに定義されているスタイルをラベルに適用するように指定します。下記で、新しい行は<strong>太字</strong>で強調表示されています。
+
+<pre class="examplecode">public void onSuccess(Object result) {
+    //display the retrieved quote in the label:
+    quoteText.setText((String) result);
+    <strong>quoteText.setStyleName(&quot;quoteLabel&quot;);</strong>
+}</pre>
+
+                    入力時に[Ctrl]-[Space]を押すと、IDEに組み込まれているコード補完が有効になります。コード補完は、コードを完成させる方法を提案するポップアップ・ウィンドウをトリガーし、関連するJavadocを表示することによって機能します。<br><img alt="エディタで提供されるコード補完サポート" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/code-completion.png" title="エディタで提供されるコード補完サポート"><br><span class="tips">IDEでの作業中に継続的にGWTドキュメントにアクセスする必要がある場合は、IDEのJavadocウィンドウを開くこともできます。これを行うには、メイン・メニューから「ウィンドウ」>「その他」>「Javadoc」を選択します。エディタで入力するとき、カーソルの位置に応じてJavadocウィンドウ内のドキュメントが更新されます。</span><br><img alt="Javadocウィンドウ" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/javadoc.png" title="Javadocウィンドウで提供されるドキュメント・サポート"></li>
+
+                <li>「プロジェクト」ウィンドウでプロジェクト・ノードを右クリックし、「実行」を選択します。今回は、この項で作成したスタイル・シートを使用して、ラベルがカスタム・スタイルで表示されます。<br><img alt="ブラウザに表示されたスタイルシートの効果" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/final.png" title="ブラウザに表示されたスタイルシートの効果">
+                </li>
+            </ol>
+        </div>
+
+        <a name="compile-debug"></a>
+        <h2>コンパイルとデバッグ</h2>
+
+        <p>「ファイル」ウィンドウ([Ctrl]-[2]、Macの場合は[&#8984]-[2])を開き、<code>build</code>フォルダを展開します。(<code>build</code>フォルダが存在しない場合は、IDEで<code>build</code>フォルダを再生成するために、プロジェクトを再ビルドする必要があります。)次のように表示されるはずです。<br><img alt="「ファイル」ウィンドウに表示されたBuildフォルダ" class="margin-around" src="../../../images_www/articles/72/web/gwt/build-folder.png" title="「ファイル」ウィンドウに表示されたBuildフォルダ"><br>このフォルダは、アプリケーションのコンパイル時にGWTによって自動的に生成されます。このフォルダは、デプロイの準備ができているクライアント・アプリケーションで構成されます。これらのファイルが何を表しているかについては、<a href="http://code.google.com/support/bin/answer.py?answer=77858&topic=13006">GoogleコードFAQ - キャッシュ/ ノーキャッシュ、変わった名前のファイルは何ですか</a>を参照してください。</p>
+
+        <p>また、GWTアプリケーションを操作するときに、IDEに組み込まれている<a href="https://netbeans.org/features/java/debugger.html">デバッガ</a>を利用することもできます。これにより、<a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideCompilingAndDebugging.html">GWTのホストされたモードでのデバッグ</a>が有効になりますGWTおよびホストされたモードのメイン・ウィンドウとWebブラウザが自動的に開きます。</p>
+
+        <p><strong class="notes">Mac OS Xユーザー向けの注意: </strong>GWTのホストされたモードは、Mac OS Xでは32ビット・アーキテクチャ向けにコンパイルされますが、それはJava 1.5に対してのみ存在します。64ビット・バージョンのJava 1.6を実行している場合は、32ビット・バージョンに切り替える必要があります。それにはOS Xの「Java設定」パネルを使用できます。Javaバージョンを切り替えた後は、IDEを再起動してください。</p>
+            
+            <!--Also, if you are using the GlassFish server
+            3.0.1 (which requires Java 6 to run), you'll need to explicitly set the path to your JDK 6 executable.
+            You can do this in the IDE by opening the Servers window (Tools &gt; Servers), and selecting the
+            Java tab of your the GlassFish server 3.0.1 server. Enter the path in the Java Executable field. The default
+            location for this is:
+            <code>/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Home/bin/java</code>.</p> -->
+
+        <p>ソース・ファイルにフィールド、メソッド、および行のブレークポイントを設定するには、IDEのエディタの左マージンをクリックします。<br> <img alt="行ブレークポイントが表示されたエディタ" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/line-breakpoint.png" title="エディタで設定された行ブレークポイント"> <br>次に、Webプロジェクトと同じ通常の方法で「デバッグ」を選択します(たとえば、プロジェクトのノードを右クリックして「デバッグ」を選択するか、「プロジェクトをデバッグ」アイコン(<img alt="「プロジェクトをデバッグ」アイコン" src="../../../images_www/articles/72/web/gwt/debug-icon.png">)をクリックします)。設定したブレークポイントでアプリケーションが停止するので、コードをステップ実行して変数と式の値を調べることができます(たとえば、「ウィンドウ」>「デバッグ」>「ローカル変数」を使用して「ローカル変数」ウィンドウに値を表示する)。<br><img alt="ブレークポイントで停止したデバッガ" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/line-breakpoint2.png" title="ソース・ファイルに設定されたブレークポイントで停止したデバッガ"><br><span class="tips">また、エディタで式または値の上にカーソルを置くと、現在の値がポップアップで通知されます(上のイメージに示すとおり)。</span><br> GWTのホストされたモードのメイン・ウィンドウとWebブラウザが開きます。機能するアプリケーションがブラウザに表示されます。<br><img alt="GWTのホストされたモードのブラウザ" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/hosted-mode.png" title="IDEのデバッガの実行時に表示される、GWTのホストされたモードのブラウザ"></p>
+
+
+        <a name="conclusion"></a>
+        <h2>まとめ</h2>
+
+        <p>このチュートリアルでは、次のことを学びました。</p>
+
+        <ul>
+            <li>Google Web Toolkitアプリケーションの典型的なアプリケーション・ソース構造。</li>
+
+            <li>Google Web Toolkitアーティファクトの相互関係。</li>
+
+            <li>Google Web Toolkitを使用するためのIDEの設定方法。</li>
+
+            <li>特にGoogle Web Toolkitを使用するための、IDEで使用できるツール。</li>
+        </ul>
+
+        <p>GWTフレームワークは、ブラウザ関連のコード生成と、さらに下のレベルの<code>XmlHttpRequest</code> APIコードの作成を処理するため、フレームワークを利用して、アプリケーションで提供する必要がある機能に焦点を絞ることができます。したがって、概要で説明したとおり、GWTを使用するとブラウザの互換性に関連する問題を回避できると同時に、Web 2.0特有の、標準に準拠した動的な操作性を同様にユーザーに提供できます。このチュートリアルで示したとおり、Javaクラスからブラウザ準拠のJavaScriptおよびHTMLへの変換をGWTコンパイラに実行させることができるため、GWTフレームワークを適用してフロント・エンドを完全にJavaで記述できます。また、IDEにはこのすべてを簡単に効率よく行うための完全なツール・セットがあり、GWTアプリケーションの基本インフラストラクチャを手動でコーディングする必要がないことも説明しました。</p>
+
+        <div class="feedback-box">
+            <a href="/about/contact_form.html?to=3&amp;subject=Feedback: Introduction to the GWT Web Framework">ご意見をお寄せください</a></div>
+
+        <br style="clear:both;">
+
+        <a name="seeAlso"></a>
+        <h2>関連項目</h2>
+
+        <p>これで、Google Web Toolkitフレームワーク入門のチュートリアルは終わりです。関連する資料およびさらに高度な資料については、次のリソースを参照してください。</p>
+
+        <h4>GWTのリソース</h4>
+
+        <ul>
+            <li><a href="http://code.google.com/webtoolkit/doc/1.6/DevGuide.html">Google Web Toolkit開発者ガイド</a></li>
+            <li><a href="https://gwt4nb.dev.java.net/">NetBeans Google Web Toolkitプロジェクトのページ</a></li>
+            <li><a href="https://gwt4nb.dev.java.net/manual/impl_details.html">GWT4NBの中身</a></li>
+            <li><a href="http://googlewebtoolkit.blogspot.com/2007/12/developing-gwt-applications-with.html">NetBeans Google Web Toolkitのブログ</a></li>
+        </ul>
+
+        <h4>Java Webフレームワーク用NetBeansドキュメント</h4>
+
+        <ul>
+            <li><a href="../../docs/web/jsf20-intro_ja.html">JavaServer Faces 2.0入門</a></li>
+            <li><a href="../../docs/web/quickstart-webapps-spring_ja.html">Spring Framework入門</a></li>
+            <li><a href="../../docs/web/quickstart-webapps-struts_ja.html">Struts Webフレームワーク入門</a></li>
+            <li><a href="../../docs/web/grails-quickstart_ja.html">Grails Webフレームワーク入門</a></li>
+        </ul>
+
+    </body>
+</html>

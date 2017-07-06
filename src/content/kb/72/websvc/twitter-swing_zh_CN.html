@@ -1,0 +1,467 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+<html>
+    <head><link rel="stylesheet" href="../../../print.css" type="text/css" media="print">
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>为 Twitter 创建图形客户端 - NetBeans IDE 教程</title>
+        <meta name="KEYWORDS" content="NETBEANS, TUTORIAL, GUIDE, USER, DOCUMENTATION,
+              WEB SERVICE, WEB SERVICES, REST, SAAS, TWITTER, SWING, GUI, CLIENT, LISTCELLRENDERER">
+        <meta name="description"
+              content="Using NetBeans IDE, create a simple, graphical,
+              REST-based client that displays Twitter public messages and lets you
+              view and update your Twitter status. The application uses Swing and
+              NetBeans IDE's support for Twitter's SaaS operations.">
+        <link rel="stylesheet" href="../../../netbeans.css">
+</head>
+    <body>
+        <h1>为 Twitter 创建图形客户端</h1>
+        <p>在本教程中，您将使用 NetBeans IDE 创建一个基于 REST 的简单图形化客户端，通过该客户端可以显示 Twitter 好友时间线消息，以及查看和更新 Twitter 状态。该应用程序将使用 Swing 以及 NetBeans IDE 对 Twitter 的 SaaS 操作的支持。</p>
+        <img alt="显示 Twitter 消息的正在运行的客户端" class="margin-around" height="374" src="../../../images_www/articles/72/websvc/twitter-swing/client-display.png" width="570" />
+        <p>如果您没有 Twitter 帐户，请先转至 <a href="http://twitter.com" target="_blank">twitter.com</a> 并创建一个帐户，然后再继续学习本教程。 </p>
+        <p>我们提供了此应用程序的完整样例以供下载。单击<a href="https://netbeans.org/projects/samples/downloads/download/Samples%252FWeb%2520Services%252FTwitterSwingClient.zip" target="_blank">此处</a>可以下载该样例。</p>
+        <p><b>目录</b></p>
+        <img alt="此页上的内容适用于 NetBeans IDE 6.9-7.1" class="stamp" height="114" src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" title="此页上的内容适用于 NetBeans IDE 6.9-7.1" width="114">
+        <ul class="toc">
+            <li><a href="#jframe">设计 JFrame</a></li>
+            <li><a href="#show-status">显示用户状态</a></li>
+            <li><a href="#authentication">从 Twitter 获取 OAuth 键值</a></li>
+            <li><a href="#run">运行项目</a></li>
+            <li><a href="#multiservis">调用多项服务</a><ul>
+            <li><a href="#add-services">添加服务并将调用合并到一个类中</a></li>
+            
+            <li><a href="#modify-paths">修改资源路径</a></li>
+            </ul></li>
+            <li><a href="#update-status">添加更新状态操作</a></li>
+            <li><a href="#public-timeline-autoupdate">在 JFrame 中显示用户名和状态</a>
+            <ul>
+                <li><a href="#timer-task">创建 TimerTask</a></li>
+                <li><a href="#add-run">使用 getFriendsTimeline 操作添加 run 方法</a></li>
+                <li><a href="#listcellrenderer">创建呈现组件的列表单元格</a></li>
+                <li><a href="#display-component">在 TwitterJFrame 中显示 Component</a></li>
+            </ul></li>
+			<li><a href="#connecting-proxy">通过代理进行连接</a></li>
+        </ul>
+    <p><b>要学完本教程，您需要具备以下软件和资源。</b></p>
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">软件或资源</th>
+                    <th class="tblheader" scope="col">要求的版本</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html" target="_blank">NetBeans IDE</a></td>
+                    <td class="tbltd1">Java EE 下载包</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html" target="_blank">Java 开发工具包 (JDK)</a></td>
+                    <td class="tbltd1">版本 6 或版本 7<br></td>
+                </tr>
+                <tr>
+                    <td class="tbltd1" colspan="2"><a href="http://www.twitter.com" target="_blank">Twitter</a> 帐户的用户名和口令</td>
+                </tr>
+            </tbody>
+        </table>
+    <h2><a name="jframe"></a>设计 JFrame</h2>
+        <p>在此步骤中，您将创建一些 GUI 元素，这些元素将用来显示 Twitter 好友时间线、用户图标以及读取和更新状态的位置。所有 GUI 元素都包装在 <a href="http://java.sun.com/javase/6/docs/api/" target="_blank">JFrame</a> 中。您不必完全按照此部分中的所述布置 GUI 元素。该布局只是一个建议。例如，您可以添加更多功能。但是，您需要至少创建本教程中提及的所有元素。</p>
+        <p><strong>设计 JFrame：</strong></p>
+        <ol>
+            <li>选择 "File"（文件）> "New Project"（新建项目）。此时将打开新建项目向导。选择 "Java" 类别，然后选择 "Java Application"（Java 应用程序）项目。单击 "Next"（下一步）。</li>
+            <li>将该项目命名为 TwitterSwingClient。选择一个项目位置。取消选中 <em>Create Main Class</em>（创建主类）。（JFrame 将会成为主类。）单击 "Finish"（完成）。<br /> <img alt="显示用于创建 TwitterSwingClient 项目的字段的新建项目向导" border="1" class="margin-around" height="443" src="../../../images_www/articles/72/websvc/twitter-swing/create-project.png" width="600">  </li>
+            <li>IDE 将创建 TwitterSwingClient 项目，该项目将显示在 "Projects"（项目）窗口中。右键单击 "TwitterSwingClient" 项目节点，然后选择 "New"（新建）> "JFrame Form"（JFrame 窗体），或者选择 "New"（新建）> "Other"（其他）> "Swing GUI Forms"（Swing GUI 窗体）> "JFrame Form"（JFrame 窗体）。此时将打开新建 JFrame 窗体向导。</li>
+            <li>将该窗体命名为 TwitterJFrame 并为其创建一个名为 <tt>twitterclient</tt> 的包。单击 "Finish"（完成）。 <br><img alt="显示用于创建 TwitterJFrame 的新建 JFrame 窗体向导" class="margin-around" height="447" src="../../../images_www/articles/72/websvc/twitter-swing/create-jframe-form.png" width="600"></li>
+            <li>IDE 将在编辑器的 "Design"（设计）视图中打开 TwitterJFrame。这里提供了一个包含所有 Swing 组件的组件面板，您可以将这些组件拖放至 JFrame 中。 <br><img alt="编辑器设计视图中的 Twitter JFrame" class="margin-around" height="368" src="../../../images_www/articles/72/websvc/twitter-swing/design-view.png" width="600"></li>
+            <li>在 "Palette"（组件面板）中的 "Swing Controls"(Swing 控件）下，单击 "Button"（按钮）图标。将其拖放至 JFrame 的右下角。请注意，该按钮显示为 jButton1，这是此 JButton 对象的名称。 <br><img alt="显示新添加的 jButton1 的 JFrame" class="margin-around b-all" height="409" src="../../../images_www/articles/72/websvc/twitter-swing/jbutton1.png" width="436"></li>
+            <li>右键单击 "jButton1"，然后从上下文菜单中选择 "Edit Text"（编辑文本）。将其显示文本更改为 "Update"。</li>
+            <li>将一个标签 (jLabel1) 拖放至 JFrame 的左下角。将其显示文本更改为 "Icon"。在此标签中将显示用户图标。 </li>
+            <li>将一个文本字段 (jTextField1) 拖放至标签和按钮之间。将其显示文本更改为 "Status"。单击该文本字段的右边框，然后将其朝按钮拉伸。此时会出现蓝色的基准线，指示到按钮的建议距离。</li>
+            <li>右键单击 "jLabel1"，然后从上下文菜单中选择 "Properties"（属性）。“jLabel1 属性”对话框打开。设置 "labelFor" 属性指向 jTextField1。（这样可以提高可访问性。） </li>
+            <li>找到最大大小、最小大小以及首选大小所对应的属性。将所有这些属性设置为 "[48,48]"，以与 Twitter 图标 48 X 48 像素的尺寸相匹配。 <br> <img alt="Twitter JFrame 中的 jLabel 1 的属性，显示最大值、最小值，并且其首选大小设置为 48、48" class="margin-around b-all" height="421" src="../../../images_www/articles/72/websvc/twitter-swing/jlabel-properties.png" width="497"></li>
+            <li>将一个滚动窗格拖放至 JFrame 的上半部分。拖动其边框，将其扩展至填充文本字段和按钮上方的大部分或全部空白区域。（如果希望在以后添加更多功能，如<a href="https://netbeans.org/projects/samples/downloads/download/Samples%252FWeb%2520Services%252FTwitterSwingClient.zip" target="_blank">样例</a>中的菜单，则可以留出一个旁注。）</li>
+            <li>将一个列表拖放至滚动窗格中。将显示一个项目样例列表。保存 TwitterJFrame。JFrame 应如下图所示： <br> <img alt="设计视图中的 Twitter JFrame，带有所有基本 GUI 元素" class="margin-around b-all" height="371" src="../../../images_www/articles/72/websvc/twitter-swing/jframe-with-list.png" width="561"> </li>
+        </ol>
+        <p>现在，您已具有用于 Swing 客户端的所有基本 GUI 组件。接下来，该添加第一个 Twitter SaaS（Software as a Service，服务型软件）操作。</p>
+        <h2><a name="show-status"></a>显示用户状态</h2>
+        <p>在此部分，您将创建一个新方法，并向此方法中添加 Twitter getUserTimeline 操作。getUserTimeline 操作可获取您的用户图标和当前状态。然后，您将向该方法中添加代码，以在 jLabel1 和 jTextField 中分别显示您的图标和状态。最后，您将向 JFrame 的构造函数中添加一行代码来初始化该方法。</p>
+        <p><strong>显示用户状态：</strong></p>
+        <ol>
+            <li>切换至 TwitterJFrame 的 "Source"（源）视图。</li>
+            <li>按 Alt-Insert 组合键，或右键单击并从上下文菜单中选择 "Insert Code"（插入代码）。此时会打开一个用于插入代码的菜单。<br /><img alt="用于在 initUserInfo 方法中插入代码的菜单" class="margin-around" height="158" src="../../../images_www/articles/72/websvc/twitter-swing/insert-code-menu.png" width="171"></li>
+            <li>单击 "Generate REST Client"（生成 REST 客户端）。"Available REST Resources"（可用的 REST 资源）对话框打开。<br /> <img alt=""Available REST Resources"（可用的 REST 资源）对话框" class="margin-around" height="263" src="../../../images_www/articles/72/websvc/twitter-swing/available-rest-dialog.png" width="386"></li>
+            <li>选择 "IDE Registered"（IDE 中的已注册服务）单选按钮，然后单击 "Browse"（浏览）。导航至 "Twitter" > "Twitter OAuth" > "[statuses]" > "[user_timeline.{format}]"。单击 "OK"（确定）。<br><img alt="带有 Web 服务树的 "Services"（服务）窗口，其中显示选定的 Twitter getUserTimelineById 操作" class="margin-around" height="583" src="../../../images_www/articles/72/websvc/twitter-swing/browse-user-timeline.png" width="430"></li>
+            <li>"Available REST Resources"（可用的 REST 资源）对话框现在会显示所选的 Twitter OAuth user_timeline 资源、对应的类名和 OAuth 验证类型。单击 "OK"（确定）。<br><img alt="已填充的 "Available REST Resource"（可用的 REST 资源）对话框" class="margin-around" height="263" src="../../../images_www/articles/72/websvc/twitter-swing/completed-rest-dialog.png" width="386"></li>
+            <li>此时会打开一个对话框，询问您是否希望通过 WADL 文件中的 XML 方案引用来生成 Java 对象。单击 "Yes"（是）。</li>
+            <li>在 TwitterJFrame 类的末尾，IDE 会生成一个名为 Twitter_OAuth_user_timeline__format_JerseyClient 的内部类。  
+              <p>该内部类很复杂，其中包含以下字段、方法和内部类：</p>
+              <ul>
+                <li><tt>CONSUMER_KEY</tt>：使用者键值字符串</li>
+                <li><tt>CONSUMER_SECRET</tt>：使用者密钥字符串</li>
+                <li><tt>initOAuth()</tt>：用于 OAuh 初始化的方法</li>
+                <li><tt>getUserTimeline()</tt>：对应于 HTTP 方法 getUserTimeline（来自 REST 资源）的方法</li>
+                <li><tt>makeOAuthRequestUnique()</tt>：对于一个会话中的多个 API 调用非常有用</li>
+                <li><tt>login</tt>：用于登录 Twitter 应用程序（强制授权）。此方法会调用另外两个生成的方法：<tt>getOAuthAccessToken</tt> 和 <tt>getOAuthRequestToken</tt>。</li>
+              </ul>
+              <p>以下是 "Navigator"（导航器）窗口中显示的类结构。</p>
+              <img alt="显示 Twitter_OAuth_user_timeline__format_JerseyClient 类的 "Navigator"（导航器）窗口" class="margin-around" height="459" src="../../../images_www/articles/72/websvc/twitter-swing/user-timeline-internal-class.png" width="572"></li>
+            <li>在内部 Twitter_OAuth_user_timeline__format_JerseyClient 类正上方的 TwitterJFrame 中，插入以下代码行。此代码会创建一个名为 <tt>client</tt> 的变量，代表内部类的实例。
+              <pre class="examplecode">private Twitter_OAuth_user_timeline__format_JerseyClient client;</pre>
+            <img alt="在内部类正上方显示客户端变量的代码片段" class="margin-around b-all" height="141" src="../../../images_www/articles/72/websvc/twitter-swing/class-variable.png" width="591"></li>
+            <li>找到 TwitterJFrame 中的 <tt>main</tt> 方法。在此方法上方，创建一个名为 <tt>initUserInfo</tt> 的新方法，用于引发 MalformedURLException 和 IOException。
+              <pre class="examplecode">private void initUserInfo() throws MalformedURLException, IOException {
+
+
+
+}</pre>
+            </li>
+            <li>将以下代码插入 <tt>initUserInfo</tt> 的方法主体。代码中的注释说明了代码的作用。
+            <pre class="examplecode">private void initUserInfo() throws MalformedURLException, IOException {
+<br>
+    //Create an instance of the internal service class
+    client = new Twitter_OAuth_user_timeline__format_JerseyClient("xml");
+<br>
+    //Log in, get tokens, and append the tokens to the consumer and secret
+    //keys
+    client.login();
+    client.initOAuth();
+<br>
+    //Call getUserTimeline, get a list of statuses, pass the most recent
+    //status as a StatusType object, and display the text of that object
+    //in the JTextField
+    Statuses statuses = client.getUserTimeline(Statuses.class, null, null, null, "1");
+    StatusType st = statuses.getStatus().get(0);
+    jTextField1.setText(st.getText().trim());
+<br>
+    //Get a UserType object from the StatusType object, get the URL of that
+    //user's icon, and display that icon in the JLabel
+    UserType user = st.getUser();
+    String iconSrc = user.getProfileImageUrl();
+    URL iconUrl = new URL(iconSrc);
+    ImageIcon icon = new ImageIcon(iconUrl, user.getScreenName());
+    jLabel1.setIcon(icon);
+}</pre>
+            </li>
+            <li>打开 "Fix Imports"（修复导入）对话框（按 Ctrl/⌘-Shift-I 组合键，或从上下文菜单中进行选择）。在该对话框中，选择 twitter.twitteroauth.twitterresponse.StatusType，而不是默认的 Java StatusType 类。<br> <img alt="完成 initUserInfo 方法后的 "Fix Imports"（修复导入）对话框" class="margin-around" height="347" src="../../../images_www/articles/72/websvc/twitter-swing/inituserinfo-imports.png" width="580"></li>
+            <li>将 try/catch 块添加到 TwitterJForm 构造函数中，以在应用程序运行时调用 <tt>initUserInfo</tt>。在添加 try/catch 块之后进行修复导入。
+              <pre class="examplecode">public TwitterJFrame() {
+    initComponents();
+
+    try {
+        initUserInfo();
+    } catch (IOException ex) {
+        Logger.getLogger(TwitterJFrame.class.getName()).log(Level.SEVERE, null, ex);
+    }
+ }</pre>
+            </li>
+        </ol>
+    <p>在您<a href="#authentication">从 Twitter 获取 OAuth 键值</a>之后，就可以运行该项目了。右键单击该项目节点，然后从上下文菜单中选择 "Run"（运行）。将打开一个应用程序，显示您的用户图标和状态。</p>
+    
+    <h2><a name="authentication"></a>从 Twitter 获取 OAuth 键值</h2>
+        <p>为了使 Java 应用程序能够访问 Twitter 数据，您需要从 Twitter 获取 CUSTOMER 和 CUSTOMER_SECRET 键值，以及验证字符串。Twitter 使用 OAuth 授权，而 OAuth 授权需要这些键值。但是，预计 OAuth 将设置为可由服务器上的 Web 应用程序调用。为了获取授权码，您要注册“伪”Web 应用程序。</p>
+        <p><b>从 Twitter 获取 OAuth 键值：</b></p>
+        <ol>
+          <li>打开浏览器。转至 <a href="http://twitter.com/apps" target="_blank">"Twitter" > "Applications"（应用程序）</a>页面，然后单击 <a href="http://twitter.com/apps/new" target="_blank">Register a new application</a>（注册新应用程序）。您需要登录 Twitter 帐户。如果您具有多个帐户，请确保您登录到正确的帐户。</li>
+          <li>在 <strong>Application Name</strong>（应用程序名称）文本字段中键入 <tt>NB User Timeline Application</tt>。</li>
+          <li>在 <strong>Description</strong>（描述）字段中键入描述。此字段为必填字段。您可以键入一些类似 "Java application created in NetBeans IDE calling the user_timeline operation" 的内容。</li>
+          <li>在 <strong>Application Website</strong>（应用程序网站）字段中键入任意 URL。</li>
+          <li>在 <strong>Application Type</strong>（应用程序类型）选项中，选择 "Client"（客户端）单选按钮。</li>
+          <li>在 <strong>Default Access Type</strong>（默认访问类型）部分，选择 "Read &amp; Write"（读和写）按钮。
+          <p class="alert"><strong>注：</strong>确保您选择的是 "Read &amp; Write"（读和写）。尽管您可以稍后返回来编辑您的设置，但这似乎不会影响您的应用程序访问权限。</p></li>
+          <li>将其他选项保留为默认设置，然后按 "Save"（保存）。此时会打开浏览器页面，其中包含您已注册的应用程序的详细信息。重要的详细信息是 <strong>Consumer key</strong>（使用者键值）和 <strong>Consumer secret</strong>（使用者密钥）。</li>
+          <li>从浏览器中复制 "Consumer key"（使用者键值）。在 IDE 中，找到其中设置 <tt>CONSUMER_KEY</tt> 的行。在引号之间粘贴使用者键值。 <br> <img alt="显示 CONSUMER_KEY 和 CONSUMER_SECRET 位置的 TwitterClient" border="1" class="margin-around" height="269" src="../../../images_www/articles/72/websvc/twitter-swing/keys-in-twitter-client.png" width="552"></li>
+          <li>将浏览器中的使用者密钥键值复制并粘贴到 TwitterSwingClient。保存所做的更改。</li>
+        </ol>
+        <h2><a name="run"></a>运行项目</h2>
+        <p>既然您已具有使用者键值和使用者密钥键值，就可以开始运行项目了。该应用程序会调用 Twitter，此过程将打开浏览器窗口以使应用程序能够访问数据。 </p>
+        <p><strong>运行项目：</strong></p>
+        <ol>
+          <li>如果 TwitterSwingClient 是您的主项目，请按 F6。否则，请右键单击 "TwitterSwingClient" 项目节点，然后从上下文菜单中选择 "Run"（运行）。</li>
+          <li>此时会打开浏览器窗口，询问您是否希望允许已注册的应用程序访问 Twitter 数据。单击 "Allow"（允许）。</li>
+          <li>浏览器窗口会更新为显示个人识别码的新窗口。复制此个人识别码。</li>
+          <li>在 IDE 中，输出窗口会显示一个请求，要求您键入 oauth_verifier 字符串。在冒号 : 后面粘贴个人识别码，然后按 Enter 键。<br><img alt="IDE 中要求提供验证器字符串的 "Output"（输出）窗口，此时尚未粘贴该字符串" class="margin-around" height="128" src="../../../images_www/articles/72/websvc/twitter-swing/request-verifier-string.png" width="496"></li>
+          <li>此时会打开桌面客户端，显示最新的 Twitter 状态消息。<br> <img alt="显示用户图标和状态的正在运行的应用程序" class="margin-around b-all" height="338" src="../../../images_www/articles/72/websvc/twitter-swing/client-showing-status.png" width="556"></li>
+        </ol>
+        <h2><a name="multiservis"></a>调用多项<tt></tt>服务</h2>
+        <p>应用程序的最终设计需要调用三项 Twitter 服务：user_timeline{format}（已经调用）、update{format} 和 friends_timeline{format}。对这些服务的调用需要共享一个登录名。为了使这些调用共享同一个登录名，它们必须在同一个客户端类中。从一个客户端调用多项服务需要以下两个步骤：</p>
+        <ul>
+          <li>将多项服务添加到一个客户端类中。</li>
+          <li>修改客户端类中的资源路径</li>
+        </ul>
+        <div class="indent">
+            <h3><a name="add-services"></a>添加服务并将调用合并到一个类中</h3>
+    <p>在此部分中，您首先为其他服务添加客户端，然后将它们合并到一个常规客户端中。 </p>
+    <p><strong>添加多项服务：</strong></p>
+        <ol>
+            <li>按 Alt-Insert 组合键，然后选择 "Generate REST Client"（生成 REST 客户端）。<br> <img alt="用于在 initUserInfo 方法中插入代码的菜单" class="margin-around" height="158" src="../../../images_www/articles/72/websvc/twitter-swing/insert-code-menu.png" width="171"></li>
+            <li>按照<a href="#show-status">显示您的用户状态</a>部分遵循的过程生成 REST 客户端，只是选择 "[statuses]" &gt; "[update.{format}]" 服务。IDE 会生成内部类 Twitter_OAuth_update__format_JerseyClient，它类似于 Twitter_OAuth_user_timeline__format_JerseyClient 类。<br> <img alt="显示更新格式服务的 "Available REST Resources"（可用的 REST 资源）对话框" class="margin-around" height="567" src="../../../images_www/articles/72/websvc/twitter-swing/select-update-format.png" width="430"></li>
+            <li>重复上文中的步骤 1 和 2 为 [friends_timeline.{format}] 服务添加客户端。</li>
+            <li>更改原始 Twitter_OAuth_user_timeline__format_JerseyClient 类的名称。您将生成此调用所有 3 项服务的常规客户端类。选择名称为 Twitter_OAuth_user_timeline__format_JerseyClient 的实例，然后按 Ctrl-R 组合键，或者右键单击并选择 "Refactor"（重构）> "Rename"（重命名）。“重命名类”对话框打开。键入新的名称 TwitterClient。<br><img alt="带有新名称 TwitterClient 的 "Rename Class"（重命名类）对话框" class="margin-around" height="225" src="../../../images_www/articles/72/websvc/twitter-swing/rename-dialog.png" width="396"></li>
+            <li>单击 "Refactor"（重构）。IDE 会替换类名的所有实例。<br><img alt="类名已在多个位置更改" border="1" class="margin-around" height="163" src="../../../images_www/articles/72/websvc/twitter-swing/replaced-names.png" width="331"></li>
+            <li>在 "Navigator"（导航器）窗口中，找到 Twitter_Oauth_friends_timeline__format_JerseyClient 类。在该类中，找到并双击 <tt>getFriendsTimeline</tt> 方法。<br> <img alt="显示 getPublicTimeline 方法的 "Navigator"（导航器）窗口" class="margin-around" height="286" src="../../../images_www/articles/72/websvc/twitter-swing/navigate-getpublictimeline.png" width="369"></li>
+            <li>编辑器中的光标会移动至 <tt>getFriendsTimeline</tt> 方法。剪切该方法（在下方重新生成）。
+              <pre class="examplecode">public &lt;T&gt; T getFriendsTimeline(Class&lt;T&gt; responseType, String since, String since_id, String page, String count) throws UniformInterfaceException {
+      String[] queryParamNames = new String[]{"since", "since_id", "page", "count"};
+      String[] queryParamValues = new String[]{since, since_id, page, count};
+      return webResource.queryParams(getQueryOrFormParams(queryParamNames, queryParamValues)).accept(javax.ws.rs.core.MediaType.TEXT_XML).get(responseType);
+}</pre>
+            </li>
+            <li>将 <tt>getFriendsTimeline</tt> 方法粘贴到 <tt>getUserTimeline</tt> 方法下的 TwitterClient 内部类中。</li>
+            <li>将 <tt>updateStatus</tt> 方法从 Twitter_OAuth_update__format_JerseyClient 剪切并粘贴到 <tt>getFriendsTimeline</tt> 方法下的 TwitterClient 中。</li>
+        </ol>
+            
+            
+            
+            
+    <h3><a name="modify-paths"></a>修改资源路径</h3>
+            <p>现在，所有 Twitter 服务调用都在一个客户端类中。但是，该客户端类中的资源路径的构造不正确。在 IDE 最初生成该类时，还生成了特定于 user_timeline 服务的资源路径。您需要修改该类，以使得在该类级别下，资源路径是通用的，并且特定路径由服务调用方法指定。</p>
+            <p><strong>修改资源路径：</strong></p>
+            <ol>
+            <li>找到 TwitterClient 构造函数，并删除 <tt>String format</tt> 参数。<br> <img alt="从构造函数中删除参数之前和之后的视图" class="margin-around" height="160" src="../../../images_www/articles/72/websvc/twitter-swing/remove-format-pm.png" width="600"></li>
+            <li>此时右旁注中会出现一个红色的错误线。单击该错误线，您会转至 <tt>initUserInfo</tt> 中实例化 TwitterClient 类的行。此行为 <tt>client = new TwitterClient("xml");</tt>。删除参数 "xml"，因为 TwitterClient 构造函数不再使用该参数。该行现在为 <tt>client = new TwitterClient();</tt>。此时错误图标会消失。</li>
+            <li>返回到 TwitterClient 构造函数。（"Navigator"（导航器）窗口可以帮助您完成。）找到以下行：
+            <pre class="examplecode">String resourcePath = java.text.MessageFormat.format("statuses/user_timeline.{0}", new Object[]{format}); </pre>
+            <p>此行为整个类设置 <tt>resourcePath</tt>。更改该行，以使 <tt>resourcePath</tt> 指向父 <tt>statuses</tt> 目录。该行现在如下所示：</p>
+            
+            <pre class="examplecode">String resourcePath = &quot;statuses&quot;;</pre></li>
+            
+            <li>导航至 <tt>getUserTimeline</tt> 方法。找到 <tt>return</tt> 行：<br>
+            <pre class="examplecode">return webResource.queryParams(getQueryOrFormParams(queryParamNames, queryParamValues))...;</pre>
+            <p>将路径信息（在下方的 <strong>boldface</strong> 中）附加到调用的开头。</p><pre class="examplecode">return webResource.<strong>path("user_timeline.xml").</strong>queryParams(getQueryOrFormParams(queryParamNames, queryParamValues)).accept(javax.ws.rs.core.MediaType.TEXT_XML).get(responseType);</pre>
+            </li>
+            <li>导航至 <tt>getFriendsTimeline</tt> 方法。找到 <tt>return</tt> 行：<br>
+              <pre class="examplecode">return webResource.queryParams(getQueryOrFormParams(queryParamNames, queryParamValues)).accept(javax.ws.rs.core.MediaType.TEXT_XML).get(responseType);</pre>
+              <p>将路径信息附加到调用的开头。</p>
+              <pre class="examplecode">return webResource.path(&quot;friends_timeline.xml&quot;).queryParams(getQueryOrFormParams(queryParamNames, queryParamValues)).accept(javax.ws.rs.core.MediaType.TEXT_XML).get(responseType);<br>
+              </pre>
+            </li>
+            <li>导航至 <tt>updateStatus</tt> 方法。找到 <tt>return</tt> 行：<br>
+              <pre class="examplecode">return webResource.type(javax.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED)...</pre>
+              <p>将路径信息附加到调用的开头。</p>
+              
+              <pre class="examplecode">return webResource.<strong>path(&quot;update.xml&quot;).</strong>type(javax.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED).post(responseType, getQueryOrFormParams(formParamNames, formParamValues));</pre>
+            </li>
+            <li>找到并注释掉 TwitterClient 的 <tt>setResourcePath</tt> 方法。该方法还没有被调用，但这是一个预防措施。</li>
+            <li>删除 Twitter_OAuth_update__format_JerseyClient 和 Twitter_Oauth_friends_timeline__format_JerseyClient 类。 </li>
+            </ol>
+            
+    <p>您现在已经可以通过 JerseyClient 类获得所有三项服务。</p>
+            <p class="alert"><b>重要信息：</b>您要在上述过程中更改三种方法内的三个 <tt>return</tt> 语句。请确保更改所有三个语句！</p>
+            </div>
+            <h2><a name="update-status"></a>添加更新状态操作</h2>
+            <ol>
+            <li>返回至 TwitterJFrame 的 "Design"（设计）视图。双击 JFrame 中的 "Update" 按钮。编辑器会切换回 "Source"（源）视图，并且光标位于 IDE 刚创建的 <tt>jButton1ActionPerformed</tt> 方法主体内。 <br> <img alt="源视图中的 TwitterJFrame，光标位于新创建 jButton1ActionPerformed 方法的中间" border="1" class="margin-around" height="341" src="../../../images_www/articles/72/websvc/twitter-swing/jbutton1-code.png" width="600"></li>
+            <li>按照如下方式填写 <tt>jButton1ActionPerformed</tt> 方法正文：
+            <p class="alert"><b>注：</b>当您更新您的状态时，该状态会以 UTF-8 编码形式显示，并且空格显示为 + 号或 %21 符号等。但是，如果未将文本字段内容转换为 UTF-8，则在状态消息中键入任何空格时，应用程序将失败，并显示“签名无效”！如果有任何人发现了解决此问题的方法，请使用教程底部的“反馈”链接与我们联系。 </p>
+            <pre class="examplecode">private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {                                         
+    String rawStatus = jTextField1.getText().trim();
+    String status = URLEncoder.encode(rawStatus, &quot;UTF-8&quot;);
+    client.makeOAuthRequestUnique();
+    try {
+    client.updateStatus(String.class, status, null);
+    } catch(UniformInterfaceException ex) {
+        System.out.println("Exception when calling updateStatus = " + ex.getResponse().getEntity(String.class));
+    }
+
+}    </pre>
+            </li>
+        </ol>
+    <p>此代码从文本字段获取文本，并将其传递到 <tt>updateStatus</tt> 类。请注意对 <tt>makeOAuthRequestUnique</tt> 的调用。代码会调用此方法，因为在应用程序初始化时，就已经登录，并且由对 <tt>initUserInfo</tt> 中的 <tt>login</tt> 和 <tt>initOAuth</tt> 的调用进行了验证。<tt>makeOAuthRequestUnique</tt> 方法增加了现有的 OAuth 和时间戳参数，以确保每个请求都是唯一的。</p>
+    <p class="alert"><b>注：</b>并不完全清除此处调用 <tt>makeOAuthRequestUnique</tt> 或 <tt>initOAuth</tt> 效果是否会更好。如果您遇到验证问题，请使用这两种形式进行试验。</p>
+    <p>另外请注意，对 <tt>updateStatus</tt> 的调用包装在 try/catch 块中。这样可以帮助您调试在调用 <tt>updateStatus</tt> 时可能发生的任何问题。</p>
+    <h2><a name="public-timeline-autoupdate"></a>在 JFrame 中显示用户名和状态</h2>
+        <p>现在，将应用程序设置为显示您的 Twitter 好友的用户名和状态。 </p>
+<ul>
+            <li>为了从 Twitter 获取用户名和状态，应用程序将在运行时调用 Twitter <tt>getFriendsTimeline</tt> 操作。要对此进行设置，<a href="#add-run">请创建新的 run 方法</a>，该方法将覆盖 <tt>main</tt> 中的 <tt>run</tt> 方法。将对 <tt>getFriendsTimeline</tt> 的调用插入此方法中。</li>
+  <li>要使显示自动更新，<a href="#timer-task">请将包含</a> <tt>getFriendsTimeline</tt> 操作的 run 方法包装到 <tt><a href="http://java.sun.com/javase/6/docs/api/java/util/TimerTask.html" target="_blank">java.util.TimerTask</a></tt> 类中，该类每 75 秒执行一次 <tt>run</tt> 方法。</li>
+            <li>应用程序将以列表中单元格的形式显示数据。您需要将数据传递到能够以列表中单元格的形式呈现的 GUI 组件中，同时还需要设置数据显示的格式。要实现此操作，请<a href="#listcellrenderer">创建一个新 JPanel</a>，以实现 <tt><a href="http://java.sun.com/javase/6/docs/api/javax/swing/ListCellRenderer.html" target="_blank">javax.swing.ListCellRenderer</a></tt>。该 JPanel 返回一个 <tt><a href="http://java.sun.com/javase/6/docs/api/java/awt/Component.html" target="_blank">java.awt.Component</a></tt> 对象，其中包含传入 JLabel 的用户名和状态。此外，还需调整 JPanel 的格式。 </li>
+            <li>在 TwitterJFrame 中，<a href="#display-component">设置 JList</a> 以显示由 JPanel 返回的 Component 对象。 </li>
+    </ul>
+        <div class="indent">
+            <h3><a name="timer-task"></a>创建 TimerTask</h3>
+            <p>要自动更新显示的 Twitter 好友时间线，请将执行代码包装到 TimerTask 中。首先编写一个 TimerTask 包装器，然后使用执行代码填充该包装器。否则，代码将出现许多错误警告。</p>
+            <p><strong>创建 TimerTask：</strong></p>
+            <ol>
+                <li>在编辑器的 "Source"（源）视图中打开 TwitterJFrame。</li>
+                <li>找到类声明和构造函数。
+                    <pre class="examplecode">public class TwitterJFrame extends javax.swing.JFrame {
+
+    /** Creates new form TwitterJFrame */
+    public TwitterJFrame() {
+        initComponents();
+        try {
+            initUserInfo();
+        } catch (IOException ex) {
+            Logger.getLogger(TwitterJFrame.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }</pre>
+                </li>
+                <li>在构造函数方法主体的 <tt class="examplecode">initComponents();</tt> 上面，实例化 <tt><a href="http://java.sun.com/javase/6/docs/api/java/util/Timer.html" target="_blank">java.util.Timer</a></tt> 类。参数将 <tt>Timer</tt> 线程命名为 "Twitter Updater"，并且指定该线程不能以守护进程运行。
+
+                    <pre class="examplecode">public class TwitterJFrame extends javax.swing.JFrame {
+
+    /** Creates new form TwitterJFrame */
+    public TwitterJFrame() {<strong>
+        Timer t = new Timer("Twitter Updater`", false);</strong>
+        initComponents();
+        try {
+            initUserInfo();
+        } catch (IOException ex) {
+            Logger.getLogger(TwitterJFrame.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+                    </pre>
+                </li>
+                <li>在编辑器中的任意位置右键单击，然后从上下文菜单中选择 "Fix Imports"（修复导入），或者按 Ctrl/⌘-Shift-I 组合键。此时将打开一个对话框，您可以选择要导入的类。为 <tt>java.util.Timer</tt> 添加一个 import 语句。</li>
+                <li>在 <tt>Timer</tt> 实例化下面，创建一个新 <tt>Timer.scheduleAtFixedRate</tt> 方法。该方法的参数包括一个 <tt>TimerTask</tt> 对象、该方法首次运行任务前的延迟及其运行任务的频率。将方法设置为在初次运行之前等待 30 秒，并且每 75 秒重新运行一次。（较长的初始延迟为您提供了登录的时间。）具体的代码如下所示（粗体显示的部分）。在放置执行代码的位置留有一个空行。请注意，必须为 <tt>java.util.TimerTask</tt> 添加一个 import 语句。
+                    <pre class="examplecode">public class TwitterJFrame extends javax.swing.JFrame {
+
+    /** Creates new form TwitterJFrame */
+    public TwitterJFrame() {
+        Timer t = new Timer("Twitter Updater`", false);<strong>
+        t.scheduleAtFixedRate(new TimerTask() {<br><br>
+        }, 30000, 75000);</strong>
+        initComponents();
+        try {
+            initUserInfo();
+        } catch (IOException ex) {
+            Logger.getLogger(TwitterJFrame.class.getName()).log(Level.SEVERE, null, ex);
+        }
+     }</pre>
+              </li>
+            </ol>
+          <p>现在，已完成 <tt>TimerTask</tt> 包装器代码。接下来，您将添加执行代码。</p>
+          <h3><a name="add-run"></a>使用 <tt>getFriendsTimeline</tt> 操作添加 <tt>run</tt> 方法</h3>
+            <p>为了显示用户名和状态，应用程序将首先从 Twitter 获取该数据。Twitter SaaS 提供了用于获取用户名和状态的 <tt>getFriendsTimeline</tt> 操作。要在应用程序运行时执行 <tt>getFriendsTimeline</tt> 操作，该操作必须包含在 <tt>run</tt> 方法内。最后，因为应用程序将在 JList 中显示用户名和状态，所以应用程序需要将 <tt>getFriendsTimeline</tt> 的结果作为 <tt><a href="http://java.sun.com/javase/6/docs/api/javax/swing/DefaultListModel.html" target="_blank">DefaultListModel</a></tt> 对象的元素进行添加。 </p>
+          <p><strong>使用 getFriendsTimeline 操作添加 run 方法：</strong></p>
+            <ol>
+                <li>在 TwitterJFrame 构造函数上面，创建一个名为 <tt>statusesListModel</tt> 的 <tt>DefaultListModel</tt> 对象。
+                    <pre class="examplecode">public class TwitterJFrame extends javax.swing.JFrame {
+
+    <strong>private DefaultListModel statusesListModel = new DefaultListModel();</strong>
+<br>
+    /** Creates new form TwitterJFrame */
+    public TwitterJFrame() {
+                    </pre>
+                </li>
+                <li>在编辑器中的任意位置右键单击，然后从上下文菜单中选择 "Fix Imports"（修复导入），或者按 Ctrl/⌘-Shift-I 组合键。此操作将为 <tt>DefaultListModel</tt> 添加一个 import 语句。</li>
+                <li>在 <tt>TimerTask</tt> 对象的主体中，创建一个新 <tt>run</tt> 方法。使用 <tt>@Override</tt> 标注覆盖 <tt>main</tt> 中的 <tt>run</tt> 方法。
+                    <pre class="examplecode">public class TwitterJFrame extends javax.swing.JFrame {
+
+    private DefaultListModel statuses = new DefaultListModel();<br><br>
+
+
+
+    /** Creates new form TwitterJFrame */
+    public TwitterJFrame() {
+        Timer t = new Timer(&quot;Twitter Updater`&quot;, false);<br>        t.scheduleAtFixedRate(new TimerTask() {<br>         <strong>   @Override</strong><br>            <strong>public void run(){<br>             <br>            }</strong><br>        }, 1500, 75000);<br>        initComponents();
+        try {
+            initUserInfo();
+        } catch (IOException ex) {
+            Logger.getLogger(TwitterJFrame.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    </pre>
+                </li>
+              <li>将以下代码插入<tt></tt> <tt>run</tt> 方法的主体。 
+                <pre class="examplecode">@Override
+public void run() {
+    <strong>System.out.println("Timer Task is running");
+    try {
+        client.initOAuth();
+        Statuses response = client.getFriendsTimeline(Statuses.class, null, null, null, "10");
+        // Clear the list model so it does not replicate the contents from the last run
+        statusesListModel.clear();
+        // Create a Status Type object for every status in the Status list, and add an element
+        // to the list model for every status type object
+        for (final StatusType st : response.getStatus()) {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    statusesListModel.addElement(st);
+                }
+            });
+        }
+    } catch (UniformInterfaceException ex) {
+    System.out.println("Exception when calling getFriendsTimeline = " + ex.getResponse().getEntity(String.class));
+    }
+</strong>}</pre>
+              </li>
+                
+            </ol>
+          <p>现在，已完成从 Twitter 好友时间线获取状态的代码。接下来，您将编写一个新类，以返回 <tt>Component</tt>，其中包含在 GUI 组件中呈现的列表元素。</p>
+          <h3><a name="listcellrenderer"></a>创建呈现组件的列表单元格</h3>
+            <p>现在，您已具有可从 Twitter 好友时间线获取 <tt>Status</tt> 对象并为每个 Status 创建列表元素的代码。但是，无法在 JList 中显示这些原始列表元素。您需要将数据传递到 GUI 组件中。要实现此操作，请创建一个新 JPanel，以实现 <tt><a href="http://java.sun.com/javase/6/docs/api/javax/swing/ListCellRenderer.html" target="_blank">javax.swing.ListCellRenderer</a></tt>。该 JPanel 返回一个 <tt><a href="http://java.sun.com/javase/6/docs/api/java/awt/Component.html" target="_blank">java.awt.Component</a></tt> 对象，其中包含传入 JLabel 的用户名和状态。您可以在 JPanel 中定制 JLabel 的外观。 </p>
+            <p><strong>添加呈现组件的列表单元格：</strong></p>
+            <ol>
+                <li>右键单击该项目的节点，然后选择 "New"（新建）> "JPanel Form"（JPanel 窗体）。此时将打开新建 JPanel 窗体向导。</li>
+                <li>将该 JPanel 命名为 <tt>Item</tt>，并将其放置在 <tt>twitterclient</tt> 包中。 <br> <img alt="显示名为 "Item"（项）的面板和包 twitterclient 的新建 JPanel 窗体向导" border="1" class="margin-around" height="286" src="../../../images_www/articles/72/websvc/twitter-swing/create-jpanel-form.png" width="600"></li>
+                <li>单击 "Finish"（完成）。将在编辑器的 "Design"（设计）视图中打开 <tt>Item.java</tt>。 </li>
+                <li>将一个标签和一个文本窗格拖放至 JPanel 中。标签将显示用户名，而文本窗格将显示用户的状态消息。</li>
+                <li>调整标签和文本窗格的位置，以使其与希望的数据显示方式相匹配。在下图中，用户名位于左上角，而状态文本则位于紧随其下略微缩进的位置。在<a href="https://netbeans.org/projects/samples/downloads/download/Samples%252FWeb%2520Services%252FTwitterSwingClient.zip" target="_blank">样例</a>项目中，左上角显示数据，右下角显示用户名。应在 JPanel 中的文本窗格下面留出足够的空间，以便文本窗格在包含较长的文本时进行扩展。<br> <img alt="显示用户名和状态文本的 jlabel 的布局" class="margin-around b-all" height="198" src="../../../images_www/articles/72/websvc/twitter-swing/item-layout.png" width="425"></li>
+                <li>右键单击 JLabel 元素，然后从上下文菜单中选择 "Properties"（属性）。在 "Properties"（属性）中，可以对字体、颜色、对齐方式以及其他属性进行更改。将 <tt>labelFor</tt> 属性设置为指向 jTextPane1。这样可以提高可访问性。尝试调整标签的属性直到您对外观满意为止。在下图中，前景属性中的字体颜色已被设置为蓝色。 <br> <img alt="前景设置为蓝色的 JLabel 属性对话框" border="1" class="margin-around" height="527" src="../../../images_www/articles/72/websvc/twitter-swing/item-label-color.png" width="557"></li>
+                <li>打开 JTextPane 的 "Properties"（属性）对话框，然后尝试调整其外观。</li>
+                <li>切换至 <tt>Item.java</tt> 的 "Source"（源）视图。找到 "Generated Code" 块并将其展开。此操作将显示设置 JLabel 和 JTextPane 的属性时由 IDE 生成的代码。
+                    <p>在下图中，请注意对 JLabel1 所做的蓝色设置。您能看出对 JTextPane 设置了哪些属性吗？</p>
+                <img alt="通过在设计视图中设置 JLabel 属性在 Item.java 中生成的代码" class="margin-around b-all" height="350" src="../../../images_www/articles/72/websvc/twitter-swing/item-generated-code.png" width="592"></li>
+                <li>找到类声明，然后添加代码 <tt class="examplecode">implements ListCellRenderer</tt>。
+                    <pre class="examplecode">public class Item extends javax.swing.JPanel <strong>implements ListCellRenderer</strong> {</pre>
+                </li>
+                <li>按 Ctrl-Shift-I 组合键（在 MacOS 上按 ⌘-Shift-I 组合键）。此操作将为 <tt>javax.swing.ListCellRenderer</tt> 添加一个导入语句。此时会出现一个警告，指明需要实现所有抽象方法。 </li>
+                <li> 在生成的代码块和变量声明之间添加一些空行。向该空白区域中添加以下代码，以实现抽象方法 <tt>getListCellRendererComponent</tt>。（可以复制并粘贴该代码，也可以尝试使用代码完成生成该代码。）该代码将使用通过 twitteroauth StatusType 类获取的 Text、User 和 ScreenName 对象替换默认的标签文本 "username" 和 "text"。然后，该代码将返回一个包含这些新 JLabel 文本值的 Component 实例。
+                    <pre class="examplecode">public Component getListCellRendererComponent(JList list, Object value, int index, boolean sel, boolean focus) {
+        StatusType st = (StatusType) value;
+        jTextPane1.setText(st.getText());
+        jLabel1.setText("&lt;html&gt;" + st.getUser().getScreenName() + "&lt;/html&gt;");
+        return this;
+}</pre>
+                </li>
+            <li>按 Ctrl-Shift-I 组合键（在 MacOS 上按 ⌘-Shift-I 组合键）。此操作将为 StatusType 和 Component 类添加导入语句。选择 StatusType 的 twitteroauth 版本。保存 Item.java。</li>
+            </ol>
+            <p>现在，您已具有一个 Item 类，该类返回其中包含在 JLabel 和 JTextPane 中显示的用户名和状态的 Component 对象。接下来，您将修改 TwitterJFrame 以使用此 Component。</p>
+
+            <h3><a name="display-component"></a>在 TwitterJFrame 中显示 Component</h3>
+            <p>为了显示在 Item.java 中创建的 Component 对象，TwitterJFrame 中的 JList 必须使用 Item.java 作为其单元格呈现器。 </p>
+            <ol>
+                <li>返回至 TwitterJFrame。在 "Design"（设计）视图中，选择 JList。单击鼠标右键，然后打开其 "Properties"（属性）。 <br><img alt="TwitterJFrame 中 JList 元素的属性对话框" class="margin-around b-all" height="462" src="../../../images_www/articles/72/websvc/twitter-swing/jlist-properties.png" width="460"></li>
+                <li>选择 <tt>model</tt> 属性。按 Ctrl-空格组合键。将打开定制属性编辑器，其中显示了列表中所显示的默认文本。 <br><img alt="Jlist 定制属性编辑器" class="b-all margin-around" height="265" src="../../../images_www/articles/72/websvc/twitter-swing/jlist-custom-editor.png" width="458"></li>
+                <li>在 "Set jLlist1's model property using:"（使用以下内容设置 jList1 的 model 属性：）下拉菜单中，选择 "Custom Code"（定制代码）。将出现一个文本字段，可以在其中键入 <tt>jLabel1.setModel</tt> 的属性。在该字段中键入 <tt>statusesListModel</tt>，然后单击 "OK"（确定）。 <br><img alt="jList 定制属性编辑器，其中显示在定制代码编辑器中选定了 setModel(statuses)" class="margin-around" height="341" src="../../../images_www/articles/72/websvc/twitter-swing/jlist-model.png" width="433">
+                <li>在 "Properties"（属性）对话框中，选择 "cellRenderer"，然后按 Ctrl-空格组合键。将打开定制属性编辑器。</li>
+                <li>在 "Set jList1's cellRenderer property using:"（使用以下内容设置 jList1 的 cellRenderer 属性：）下拉菜单中，选择 "Custom Code"（定制代码）。将出现一个文本字段，可以在其中键入 <tt>jList1.cellRenderer</tt> 的属性。键入 <tt>new Item()</tt>，然后单击 "OK"（确定）。 <br><img alt="显示选定新项的 JList 定制单元格呈现器属性编辑器" class="margin-around" height="221" src="../../../images_www/articles/72/websvc/twitter-swing/jlist-custom-cell-renderer.png" width="498"></li>
+            </ol>
+
+            <p>现在，已完成客户端应用程序！保存所有文件，然后运行该应用程序。（右键单击项目节点，然后选择 "Run"（运行）。）此时将打开该应用程序，其中显示一个时间线消息列表以及一个包含您自己状态的字段。</p>
+        <img alt="显示 Twitter 消息的正在运行的客户端" class="margin-around" height="374" src="../../../images_www/articles/72/websvc/twitter-swing/client-display.png" width="570">        </div>
+        <h2><a name="connecting-proxy"></a>通过代理进行连接；</h2>
+	
+	  
+<p>如果您是通过代理连接至 Internet 的，则需要同时对 IDE 和 TwitterSwingClient 项目进行配置以使用代理设置。</p>
+<p>要配置 IDE，请打开 "Tools"（工具）> "Options"（选项）> "General"（常规）。找到 "Proxy Settings"（代理设置）部分。您可以选择使用无代理设置、使用系统代理设置或使用手动代理设置。IDE 将从默认的系统 Web 浏览器中获取系统代理设置。</p>
+<p>对于 TwitterSwingClient 项目，需要指定 HTTP 协议处理程序使用的代理。<a href="http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html" target="_blank">Java SE 6 文档</a>中对此进行了介绍。您需在传递给虚拟机的选项中指定代理。在 NetBeans IDE 中，这些选项是在 "Properties"（属性）对话框中设置的。</p>
+<p><strong>为 TwitterSwingClient 项目指定代理：</strong></p>
+<ol>
+  <li>在 "Projects"（项目）窗口中，右键单击 "TwitterSwingClient" 项目节点，然后选择 "Properties"（属性）。"Properties"（属性）对话框打开。</li>
+  <li>在 "Categories"（类别）树下，选择 "Run"（运行）。将显示 "Run"（运行）属性。</li>
+  <li>在 "VM Options"（VM 选项）字段中，输入 <tt>-Dhttp.proxyHost=server -Dhttp.proxyPort=port</tt>。请将 "server" 和 "port" 分别替换为您的代理服务器的主机名和端口！<br><img alt=""Project properties"（项目属性）对话框的 VM 选项中的代理设置" class="margin-around" height="304" src="../../../images_www/articles/72/websvc/twitter-swing/proxy-settings.png" width="600"></li>
+</ol>
+
+<h2><a name="more_exercises"></a>更多练习</h2>
+        <p>下面是供您探讨的更多思路：</p>
+        <ul>
+            <li>更改 Twitter 用户图标（在浏览器中），然后重新运行客户端。是否会显示新图标？</li>
+            <li>向 JFrame 中添加一个具有某些功能的工具栏。</li>
+    </ul>
+  <div class="feedback-box">
+        <a href="/about/contact_form.html?to=3&amp;subject=Feedback:RESTful%20Swing%20Client%20for%20Twitter">请将您的反馈意见发送给我们</a></div>
+
+        <br style="clear:both;" >
+        <h2><a name="seealso"></a>另请参见</h2>
+        <p>有关使用 NetBeans IDE 创建和使用 Web 服务以及设计 GUI 的更多信息，请参见以下资源： </p>
+        <ul>
+            <li><a href="../../docs/websvc/rest_zh_CN.html">REST 风格的 Web 服务入门指南</a></li>
+            <li><a href="../../docs/java/quickstart-gui_zh_CN.html">NetBeans IDE 中的 GUI 构建</a></li>
+            <li><a href="../../docs/java/gui-image-display_zh_CN.html">在 GUI 应用程序中处理图像</a></li>
+            <li><a href="../../docs/websvc/jersey-rcp-client_zh_CN.html">在 NetBeans 模块中创建 REST 风格的服务客户端</a></li>
+            <li><a href="../../trails/web_zh_CN.html">Web 服务学习资源</a></li>
+            <li><a href="../../trails/matisse_zh_CN.html">Java 和 JavaFX GUI 应用程序学习资源</a></li>
+        </ul>
+    <p>要发送意见和建议、获得支持以及随时了解 NetBeans IDE Java EE 开发功能的最新开发情况，请<a href="../../../community/lists/top.html">加入 nbj2ee@netbeans.org 邮件列表</a>。</p>
+    </body>
+</html>

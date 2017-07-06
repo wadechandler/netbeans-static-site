@@ -1,0 +1,238 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+    <head>
+
+        <title>Writing POV-Ray Support for NetBeans IV&#8212;Providing Project Templates</title>
+
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+        <meta name="AUDIENCE" content="NBUSER"/>
+        <meta name="TYPE" content="ARTICLE"/>
+        <meta name="EXPIRES" content="N"/>
+        <meta name="developer" content="geertjan.wielenga@oracle.com"/>
+        <meta name="indexed" content="y"/>
+        <meta name="description"
+              content="NetBeans POV-Ray Support Tutorial Part IV&#8212;Providing custom project templates"/>
+        <!--      Copyright (c) 2006 Sun Microsystems, Inc. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+
+    </head>
+
+    <body>
+
+        <h1>Writing POV-Ray Support for NetBeans IV&#8212;Providing Project Templates</h1>
+
+        <p>This is a continuation of the tutorial for building a POV-Ray rendering application on
+            the NetBeans Platform. If you have not read the <a href="nbm-povray-1.html">first</a>,
+            <a href="nbm-povray-2.html">second</a>, and <a href="nbm-povray-3.html">third</a>
+            parts of this tutorial, you may want to start there.</p>
+
+        <h2 class="tutorial"><a name="setup"></a>Project Templates</h2>
+
+        <p>We left off with a module that let us open POV-Ray projects, and basic
+            support for POV-Ray files, but no way to create a new POV-Ray project.</p>
+
+        <p>So the first step is to add the ability to use the New Project Wizard
+            to create POV-Ray projects.  The IDE gives you the ability to embed a project
+            in a module as a ZIP file, and add the necessarily configuration and code
+            to make it available from the New Project wizard and unpack it in a
+            directory of the user's choice.  We will make use of that functionality
+            to create our project templates.</p>
+
+        <p>First we need to <i>have</i> a project to zip up, so we will create that
+            by hand.  You can do this in NetBeans, just by creating the appropriate
+            folders and files.</p>
+
+        <div class="indent">
+
+            <ol>
+
+                <li>First create a new package in the Povray Projects project,
+                    <code>org.netbeans.examples.modules.povproject.templates</code>.  This
+                    will simply help us keep the sources more organized.</li>
+
+                <li>Switch to the Files window in the IDE and find the root folder for
+                    the Povray Projects project.</li>
+
+                <li>Create the following directory structure underneath that directory:
+                    <p></p>
+                    <ul>
+                        <li><code><b>templates/</b></code>&#8212;a root directory for our template projects
+                            <ul>
+                                <li><code><b>EmptyPovrayProject/</b></code>&#8212;Base directory for an empty project
+                                    <ul>
+                                        <li><code><b>images/</b></code></li>
+                                        <li><code><b>pvproject/</b></code>
+                                            <ul>
+                                                <li><code>project.properties</code></li>
+                                            </ul></li>
+                                        <li><code><b>scenes/</b> </code>
+                                            <ul>
+                                                <li><code>EmptyPovrayProject.pov</code></li>
+                                            </ul></li>
+                                    </ul></li>
+                                <li><code><b>SamplePovrayProject/</b></code>&#8212;Base directory for an project with sample .pov files
+                                    <ul>
+                                        <li><code><b>images/</b></code></li>
+                                        <li><code><b>pvproject/</b></code>
+                                            <ul>
+                                                <li><code>project.properties</code></li>
+                                            </ul></li>
+                                        <li><code><b>scenes/</b> </code>
+                                            <ul>
+                                                <li><code>SamplePovrayProject.pov</code></li>
+                                            </ul></li>
+                                    </ul></li>
+                            </ul></li>
+                    </ul></li>
+            </ol>
+
+        </div>
+
+        <p>In the Files window, you should now see the following:</p>
+
+        <p><img alt="" src="../../images/tutorials/povray/71/ch4/pic-1.png"/></p>
+
+        <p>We should have some content for the sample POV-Ray project's file.  You
+            can copy and paste the initial content into the
+            <code>SamplePovrayProject.pov</code> from here:</p>
+
+        <pre class="examplecode">// This is a simple red sphere
+
+// first, the camera position
+camera {
+  location <2,5,-10>
+  look_at <0,0,0>
+}
+
+// now, some light
+light_source {
+  <0,-10,0>
+  color rgb <1,1,1>
+}
+
+// the sphere
+sphere {
+  <0,0,0>, 5
+  pigment { color rgb <1,0,0> }
+}</pre>
+	<p class="tips"> A POV-Ray file that will render a NetBeans logo <a href="../images/tutorials/povray/71/ch4/sample.pov">can
+	    be found here</a>!</p>
+
+        <p>Now we are ready to add our sample projects&#8212;but here we have to cheat
+            just a little:  the IDE will only package up a sample project that it has
+            open, and in our development IDE we don't have support for POV-Ray projects,
+            so our hand-created projects won't be recognized.  <i>But</i>, we already
+            have a module that provides support for POV-Ray projects available.  So we
+            will cheat just a little bit and use that to fool it into embedding our
+            new POV-Ray projects in our module:</p>
+
+        <div class="indent">
+
+            <ol>
+                <li><p>Right-click the Povray Project and choose Create NBM:</p>
+                    <p><img alt="" src="../../images/tutorials/povray/71/ch4/pic-2.png"/></p>
+                </li>
+                <li><p>Switch to the Files window (Ctrl-2), where you should see
+                        the NBM file that has been created:</p>
+                    <p><img alt="" src="../../images/tutorials/povray/71/ch4/pic-3.png"/></p>
+                    <p class="tips">An NBM (<b>N</b>et<b>B</b>eans <b>M</b>odule) file is the
+                        deployment unit of a module. It contains the JAR, together
+                        with some metadata needed for installing the JAR and
+                        activating it in an application.</p>
+                </li>
+                <li><p>In the IDE, go to Tools | Plugins in the main menu. In the Downloaded
+                        tab, browse to the NBM file that you created in the previous step.</p>
+                    <p><img alt="" src="../../images/tutorials/povray/71/ch4/pic-4.png"/></p>
+                    <p>Click Install and then click through all the dialogs, saying Yes
+                        and OK everywhere, and in the end you will have installed the
+                        POV-Ray project support into the development IDE.
+                    </p>
+                </li>
+                <li><p>Open <code>templates/EmptyPovrayProject</code>
+                        and <code>templates/SamplePovrayProject</code> into the IDE, which
+                        is now possible because the IDE now supports POV-Ray projects:</p>
+                    <p><img alt="" src="../../images/tutorials/povray/71/ch4/pic-5.png"/></p>
+                </li>
+                <li><p>Right-click the Povray Projects module and choose New &gt; Other.
+                        In the Module Development category, choose the Project Template
+                        wizard, as shown below:</p>
+                    <p><img alt="" src="../../images/tutorials/povray/71/ch4/pic-6.png"/></p>
+                    <p>Press Enter or click Next.</p>
+                </li>
+                <li><p>On the next page of the wizard, select EmptyPovrayProject from the
+                        combo box&#8212;this is what we will package up.</p>
+                    <p><img alt="" src="../../images/tutorials/povray/71/ch4/pic-7.png"/></p>
+                    <p>Click Next or press Enter.</p>
+                </li>
+                <li><p>Now you are prompted for a name.  Enter &quot;EmptyPovrayProject&quot;
+                        for the Template Name, and &quot;Empty Povray Project&quot; for the
+                        display name.  Type "POVRay" as the category. Select the "templates"
+                        package for storing the new project template.</p>
+                    <p><img alt="" src="../../images/tutorials/povray/71/ch4/pic-8.png"/></p>
+                    <p>Click Finish or press Enter.</li>
+                <li><p>Now repeat the above steps, from 5 to 7, for <code>templates/SamplePovrayProject</code>,
+                        calling it Sample Povray Project and choosing the sample package,
+                        that is, the <tt>templates</tt> package, for storing the template:
+                        <p><img alt="" src="../../images/tutorials/povray/71/ch4/pic-9.png"/></p>
+                </li>
+            </ol>
+
+        </div>
+
+        <p>The above steps created a number of files on disk&#8212;as shown below:</p>
+
+        <p><img alt="" src="../../images/tutorials/povray/71/ch4/pic-10.png"/></p>
+
+        <p>There are two new
+            ZIP files in our module that are zipped copies of the projects. The other
+            files provide wizard functionality for instantiating our two projects
+            from the New Project wizard.</p>
+
+        <p>Run the application, go to File | New Project, and you will see the
+            two templates ready to be used:</p>
+
+        <p><img alt="" src="../../images/tutorials/povray/71/ch4/pic-11.png"/></p>
+
+        <p>Complete the wizard and you will have a new POV-Ray project ready
+            to be developed further.</p>
+
+        <h2 class="tutorial"><a name="build-script"></a>Modifying the Build Script</h2>
+
+        <p>Our initial sample projects are probably not in their final form, so it would
+            be nice to have the build script automatically rebuild the zip files of the
+            sample projects whenever we build the Povray Projects module&#8212;that way we can
+            simply modify the samples at will, and whenever we do a build they will be
+            up-to-date.  So we'll make a few changes to the build script:</p>
+
+        <p>Add the following targets to the Ant build script in the Povray Projects module:</p>
+        <pre class="examplecode">&lt;target name="netbeans" depends="package-samples,projectized-common.netbeans"/&gt;
+
+&lt;target name="package-samples"&gt;
+
+    &lt;delete file="${basedir}/src/org/netbeans/examples/modules/povproject/templates/EmptyPovrayProjectProject.zip"/&gt;
+
+    &lt;delete file="${basedir}/src/org/netbeans/examples/modules/povproject/templates/SamplePovrayProjectProject.zip"/&gt;
+
+    &lt;zip compress="9" basedir="src/org/netbeans/examples/modules/povproject/templates/EmptyPovrayProject"
+            zipfile="${basedir}/src/org/netbeans/examples/modules/povproject/templates/EmptyPovrayProjectProject.zip"/&gt;
+
+    &lt;zip compress="9" basedir="src/org/netbeans/examples/modules/povproject/templates/SamplePovrayProject"
+            zipfile="${basedir}/src/org/netbeans/examples/modules/povproject/templates/SamplePovrayProjectProject.zip"/&gt;
+
+&lt;/target&gt;</pre>
+
+        <p class="tips">If we were using a version control system such as CVS to store our source code, now
+            would be a good time to mark the two ZIPs as ignored
+            (add them to <code>.cvsignore</code>
+            or equivalent), since they will be recreated whenever you build the project.</p>
+
+        <h2 class="tutorial"><a name="setup"></a>Next Steps</h2>
+
+        <p>In the <a href="nbm-povray-5.html">next section</a> we will create the API needed for communication
+            between our two current modules.</p>
+
+    </body>
+
+</html>

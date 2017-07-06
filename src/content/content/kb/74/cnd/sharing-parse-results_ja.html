@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+    <title>大規模なC/C++プロジェクトの解析結果の共有</title>
+    <meta name="DESCRIPTION" content="A short guide to sharing parse results of a C/C++ project in NetBeans IDE and Oracle Solaris Studio IDE.">
+    <meta name="keywords" content="NetBeans, Oracle Solaris Studio, IDE, integrated development environment,
+          tutorial, guide, user, documentation, open source, parse, results, share, C, C++">
+   
+<link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+<link rel="stylesheet" type="text/css" href="../../../print.css" media="print">
+<link rel="stylesheet" type="text/css" href="../../../lytebox.css" media="screen">
+<script type="text/javascript" src="../../../images_www/js/lytebox-compressed.js"></script>
+<meta HTTP-EQUIV="Content-Type" Content="text/html; charset=UTF-8"></head>
+<body>
+<a name="top"></a>
+<h1>大規模なC/C++プロジェクトの解析結果の共有</h1>
+<div style="margin-left: 0px; font-style: italic;" class="articledate">
+<p>執筆: Vladimir Kvashin、管理: Alyona Stashkova<br> 2013年10月 [リビジョン番号: V7.4-1]</p>
+</div>
+
+<p>このドキュメントでは、大規模プロジェクトの解析を1回実行し、結果をチーム・メンバーと共有して時間とリソースを節約する方法について説明します。</p>
+<h3>目次</h3>
+<img alt="このページの内容は、NetBeans IDE 7.3および7.4に適用されます" class="stamp" src="../../../images_www/articles/73/netbeans-stamp-74-73.png" title="このページの内容は、NetBeans IDE 7.3および7.4に適用されます">
+<ul class="toc">
+    <li><a href="#requirements" title="要件">要件</a></li>
+    <li><a href="#cache" title="コード支援キャッシュ">コード支援キャッシュ</a></li>
+	<li><a href="#share" title="コード支援キャッシュの共有">コード支援キャッシュの共有</a></li>
+	<li><a href="#multiple" title="複数のオペレーティング・システムまたはコンパイラの取り扱い">異なるオペレーティング・システムまたはコンパイラを使用するマシン間でのキャッシュの共有</a></li>
+	<li><a href="#info" title="C/C++/Fortranサポートに関する詳細情報">C/C++/Fortranサポートに関する詳細情報</a></li>
+</ul>
+
+
+
+<h2><a NAME="requirements"></a>要件</h2>
+<p><b>このチュートリアルに従うには、次のソフトウェアが必要です。</b></p>
+
+<table>
+<tbody>
+<tr>
+    <th class="tblheader" scope="col">ソフトウェア</th>
+    <th class="tblheader" scope="col">必須バージョン</th>
+</tr>
+
+<tr>
+<td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE (C/C++のサポートを含む)</a></td>
+<td class="tbltd1">バージョン7.3または7.4</td>
+</tr>
+<tr>
+    <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit(JDK)</a></td>
+    <td class="tbltd1">バージョン6または7</td>
+</tr>
+
+</tbody>
+</table>
+      <br>
+<p>必要なソフトウェアのダウンロードとインストールについては、<a href="../../../community/releases/74/install.html">NetBeans IDEのインストール手順</a>および<a href="../../../community/releases/74/cpp-setup-instructions.html">C/C++/Fortran向けのNetBeans IDEの構成</a>を参照してください。</p>
+
+
+<a id="cache"></a>
+<h2>コード支援キャッシュ</h2>    
+<p>NetBeans IDEは、C/C++ソース・コードの解析時に解析結果をディスクに格納します。ディスクに保存されるデータは<tt>コード支援キャッシュ</tt>と呼ばれます。</p>
+<p>プロジェクトを開くと、NetBeans IDEはキャッシュを検証し、キャッシュが最新かどうかをチェックします。キャッシュが最新の場合、NetBeans IDEはプロジェクトを解析せず、コードのナビゲーションに必要なデータをコード支援キャッシュからロードします。</p>
+    
+<h2><a id="share"></a>コード支援キャッシュの共有</h2>
+
+<p>デフォルトでは、コード支援キャッシュは<code>${userdir}/var/cache</code>フォルダ(<code><a href="http://wiki.netbeans.org/FaqWhatIsUserdir">${userdir}</a></code>は<a href="http://wiki.netbeans.org/FaqWhatIsUserdir">NetBeansユーザー・ディレクトリ</a>)に存在し、共有も別の場所へのコピーも行うことができません。</p>
+<p> コード支援キャッシュがプロジェクトの内部に存在する場合は、コピー先のマシンが次の要件を満たす場合に別のマシンにコピーできます。        </p>
+
+        <div class="indent">
+        <ul>
+            <li>オペレーティング・システムが、コードが解析されるマシンのオペレーティング・システムと同一である</li>
+            <li>プロジェクトで使用されるツール・コレクションが、キャッシュがコピーされるマシンに存在し、同じ場所にある</li>
+        </ul>
+
+        </div>
+        <p><b>NetBeans IDEに、コード支援キャッシュをプロジェクト・メタデータの内部に配置するよう指示する手順:</b></p>
+		<ol>
+		<li><code>cache.location=nbproject/private/cache</code>行を次のいずれかに追加します。
+		  <ul>
+		<li>プロジェクト・プロパティ・ファイル(<code>nbproject/project.properties</code>)</li>
+      <li>
+        
+           プライベート・プロパティ・ファイル(<code>nbproject/private/private.properties</code>)</li>
+		  </ul>
+		
+           <p class="notes"><b>注意:</b> プロジェクト・プロパティ・ファイルとプライベート・プロパティ・ファイルの違いは、パブリック・プロパティ・ファイル(<code>nbproject/project.properties</code>)がデフォルトでバージョン管理システムを介して共有されるのに対し、プライベート・プロパティ・ファイル(<code>nbproject/private/private.properties</code>)は共有されないことです。このため、プライベート・プロパティを変更した場合は、プライベート・プロパティ・ファイルを別のマシン上の同一ファイルと同期する必要があります。プロジェクト・プロパティ・ファイルが変更された場合、バージョン管理システムは、そのファイルを別のマシン上のファイルと自動的に同期できます。</p>
+	   </li>
+
+        
+           <li>プロパティ・ファイルが変更された後で、プロパティを閉じて再び開きます。<br>IDEはプロジェクトを解析し、コード支援キャッシュがプロジェクト・メタデータ内のプライベート・サブディレクトリに配置されます。</li>
+
+        <li>
+            プロジェクトを閉じ、<code>nbproject/private/cache</code>をアーカイブするか共有場所にコピーします。
+            <p class="notes"><b>注意:</b> コピーまたは圧縮する前にプロジェクトを忘れずに閉じてください。そうしないと、一部のデータがキャッシュにフラッシュされません。</p> 
+</li></ol>
+		<p>NetBeansがプロジェクトを解析するまで待たずに、コード支援キャッシュが他のマシン上の他のプロジェクトにコピーされ、使用されます。</p>
+
+               <p>キャッシュがコピーされるマシン上に新しいファイルがある場合は、より新しいファイルのみが解析されます。</p>
+
+               <h2><a id="multiple"></a>異なるオペレーティング・システムまたはコンパイラを使用するマシン間でのキャッシュの共有</h2>
+
+        <p>
+            異なるオペレーティング・システムまたは異なるコンパイラを実行しているマシン間でコード支援キャッシュを共有する必要がある場合は、ペア(オペレーティング・システム、コンパイラ・コレクション)ごとに別々のキャッシュを作成する必要があります。        </p>
+        <h2><a id="info"></a>C/C++/Fortranサポートに関する詳細情報</h2>
+<p>NetBeans IDEのC/C++機能の使用方法の詳細は、<a href="../../../trails/cnd.html">C/C++の学習</a>を参照してください。</p>
+
+<p><a href="http://forums.netbeans.org/cnd-users.html">NetBeans C/C++ユーザー・フォーラム</a>に参加すると、NetBeans IDEを使用したC/C++開発に関連するディスカッションに参加したり、支援を求めたりできます。 </p>
+<p>バグの報告または機能強化の提案は、<a href="https://netbeans.org/bugzilla/enter_bug.cgi?component=cnd">Bugzilla</a>に提出できます(netbeans.orgへの登録が必要です)。</p>
+
+<div class="feedback-box"><a href="mailto:users@cnd.netbeans.org?subject=Feedback:%20Sharing%20Parse%20Results%20of%20a%20Large%20C/C++%20Project%20-%20NetBeans%20IDE%207.3%20Tutorial">このチュートリアルに関するご意見をお寄せください</a></div>
+<br style="clear: both;">
+</body></html>

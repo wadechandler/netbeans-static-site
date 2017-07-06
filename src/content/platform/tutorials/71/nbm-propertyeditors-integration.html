@@ -1,0 +1,1262 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>Integrated Property Editors in NetBeans</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="tboudreau@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="Techniques for using property editors in NetBeans.">
+        <style type="text/css">
+        .tips {
+            margin: 5px;
+            border-style: solid;
+            border-width: 2px;
+            border-color: #CCFFCC;
+            background-color: #F5FFF5;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            padding-left: 35px;
+            padding-right: 25px;
+        }
+        .caveat {
+            margin: 20px;
+            border-style: solid;
+            border-width: 2px;
+            border-color: #CCAAAA;
+            background-color: #EECCCC;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            padding-left: 25px;
+            padding-right: 25px;
+        }
+        .td {
+            border-style: solid;
+            border-width: 1px;
+            border-color: #CCCCCC;
+            font-family: 'Courier New';
+            background-color: #CCCCCC;
+            font-weight: bold;
+        }
+        </style>
+   <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+    <body>
+        <h1>Integrated Property Editors in NetBeans</h1>
+        <p>The NetBeans IDE includes a visual editor for Swing user interfaces
+        (UIs).  Components are controlled using property editors which
+        follow the Java Beans&trade; specification.  This tutorial will show
+        how to distribute components inside a NetBeans plug-in, how to 
+        provide custom property editors for individual properties or an
+        entire class of properties of those components;  and how to write
+        property editors that are able to call into and use features of
+        the NetBeans IDE.
+        
+        <h2>Why is this so complicated?</h2>
+        <p>The Java Beans specification defines how components should interact
+        with an integrated development environment (IDE), and various classes
+        that both an IDE and a component vendor will use to communicate with
+        the IDE and vice-versa.  The fundamental problem with the beans
+        specification is that, when it was created and cast in stone, 
+        <i>there were no Java IDEs</i>.  The specification tends to be in
+        some cases naively defined (BeanInfo), and in other cases 
+        woefully underspecified (PropertyEditor) with respect to what an IDE
+        or a component will actually need to provide a good user experience.
+        </p>
+        <p>It is possible to create generic property editors that will integrate
+        with an IDE without depending on that IDE &mdash; and where this makes
+        sense, it is encouraged to do that.  However, there are many cases
+        where that is not sufficient.  For example, the specification for
+        <code>java.beans.PropertyEditor</code> simply allows a property 
+        editor to return a <code>java.awt.Component</code> to provide a
+        custom editor dialog.  In practice, that component will be shown
+        to the user in a dialog - and if it is possible for the user to
+        provide invalid input, good UI design dictates that the OK button
+        for that dialog should be disabled when the input is not usable.
+        But there is no communication path for a component to tell an IDE
+        about such a situation.  Similarly, a property editor that lets the
+        user supply an image needs to allow the user to choose a file on
+        disk to use.  If the image is not on the classpath of the project,
+        it needs to be copied into some directory where it can be found at
+        runtime &mdash; but there is no way for an IDE to communicate to a
+        third party property editor anything about files or directories or
+        classpaths.
+        </p>
+        <p>For these cases, NetBeans provides APIs that fill some of the gaps
+        in the beans spec.  NetBeans also provides sophisticated
+        user interface controls
+        that can save time and create a better user experience if used.
+        <center>
+            <img src="../../images/tutorials/property-editors/borderCustomEditor.png" alt="Border Custom Editor"/>
+            <br/>
+            <i>
+            NetBeans' custom editor for Borders uses NetBeans' <br/>Nodes and
+            Explorer API to provide the list of available <br/>borders in an
+            embedded property sheet.
+            </i>
+        </center>
+        <h2><a name="step1">Step 1:  Creating Some Beans</a></h2>
+        The first step in packaging up some components is creating some
+        components, so we will start by creating a simple Java project.
+
+        <ol class="instructions">
+            <li>In NetBeans, select
+                <b>File &gt; New Project</b> and choose <b>Java 
+                &gt; Java Class Library</b>.  On the second page of the
+                new project wizard, give the project the name
+                <code>Bean</code>. Click Finish.</li>
+            <li>Once the project is open, create a new Java Class called
+                <code>Bean1</code> in a
+                package named <code>bean</code>.</li>
+            <li>Add the following code to it (it will use a class that
+                does not exist yet, so don't worry about warnings for
+                <code>ColorValue</code>):</li>
+        </ol>
+        <h3><a name="listing1">Listing 1:  Bean1.java</a></h3>
+        <pre>
+public class Bean1 extends JComponent {
+    private ColorValue colorValue = new ColorValue (255, 235, 128);
+
+    public ColorValue getColorValue() {
+        return colorValue;
+    }
+
+    public void setColorValue(ColorValue val) {
+        ColorValue old = this.colorValue;
+        this.colorValue = val;
+        if ((old == null) != (val == null) || old != null && !old.equals(val)) {
+            firePropertyChange("colorValue", old, val);
+            repaint();
+        }
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        return new Dimension (24, 24);
+    }
+
+    @Override
+    public Dimension getMinimumSize() {
+        return getPreferredSize();
+    }
+
+    @Override
+    public void paint (Graphics g) {
+        if (colorValue != null) {
+            g.setColor(colorValue.toColor());
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
+    }
+}
+        </pre>
+    <h2>Creating A Class That Will Need A Custom Editor</h2>
+    We will start with a fairly simple (if slightly artificial)
+    class.  We need to create the
+    <code>ColorValue</code> class which is the type of one of
+    <code>Bean1</code>'s properties (later we will handle a much
+    more complex data type requiring a more sophisticated custom
+    editor).
+    <ol class="instructions">
+        <li>Create a new Java class, <code>bean.ColorValue</code>.</li>
+        <li>Populate it as shown in <a href="#listing2">Listing 2</a>.</li>
+    </ol>
+    <h3><a name="listing2">Listing 2: ColorValue</a></h3>
+    <pre>package bean;
+import java.awt.Color;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+import java.io.Serializable;
+public class ColorValue implements Serializable {
+    private final PropertyChangeSupport supp = new PropertyChangeSupport(this);
+    private int red;
+    private int green;
+    private int blue;
+
+    public ColorValue() {}
+
+    public ColorValue(int red, int green, int blue) {
+        if (red < 0 || red > 255) {
+            throw new IllegalArgumentException("" + red);
+        }
+        if (green < 0 || green > 255) {
+            throw new IllegalArgumentException("" + green);
+        }
+        if (blue < 0 || blue > 255) {
+            throw new IllegalArgumentException("" + blue);
+        }
+        this.red = red;
+        this.green = green;
+        this.blue = blue;
+    }
+
+    public int getBlue() {
+        return blue;
+    }
+
+    public int getGreen() {
+        return green;
+    }
+
+    public int getRed() {
+        return red;
+    }
+
+    public void setGreen(int green) {
+        if (green < 0 || green > 255) {
+            throw new IllegalArgumentException("" + green);
+        }
+        int old = this.green;
+        this.green = green;
+        if (green != old) {
+            supp.firePropertyChange("green", old, green);
+        }
+    }
+
+    public void setBlue(int blue) {
+        if (blue < 0 || blue > 255) {
+            throw new IllegalArgumentException("" + blue);
+        }
+        int old = blue;
+        this.blue = blue;
+        if (old != blue) {
+            supp.firePropertyChange("blue", old, blue);
+        }
+    }
+
+    public void setRed(int red) {
+        if (red < 0 || red > 255) {
+            throw new IllegalArgumentException("" + red);
+        }
+        int old = this.red;
+        this.red = red;
+        if (old != red) {
+            supp.firePropertyChange("red", old, red);
+        }
+    }
+
+    public Color toColor() {
+        return new Color(red, green, blue);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || ColorValue.class != obj.getClass()) {
+            return false;
+        }
+        final ColorValue other = (ColorValue) obj;
+        return red == other.red && green == other.green && blue == other.blue;
+    }
+
+    @Override
+    public int hashCode() {
+        //evenly distribute 3 byte values across 32 bits
+        return red + (green << 12) + (blue << 24);
+    }
+
+    public void removePropertyChangeListener(PropertyChangeListener pl) {
+        supp.removePropertyChangeListener(pl);
+    }
+
+    public void addPropertyChangeListener(PropertyChangeListener pl) {
+        supp.addPropertyChangeListener(pl);
+    }
+}</pre>
+    <h2><a name="creatingModule">Creating the Plug-In</a></h2>
+    Now we need to create a NetBeans plug-in (module) which will
+    do three things:
+    <ol>
+        <li>Integrate our class library into the IDE, so that it appears
+            in the list of libraries available to users (found in
+            <b>Tools &gt; Libraries</b> in the IDE).  While we could ask
+            users to put the JAR for our library on the classpath of
+            every project they use it in, this approach is much more
+            convenient.</li>
+        <li>Add <code>Bean1</code> to the Component Palette, so that
+            users can simply drag the component into their user interfaces.
+        </li>
+        <li>Provide our property editors for our property classes and
+            integrate them into the IDE.
+        </li>
+    </ol>
+    NetBeans comes with built-in support for creating modules, so setting
+    up a new module project is quite simple:
+    <ol class="instructions">
+        <li>Select <b>File &gt; New Project</b> in the main menu.</li>
+        <li>In the New Project wizard, choose
+            <b>NetBeans Modules&gt; Module</b> on the first page, then click Next.</li>
+        <li>On the second page of the wizard, name the project <code>BeanLibraryModule</code>.</li>
+        <li>On the third page of the wizard, enter <code>org.netbeans.demo.form.beanlib</code>
+            for the <b>Code Name Base</b>, and <code>Bean Library Module</code> for the
+            display name.  Check the <b>Generate XML Layer</b> checkbox and click
+            <b>Finish</b>.</li>
+    </ol>
+
+    <h2><a name="requireRestart">Setting The Module To Require an IDE Restart</a></h2>
+    Modules which install Java libraries &mdash; particuarly ones which add components
+    to the component palette should always require a restart of the IDE.  There
+    are two reasons for this:
+    <p>
+    <ul>
+        <li><i>MS Windows File Locking</i>&mdash;The IDE can reload a module without
+        restarting.  However, on the Windows platform, if something is using a
+        JAR file, it will be locked at the operating system level, so updating
+        the module may fail with an exception if the old JAR file cannot be
+        overwritten with the new one.</li>
+        <li><i>Form Editor Reloading</i>&mdash;If the user has a form open, which
+        is using a component from the JAR file, the component will not be replaced
+        with one from the new JAR file (this could be very complicated if the file
+        is modified but not saved).  For the updated component to
+        be used, we need to be sure both that the form is reloaded, and also that
+        any cached class data from the JAR is discarded.</li>
+    </ul>
+    Causing a module to request that the IDE restart itself before it is
+    installed is as simple as checking a checkbox:
+    <ol>
+        <li>Once the project is created, right click it and choose Properties</li>
+        <li>When the <b>Project Properties</b> dialog appears, click the <b>Build &gt; Packaging</b>
+            item in the category list to show the Packaging page of the dialog; check
+            the <b>Needs Restart on Install</b> checkbox and click <b>OK</b> to
+            save this setting.
+        </li>
+    </ol>
+
+    <h2><a name="tweakBuildScript">Modifying the Plug-In's Build Script</a></h2>
+    We now have a plug-in.  However, we will want it to bundle the
+    <code>Bean</code> project.  So before going further, it would be useful to
+     do the following:
+    <ol>
+        <li>Modify the module's build script to recompile the Bean project &mdash;
+            this way, the module will always contain the latest version of the
+            project</li>
+        <li>Modify the build script to copy the Bean project into the place
+            it needs to be to bundle <code>Bean.jar</code> into our module.</li>
+    </ol>
+    Doing these things involves overriding two targets in our module project's
+    build script.  Ant supports a crude sort of target inheritance, in which
+    we replace a target from one build script, but call the original target by
+    referring to <code>[projectname].[targetname]</code> (the project name in
+    this case is the name defined in the <code>&lt;project&gt;</code> tag at the
+    top of any Ant build script).
+    <ol class="instructions">
+        <li>Open the build script by expanding the module project in the <b>Projects</b>
+            tab in the IDE, and the <b>Important Files</b> node under it, and
+            double clicking the <b>Build Script</b> node.  This corresponds to
+            the file <code>build.xml</code> in the <code>BeanLibraryModule</code>
+            directory which is the root of our module project.</li>
+        <li>Add the code found in <a href="listing3">Listing 3</a> to the build
+            script, below the line <code>&lt;import file=&quot;nbproject/build-impl.xml&quot;/&gt;</code>.
+    </ol>
+    <h3><a name="listing3">Listing 3: Module Build Script Changes</a></h3>
+<pre>&lt;target name=&quot;build-init&quot; depends=&quot;harness.build-init&quot;&gt;
+    &lt;echo&gt;Rebuilding Bean JAR&lt;/echo&gt;
+    &lt;ant antfile=&quot;../Bean/build.xml&quot; target=&quot;jar&quot; inheritall=&quot;false&quot; inheritrefs=&quot;false&quot;/&gt;
+    &lt;mkdir dir=&quot;release/libs&quot;/&gt;
+    &lt;copy file=&quot;../Bean/dist/Bean.jar&quot; todir=&quot;release/libs&quot;/&gt;
+&lt;/target&gt;
+
+&lt;target name=&quot;clean&quot; depends=&quot;projectized-common.clean&quot;&gt;
+    &lt;echo&gt;Cleaning and deleting copy of Bean JAR&lt;/echo&gt;
+    &lt;ant antfile=&quot;../Bean/build.xml&quot; target=&quot;clean&quot; inheritall=&quot;false&quot; inheritrefs=&quot;false&quot;/&gt;
+    &lt;delete file=&quot;${basedir}/release/libs/Bean.jar&quot;/&gt;
+&lt;/target&gt;</pre>
+
+    <p class="tips">
+        Most of the targets in the <code>build.xml</code> for a module project
+        are in other files &mdash; specifically, in <code>nbproject/build-impl.xml</code>
+        and in <code>$HARNESS/build.xml</code> and <code>$HARNESS/common.xml</code>
+        (<code>$HARNESS</code> is a directory under the copy of NetBeans you
+        are building against, which may or may not be your IDE).
+        To find out what file a target you are calling or overriding is in,
+        find the <code>build.xml</code> in the <b>Files</b> tab in the IDE.
+        Expand its node and you will see all of the targets (even ones in
+        other files).  Right click the
+        target you are wondering about and choose <b>Open</b> to open the
+        file which contains that target in the IDE.  The path on disk to the
+        file will be shown in the tooltip of its tab in the editor.
+    
+        <p>This code will build the <code>Bean</code> project, and copy the resulting
+    JAR file to <code>BeanLibraryModule/release/libs</code>.  The build script
+    will bundle anything under the <code>release</code> subdir of a module into
+    the NBM file you will deliver to your users (for example, via an update
+    server found via <b>Tools &gt; Plugins</b>).
+    <p/>
+    At this point, it is a good time to make sure everything is working correctly.
+    You can test this by right clicking <code>BeanLibraryModule</code> in the
+    <b>Projects</b> tab, and choosing <b>Build</b> from the popup menu (or
+    by pressing F11).
+    <p/>
+
+    <h2>Adding Bean.jar to Tools &gt; Libraries</h2>
+    Now we need to add some metadata to our module &mdash; no code yet &mdash; to
+    make <code>Bean.jar</code> appear in the list of libraries for users who
+    have installed our module.  This involves two steps:
+    <ol class="instructions">
+        <li>Open the module's <i>layer file</i> &mdash; you can find it under
+            the <b>Important Files</b> node below the module project's node in
+            the <b>Projects</b> tab (if you don't see it, you did not check the
+            <b>Generate XML Layer</b> button when you created the module project).
+            This file provides declarative metadata to NetBeans at runtime.  One
+            of the things it can do is tell NetBeans about a library a module
+            is installing.</li>
+        <li>Between the <code>&lt;filesystem&gt;</code> tags, add the XML from
+            <a href="#listing4">listing 4</a>.</li>
+    </ol>
+ 
+    <h3><a name="listing4">Listing 4:  Adding Library Metadata to a Module's XML Layer</a></h3>
+<pre>
+&lt;folder name=&quot;org-netbeans-api-project-libraries&quot;&gt;
+    &lt;folder name=&quot;Libraries&quot;&gt;
+        &lt;file name=&quot;Bean.xml&quot; url=&quot;Bean.xml&quot;/&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;
+</pre>
+    The <code>url</code> attribute of the <code>file</code> tag is important &mdash;
+    the XML we have entered defines a <i>virtual file</i> &mdash; but a file name
+    is usually useless without some content.  The URL attribute is a path, relative
+    to the layer file, in the location where it really lives on disk.  The next
+    step is to actually create a file called <code>Bean.xml</code>.
+    <ol class="instructions">
+        <li>With the layer XML file open, press Ctrl-Shift-1 (Command-Shift-1 on
+            Macintosh) to reveal the file, inside the package
+            <code>org.netbeans.demo.form.beanlib</code> in the module project's
+            source code.</li>
+        <li>Right click that package, and choose <b>New &gt; Other</b>.  In the
+            New File Wizard which opens, choose <b>XML &gt; XML Document</b>.</li>
+        <li>Name the file <code>Bean</code> on the second page of the
+            wizard and click <b>Finish</b> to create the file.</li>
+        <li>Populate the file with the XML content in <a href="#listing5">listing 5</a>.</li>
+    </ol>
+    <h3><a name="listing5">Listing 5:  An XML Library Definition for Bean.jar</a></h3>
+    <pre>
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE library PUBLIC &quot;-//NetBeans//DTD Library Declaration 1.0//EN&quot; &quot;https://netbeans.org/dtds/library-declaration-1_0.dtd&quot;&gt;
+&lt;library version=&quot;1.0&quot;&gt;
+    &lt;name&gt;Bean&lt;/name&gt;
+    &lt;type&gt;j2se&lt;/type&gt;
+    &lt;localizing-bundle&gt;org.netbeans.demo.form.beanlib.Bundle&lt;/localizing-bundle&gt;
+    &lt;volume&gt;
+        &lt;type&gt;classpath&lt;/type&gt;
+        &lt;resource&gt;jar:nbinst://org.netbeans.demo.form.beanlib/modules/ext/Bean.jar!/&lt;/resource&gt;
+    &lt;/volume&gt;
+    &lt;volume&gt;
+        &lt;type&gt;src&lt;/type&gt;
+    &lt;/volume&gt;
+    &lt;volume&gt;
+        &lt;type&gt;javadoc&lt;/type&gt;
+    &lt;/volume&gt;
+&lt;/library&gt;
+    </pre>
+    <div class="tips">
+    Note that there are placeholders in this file for Javadoc documentation
+    and source files.  If you want to include these later, just create targets
+    in <code>Bean/build.xml</code> to build and zip the javadoc and sources
+    into zip files, and modify <code>BeanLibraryModule</code> to call those
+    targets in the Bean project and copy the additional files into the
+    same directory as <code>Bean.jar</code>;  then add <code>&lt;resource&gt;</code>
+    tags similar to the one already in this file, but pointing to the zip files.
+    Such files are helpful for users who want instantly available documentation,
+    or wish to step through your component's code in a debugger.
+    </div>
+
+    <h2>Localizing Library and Other Names</h2>
+    All user-visible strings in NetBeans are localized &mdash; put into
+    resource-bundle files, so they can be translated into other human languages.
+    Things which are installed declaratively via <code>layer.xml</code> files
+    are no exception.  You may have noticed that a <i>localizing bundle</i>
+    is mentioned in some of the XML we have already entered.  This is a pointer
+    to a file named <code>Bundle.properties</code>, which should live in the
+    package <code>org.netbeans.demo.form.beanlib</code> alongside our other
+    files.  If it does not exist, create it as follows:
+    <ol class="instructions">
+        <li>Right click the package <code>org.netbeans.demo.form.beanlib</code>
+            and choose <b>New &gt; Other</b> from the popup menu.</li>
+        <li>Choose <b>Other &gt; Properties File</b> on
+            the first step of the New File Wizard and click Next.</li>
+        <li>On the second step of the wizard, name the file <code>Bundle</code>
+            and click <b>Finish</b>.</li>
+        <li>Add the content in <a href="#listing6">listing 6</a> to the
+        newly created resource bundle file (the content includes entries
+        for files we are about to create in order to add <code>Bean1</code> to
+        the Component Palette).</li>
+    </ol>
+    <h3><a name="listing6">Listing 6:  Localized Names for Library and Component Palette Items</a></h3>
+    <pre>
+Bean=Bean
+FormDesignerPalette/Bean=Beans!
+NAME_bean-Bean1=The Bean
+HINT_bean-Bean1=This is a Bean
+    </pre>
+
+    At this point, we have a working module to bundle Bean as a library.
+    To try it out, right click the Bean Library Module project and choose
+    <b>Run</b>.  This will start another copy of NetBeans.  When it is started,
+    look for your library in the library manager dialog that opens when you
+    select <b>Tools &gt; Libraries</b> from the main menu.
+
+    <h2>Including <code>Bean.jar</code> on the Module's Class Path</h2>
+    We are bundling the JAR file as a library.  However, if we want property
+    editors which can talk to both our Java Bean classes and to NetBeans itself,
+    we will need to put <code>Bean.jar</code> onto our module's classpath as
+    well.  NetBeans is very strict about what JARs a module can see classes
+    from, and by default, a library is for use in the projects a user creates,
+    not for loading in to the VM NetBeans is running in.  So we need to
+    explicitly include <code>Beans.jar</code> in our module's classpath if we
+    want to be able to use classes from it in our module &mdash; and if we want
+    to provide <i>NetBeans-aware property editors</i> we need to do that.
+
+    <p class="tips">
+        Not everybody needs property editors that interact with
+        the IDE beyond the very limited ways the Java Beans specification allows.
+        If you are writing ordinary property editors, you can simply skip the rest of this step, then 
+        follow the later steps to add your beans to the component
+        palette and stop there:
+        <ol>
+            <li>Create another Java Class Library project called BeanEditors.</li>
+            <li>Put the Beans project on its classpath.</li>
+            <li>Create the <code>beans</code> package in the new project.</li>
+            <li>Write your properties (and optionally BeanInfo) there.</li>
+            <li>Add another <code>&lt;resource&gt;</code> entry to <code>Bean.xml</code>
+            below the first one, which refers to <code>BeanEditors.jar</code></li>
+            <li>Modify the module project's build script to build that project.
+                too, and copy <code>BeanEditors.jar</code> to <code>release/libs</code>.</li>
+        </ol>
+
+        <p>To add <code>Bean.jar</code> to the classpath of <i>classes in your module</i>,
+    do the following:
+    <ol class="instructions">
+        <li>Under the <b>Important Files</b> node under the Bean Library Module
+        project, double click the node <b>Project Metadata</b> to open the
+        project's <code>nbproject/project.xml</code> file in the editor.</li>
+        <li>Add the code in <a href="#listing7">listing 7</a> to the bottom
+            of this file, just above the closing <code>&lt;/data&gt;</code> tag.</li>
+        <li>Build the Bean Library Module project, to ensure that the JAR is
+            where it needs to be.</li>
+        <li>Shut down and restart the IDE (module projects are not terribly
+        intelligent about rescanning the classpath when the project metadata
+        is manually modified, so you need to do this to have code-completion
+        and parsing work in the editor later, when you use
+        classes from <code>Bean.jar</code> in your
+        module. This may be improved in future release of NetBeans).</li>
+    </ol>
+    <h3><a name="listing7">Listing 7:  Adding Bean.jar to our Module's Classpath</a></h3>
+    <pre>
+&lt;class-path-extension&gt;
+    &lt;runtime-relative-path&gt;ext/Bean.jar&lt;/runtime-relative-path&gt;
+    &lt;binary-origin&gt;../Bean/dist/Bean.jar&lt;/binary-origin&gt;
+&lt;/class-path-extension&gt;</pre>
+
+    <div class="tips">
+        The &ldquo;runtime relative path&rdquo; is the path to Bean.jar from
+        the location of the module JAR at runtime.  The NBM file
+        which is created when you right click the module project and choose
+        <b>Create NBM</b> is unpacked onto disk when the user installs it.
+        You can build the NBM and then expand in the <b>Files</b> tab in the
+        IDE to browse its contents.  You will find the module JAR under the
+        <code>modules/</code> folder in the NBM.  You will also find
+        <code>modules/ext/Bean.jar</code> there &mdash; Bean.jar is added to
+        the module's classpath using the standard Java mechanism of including
+        <code>Class-Path:  ext/Bean.jar</code> in the module's JAR manifest.
+    </div>
+
+    <h2>Adding Bean1 to the Component Palette</h2>
+    We have our library embedded in our module &mdash; next we need to put
+    our component on the Component Palette, so users will be able to drag
+    and drop it into their user interfaces.  Doing that is quite simple, and
+    very similar to the way we added <code>Bean.jar</code> as a library &mdash;
+    it will again involve editing the <code>layer.xml</code> file, adding a
+    reference to an external XML file and then creating that file.
+    <ol class="instructions">
+        <li>Open the <code>layer.xml</code> file, either by clicking
+            <b>Important Files &gt; XML Layer</b> under your project,
+            or the node for <code>layer.xml</code> in the package
+            <code>org.netbeans.demo.form.beanlib</code>.</li>
+        <li>Add the code in <a href="#listing8">listing 8</a> after the
+            initial <code>&lt;filesystem&gt;</code> tag.</li>
+        <li>Create a new XML file called <code>Bean1_paletteItem.xml</code>
+            next to the <code>layer.xml</code> file in the same package.</li>
+        <li>Replace the new XML file's contents with the XML code in
+            <a href="#listing9">listing 9</a>.
+    </ol>
+
+    <h3><a name="listing8">Listing 8:  Adding a <code>palette_item</code> file to the layer.xml</a></h3>
+    <pre>
+&lt;folder name=&quot;FormDesignerPalette&quot;&gt;
+    &lt;folder name=&quot;Bean&quot;&gt;
+        &lt;attr name=&quot;SystemFileSystem.localizingBundle&quot; stringvalue=&quot;org.netbeans.demo.form.beanlib.Bundle&quot;/&gt;
+        &lt;file name=&quot;Bean1.palette_item&quot; url=&quot;Bean1_paletteItem.xml&quot;/&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+    <h3><a name="listing9">Listing 9:  XML File Defining a Component on the Palette</a></h3>
+    <pre>
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;palette_item version=&quot;1.0&quot;&gt;
+  &lt;component classname=&quot;bean.Bean1&quot;/&gt;
+  &lt;description localizing-bundle=&quot;org.netbeans.demo.form.beanlib.Bundle&quot;
+               display-name-key=&quot;NAME_bean-Bean1&quot;
+               tooltip-key=&quot;HINT_bean-Bean1&quot; /&gt;
+  &lt;classpath&gt;
+    &lt;resource type=&quot;library&quot; name=&quot;Bean&quot;/&gt;
+  &lt;/classpath&gt;
+&lt;/palette_item&gt;
+    </pre>
+
+    <P>At this point, the work of embedding our library and our component is done.
+    Run the module now to try out the result &mdash; create a new project in
+    the copy of NetBeans that starts, then use <b>New &gt; JPanel Form</b> to
+    show the form editor (aka &ldquo;Matisse&rdquo;).  There will be a new
+    category, <b>Beans!</b> on the Component Palette.  Expand it, and you will
+    see <code>Bean1</code>, listed as <b>The Bean</b> (these are the strings
+    we defined in our <code>Bundle.properties</code> file).  Drag it onto the
+    form to use it.
+    <p>Notice also that, after you add a <code>Bean1</code> to a form, if you
+    expand the <b>Libraries</b> node under the project, the <code>Bean</code>
+    library has automatically been added to the project's classpath.
+
+    <p class="tips">
+        The Java Beans specification allows a <code>BeanInfo</code>
+        class for a component to define a localized name for it, along with
+        icons.  In the example above, we defined the localized name in the
+        <code>palette_item</code> file's definition and the <code>Bundle.properties</code>
+        file.  You can use either one (just leave out the line about the resource
+        bundle in the XML file to use the BeanInfo);  if you are going
+        to need a <code>BeanInfo</code> anyway, you can just define it there.
+        However, since they are Java classes, BeanInfos use memory and are
+        an inefficient way to define this sort of thing.  If possible, avoid
+        having a <code>BeanInfo</code> and just use this mechanism.
+        <p/>
+        If you want to provide icons via the <code>palette_item</code> XML file,
+        you can do that too &mdash; just add the following lines inside the
+        <code>&lt;palette_item&gt;</code> tags in the file, replacing the file
+        name with a .gif or .png file name, and the path with the path in your module
+        to the package they are in:
+        <pre>&lt;icon16 urlvalue=&quot;nbres:/org/netbeans/modules/form/beaninfo/awt/panel.gif&quot; /&gt;
+&lt;icon32 urlvalue=&quot;nbres:/org/netbeans/modules/form/beaninfo/awt/panel32.gif&quot; /&gt;</pre>
+
+    <h2>Creating A Property Editor</h2>
+    Now we are ready to create a property editor.  We will put our editors in
+    another package, <code>org.netbeans.demo.form.beanlib.editors</code> &mdash;
+    in accordance with the Java Beans specification, that package will be registered
+    with <code>java.beans.PropertyEditorManager</code>.  We don't need
+    <code>PropertyEditorManager</code> to be able to find other classes that are part
+    of our module, but are not our property editors or classes our property
+    editors use.  So keeping unrelated classes invisible to our property editors
+    is good sense both from a perfomance and a security perspective.
+    <ol class="instructions">
+        <li>Right-click the <code>org.netbeans.demo.form.beanlib.editors</code> package
+            and choose <b>New &gt; Java Class</b>.</li>
+        <li>When the New File Wizard opens, name the class <code>ColorValueEditor</code>.</li>
+        <li>Replace the template code that initially appears in the new Java file with
+            the code in <a href="#listing10">listing 10</a>.
+    </ol>
+    <h3><a name="listing10">Listing 10:  A PropertyEditor for ColorValue Objects</a></h3>
+    <pre>package org.netbeans.demo.form.beanlib.editors;
+import bean.ColorValue;
+import java.awt.Component;
+import java.awt.Graphics;
+import java.awt.Rectangle;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+import java.beans.PropertyEditor;
+import org.openide.explorer.propertysheet.ExPropertyEditor;
+import org.openide.explorer.propertysheet.PropertyEnv;
+public class ColorValueEditor implements PropertyEditor, ExPropertyEditor {
+    private ColorValue value;
+    public void setValue(Object o) {
+        this.value = (ColorValue) o;
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
+    public boolean isPaintable() {
+        return false;
+    }
+
+    public void paintValue(Graphics grphcs, Rectangle rctngl) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public String getJavaInitializationString() {
+        return "new ColorValue(" + value.getRed() + ',' +
+                value.getGreen() + ',' + value.getBlue() + ')';
+    }
+
+    public String getAsText() {
+        return "" + value.getRed() + ',' + value.getGreen() + ',' +
+                value.getBlue();
+    }
+
+    public void setAsText(String string) throws IllegalArgumentException {
+        String[] rgb = string.split(",");
+        if (rgb == null || rgb.length != 3) {
+            throw new IllegalArgumentException ("Should be in format " +
+                    "'red,green,blue'");
+        }
+        try {
+            int red = Integer.parseInt(rgb[0].trim());
+            int green = Integer.parseInt(rgb[1].trim());
+            int blue  = Integer.parseInt(rgb[2].trim());
+            setValue (new ColorValue(red, green, blue));
+        } catch (NumberFormatException nfe) {
+            throw new IllegalArgumentException(nfe);
+        }
+    }
+
+    public String[] getTags() {
+        return null;
+    }
+
+    public Component getCustomEditor() {
+        return null;
+    }
+
+    public boolean supportsCustomEditor() {
+        return false;
+    }
+
+    private final PropertyChangeSupport supp = new PropertyChangeSupport(this);
+    public void addPropertyChangeListener(PropertyChangeListener pl) {
+        supp.addPropertyChangeListener(pl);
+    }
+
+    public void removePropertyChangeListener(PropertyChangeListener pl) {
+        supp.removePropertyChangeListener(pl);
+    }
+
+    private PropertyEnv env;
+    public void attachEnv(PropertyEnv pe) {
+        env = pe;
+    }
+}
+    </pre>
+
+    <h2>Registering The Property Editor Package</h2>
+    <p>We now have a property editor for <code>ColorValue</code> objects.  The next
+    step is to register our property editor package, so that, when our module is
+    run in the IDE, <code>java.beans.PropertyEditorManager</code> can find our
+    editor and it will be used in the Property Sheet of the Form Editor.
+    <p>While most of the time, the way you install things in NetBeans, so that the IDE
+    can find your module's classes at runtime, is declarative &mdash; using the
+    <code>layer.xml</code> file and similar mechanisms &mdash; <code>PropertyEditorManager</code>
+    is not part of NetBeans, it is part of the JDK.  It expects registration
+    to be done programmatically, via Java code that runs during IDE startup.
+    Running code during startup is generally to be avoided, since it means the
+    user will be looking at the startup splash-screen for longer, but in this
+    case there is no other way.
+    <p/>
+    To register our property editor, we need to create a subclass of
+    <code>org.openide.modules.ModuleInstall</code>,
+    and add a reference to it to our module's JAR manifest.  Fortunately, there
+    is a file template built into NetBeans' module-writing tools that will take
+    care of creating the subclass and adding the manifest entry &mdash; we can use
+    that and then just add the code we need to the resulting <code>ModuleInstall</code>.
+    To do that:
+    <ol class="instructions">
+        <li>Right click the <code>org.netbeans.demo.form.beanlib</code> package and
+        choose <b>New &gt; Other</b> from the popup menu.</li>
+        <li>In the New File Wizard, choose <b>Module Development &gt; Module Installer</b>
+            and click <b>Next</b>, then click <b>Finish</b>.  A Java file called
+            <code>Installer</code> will be created in the package.</li>
+        <li>Replace the <code>restored()</code> method with the contents of
+            <a href="#listing11">listing 11</a></li>
+    </ol>
+    <h3><a name="listing11">Listing 11: Registering The Property Editors Package At IDE Startup</a></h3>
+    <pre>
+public void restored() {
+    String[] old = PropertyEditorManager.getEditorSearchPath();
+    List &lt;String&gt; l = new ArrayList&lt;String&gt;(Arrays.asList(old));
+    l.add ("org.netbeans.demo.form.beanlib.editors");
+    PropertyEditorManager.setEditorSearchPath(l.toArray(new String[l.size()]));
+}</pre>
+    <div class="tips">
+        <p><code>java.beans.PropertyEditorManager</code> uses a naming convention
+        to recognize property editors:  It expects the class name of an editor
+        for a type to be the name of the class it edits plus &quot;Editor&quot;
+        (i.e. the editor class for a ColorValue must be called ColorValueEditor).
+        PropertyEditorManager also allows you to register a specific
+        editor class to edit a specific class.  The code above would look like
+        <code>PropertyEditorManager.registerEditor (ColorValue.class, ColorValueEditor.class)</code>
+        if we took that approach.
+        <p>Package name based registration has the
+        advantage that neither the ColorValue nor the ColorValueEditor class
+        needs to be loaded into the VM unless the user actually uses it.
+    </div>
+
+    <h2>NetBeans Form Editor Classloader Black Magic</h2>
+    <p>At this point we are almost ready to run our module with our property
+    editor.  There is one bit of arcana left to take care of.  As mentioned
+    earlier, NetBeans does various tricks with classloaders &mdash; in particular,
+    limiting classes a module can see to only those ones it says it needs
+    access to.
+    <p>A Swing GUI and its libraries are classes that belong to the user &mdash; they
+    are not parts of NetBeans.  The form editor takes a similar approach &mdash;
+    Java classes used in a Swing UI <i>are</i> loaded into the Java Virtual Machine
+    NetBeans is running in;  however, they are loaded in their own classloader,
+    which normally does not allow random components access to classes from
+    a module.  This has two beneficial effects:
+    <ol class="instructions">
+        <li>A foreign Swing component cannot interfere with the operation of the
+            rest of the IDE, just because a user dropped it on a form.</li>
+        <li>Misbehaving or memory-leaking components can be discarded when the
+            form is closed and the classloader it used is discarded &mdash;
+            limiting the potential damage a buggy component can do.</li>
+    </ol>
+    <p>We have already set up the classpath so that our module can see classes
+    from <code>Bean.jar</code>.  We need to set up the reverse situation &mdash;
+    allow our properties to call into classes in our module and the rest of
+    NetBeans when they are loaded inside the sandbox of the classloader the
+    form editor uses for loading the user's components.
+    <p>This is accomplished via a bit of black magic with the form editor's classloader.
+    The form editor allows us to define a special text file in our <code>layer.xml</code>
+    file, which contains a list of classes and/or packages that should be visible
+    to components living inside a Swing form.  To accomplish this:
+    <ol class="instructions">
+        <li>Open <code>layer.xml</code> again in the text editor.</li>
+        <li>Add the XML fragment from <a href="#listing12">listing 12</a> before
+        the closing <code>&lt;/filesystem&gt;</code> tag.</li>
+        <li>Right click the <code>org.netbeans.demo.form.beanlib</code> package,
+            and choose <b>New &gt; Other</b>.</li>
+        <li>In the New File Wizard, choose <b>Other &gt; Empty File</b> and click
+            <b>Next</b>.</li>
+        <li>In the second page of the New File Wizard, name the file <code>BeanClasses.txt</code>
+            (note that because we are using the <b>Empty File</b> template, we
+            need to specify the file extension &mdash; normally you do not do this
+            or you end up with file names such as <code>Foo.xml.xml</code>).</li>
+        <li>Paste the contents of <a href="#listing13">listing 13</a> into the
+            new text file.</li>
+    </ol>
+    <h3><a name="listing12">Listing 12:  Registering Classes That Should Be Visible in layer.xml</a></h3>
+    <pre>
+&lt;folder name=&quot;org-netbeans-modules-form&quot;&gt;
+   &lt;folder name=&quot;classloader&quot;&gt;
+       &lt;folder name=&quot;system&quot;&gt;
+            &lt;file name=&quot;BeanClasses.txt&quot; url=&quot;BeanClasses.txt&quot;/&gt;
+        &lt;/folder&gt;
+   &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+    <p class="tips">
+        If your property editors or components also need to be able
+        to see classes or resources (such as images) that are part of
+        the user's project, you can register the
+        class list in the folder <code>system_with_project</code> instead of
+        <code>system</code>.  If some do and some do not, register two lists,
+        including only those that really need to see classes from the user's
+        project in <code>system_with_project</code>.
+    
+
+    <h3><a name="listing13">Listing 13:  Listing Module Classes That Should Be Visible to Components in the Form Editor</a></h3>
+    <pre>org.netbeans.demo.form.beanlib.editors.**
+bean.**
+    </pre>
+    Now at last we have working property editors which are registered by our
+    module.  You can run the module project, add a <code>Bean1</code> to a
+    Swing form, and the property <code>colorValue</code> will use our property
+    editor.
+    <p/>
+    <p class="tips">This file can list individual classes, or it can list packages
+    including all subpackages of those classes by using the suffix <code>**</code>,
+    or limit the search to only the one specified package but using the
+    suffix <code>*</code>.
+    The next step is to create a custom editor that will interact with the
+    IDE, controlling its (NetBeans-provided) OK button.
+
+    <h2>Adding A Custom Editor</h2>
+    To really interact with the IDE, we should add support for a custom
+    (pop-up window) editor for our <code>ColorValue</code> property.
+    To do that:
+    <ol class="instructions">
+        <li>Right-click the <code>org.netbeans.demo.form.beanlib.editors</code> package
+        and choose <b>New &gt; JPanel Form</b> from the popup window.</li>
+        <li>In the New File Wizard that opens, name the file <code>ColorValueCustomEditor</code>.</li>
+        <li>In the newly created JPanel form, add the following components
+            from the Component Palette, arranging the UI as shown in
+            <a href="#figure2">figure 2</a> and setting the variable names
+            as shown below (to set the name, slow-double-click the name of
+            each component in the <b>Inspector</b> window, then type the new 
+            name;  component type shown in parentheses):
+            <p><center>
+            <a name="figure2"><img src="../../images/tutorials/property-editors/colorValueCustomEditorUI.png" alt="Color Value Custom Editor"></a><br/>
+                <i>Figure 2: Color Value Custom Editor User Interface</i>
+                <p>
+                <table>
+                <tr>
+                    <td class="td">redLabel (JLabel)</td><td class="td">redSlider (JSlider)</td><td class="td">redValue (JLabel)</td>
+                </tr>
+                <tr>
+                    <td class="td">greenLabel (JLabel)</td><td class="td">greenSlider (JSlider)</td><td class="td">greenValue (JLabel)</td>
+                </tr>
+                <tr>
+                    <td class="td">blueLabel (JLabel)</td><td class="td">blueSlider (JSlider)</td><td class="td">blueValue (JLabel)</td>
+                </tr>
+                <tr>
+                    <td class="td">intLabel (JLabel)</td><td class="td" colspan="2" align="center">intValue (JTextField)</td>
+                </tr>
+                <tr>
+                    <td class="td" colspan="3" align="center">sample (JLabel)</td>
+                </tr>
+            </table>
+                    <i>Table 1:  Component Variable Names and Types in ColorValueCustomEditor</i>
+            </center>
+        </li>
+        <li>Set the property <b>Opaque</b> to true on the property sheet for
+            <code>sample</code>.</li>
+        <li>Select all (shift-click) of the JSliders in the form editor, and set
+        their <code>maximum</code>
+        property to <code>255</code>.</li>
+        <li>Replace the constructor of <code>ColorValueCustomEditor</code> with the
+            content of <a href="#listing14">listing 14</a>.
+        <li>Change the class signature of <code>ColorValueCustomEditor</code> to look
+            like <a href="#listing15">listing 15, implementing <code>ChangeListener</code>
+            and <code>DocumentListener</code></a>.</li>
+        <li>Add the code in <a href="listing16">listing 16</a> to
+            <code>ColorValueCustomEditor</code> to implement the listener
+            interfaces and handle events.</li>
+    </ol>
+    <h3><a name="listing14">Listing 14:  ColorValueCustomEditor Constructor</a></h3>
+    <pre>
+    private final ColorValueEditor ed;
+    public ColorValueCustomEditor(ColorValueEditor ed, PropertyEnv env) {
+        initComponents();
+        ColorValue cv = (ColorValue) ed.getValue();
+        if (cv != null) {
+            Color c = cv.toColor();
+            setColor(c);
+            intValue.setText(c.getRGB() + "");
+        }
+        env.setState(PropertyEnv.STATE_VALID);
+        this.ed = ed;
+        redSlider.getModel().addChangeListener(this);
+        greenSlider.getModel().addChangeListener(this);
+        blueSlider.getModel().addChangeListener(this);
+        intValue.getDocument().addDocumentListener(this);
+    }</pre>
+
+    <h3><a name="listing15">Listing 15:  Changing the Class Signature of ColorValueCustomEditor to Implement Listeners</a></h3>
+    <pre>final class ColorValueCustomEditor extends javax.swing.JPanel implements ChangeListener, DocumentListener {</pre>
+
+    <h3><a name="listing16">Listing 16:  Listener Interface Implementation for ColorValueCustomEditor</a></h3>
+    <pre>
+    private ColorValue getPropertyValue() {
+        return new ColorValue(redSlider.getValue(), greenSlider.getValue(),
+                blueSlider.getValue());
+    }
+
+    private boolean inUpdate;
+    public void stateChanged(ChangeEvent ce) {
+        if (inUpdate) {
+            return;
+        }
+        inUpdate = true;
+        try {
+            redValue.setText(redSlider.getValue() + "");
+            greenValue.setText(greenSlider.getValue() + "");
+            blueValue.setText(blueSlider.getValue() + "");
+            ColorValue v = getPropertyValue();
+            Color c = v.toColor();
+            intValue.setText(c.getRGB() + "");
+            sample.setBackground(c);
+            ed.setValue(v);
+        } finally {
+            inUpdate = false;
+        }
+    }
+
+    public void insertUpdate(DocumentEvent de) {
+        changedUpdate(de);
+    }
+
+    public void removeUpdate(DocumentEvent de) {
+        changedUpdate(de);
+    }
+
+    void setColor (Color c) {
+        boolean old = inUpdate;
+        inUpdate = true;
+        try {
+            redSlider.setValue(c.getRed());
+            greenSlider.setValue(c.getGreen());
+            blueSlider.setValue(c.getBlue());
+        } finally {
+            inUpdate = old;
+        }
+    }
+
+    public void changedUpdate(DocumentEvent de) {
+        if (!inUpdate) {
+            try {
+                int val = Integer.parseInt(intValue.getText().trim());
+                setColor(new Color(val));
+            } catch (NumberFormatException e) {
+                PropertyEnv env = ed.env;
+                if (env != null) {
+                    env.setState(PropertyEnv.STATE_VALID);
+                }
+            }
+        }
+    }
+    </pre>
+
+    Now we just need to modify <code>ColorValueEditor</code> to actually
+    create a <code>ColorValueCustomEditor</code>.  To do that:
+    <ol class="instructions">
+        <li>Update the <code>supportsCustomEditor()</code> and <code>getCustomEditor()</code>
+            to look like <a href="#listing17">listing 17</a></li>
+    </ol>
+    <h3><a name="listing17">Listing 17:  Creating Our Custom Editor</a></h3>
+    <pre>
+    public Component getCustomEditor() {
+        return new ColorValueCustomEditor(this, env);
+    }
+
+    public boolean supportsCustomEditor() {
+        return true;
+    }</pre>
+
+    At this point, we are ready to run the project, and when you click on the
+    [...] button for the <code>colorValue</code> property of an instance of
+    <code>Bean1</code> on your form, our newly finished custom editor will open.
+    Notice that if you type an invalid number in the text area, the
+    OK button will become disabled.
+
+    <h3>What ColorValueEditor Does</h3>
+    <p>You may have noticed that <code>ColorValueEditor</code> implements a
+    NetBeans interface, <code>org.openide.explorer.propertysheet.ExPropertyEditor</code>,
+    in addition to the standard JDK <code>PropertyEditor</code> interface.
+    This interface, or more importantly the <code>PropertyEnv</code> object that
+    is passed to it is the path for our property editor to escape the
+    prison of the Java Beans spec and interact with the environment (the IDE)
+    that instantiated it.
+    <p><code>PropertyEnv</code> is an enigmatic little class, but it offers a lot
+    of power.  In our case, we are using it very simply, just to let our
+    custom editor control the OK button of the dialog it appears in.  To do that,
+    we call <code>env.setState(PropertyEnv.STATE_INVALID)</code> to disable the
+    OK button, and <code>env.setState(PropertyEnv.STATE_VALID)</code> to re&euml;nable
+    it.  Here are some of the other things we could do with it:
+    <ul>
+        <li>Delay figuring out if the user's input is good or not until the
+            user presses enter, by calling <code>env.setState(PropertyEnv.STATE_NEEDS_VALIDATION)</code> and
+            attaching a <code>VetoableChangeListener</code> which can veto a change
+            to <code>STATE_VALID</code> which will happen when the user presses
+            OK</code></li>
+        <li>Get the <code>Node.Property</code> object which created the property
+            editor and represents the property being useful, using <code>env.getFeatureDescriptor()</code>.
+            This is useful for passing hints to the property sheet about how an
+            editor should behave when in the property sheet.  Two useful hints are
+            <ul>
+                <li>Call <code>env.getFeatureDescriptor().setValue("canEditAsText", Boolean.FALSE)</code>
+                    to make the property non-editable inside the property sheet
+                    (so the only way to change the property is to open the custom
+                    editor).
+                </li>
+                <li>Call <code>env.getFeatureDescriptor().setValue("suppressCustomEditor", Boolean.TRUE)</code>
+                    from a <code>PropertyEditor</code> subclass, to hide the
+                    [...] custom editor button on a property that would otherwise
+                    have one.
+                </li>
+            </ul>
+        </li>
+        <li>Register an <code>InplaceEditor.Factory</code> which can provide the UI
+        component that is shown in the property sheet when the user edits the property
+        without opening a custom editor (a tutorial on how to do that can
+        <a href="https://platform.netbeans.org/tutorials/nbm-property-editors.html">be found here</a>)</li>
+        <li>Get the Node for the file being edited like this:
+            <pre>
+Node n = null;
+for (Object o : env.getBeans()) {
+  if (o instanceof Node) {
+    n = (Node) o;
+    break;
+  }
+}
+            </pre>
+            and use that to
+            <ul>
+                <li>Get the file that is being edited &mdash; <code>n.getLookup().lookup(DataObject.class).getPrimaryFile()</code></li>
+                <li>Find the project that owns the file being edited and interrogate its classpath (for example,
+                    to list possible directories the user might want to save an icon file 
+                    to):<pre>FileObject fo = n.getLookup().lookup(DataObject.class).getPrimaryFile();
+Project project = FileOwnerQuery.getOwner(fo);
+if (project != null) } {
+   ClassPathProvider provider = project.getLookup().lookup(ClassPathProvider.class);
+   ...</pre>
+                </li>
+            </ul>
+        </li>
+    </ul>
+    <div class="caveat">
+        Be aware that <code>attachEnv()</code> may be called more than once for
+        your property editor.  To make sure you are using the right instance of
+        <code>PropertyEnv</code>, store the value from the most recent call in
+        a field of your property editor, and pass that to the custom editor.
+    </div>
+
+
+    <h2>Writing XML Instead Of Serializing</h2>
+    <p>The last thing we may want to do is more about plumbing than anything the
+    user sees directly:  When you are editing a Swing form in the NetBeans Form
+    Editor, you are really editing two files (though you only see the Java file
+    in the projects tab).  The form editor is really an editor for an invisible (in NetBeans)
+    XML file that sits next to the Java source file.  The form editor is really
+    an editor of that XML file.  Whenever you make a change in the form editor,
+    the data about how components are positioned and their properties
+    is saved in that file.  That file is then used to generate the
+    <code>initComponents()</code> method and other code inside the non-editable
+    blue code blocks in your Java source.  Whenever the XML file changes (because
+    you made a change in the form editor and saved the file), those blue
+    <i>guarded blocks</i> are regenerated into the Java source file.
+    <p>It is worth taking a look at the <code>.form</code> file after you have
+    modified a <code>ColorValue</code> and saved the form (make sure you save it!).
+    To do this, you will need to go outside of NetBeans and use a text
+    editor (if on Windows,
+    use a text editor that understands lines that end with just a carriage
+    return character &mdash; WordPad, usually located in <code>C:\Program Files\Windows NT\Accessories</code>
+    on Windows will do).  What you will see is something like this:
+    <pre>&lt;Property name=&quot;colorValue&quot; type=&quot;bean.ColorValue&quot; editor=&quot;org.netbeans.demo.form.beanlib.editors.ColorValueEditor&quot;&gt;
+  &lt;SerializedValue value=&quot;-84,-19,0,5,115,114,0,15,98,101,97,110,46,67,
+                   111,108,111,114,86,97,108,117,101,95,6,-80,34,96,
+                  <i style="color:gray">[remainder omitted]</i>
+&lt;/Property&gt;</pre>
+    <p>What are all of these numbers? This is a <i>serialized</i> object.
+    The form editor knows nothing about your component, but needs some way
+    to save the state of our <code>ColorValue</code> object.  The only
+    built-in way Java has to do that is to use serialization to save the
+    in-memory representation of your object as an array of bytes.  The form
+    editor then translates that array of bytes into a terribly inefficient
+    comma-delimited string of numbers.
+    <p>There are four big problems with using serialization to write out an
+    object into the form file:
+    <ol>
+        <li>It's inefficent &mdash; it takes up a lot of space in the file,
+        and takes longer to read and write</li>
+        <li>It's not human-readable &mdash; If a form were corrupted in some
+        way, the user doesn't have any chance to figure out what the value
+        of this object actually was</li>
+        <li>It's fragile &mdash; the data structure depends on the JVM's in-memory
+            data structure for the class.  If you add a field or a method
+            to <code>ColorValue</code> in the future, the data in all existing
+            <code>.form</code> files will be unusable.  That means users will
+            lose their components and have to recreate them, or they must never
+            edit a form with a <code>Bean1</code> on it again.
+        </li>
+    </ol>
+    There is another way.  Although nobody truly loves writing DOM code, you can
+    implement XMLPropertyEditor.  What happens then is:
+    <ol>
+        <li>When the form is saved, the form editor will make an instance of
+            the property editor for the property
+        </li>
+        <li>The property editor will be passed the XML <code>Document</code> and
+        asked to provide a document node that contains data about the component</li>
+        <li>The next time the form is opened, the form editor will read the name
+            <code>org.netbeans.demo.form.beanlib.editors.ColorValueEditor</code> in
+            the XML, make an instance of our editor, and ask it to read the
+            XML that was written out and create an instance of <code>ColorValue</code>
+            to display in the form editor.</li>
+    </ol>
+    By using XML instead of serialization, we get to choose what data we store in
+    the <code>.form</code> file, how it is stored, and our code is in charge of
+    reading it back.  If new properties or fields have been added to <code>ColorValue</code>
+    and we are reading an old form, we can just ignore missing values and use some
+    reasonable default value.  The result is that our users are protected from
+    having corrupted, unopenable forms caused by upgrading to a new version of
+    <code>Bean.jar</code>.  To use this approach instead,
+    <ol class="instructions">
+        <li>Modify the class signature of <code>ColorValueEditor</code> so that
+            it implements <code>org.openide.explorer.propertysheet.editors.XMLPropertyEditor</code>.
+        </li>
+        <li>Implement the methods of <code>XMLPropertyEditor</code> as shown in
+            <a href="#listing18">listing 18</a>.</li>
+    </ol>
+    <h3><a name="listing18">Listing 18:  Implementing XMLPropertyEditor</a></h3>
+    <pre>public void readFromXML(Node node) throws IOException {
+    NamedNodeMap attrs = node.getAttributes();
+    Node red = attrs.getNamedItem("red");
+    Node green = attrs.getNamedItem("green");
+    Node blue = attrs.getNamedItem("blue");
+    if (red != null && green != null && blue != null) {
+        value = new ColorValue(
+                Integer.parseInt(red.getNodeValue()),
+                Integer.parseInt(green.getNodeValue()),
+                Integer.parseInt(blue.getNodeValue())
+                );
+    } else {
+        value = new ColorValue(); //use default value
+    }
+}
+
+public Node storeToXML(Document doc) {
+    Element el = doc.createElement("ColorValue");
+    if (value != null) {
+        el.setAttribute("red", "" + value.getRed());
+        el.setAttribute("green", "" + value.getGreen());
+        el.setAttribute("blue", "" + value.getBlue());
+    }
+    return el;
+}</pre>
+
+    <p>The above results in:
+<pre>&lt;Property name="colorValue" type="bean.ColorValue" editor="org.netbeans.demo.form.beanlib.editors.ColorValueEditor"&gt;
+     &lt;ColorValue blue="128" green="235" red="26"/&gt;
+&lt;/Property&gt;</pre>
+
+    <h2>Packaging Your Component</h2>
+    Once you have your module the way you like it, the next step is to package
+    it up so that others can install it.  In NetBeans, this is extremely simple:
+    Just right click the module project and choose <b>Create NBM</b>.  This will
+    create an NBM (NetBeans Module) file which includes your module and your
+    library in a single file any user can install using <b>Tools &gt; Plugins</b>.
+    Users of your component do not have to deal with separate JAR and documentation
+    downloads, and if they want an updated version of your components, all they
+    have to do is install a new NBM to get them.
+
+    <p class="tips">A useful way to deliver components is to set
+        up your own <i>update center</i>.  An update center has a list of NBM
+        files for download.  Users of NetBeans can just add the URL for your update
+        center on the <b>Settings</b> tab in <b>Tools &gt; Plugins</b>.  The IDE
+        will automatically check with your server on a regular basis to see if
+        there are updates available.
+        <p/>
+        You can make this process even easier by doing two things:
+        <ol>
+            <li>Automatically generate the update index using NetBeans:  Just
+                create a <b>Module Suite</b> project and add the module to it.
+                Right click that project and choose <b>Create NBMs</b>.  Along
+                with the NBM file, you get the <code>update.xml</code> file which
+                is what the IDE reads to figure out if any updates are there.</li>
+            <li>Use <a href="http://hudson.dev.java.net">Hudson</a> to run continuous
+                builds of your suite and publish the resulting files.  This way
+                you can completely automate publishing new versions of your
+                module and libraries.  More information about setting up
+                automated builds with Hudson <a href="http://xtest.netbeans.org/XTest_for_Platform.html#Build_application_using_Hudson">can be found here</a></li>
+        </ol>
+    
+
+    <h2>Wrap Up</h2>
+    NetBeans provides a powerful way to deliver Java components to your users,
+    including all of the documentation and sources to your users and potential
+    users in a single easy-to-use deliverable.  By creating property editors
+    that integrate tightly with NetBeans, you can further enhance the ease of
+    use of working with your components.
+
+    <!--
+    The first is simply an artificial substitute
+    for a color, which holds integer red, green and blue values.  The
+    second, based on real-world requirements an organization which
+    was using NetBeans internally, is a considerably more complicated
+    class:  An IdInfo has a string ID, representing one stream of data
+    the component will show at runtime.  An IdInfo also has a <i>type</i>
+    for the data (Integer, Double or Enum).  When the ID is supplied,
+    the component will contact a remote server, and pass it the ID.
+    The server will reply with the type of the data.  The component (which
+    will represent a measurement of a physical process) will configure itself
+    to show data of that type.  The
+       -->
+   
+    </body>
+</html>

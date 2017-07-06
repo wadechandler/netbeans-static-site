@@ -1,0 +1,572 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>NetBeans XML Editor Extension Module Tutorial for NetBeans Platform 6.9</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+  <meta name="AUDIENCE" content="NBUSER"/>
+  <meta name="TYPE" content="ARTICLE"/>
+  <meta name="EXPIRES" content="N"/>
+  <meta name="developer" content="gwielenga@netbeans.org"/>
+  <meta name="indexed" content="y"/>
+  <meta name="description"
+ content="A short guide to extending the NetBeans XML Editor."/>
+<!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>NetBeans XML Editor Extension Module Tutorial</h1>
+
+<p>This tutorial demonstrates how to create a module that extends the functionality offered by one of NetBeans IDE's editors.
+ The IDE has several editors&#8212;for example, the XML editor, the Java editor, the JSP editor, and the SQL editor.
+ Normally all the IDE's editors are referred to collectively as the Source Editor. However, each of the editors
+ is distinct&#8212;its functionality is targeted at the file type for which it exists. In this tutorial,
+ you add an action to the XML editor. After you create and install the module, and you open an XML file,
+  the editor's contextual menu will include a menu item that displays the XML file's tags in the Output Window: </p>
+ <p><img src="../../images/tutorials/taghandler/69-result-1.png" alt="New Output window."/></p>
+
+ <p><strong class="notes">Note: </strong>This document uses NetBeans Platform 6.9
+     and NetBeans IDE 6.9. If you
+    are using an earlier version, see <a href="68/nbm-xmleditor.html">the 6.5/6.7/6.8 version
+    of this tutorial</a>.</p>
+
+  <p><b>Contents</b></p>
+   
+   <p><img  src="../../images/articles/69/netbeans-stamp69.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.9" title="Content on this page applies to NetBeans IDE 6.9"/></p>
+      <ul class="toc">
+  <li><a href="#creatingthemoduleproject">Setting Up the Module Project</a>
+<ul><li><a href="#create-plug-in">Creating the Module Project the Sample</a></li>
+<li><a href="#specify-dependencies">Specifying the Module's Dependencies</a></li></ul></li>
+  <li><a href="#create-tag-handler">Coding the Module</a></li>
+  <li><a href="#creating-action">Creating the Action</a></li>
+  <li><a href="#building">Building and Installing the Module</a>
+  <ul><li><a href="#install-plugin">Installing the Module</a></li>
+  <li><a href="#use-plugin">Using the Module</a></li>
+  <li><a href="#share-plugin">Creating a Shareable Module Binary</a></li></ul></li>
+       </ul>
+         
+<p><b>To follow this tutorial, you need the software and resources listed in the following 
+table.</b></p>
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.9</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Version 6</td>
+            </tr>
+        </tbody>
+    </table>
+ 
+ <p class="tips">Optionally, for troubleshooting purposes, you
+  can <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=14039">download the completed sample</a>.</p>
+
+<h2 class="tutorial"><a name="creatingthemoduleproject"></a>Setting up the Module Project</h2>
+<p>Before you start writing the module, you have to make sure you
+  that your project is set up correctly. The IDE provides a wizard that sets up all the basic files
+ needed for a module.</p>
+<div class="indent">
+
+<h3 class="tutorial"><a name="create-plug-in"></a>Creating the Module Project</h3>
+
+ <ol>
+    <li>Choose File &gt; New Project (Ctrl+Shift+N). Under Categories, select NetBeans Modules.
+        Under Projects, select Module. Click Next.</li>
+    <li>In the Name and Location panel, type <tt>ShowXMLStructure</tt> in the Project Name field.
+        Change the Project Location to any directory on your computer. Select the Standalone Module option
+        and Set as Main Project checkbox selected. Click Next.</li>
+    <li>In the Basic Module Configuration panel, type <tt>org.netbeans.modules.showxmlstructure</tt>
+     in Code Name Base.</li>
+    <li>Select "Generate XML Layer". Leave the
+        locations of both the localizing bundle and the XML layer file
+        so that they will be stored in a package with
+        the name <tt>org/netbeans/modules/showxmlstructure</tt>. Click Finish.</li>
+</ol>
+
+ <p> The IDE creates the <tt>ShowXMLStructure</tt>
+     project. The project contains all of your sources and
+     project metadata, such as the project's Ant build script. The project
+     opens in the IDE. You can view its logical structure in the Projects window (Ctrl-1) and its
+ file structure in the Files window (Ctrl-2).</p>
+
+<h3 class="tutorial"><a name="specify-dependencies"></a>Specifying the Module's Dependencies</h3>
+
+<p>You will need to subclass several classes that belong to the NetBeans APIs. 
+ Each is declared as a module dependency. Use the Project Properties dialog box for this purpose,
+ as described below.</p>
+      <ol>
+	<li>In the Projects window, right-click the <tt>ShowXMLStructure</tt> project and choose Properties.</li>
+
+<li>For each of the following APIs, click "Add..." in the Libraries panel, 
+ select the name from the Module list, and then click OK to confirm it:
+<ul>
+<li><tt>I/O APIs</tt></li>
+<li><tt>Nodes API</tt></li>
+<li><tt>Text API</tt></li>
+<li><tt>Utilities API</tt></li>
+<li><tt>Window System API</tt></li></ul>
+<p>Click OK to exit the Project Properties dialog box.</p></li>
+      </ol>
+<p>In the Projects window, expand the Important Files
+ node and double-click Project Metadata and notice that the APIs you selected have been
+ declared as module dependencies.</p>
+
+
+      </div>
+
+<!-- ===================================================================================== -->
+<h2><a name="create-tag-handler"></a>Coding the Module</h2>
+
+<div class="indent">
+
+<h3 class="tutorial"><a name="creating-action"></a>Creating the Action</h3>
+
+<ol>
+	
+	 <li><p>Right-click the project node and
+	      choose New &gt; Other. Under Categories, select Module Development. Under Projects, 
+     select Action, as shown below:</p>
+           <p><img src="../../images/tutorials/taghandler/69-action-1.png" alt="Step 1 of New Action wizard."/></p>
+
+            <p>Click Next.</p></li>
+           <li><p>In the Action Type panel and click Conditionally Enabled. Select <tt>EditorCookie</tt>, which
+              is the name of the class that lets the Source Editor access the action, as shown below:</p>
+           <p><img src="../../images/tutorials/taghandler/69-action-2.png" alt="Step 2 of New Action wizard."/></p>
+
+	      
+              <p>Click Next.</p></li>
+
+              <li><p>In the GUI Registration panel, select the 'Edit' category in the Category drop-down list.
+                  The Category drop-down list controls where an action is shown in the Keyboard Shortcuts editor in the IDE.
+              Next, select Editor Contect Menu Item and then select the <tt>text/xml</tt> MIME type, as shown below:</p>
+	      
+<p><img src="../../images/tutorials/taghandler/69-action-3.png" alt="Step 3 of New Action wizard."/></p>
+
+<p>Notice that you can set the position of the menu item and that you
+              can separate the menu item from the item before it and after it. Click Next.</p></li>
+
+   <li><p>In the Name and Location panel, type <tt>ShowXMLStructureAction</tt> as the Class Name
+   and type <tt>Show XML Structure</tt> as the Display Name. You should now see the following:</p>
+<p><img src="../../images/tutorials/taghandler/69-action-4.png" alt="Step 4 of New Action wizard."/></p>
+   <p>Menu items provided by contextual menus
+   do not display icons. Therefore, click Finish and <tt>ShowXMLStructureAction.java</tt> is added to the package.
+    The content of the file is as follows:</p>
+
+<pre class="examplecode">package org.netbeans.modules.showxmlstructure;
+
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import org.openide.cookies.EditorCookie;
+
+public final class ShowXMLStructureAction implements ActionListener {
+
+    private final EditorCookie context;
+
+    public ShowXMLStructureAction(EditorCookie context) {
+        this.context = context;
+    }
+
+    public void actionPerformed(ActionEvent ev) {
+        // TODO use context
+    }
+
+}</pre>
+
+
+   </li>
+   <li>In the Source Editor, write the <tt>actionPerformed</tt> method as follows,
+    after reading and understanding the comments in the code:
+
+<pre class="examplecode">public void actionPerformed(ActionEvent ev) {
+    EditorCookie editorCookie = context;
+    <b>//Get the tab name from the Bundle.properties file:</b>
+    String tabName = NbBundle.getMessage(ShowXMLStructureAction.class, "LBL_tabName");
+    <b>// "XML Structure" tab is created in Output Window for writing the list of tags:</b>
+    InputOutput io = IOProvider.getDefault().getIO(tabName, false);
+    io.select(); <b>//"XML Structure" tab is selected</b>
+    try {
+        <b>//Get the InputStream from the EditorCookie:</b>
+        InputStream is = ((org.openide.text.CloneableEditorSupport) editorCookie).getInputStream();
+        <b>//Use the NetBeans org.openide.xml.XMLUtil class to create a org.w3c.dom.Document:</b>
+        Document doc = XMLUtil.parse(new InputSource(is), true, true, null, null);
+        <b>//Create a list of nodes, for all the elements:</b>
+        NodeList list = doc.getElementsByTagName("*");
+        <b>//Iterate through the list:</b>
+        for (int i = 0; i &lt; list.getLength(); i++) {
+            <b>//For each node in the list, create a org.w3c.dom.Node:</b>
+            org.w3c.dom.Node mainNode = list.item(i);
+            <b>//Create a map for all the attributes of the org.w3c.dom.Node:</b>
+            NamedNodeMap map = mainNode.getAttributes();
+            <b>//Get the name of the node:</b>
+            String nodeName = mainNode.getNodeName();
+            <b>//Create a StringBuilder for the Attributes of the Node:</b>
+            StringBuilder attrBuilder = new StringBuilder();
+            <b>//Iterate through the map of attributes:</b>
+            for (int j = 0; j &lt; map.getLength(); j++) {
+                <b>//Each iteration, create a new Node:</b>
+                org.w3c.dom.Node attrNode = map.item(j);
+                <b>//Get the name of the current Attribute:</b>
+                String attrName = attrNode.getNodeName();
+                <b>//Add the current Attribute to the StringBuilder:</b>
+                attrBuilder.append("*").append(attrName).append(" ");
+            }
+            <b>//Print the element and its attributes to the Output window:</b>
+            io.getOut().println("ELEMENT: " + nodeName +
+                    " --> ATTRIBUTES: " + attrBuilder.toString());
+        }
+        <b>//Close the InputStream:</b>
+        is.close();
+    } catch (SAXException ex) {
+        Exceptions.printStackTrace(ex);
+    } catch (IOException ex) {
+        Exceptions.printStackTrace(ex);
+    }
+}</pre>
+   </li>
+    <li>You will need these import statements:
+        
+<pre class="examplecode">import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.io.IOException;
+import java.io.InputStream;
+import org.openide.cookies.EditorCookie;
+import org.openide.util.Exceptions;
+import org.openide.util.NbBundle;
+import org.openide.windows.IOProvider;
+import org.openide.windows.InputOutput;
+import org.openide.xml.XMLUtil;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;</pre></li>
+        
+<li>Add the display names to the <tt>Bundle.properties</tt> file:
+
+   <pre class="examplecode">LBL_tabName=XML Structure</pre>
+</li>
+</ol>
+ </div>
+
+<!-- ======================================================================================= -->
+
+<h2><a name="building"></a>Building and Installing the Module</h2>
+<p>The IDE uses an Ant build script to build and install your module. The build script is created for you
+when you create the module project.</p>
+<div class="indent">
+
+	<h3 class="tutorial"><a name="install-plugin"></a>Installing the Module</h3>
+<p>In the Projects window, right-click the <tt>ShowXMLStructure</tt> project and choose Run.</p>
+	      <p>The module is built and installed in the target IDE or Platform. The target IDE or Platform opens so that you
+	      can try out your new module. The default target IDE or Platform is the 
+	      installation used by the current instance of the development IDE. Note that when you run your module, you will be using 
+              a temporary test user directory, not the development IDE's user directory. </p>
+
+       <h3 class="tutorial"><a name="use-plugin"></a>Using the Module</h3>
+       <ol>
+           <li><p>Choose File &gt; New Project (Ctrl-Shift-N) and create a new project.</p></li>
+	       <li><p>In the Files window (Ctrl-2), expand the project node and then expand the <tt>nbproject</tt> node.
+           Double-click <tt>build-impl.xml</tt> so that it opens in the Source Editor</p></li>
+                <li><p>Right-click anywhere in the Source Editor and notice the new popup menu item called "Show XML Structure".
+	        Choose the menu item and notice that the tag handler prints all the elements
+            and attributes to the Output window,
+		 which is at at the bottom of the IDE, as shown below:</p>
+                <p><img src="../../images/tutorials/taghandler/69-result-1.png" alt="New Output window."/></p></li>
+	<li><p>Open a different file type in the Source Editor. For example, open a Java class. Right-click anywhere in the
+    Source Editor and notice that the new popup menu item is not included in the contextual menu. That is
+    because the New Action wizard created the following entries for you, which cause the action to be
+    available for XML files only:</p>
+
+<pre class="examplecode">&lt;folder name="Actions"&gt;
+    &lt;folder name="Edit"&gt;
+        &lt;file name="org-netbeans-modules-showxmlstructure-ShowXMLStructureAction.instance"&gt;
+            &lt;attr name="delegate" methodvalue="org.openide.awt.Actions.inject"/&gt;
+            &lt;attr name="displayName" bundlevalue="org.netbeans.modules.showxmlstructure.Bundle#CTL_ShowXMLStructureAction"/&gt;
+            &lt;attr name="injectable" stringvalue="org.netbeans.modules.showxmlstructure.ShowXMLStructureAction"/&gt;
+            &lt;attr name="instanceCreate" methodvalue="org.openide.awt.Actions.context"/&gt;
+            &lt;attr name="noIconInMenu" boolvalue="false"/&gt;
+            &lt;attr name="selectionType" stringvalue="EXACTLY_ONE"/&gt;
+            &lt;attr name="type" stringvalue="org.openide.cookies.EditorCookie"/&gt;
+        &lt;/file&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;
+&lt;folder name="Editors"&gt;
+    &lt;folder name="text"&gt;
+        &lt;folder name="xml"&gt;
+            &lt;folder name="Popup"&gt;
+                &lt;file name="org-netbeans-modules-showxmlstructure-ShowXMLStructureAction.shadow"&gt;
+                    &lt;attr name="originalFile" stringvalue="Actions/Edit/org-netbeans-modules-showxmlstructure-ShowXMLStructureAction.instance"/&gt;
+                    &lt;attr name="position" intvalue="1100"/&gt;
+                &lt;/file&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+        </li>
+ </ol>
+
+ <h3 class="tutorial"><a name="share-plugin"></a>Creating a Shareable Module Binary</h3>
+  
+      <ol>
+          <li><p>In the Projects window, right-click the <tt>ShowXMLStructure</tt> project and choose Create NBM.</p>
+
+              <p>The NBM file is created and you can view it in the Files window (Ctrl-2):</p>
+	      <p><img src="../../images/tutorials/taghandler/69-result-2.png" alt="Shareable NBM."/></p></li>
+          <li>Make it available to others via, for example, the <a href="http://plugins.netbeans.org/PluginPortal/">Plugin Portal</a>.</li>
+       </ol>
+    </div>
+    
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20XML%20Editor%20Extension%20Tutorial">Send Us Your Feedback</a></div>
+
+      
+
+ <!-- ======================================================================================== -->
+    
+    <h2><a name="nextsteps"></a>Next Steps</h2>
+    
+    <p>For more information about creating and developing NetBeans modules, see the following resources: </p>
+    <ul>
+        <li><a href="https://netbeans.org/kb/trails/platform.html">Other Related Tutorials</a></li>
+        <li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API Javadoc</a></li>
+    </ul>
+    
+    <!-- ======================================================================================== -->
+    <!--
+<h2><a name="version"></a>Versioning </h2>
+  
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <div><b>Version</b></div>
+      </td>
+      <td>
+	<div><b>Date</b></div>
+      </td>
+      <td>
+	<div><b>Changes</b></div>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+         11 July 2005
+      </td>
+      <td>
+         Initial version
+      </td>
+  </tr>
+ <tr>
+      <td>
+         2
+      </td>
+      <td>
+         27 September 2005
+      </td>
+      <td>
+	      <ul><li>Added Action wizard</li>
+		      <li>Renamed from "NetBeans Tag Handler Plug-in Tutorial"
+		      to "NetBeans Source Editor Extension Module Tutorial".</li>
+		      <li>Added issue 7 below.</li></ul>
+      </td>
+  </tr> 
+ <tr>
+      <td>
+         3
+      </td>
+      <td>
+         28 September 2005
+      </td>
+      <td>
+	      <ul><li>Renamed the tutorial, because 'Source Editor' doesn't
+	       cover the SQL editor, which could also be extended using the steps in this tutorial.</li>
+	       <li>Rewrote the introductory paragraph.</li></ul>
+      </td>
+  </tr> 
+   <tr>
+      <td>
+         4
+      </td>
+      <td>
+         11 June 2007
+      </td>
+      <td>
+	      Worked through whole tutorial, and cleaned up, for 6.0,
+              also changed screenshots.
+      </td>
+  </tr>
+  <tr>
+      <td>
+         5
+      </td>
+      <td>
+         17 November 2007
+      </td>
+      <td>
+	      Fixed spacing between steps. Tried out the attached sample,
+              and it works as described.
+      </td>
+  </tr>
+  <tr>
+      <td>
+         6
+      </td>
+      <td>
+         1 November 2008
+      </td>
+      <td>
+	      Updated to 6.5: badge, table, etc. But also vastly simplified
+           the tutorial, by using the NetBeans XMLUtil class, thus was
+           able to remove a whole section and a lot of code.
+      </td>
+  </tr>
+  <tr>
+      <td>
+         7
+      </td>
+      <td>
+         21 November 2010
+      </td>
+      <td>
+	      Went through and made sure no red error marks are shown in editor.
+      </td>
+  </tr>
+  <tr>
+      <td>
+         8
+      </td>
+      <td>
+         21 December 2010
+      </td>
+      <td>
+	      Changed the open angle brackets in the code to entities.
+      </td>
+  </tr>
+  <tr>
+      <td>
+         9
+      </td>
+      <td>
+         4 January 2011
+      </td>
+      <td>
+	      Updated to 6.9.
+      </td>
+  </tr>
+  </tbody>
+</table>
+<p></p>
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <b>Issue Number</b>
+      </td>
+      <td>
+	<b>Description</b>
+      </td>
+      <td>
+	<b>Status</b>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+	      Code and tutorial itself need to be reviewed. 
+      </td>
+      <td>
+	      To be fixed.
+      </td>
+  </tr>
+  <tr>
+      <td>
+         2
+      </td>
+      <td>
+	      Tutorial needs to be updated once Phase III and IV are complete.
+      </td>
+      <td>
+	     Done.
+      </td>
+  </tr>
+ <tr>
+      <td>
+         3
+      </td>
+      <td>
+	      Some APIs used in this tutorial have deprecated methods. This will
+	      produce errors in the Output window, but should not impact functioning
+	      of module.
+      </td>
+      <td>
+	      To be fixed.
+      </td>
+  </tr>
+<tr>
+      <td>
+         4
+      </td>
+      <td>
+	      Clear explanations and links to Javadoc to be added for all APIs, classes, and methods.
+	      Also Javadoc links for each of the dependencies and why they are needed in this tutorial.
+      </td>
+      <td>
+	      To be fixed.
+      </td>
+  </tr>
+
+<tr>
+      <td>
+       5
+      </td>
+      <td>
+	      Maybe other identifiers for JSP editor, HTML editor, etc. should be mentioned.
+	      For example, instead of "xml" (in layer.xml), use "html", "x-properties", "base" etc.
+      </td>
+      <td>
+	      To be fixed.
+      </td>
+  </tr> 
+<tr>
+      <td>
+       6
+      </td>
+      <td>
+	      Explain what a cookie is. Explain what a cookie action is.
+      </td>
+      <td>
+	      To be fixed.
+      </td>
+  </tr> 
+<tr>
+      <td>
+      7
+      </td>
+      <td>
+	      Need to change downloadable, because currently
+	       the tag handler and the show XML action are separate files
+	       while in the downloadable code, they're in the same file.
+	        For the same reason, must change screenshots where one file
+		 instead of two are shown.
+      </td>
+      <td>
+	      Done.
+      </td>
+  </tr> 
+
+
+  </tbody>
+</table>-->
+</body>
+</html>

@@ -1,0 +1,758 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+    <head>
+        <!-- -*- xhtml -*- -->
+        <title>Platform JavaFX Porting Tutorial</title>
+        <meta name="AUDIENCE" content="NBUSER">
+        <meta name="TYPE" content="ARTICLE">
+        <meta name="EXPIRES" content="N">
+        <meta name="developer" content="gwielenga@netbeans.org">
+        <meta name="indexed" content="y">
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">   
+        <meta name="description"
+              content="A guide describing how to implement a
+              Google Toolbar Module in NetBeans IDE 7.2.">
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+    </head>
+
+    <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+    <!--     Use is subject to license terms.-->
+
+    <body>
+        <h1><a name="top"></a>NetBeans Platform JavaFX Porting Tutorial</h1>
+
+        <p>This tutorial provides step-by-step instructions for integrating JavaFX features
+            into a NetBeans Platform application. Since the NetBeans Platform is typically used
+            as a basis for corporate applications, the JavaFX chart components are ideal
+            candidates for integration into NetBeans Platform applications. JavaFX, as a whole,
+            is focused on bringing special effects to Java. In the context of charts, JavaFX
+            provides a set of predefined charts, each of which can be animated, which is
+            particularly useful to show changes in values presented in a chart.</p>
+
+        <p><img alt="end result" src="https://blogs.oracle.com/geertjan_images/resource/stock-trader-client-nb.pnh.png"/>
+
+        <p>At the end of this tutorial, you will have various JavaFX charts in a NetBeans Platform
+            application, as can be seen above, together with instructions and an API for plugging in additional charts.</p>
+
+        <p><b>Contents</b></p>
+
+        <img src="../images/articles/74/netbeans_stamp_74_73_72.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 7.2" title="Content on this page applies to NetBeans IDE 7.2"/>
+        <ul class="toc">
+            <li><a href="#examine-sample">Examining the Swing Interop Sample</a></li>
+            <li><a href="#create-application">Setting Up the Application</a></li>
+            <li><a href="#embedding-chart">Embedding a JavaFX Chart in a TopComponent</a></li>
+            <li><a href="#splitting">Splitting the Table from the Chart</a></li>
+            <li><a href="#plugging">Plugging in New Charts</a></li>
+        </ul>
+
+        <p><b>To follow this tutorial, you need the software and resources listed in the following 
+                table.</b></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Software or Resource</th>
+                    <th class="tblheader" scope="col">Version Required</th>
+                </tr> 
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                    <td class="tbltd1">version 7.2 or above</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                    <td class="tbltd1">Version 7 or above</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javafx/overview/index.html">JavaFX Runtime</a></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- ===================================================================================== -->  
+
+        <br>
+        <h2 class="tutorial"><a name="examine-sample"></a>Examining the Swing Interop Sample</h2>
+
+        <p>We begin by looking at a sample that comes with NetBeans IDE. It provides all the JavaFX code
+            we'll need. In the following sections, we'll port the code to a NetBeans Platform application.</p>
+
+        <div class="indent">
+
+            <ol>
+                <li>Choose File &gt; New Project (Ctrl+Shift+N). Under Categories, select Samples | JavaFX. 
+                    Under Projects, select SwingInterop.   
+                    <br><br>
+                    <img src="../images/tutorials/javafx/72/swinginterop-1.png" alt="Step 0 of New Project wizard">
+
+                    <br><br>
+
+                    Click Next.
+                </li>
+                <li>In the Name and Location panel, specify where the project should be stored:<br><br>
+                    <img src="../images/tutorials/javafx/72/swinginterop-2.png" alt="Step 1 of New Project wizard">
+
+                    <br><br>
+                    Click Finish.
+                </li>
+                <li>Browse through the structure of your new application:
+                    <br/><br/>
+                    <img src="../images/tutorials/javafx/72/swinginterop-3.png" alt="Step 1 of New Project wizard">
+                </li>
+                <li>Right-click the application and choose Run. You should now see the following:
+                    <br/><br/>
+                    <img src="../images/tutorials/javafx/72/swinginterop-4.png" alt="Step 1 of New Project wizard">
+                    <br/><br/>
+                    <p>Change the first value in the 2008 table and press Enter. Notice that the chart
+                        is animated while the value changes.</p>
+                </li>
+                <li>For the application we're going to create, we don't need the "Web Browser" tab. Let's
+                    modify the sample application so that we have exactly the code we need. All the changes below
+                    apply to the class <tt>SwingInterop.java</tt>, because we can use <tt>SampleTableModel</tt>
+                    unchanged.
+                    <br/><br/>
+                    <ul>
+                        <li>Delete the <tt>createBrowser()</tt> method.</li>
+                        <li>Delete all references to
+                            <tt>browserFxPanel</tt>, which is the <tt>JFXPanel</tt> that embeds the
+                            JavaFX web view, which we do not need.</li>
+                        <li>Replace the <tt>JTabbedPane</tt> and <tt>JSplitPane</tt> with a <tt>JPanel</tt>.</li>
+                    </ul>
+
+                    <p>The <tt>init</tt> method should now be as follows:</p>
+
+                    <pre class="examplecode">public void init() {
+
+    tableModel = new SampleTableModel();
+    // create javafx panel for charts
+    chartFxPanel = new JFXPanel();
+    chartFxPanel.setPreferredSize(new Dimension(PANEL_WIDTH_INT, PANEL_HEIGHT_INT));
+
+    JPanel panel = new JPanel();
+    panel.setLayout(new BorderLayout());
+
+    //JTable
+    JTable table = new JTable(tableModel);
+    table.setAutoCreateRowSorter(true);
+    table.setGridColor(Color.DARK_GRAY);
+    SwingInterop.DecimalFormatRenderer renderer = new SwingInterop.DecimalFormatRenderer();
+    renderer.setHorizontalAlignment(JLabel.RIGHT);
+    for (int i = 0; i &lt; table.getColumnCount(); i++) {
+        table.getColumnModel().getColumn(i).setCellRenderer(renderer);
+    }
+    
+    JScrollPane tablePanel = new JScrollPane(table);
+    tablePanel.setPreferredSize(new Dimension(PANEL_WIDTH_INT, TABLE_PANEL_HEIGHT_INT));
+
+    JPanel chartTablePanel = new JPanel();
+    chartTablePanel.setLayout(new BorderLayout());
+    chartTablePanel.add(chartFxPanel, BorderLayout.CENTER);
+
+    panel.add(chartTablePanel, BorderLayout.CENTER);
+    panel.add(tablePanel, BorderLayout.SOUTH);
+
+    add(panel, BorderLayout.CENTER);
+
+    // create JavaFX scene
+    Platform.runLater(new Runnable() {
+        public void run() {
+            createScene();
+        }
+    });
+
+}</pre>                
+                    <p>Run the application again and you should see the following, that is, the JavaFX chart
+                        is now directly in a <tt>JPanel</tt>:</p>
+                    <br/>
+                    <img src="../images/tutorials/javafx/72/swinginterop-5.png" alt="Step 1 of New Project wizard">
+                    <br/><br/>
+                </li>
+
+            </ol>
+
+        </div>
+
+        <p>You now have code that is ready to be ported to a NetBeans Platform application.</p>
+
+        <!-- ===================================================================================== -->  
+
+        <br>
+        <h2 class="tutorial"><a name="create-application"></a>Setting Up the Application</h2>
+
+        <p>Let's imagine that we're creating a stock trader application. That provides a desktop client
+            scenario where JavaFX charts would be useful to integrate.</p>
+
+        <div class="indent">
+
+            <ol>
+                <li>Choose File &gt; New Project (Ctrl+Shift+N). Under Categories, select NetBeans Modules. 
+                    Under Projects, select NetBeans Platform Application: 
+                    <br><br>
+                    <img src="../images/tutorials/javafx/72/new-app-1.png" alt="Step 0 of New Project wizard">
+                    <br><br>
+                    Click Next.
+                </li>
+                <li>In the Name and Location panel:<br><br>
+                    <ul><li>In the Project Name field, type <tt>StockTraderClient</tt>.</li>
+                        <li>In the Project Location field, change the value to any directory on your computer where
+                            the application will be stored.</li></ul>
+                    <img src="../images/tutorials/javafx/72/new-app-2.png" alt="Step 1 of New Project wizard"/>
+                    <br><br>
+                    <p>Click Finish. The IDE creates the <tt>StockTraderClient</tt> project:</p>
+                    <br/>
+                    <img src="../images/tutorials/javafx/72/new-app-3.png" alt="Step 3 of New Project wizard"/>
+                </li>
+                <li>Right-click the Modules node and choose Add New Library:
+                    <br><br>
+                    <img src="../images/tutorials/javafx/72/new-app-4.png" alt="Step 3 of New Project wizard"/>
+                </li>
+                <li>Click Browse and browse
+                    to the <tt>jfxrt.jar</tt> in the JavaFX Runtime:
+                    <br><br>
+                    <img src="../images/tutorials/javafx/72/new-app-5.png" alt="Step 3 of New Project wizard"/>
+                    <br/><br/><p>Click Select, then click Next.</p>
+                </li>
+                <li><tt>jfxrt</tt> should be the project name:
+                    <br><br>
+                    <img src="../images/tutorials/javafx/72/new-app-6.png" alt="Step 3 of New Project wizard"/>
+                    <br/><br/><p>Click Next.</p>
+                </li>
+                <li>Type <tt>javafx</tt> as the code name base:
+                    <br><br>
+                    <img src="../images/tutorials/javafx/72/new-app-7.png" alt="Step 3 of New Project wizard"/>
+                    <br><br>
+                    <p class="tips"> The code name base is a unique identifier for a module. In the case of
+                        a library wrapper module, you'll typically use the name of the root package, such as
+                        <tt>org.netbeans</tt>, but in the case of JavaFX it is <tt>javafx</tt>, as the code name base.</p>
+                    <br/><p>Click Finish. The application now has a new module called <tt>jfxrt</tt>, which wraps the JavaFX runtime JAR:</p>
+                    <br>
+                    <img src="../images/tutorials/javafx/72/new-app-8.png" alt="Step 3 of New Project wizard"/>
+                </li>
+                <li><p>In the JavaFX Runtime distribution, you'll find a long list of native libraries.</p>
+                    <p class="tips"> If you use Java 7 Update 6 or later, you will not need to include
+                        the native libraries in your application, because the JDK and JRE already include them.</p>
+
+                    <p>For example,
+                        for Windows, the list looks like the image on the left. Switch to the Files window. Expand
+                        the <tt>jfxrt</tt> folder and create a new subfolder within <tt>release</tt>, named
+                        <tt>modules/bin</tt>. Into that folder, copy all the native libraries, as shown in the
+                        image on the right:
+                        <br><br>
+                        <img src="../images/tutorials/javafx/72/jfx-rt-1.png" alt="Step 3 of New Project wizard"/>
+                        <img src="../images/tutorials/javafx/72/jfx-rt-2.png" alt="Step 3 of New Project wizard"/>
+                    <br/><br/><p>Your application now contains the <tt>jfxrt.jar</tt>, as well as the native
+                        libraries required by JavaFX.</p>
+                </li>
+            </ol>
+
+        </div>
+
+        <p>You're now ready to create a module where you'll embed the JavaFX chart into a <tt>TopComponent</tt>.</p>
+
+        <!-- ===================================================================================== -->
+
+        <br>
+        <h2><a name="embedding-chart"></a>Embedding a JavaFX Chart in a TopComponent</h2>
+
+        <p>We begin by creating a new module. Then we use the New Window wizard to create
+            a new <tt>TopComponent</tt>. We set a dependency on the <tt>jfxrt</tt> module so
+            that the <tt>TopComponent</tt> can access JavaFX packages. Then we round off the section
+            by moving the code from the Swing Interop sample into the <tt>TopComponent</tt>.</p>
+
+        <ul>
+            <li><a href="#create-module">Create the Module</a></li>
+            <li><a href="#create-topcomponent">Create the TopComponent</a></li>
+            <li><a href="#set-dependency">Set Dependency on the JavaFX Runtime</a></li>
+            <li><a href="#port-chart">Port the JavaFX Chart</a></li>
+        </ul>
+
+        <div class="indent">
+            <h3 class="tutorial"><a name="create-module"></a>Create the Module</h3>
+            <p>In this section, you use the New Module wizard to create a new module.</p>
+            <div class="indent">
+                <ol>
+                    <li>Right-click the Modules node and choose Add New: 
+                        <br><br>
+                        <img src="../images/tutorials/javafx/72/new-module-1.png" alt="Step 1 of New Module wizard">
+                        <br/>
+                    </li>
+                    <li>The module we're now creating is going to contain the core functionality of the application. Ultimately,
+                        there'll be many modules that will be optional, such as a range of charting windows, while this
+                        module will always remain essential to the application. Hence, we will name this module <tt>Core</tt>:
+                        <br><br>
+                        <img src="../images/tutorials/javafx/72/new-module-2.png" alt="Step 2 of New Module wizard">
+                        <br/><br/><p>Click Next.</p>
+                    </li>
+                    <li>We imagine that we own a URL <tt>stocktrader.org</tt>, which means that that URL is unique. Turning
+                        the URL around, we arrive at the prefix of the code base for all our functionality modules. Next, in
+                        this particular case, we add <tt>core</tt>, since that is the name of our module and so we have
+                        <tt>org.stocktrader.core</tt> as the unique identifier of our module:
+                        <br><br>
+                        <img src="../images/tutorials/javafx/72/new-module-3.png" alt="Step 3 of New Module wizard">
+                        <br/><br/><p>Click Finish. We now have a new module in our application, named <tt>Core</tt>:</p>
+                        <br/>
+                        <img src="../images/tutorials/javafx/72/new-module-4.png" alt="Step 4 of New Module wizard">
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="indent">
+            <h3 class="tutorial"><a name="create-topcomponent"></a>Create the TopComponent</h3>
+            <p>In this section, you use the New Window wizard to create a new window.</p>
+            <div class="indent">
+                <ol>
+                    <li>Right-click the <tt>org.stocktrader.core</tt> package and choose New | Other.
+                        In the Module Development category, choose Window:
+                        <br><br>
+                        <img src="../images/tutorials/javafx/72/new-window-1.png" alt="Step 1 of New Module wizard">
+                        <br/><br/><p>Click Next.</p>
+                    </li>
+                    <li>In the Window Position drop-down, choose "editor". Select "Open on Application Start":
+                        <br><br>
+                        <img src="../images/tutorials/javafx/72/new-window-2.png" alt="Step 2 of New Module wizard">
+                        <br/><br/><p>Click Next.</p>
+                    </li>
+                    <li>Type "Core" as class name prefix:
+                        <br><br>
+                        <img src="../images/tutorials/javafx/72/new-window-3.png" alt="Step 3 of New Module wizard"/>
+                        <br/><br/><p>Click Finish. We now have a new window in our application, 
+                            named <tt>CoreTopComponent</tt>, together with libraries that are the dependencies required
+                            by <tt>CoreTopComponent</tt>:</p>
+                        <br/>
+                        <img src="../images/tutorials/javafx/72/new-window-4.png" alt="Step 4 of New Module wizard"/>
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="indent">
+            <h3 class="tutorial"><a name="set-dependency"></a>Set Dependency on the JavaFX Runtime</h3>
+            <p>In this section, you make the JavaFX classes accessible to your <tt>TopComponent</tt>.</p>
+            <div class="indent">
+                <ol>
+                    <li>Right-click the Libraries node and choose Add Module Dependency:
+                        <br><br>
+                        <img src="../images/tutorials/javafx/72/set-dep-1.png" alt="Step 1 of New Module wizard"/>
+                    </li>
+                    <li>Scroll down to your <tt>jfxrt</tt> module:
+                        <br><br>
+                        <img src="../images/tutorials/javafx/72/set-dep-2.png" alt="Step 3 of New Module wizard"/>
+                        <br/><br/><p>Click OK. We now have a new dependency
+                            on the JavaFX Runtime, so that we can use the JavaFX classes
+                            in our <tt>TopComponent</tt>:</p>
+                        <br/>
+                        <img src="../images/tutorials/javafx/72/set-dep-3.png" alt="Step 4 of New Module wizard"/>
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="indent">
+            <h3 class="tutorial"><a name="port-chart"></a>Port the JavaFX Chart</h3>
+            <p>In this section, you move the useful parts of the Swing Interop sample
+                into your Core module.</p>
+            <div class="indent">
+
+                <ol>
+                    <li>Copy the <tt>SampleTableModel.java</tt> file into the <tt>org.stocktrader.core</tt> package. Do
+                        so by copying the class, right-clicking on the package where you want to copy it to, and
+                        choosing Paste | Refactor Copy and then clicking the Refactor button.
+                    </li>
+                    <li>Copy the fields at the top of the <tt>SwingInterop.java</tt> file to the
+                        top of the <tt>TopComponent</tt>.
+                    </li>
+                    <li>Copy the methods <tt>createScene</tt>, <tt>createBarChart</tt>, and <tt>DecimalFormatRenderer</tt>
+                        into the body of the <tt>TopComponent</tt>.
+                    </li>
+                    <li>Copy the <tt>init</tt> method into the <tt>TopComponent</tt> and change
+                        <tt>SwingInterop.DecimalFormatRenderer</tt> to <tt>DecimalFormatRenderer</tt>.
+                    </li>
+                    <li>Change the constructor of the <tt>TopComponent</tt> to set the layout and to call
+                        the <tt>init</tt> metod, as follows, that is, by adding the two highlighted lines below:
+                        <pre class="examplecode">public CoreTopComponent() {
+    initComponents();
+    setName(Bundle.CTL_CoreTopComponent());
+    setToolTipText(Bundle.HINT_CoreTopComponent());
+    <b>setLayout(new BorderLayout());
+    init();</b>
+}</pre>
+                    </li>
+                    <li>Right-click the application, choose Run, and the application starts up,
+                        showing the JavaFX chart, together with the <tt>JTable</tt> that controls it:
+                        <br><br>
+                        <img src="../images/tutorials/javafx/72/result-1.png" alt="Step 1 of New Module wizard">
+                        <br/><br/><p>Change the first value in the 2008 table and press Enter. Notice that the chart
+                            is animated while the value changes.</p>
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+        <p>In this section, you integrated a JavaFX chart into a <tt>TopComponent</tt>. In the next section,
+            we will begin to make the application more modular. By the end of that section, the <tt>JTable</tt>
+            will be in one module, while the JavaFX Chart will be in another.
+        </p>
+
+        <!-- ===================================================================================== -->
+
+        <br>
+        <h2><a name="splitting"></a>Splitting the Table from the Chart</h2>
+
+        <p>To make the application more modular, we will move the JavaFX chart into a separate module.
+            Because the interaction between the JavaFX chart and the <tt>JTable</tt> is done via the
+            <tt>SampleTableModel</tt>, we will move that class into a separate module, too. That module
+            will be the API between the table and the chart.</p>
+
+        <p>When you complete this section, you will have a modular infrastructure letting you provide alternative
+            JavaFX charts, which will all be made available by separate modules that integrate
+            with the <tt>SampleTableModel</tt> in the
+            API module.</p>
+
+        <ul>
+            <li><a href="#create-api">Create the Stock Trader API Module</a></li>
+            <li><a href="#create-bar">Create the Bar Chart Module</a></li>
+        </ul>
+
+        <div class="indent">
+            <h3 class="tutorial"><a name="create-api"></a>Create the Stock Trader API Module</h3>
+            <p>In this section, you create a new module for the <tt>SampleTableModel</tt> class. You
+                expose the package containing the class and you set a dependency on it in the
+                <tt>Core</tt> module.</p>
+            <div class="indent">
+                <ol>
+                    <li>Right-click on the StockTraderClient's Modules node and choose Add New. 
+                        Create a new module, named <tt>StockTraderAPI</tt>. When you click Next,
+                        set <tt>org.stocktrader.api</tt> as the code name base for the module. Click
+                        Finish and you will have a new module, named StockTraderAPI.
+                    </li>
+                    <li>Right-click on the StockTraderClient's Libraries node and choose Add Module Dependency. 
+                        Set a dependency on the <tt>jfxrt</tt> module and click Finish. Your API module
+                        now has access to the JavaFX classes.
+                    </li>
+                    <li>In the Core module, right-click on <tt>SampleTableModel</tt> and choose Cut. Next, in
+                        the StockTraderAPI module, right-click on the <tt>org.stocktrader.api</tt> package and
+                        choose Paste | Refactor Copy and then click Refactor. The class is moved into the new
+                        package, while it's package statement has been updated.
+                    </li>
+                    <li>Create a new Java class named <tt>StockTraderUtilities</tt> in the <tt>org.stocktrader.api</tt>
+                        package. In this class, create a method
+                        that will ensure that only one instance of <tt>SampleTableModel</tt> is made available:
+                        <pre class="examplecode">package org.stocktrader.api;
+
+public class StockTraderUtilities {
+    
+    private static SampleTableModel stm = null;
+    
+    public static SampleTableModel getSampleTableModel() {
+        if (stm == null){
+            return stm = new SampleTableModel();
+        } else {
+            return stm;
+        }
+    }
+    
+}</pre>
+                    </li>
+                    <li>Right-click on the StockTraderAPI project node and choose Properties. In the
+                        Project Properties dialog, click the API Versioning tab. Then put a checkmark
+                        next to the package containing the classes that you want to expose to the rest of the
+                        application, as shown below:<br/><br/>
+                        <p><img src="../images/tutorials/javafx/72/new-api-0.png" alt="Step 1 of New Module wizard"/></p>
+                        <br/><p>Click OK. Now the package containing our classes
+                            has been exposed to the rest of the
+                            application.</p>
+                    </li>
+                    <li>In the Core module, right-click on Libraries node and choose Add Module Dependency. Set a dependency
+                        on the StockTraderAPI.
+                    </li>
+                    <li><p>Check that the structure of the application is now as follows:</p>
+                        <br/><p><img src="../images/tutorials/javafx/72/new-api-7.png" alt="Step 1 of New Module wizard"/></p>
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="indent">
+            <h3 class="tutorial"><a name="create-bar"></a>Create the Bar Chart Module</h3>
+            <p>In this section, you create a module containing a <tt>TopComponent</tt> where
+                you will embed the JavaFX chart that is currently in the <tt>CoreTopComponent</tt>.
+                Since the table and the JavaFX chart interact via the <tt>SampleTableModel</tt>, the modules
+                containing the table and the chart will both depend on the StockTraderAPI module.
+            </p>
+            <div class="indent">
+
+                <ol>
+                    <li>Right-click on the StockTraderClient's Modules node and choose Add New. 
+                        Create a new module, named <tt>BarChart</tt>. When you click Next,
+                        set <tt>org.stocktrader.chart.bar</tt> as the code name base and
+                        "Chart - Bar" as the display name. Click
+                        Finish and you will have a new module, named "Chart - Bar", which we
+                        will refer to below as the "bar chart module".
+                    </li>
+                    <li>Right-click on the bar chart module's Libraries node and choose Add Module Dependency. 
+                        Set a dependency on the <tt>jfxrt</tt> module and click Finish. The bar chart module
+                        now has access to the JavaFX classes. Also set a dependency on the StockTraderAPI module,
+                        so that the bar chart module will have access to the table model.
+                    </li>
+                    <li>In the bar chart module, use the New Window wizard to create a new window
+                        in the editor position, which should open at start up, with <tt>BarChart</tt>
+                        as the class name prefix.
+                    </li>
+                    <li>Open <tt>CoreTopComponent</tt> and <tt>BarChartTopComponent</tt> and do the following:<br/><br/>
+                        <ul>
+                            <li>Move the methods <tt>createScene</tt> and <tt>createBarChart</tt> into
+                                the <tt>BarChartTopComponent</tt>.
+                            </li>
+                            <li>Delete <tt>DecimalFormatRenderer</tt> and all references to it. We'll not
+                                use it at the moment, since it's not directly relevant to the application
+                                we're creating.
+                            </li>
+                            <li>Move the fields <tt>chartFxPanel</tt> and <tt>chart</tt> 
+                                into the <tt>BarChartTopComponent</tt>.
+                            </li>
+                            <li>Copy the field <tt>tableModel</tt> into the <tt>BarChartTopComponent</tt> because
+                                both <tt>TopComponents</tt> will need to have access to this class.
+                            </li>
+                            <li>In <tt>CoreTopComponent</tt>, clean up the <tt>init</tt> method, so that it
+                                only contains the code that you actually need:
+                                <pre class="examplecode">public void init() {
+    tableModel = StockTraderUtilities.getSampleTableModel();
+    JTable table = new JTable(tableModel);
+    table.setAutoCreateRowSorter(true);
+    table.setGridColor(Color.DARK_GRAY);
+    add(table, BorderLayout.CENTER);
+}</pre>
+                                <p>Similarly, in <tt>BarChartTopComponent</tt>, create an <tt>init</tt> method that
+                                    only contains the chart-related code:</p>
+                                <pre class="examplecode">public void init() {
+    tableModel = StockTraderUtilities.getSampleTableModel();
+    chartFxPanel = new JFXPanel();
+    add(chartFxPanel, BorderLayout.CENTER);
+    //Make sure to add the line below:
+    Platform.setImplicitExit(false);
+    Platform.runLater(new Runnable() {
+        public void run() {
+            createScene();
+        }
+    });
+}</pre>       
+
+                                <p class="tips"><tt><a href="http://docs.oracle.com/javafx/2/api/javafx/application/Platform.html">Platform.setImplicitExit</a></tt>
+                                    sets the implicitExit attribute to the
+                                    specified value. If this attribute is true, 
+                                    the JavaFX runtime will implicitly shutdown 
+                                    when the last window is closed; the JavaFX 
+                                    launcher will call the Application.stop() method 
+                                    and terminate the JavaFX application thread. 
+                                    If this attribute is false, the application will
+                                    continue to run normally even after the last window is closed,
+                                    until the application calls exit(). The default value is true.</p>
+
+                                <p class="tips">Notice how modulerizing the code is little more than refactoring.
+                                    And, in the end,
+                                    you have code that is much clearer than it was in the beginning.</p>
+                            </li>
+
+                            <li>In <tt>BarChartTopComponent</tt>, add these lines to the end of the constructor,
+                                to set the layout and call the <tt>init</tt> method:
+
+                                <pre class="examplecode">setLayout(new BorderLayout());
+init();</pre>                        
+
+                            </li>
+
+                            <li>In <tt>CoreTopComponent</tt>, change the <tt>@TopComponent.Registration</tt>
+                                so that "mode" is set to "output", instead of "editor". That way, our table
+                                will be displayed at the bottom of the application frame, while the chart will
+                                be displayed in the editor area, which makes for a better appearance.
+                            </li>
+                        </ul>
+                    </li>
+                    <li>Check that your application now has the following structure:
+                        <br><br>
+                        <img src="../images/tutorials/javafx/72/result-3.png" alt="Step 1 of New Module wizard">
+                    </li>
+                    <li>Right-click the application, choose Run, and the application starts up,
+                        showing the JavaFX chart, together with the <tt>JTable</tt> that controls it. This
+                        time, however, the table and the chart are in separate windows, though they're
+                        able to interact because they share a common table model:
+                        <br><br>
+                        <img src="../images/tutorials/javafx/72/result-2.png" alt="Step 1 of New Module wizard">
+                        <br/><br/><p>Change a value in the table and press Enter. Notice that the chart
+                            is animated while the value changes.</p>
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+        <p>In the final section of this tutorial, we will add new modules, each containing new JavaFX charts,
+            which will be integrated with the rest of the application because they will all share the same
+            table model.</p>
+
+        <!-- ===================================================================================== -->
+
+        <br>
+        <h2><a name="plugging"></a>Plugging in New Charts</h2>
+
+        <p>In this section, we add new modules providing a JavaFX pie chart and a JavaFX area chart. 
+            They will both be animated,
+            just like the bar chart. Whenever the user changes a value in the table, all charts
+            will be animated while performing the change.</p>
+
+        <ul>
+            <li><a href="#create-pie">Create the Pie Chart Module</a></li>
+            <li><a href="#create-area">Create the Area Chart Module</a></li>
+        </ul>
+
+        <div class="indent">
+            <h3 class="tutorial"><a name="create-pie"></a>Create the Pie Chart Module</h3>
+            <p>In this section, you create a module containing a <tt>TopComponent</tt> where
+                you will embed the JavaFX pie chart. The module will need to have access
+                to the JavaFX classes, as well as to the Stock Trader API.
+            </p>
+            <div class="indent">
+
+                <ol>
+                    <li>Right-click on the StockTraderClient's Modules node and choose Add New. 
+                        Create a new module, named <tt>PieChart</tt>. When you click Next,
+                        set <tt>org.stocktrader.chart.pie</tt> as the code name base and
+                        "Chart - Pie" as the display name. Click
+                        Finish and you will have a new module, named "Chart - Pie", which we
+                        will refer to below as the "pie chart module".
+                    </li>
+                    <li>Right-click on the bar chart module's Libraries node and choose Add Module Dependency. 
+                        Set a dependency on the <tt>jfxrt</tt> module and click Finish. The pie chart module
+                        now has access to the JavaFX classes. Also set a dependency on the StockTraderAPI module,
+                        so that the pie chart module will have access to the table model.
+                    </li>
+                    <li><p>In the pie chart module, use the New Window wizard to create a new window
+                            in the explorer position, which is the left-most window
+                            in the NetBeans Platform, which should open at start up:</p> 
+                        <br/>
+                        <img src="../images/tutorials/javafx/72/new-pie-1.png" alt="Step 1 of New Module wizard">
+                        <br/><br/>
+                        <p>Click Next and set <tt>PieChart</tt>
+                            as the class name prefix. Click Finish.</p>
+                    </li>
+                    <li>Copy the code you added to the <tt>BarChartTopComponent</tt> into the <tt>PieChartTopComponent</tt>.
+                        However, instead of a bar chart, you now want to create a pie chart:
+                        <pre class="examplecode">public PieChart createPieChart() {
+    ObservableList data = FXCollections.observableArrayList();
+    List&lt;String&gt; columnNames = tableModel.getColumnNames();
+    for (String string : columnNames) {
+        data.add(new PieChart.Data(string, 20));
+    }
+    final PieChart chart = new PieChart(FXCollections.observableArrayList(data));
+    tableModel.addTableModelListener(new TableModelListener() {
+        public void tableChanged(TableModelEvent e) {
+            if (e.getType() == TableModelEvent.UPDATE) {
+                final int row = e.getFirstRow();
+                final int column = e.getColumn();
+                final Object value = ((SampleTableModel) e.getSource()).getValueAt(row, column);
+                Platform.setImplicitExit(false);
+                Platform.runLater(new Runnable() {
+                    public void run() {
+                        PieChart.Data s = chart.getData().get(row);
+                        s.setPieValue((Double)value);
+                    }
+                });
+            }
+        }
+    });
+    chart.setId("BasicPie");
+    return chart;
+}</pre></li>
+                    <li>Run the application and notice that you now have a pie chart and that, when you make
+                        changes to the table, the pie chart animates together with the bar chart:
+                        <br><br>
+                        <img src="../images/tutorials/javafx/72/result-4.png" alt="Step 1 of New Module wizard">
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="indent">
+            <h3 class="tutorial"><a name="create-area"></a>Create the Area Chart Module</h3>
+            <p>In this section, you create a module containing a <tt>TopComponent</tt> where
+                you will embed the JavaFX area chart.
+            </p>
+            <div class="indent">
+
+                <ol>
+                    <li>Follow all the steps in the previous section, using "AreaChart" as 
+                        the project name, <tt>org.stocktrader.chart.area</tt> as the code name base,
+                        and "Chart - Area" as the display name. Add dependencies on the <tt>jfxrt</tt> module
+                        and on the Stock Trader API. Use the New Window wizard to
+                        create a new <tt>TopComponent</tt>, in the properties position, which
+                        should open at start up.
+                    </li>
+                    <li>Copy the code you added to the <tt>BarChartTopComponent</tt> into the 
+                        <tt>AreaChartTopComponent</tt>.
+                        However, instead of a bar chart, you now want to create an area chart:
+                        <pre class="examplecode">protected AreaChart&lt;Number, Number&gt; createAreaChart() {
+    NumberAxis xAxis = new NumberAxis();
+    NumberAxis yAxis = new NumberAxis();
+    AreaChart&lt;Number,Number&gt; ac = new AreaChart&lt;Number,Number&gt;(xAxis,yAxis);
+    // setup chart
+    ac.setTitle("Area Chart Example");
+    xAxis.setLabel("X Axis");
+    yAxis.setLabel("Y Axis");
+    // add starting data
+    for (int s=0;s&lt;3;s++) {
+        XYChart.Series&lt;Number,Number&gt; series = new XYChart.Series&lt;Number,Number&gt;();
+        series.setName("Data Series "+s);
+        double x = 0;
+        while (x&lt;95) {
+            series.getData().add(new XYChart.Data&lt;Number,Number&gt;(x, Math.random()*99));
+            x += 5 + (15*Math.random());
+        }
+        series.getData().add(new XYChart.Data&lt;Number,Number&gt;(99d, Math.random()*99));
+        ac.getData().add(series);
+    }
+    return ac;
+}</pre></li>
+                    <li>Run the application and notice that you now have three charts that, when you make
+                        changes to the table, all change simultaneously:
+                        <br><br>
+                        <img src="../images/tutorials/javafx/72/result-5.png" alt="Step 1 of New Module wizard">
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+        <p>The tutorial is complete. You have created a modular application on the
+            NetBeans Platform, while making use of JavaFX chart technology:</p>
+        <img src="../images/tutorials/javafx/72/result-6.png" alt="Step 1 of New Module wizard">
+
+
+
+        <br>
+        <div class="feedback-box"><a name="feedback"></a>
+            <a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20JavaFX%20NetBeans%20Integration%20Tutorial%207.2">
+                Send Us Your Feedback</a></div>
+        <br style="clear:both;" />
+        <!-- ======================================================================================== -->
+
+        <!--        <h2><a name="nextsteps"></a>See Also</h2>
+        
+                <p>This concludes the NetBeans Plugin Quick Start. This document has described
+                    how to create a plugin that adds a Google Search toolbar to the IDE. 
+                    For more information about creating and developing plugins, see the following resources: 
+                <ul>
+                    <li><a href="https://netbeans.org/kb/trails/platform.html">NetBeans Platform Learning Trail</a></li>
+                    <li><a href="http://bits.netbeans.org/dev/javadoc/">NetBeans API Javadoc</a></li>
+                    <li>NetBeans API classes used in this tutorial:
+                        <ul>
+                            <li><tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/HtmlBrowser.URLDisplayer.html">HtmlBrowser.URLDisplayer</a></tt>
+                            <li><tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/util/actions/Presenter.Toolbar.html">Presenter.Toolbar</a></tt>
+                        </ul>
+                    </li>
+                </ul>-->
+
+        <!-- ======================================================================================== -->
+
+
+    </body>
+</html>

@@ -1,0 +1,555 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>NetBeans APIs in a Nutshell</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="author" content="gwielenga@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A short guide to understanding everything.">
+<!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+	<h1>NetBeans APIs in a Nutshell</h1>
+<p>
+  
+  This overview will quickly familiarize you with how NetBeans modules
+  interact with the NetBeans Platform and with each other.  It is not intended
+  as a comprehensive document&#8212;the <a href="http://bits.netbeans.org/dev/javadoc/index.html">NetBeans API List</a>,
+  the <a href="https://netbeans.org/kb/trails/platform.html">NetBeans Platform Learning Trail</a>, and
+  the video series "<a href="https://platform.netbeans.org/tutorials/nbm-10-top-apis.html">Top 10 NetBeans APIs</a>" go into greater
+  detail&#8212;but should serve as a guide to understanding the basic concepts of NetBeans module
+  development.  
+<p>
+  A key thing to understanding the NetBeans Platform is to realize that very often
+  the same API or infrastructure does double-duty&#8212;playing one role
+  in dealing with the user's files on disk, and another role when it comes to
+  configuration information and runtime data. For example:
+  <ul><li>A <a href="http://bits.netbeans.org/dev/javadoc/org-openide-filesystems/org/openide/filesystems/FileSystem.html">FileSystem</a> represents the
+  user's files, but the <a href="https://platform.netbeans.org/tutorials/nbm-glossary.html">System Filesystem</a> represents the IDE's configuration
+  data.
+<li>A <a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/DataObject.html">DataObject</a> represents the parsed content of a Java or other file, but
+  DataObjects also are used to instantiate a Java object installed
+  by a module. 
+<li><code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/util/Lookup.html#getDefault()">Lookup.getDefault()</a></code> is the way you access global
+  services and singletons, but you also call <code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-nodes/org/openide/nodes/Node.html#getLookup()">Node.getLookup()</a></code> to
+  find services specific to an individual file or object.
+</ul>
+  <p>
+  It is this reuse that has led some to say the NetBeans APIs are confusing, and it
+  is the purpose of this overview to rapidly familiarize you with what these things
+  are and how they are used in both roles.
+  
+  <h2><a href="http://bits.netbeans.org/dev/javadoc/" name="fs">FileSystems</a></h2>
+  In NetBeans 3.x, adding items to the classpath was accomplished by &quot;mounting&quot;
+
+  FileSystems - a FileSystem had a root directory and everything under it 
+  amounted to a virtual namespace in which files lived.
+  <p>
+  Since NetBeans 4.0, the &quot;mounting&quot; is gone, and FileSystems are not
+  a concept that users are exposed to in the UI - but the infrastructure
+  behind FileSystems - <code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-filesystems/org/openide/filesystems/FileSystem.html">org.openide.filesystems.FileSystem</a></code> is alive
+  and well under the hood.  In coding NetBeans modules, you will typically
+  interact with instances of <code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-filesystems/org/openide/filesystems/FileObject.html">org.openide.filesystems.FileObject</a></code>,
+  not <code><a href="http://java.sun.com/j2se/1.5.0/docs/api/java/io/File.html">java.io.File</a></code>.
+  
+  <h3>Differences Between <code>java.io.File</code> and <code>FileObject</code>s</h3>
+
+  The main differences between them are as follows:
+  <ul>
+  <li>You get FileObjects from a FileSystem, rather than create them with a constructor.</li>
+  <li>Typically you don't have FileObjects which represent something that doesn't
+      exist (as you can with <code>new File ("some/place/that/doesnt/exist")</code>).</li>
+  <li>You can listen for changes on FileObjects, including listening on folders
+      for changes that happen anywhere underneath them</li>
+  <li>FileObjects don't necessarily represent actual files on disk</li>
+
+  <li>FileObjects can have <i>attributes</i> which are essentially key-value
+      pairs that can be associated with a file.  An attribute might be a 
+      string, or a serialized object (note that use of attributes on 
+      user files on disk is discouraged as of NetBeans 4.0, but they are
+      still commonly used in configuration files).
+  <li>The path separator for FileObjects is always <code>/</code>, no
+      conversions with File.separator are needed</li>
+  </ul>
+  
+  <h3><a name="sfs">What FileSystems Are Used For</a></h3>
+  FileSystems are used in two basic but very distinct ways in NetBeans.  The
+  first is representing the user's files on disk.  To get a FileObject for some
+  path in NetBeans, just call, e.g.
+  <pre class="examplecode">Repository.getDefault().getDefaultFilesystem().getRoot().getFileObject("path/to/some/File.txt");</pre>
+  The <code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-filesystems/org/openide/filesystems/Repository.html">Repository</a></code> is the master registry of all filesystems
+  NetBeans knows about.  In 4.0, it is the contents of the user's hard drive(s).
+  <p>
+  The second usage is to represent configuration data - this is the &quot;System Filesystem&quot;,
+  which is where modules can install their files.  Folders in the
+  System Filesystem act as &quot;extension points&quot; - there are some which
+  have predefined meanings (for example, NetBeans' main menu is a tree of 
+  folders you will place special &quot;files&quot; into to add menu items);
+  modules are free to create their own folders and do as they wish with the
+  contents.
+  <p>
+
+  How does all this work?  Well, once you have the concept of a virtualized
+  <code>FileSystem</code> full of <code>FileObject</code>s, 
+  it's relatively easy to imagine a <code>FileSystem</code>
+  which took several other <code>FileSystems</code> as arguments, and presented a merged
+  view of the sub-filesystems as if all the data lived in one tree.
+  <p>
+  Add into this the notion that the &quot;files&quot; in a <code>FileSystem</code> 
+  don't actually have to be physical files on disk at all - anything that
+  can be made to walk and talk like a file will do.  So you could have an
+  XML &quot;filesystem&quot; where the contents of files lived in an
+  XML document, not a bunch of files on disk.
+  
+  <h2>XML Layers</h2>
+
+  That is what the NetBeans Platform does:  Each module can define an XML &quot;layer&quot;
+  file, which contains some virtual &quot;files&quot; and folders that are merged into
+  the System Filesystem.  In this way modules add their configuration data
+  to the system.  And because the System Filesystem is composed from discrete
+  XML fragments from modules, when a module is disabled or unloaded, its
+  XML layer is simply removed.  <code>FileObject</code>s for the various folders that 
+  had files removed from them fire changes indicating some files were 
+  deleted, so the UI can get rid of any objects that represented the now-unloaded
+  module's files.  This is why you can uninstall and reload modules at runtime.
+  <p>
+  In its jar manifest, a module will contain a line such as:<pre class="examplecode">
+OpenIDE-Module-Layer: org/netbeans/modules/mymodule/layer.xml
+  </pre>
+  This is a pointer to an XML file inside the module jar (meaning that you
+  simply create this file somewhere in your sources so it will be compiled
+  into the jar when your module is built).  In its simplest form, that could contain
+  something like:
+  <pre class="examplecode">
+
+&lt;filesystem&gt;
+  &lt;folder name=&quot;myFolder&quot;&gt;
+    &lt;file name=&quot;myFile.txt&quot; url=&quot;resources/aTextFile.txt&quot;/&gt;
+  &lt;/folder&gt;
+
+&lt;/filesystem&gt;
+  </pre>
+  The <code>url</code> attribute is important:  It says where the contents
+  of <code>myFile.txt</code> lives in the module's jar file.  This path is
+  relative to the location of the layer file.  So, if the layer file is
+  <code>org/netbeans/modules/mymodule/layer.xml</code>, then in the module
+  jar there should also be a text file 
+  <code>org/netbeans/modules/mymodule/resources/aTextFile.txt</code>.  When
+  some code requests an <code>InputStream</code> for <code>myFolder/myFile.txt</code>,
+  that text file in the module jar is what will actually be read.
+  <p>
+
+  Of course, this particular fragment doesn't do much of anything, but it is
+  useful to illustrate what can be done here.  Since <code>myFolder</code>
+  has no predefined purpose to NetBeans, it is up to the module defining
+  that folder to do something with its contents.  But one could imagine
+  a module that provided <code>myFolder</code>, let other modules add more
+  files to that folder, and provided one menu item for each file, letting
+  the user view them.
+  <p>
+  Accessing this file programmatically is quite simple:
+  <pre class="examplecode">
+  FileObject myFile = Repository.getDefault().getDefaultFileSystem().findResource (&quot;myFolder/myFile.txt&quot;);
+  InputStream in = myFile.getInputStream();
+  <font color="gray">//...do something with it</font>
+
+  </pre>
+  <p>
+  
+  <h3>Providing Java Objects through Module Layers</h3>
+  Just being able to install text files isn't terribly interesting.  Where the
+  system of layers gets its power is in the ability to make files act as 
+  factories for Java objects.  This is made possible using the same 
+  infrastructure that recognizes user data on disk, which will be discussed
+  in more detail in <a href="#loaders">the section on Loaders</a>.  Effectively,
+  there is a specific file-extension registered in the system, <code>.instance</code>
+  which identifies a file that actually represents a Java object and can create
+  the actual object.
+  <p>
+<pre class="examplecode">
+
+&lt;filesystem&gt;
+  &lt;folder name=&quot;Menu&quot;&gt;
+    &lt;folder name=&quot;File&quot;&gt;
+      &lt;file name=&quot;org-netbeans-modules-mymodule-MyAction.instance&quot;/&gt;
+    &lt;/folder&gt;
+
+  &lt;/folder&gt;
+&lt;/filesystem&gt;
+</pre>
+  The above module layer actually adds a Swing Action (implemented by the class
+  <code>org.netbeans.modules.mymodule.MyAction</code>) into the File menu on the
+  main menu bar in NetBeans.  The NetBeans core defines the folder <code>Menu</code>;
+  the <code>core/ui</code> defines common menus that are in NetBeans, and provides
+  the infrastructure that listens on these folders and keeps the GUI up-to-date if
+  things are added or removed.  Toolbars work in a similar fashion, as do many other
+  things in NetBeans.
+  <p>
+  <h3>Hiding Files in the System Filesystem</h3>
+
+  The System Filesystem also allows one module to remove what another module 
+  adds.  The semantics are extremely simple - for example, if you wanted to delete
+  the File menu in NetBeans when your module is enabled, simply put the following
+  into your module layer:
+<pre class="examplecode">
+&lt;filesystem&gt;
+  &lt;folder name=&quot;Menu&quot;&gt;
+    &lt;folder name=&quot;File_hidden&quot;/&gt;
+  &lt;/folder&gt;
+
+&lt;/filesystem&gt;
+</pre>  
+  To make this work, modules can, in their manifest, request to be installed only
+  after another module is installed - thus there is a defined stacking order to
+  module layers.
+<p>
+<h3>The System Filesystem is Read-Write</h3>
+  If it were all just static XML fragments, it wouldn't be possible to actually
+  store configuration changes the user has made - but of course, this is possible.
+  Recall that we have the notion of a filesystem composed of merging multiple
+  other filesystems - and that we know that we have an implementation of 
+  <code>FileSystem</code> over actual files on disk, which is how a user's data
+  files are accessed.
+  <p>
+  The top layer to the system filesystem is the <code>config/</code> subdirectory
+  of the user's settings directory - typically this lives in the user's home
+  directory under the directory <code>.netbeans</code>.  So when a user makes
+  changes (like rearranging menu items), the diff of the changes is written
+  to disk in the settings directory;  since this layer lives at the top of the
+  stack, whatever changes are there (such as hiding files, as discussed above),
+  override anything a module has in its layer file.
+  
+  
+
+<h2><a name="loaders">DataLoaders and DataObjects</a></h2>
+  <code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/DataObject.html">DataObject</a></code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/DataObject.html">s</a> are wrappers for <code>FileObjects</code>.  A FileObject simply represents a file-like
+  entity;  <code>DataObject</code>s are the level at which the system understands what the contents
+  of a file are.  So a module that implements handling for a particular file 
+  type provides its own subclass of
+  <code>DataObject</code> and a factory which can create an instance of that DataObject type
+  when it is passed a <code>FileObject</code>.  <code>DataObjects</code> are what provide programmatic
+  access to the contents of a file - such as parsing a file and providing a 
+  model for its content.
+  <p>
+
+  The factory for these objects, which a module installs, is called a 
+  <code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/DataLoader.html">DataLoader</a></code>.  It is declared directly in the module's manifest:
+  <pre class="examplecode">
+Name: org/netbeans/modules/povray/PovDataLoader.class
+OpenIDE-Module-Class: Loader
+  </pre>
+  An example of how to write a DataLoader can be found in the <a href="nbm-filetype.html">NetBeans DataLoader Module Tutorial</a>.  DataLoaders typically register themselves to support specific
+  file extensions or mime types.
+  <p>
+  Unless you are writing support for a language or file-type, typically you 
+  will be using, not creating, <code>DataObject</code>s.  Getting the DataObject
+  for a file is simple:  Just call <code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/DataObject.html#find(org.openide.filesystems.FileObject)">DataObject.find(someFileObject)</a></code>.
+  <p>
+
+  <h3><a name="dataobjects">Using <code>DataObject</code>s</a></h3>
+  <code>DataObject</code>s don't do a lot in and of themselves - that is, it is
+  almost always a mistake to be casting a DataObject as a particular subclass.
+  The way to do most interesting interaction with DataObjects is via the method
+  <code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/DataObject.html#getCookie(java.lang.Class)">getCookie()</a></code>.  The pattern, which we will see in more detail in
+  the section on <a href="#lookup"><code>Lookup</code></a> is:
+  <pre class="examplecode">
+OpenCookie open = someDataObject.getCookie (OpenCookie.class);
+open.open();
+  </pre>
+  The above code will actually open a file in the editor.  The key here is that,
+  rather than providing programmatic access to a file's content as a bunch of
+  instance methods on itself (which would quickly lead to a tangled mess of inheritance issues), 
+  you <i>ask</i> a <code>DataObject</code> for an instance of some known interface
+  that does what you need.  This is accomplished by passing a <code>Class</code>
+
+  object to <code>getCookie()</code>, which will return that object if possible,
+  or <code>null</code> if not.
+  <p>
+  As another example, determining if an opened file has unsaved changes is as 
+  simple as:
+<pre class="examplecode">
+boolean needsSaving = someDataObject.getCookie (SaveCookie.class) != null;
+</pre>
+  Modules can provide their own public interfaces, and make instances of those
+  objects available via <code>getCookie()</code>.  So, for example, a <code>DataObject</code>
+
+  for an XML file might make a DOM tree or some other structural representation
+  of the file available via <code>getCookie()</code> for other modules to 
+  use to manipulate the file's contents.  Some common interfaces modules will
+  typically use via <code>getCookie()</code> can be found in the package
+  <code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-nodes/org/openide/cookies/package-summary.html">org.openide.cookies</a></code>.
+  <p>
+  Note that the term &quot;cookie&quot; in this context has nothing to do
+  with the web browser concept of cookies.
+  
+<h3>Putting it Together:  Why <code>.instance</code> Files Work</h3>
+
+  To illustrate the power of loaders and <code>DataObjects</code>, recall that
+  loaders are registered against a file type.  And recall that modules can
+  install actual Java objects via <code>.instance</code> files.  What's
+  going on here?
+  <p>
+  What is actually happening is that the very same infrastructure (<code>DataLoader</code>s) that lets
+  NetBeans recognize a user's <code>.java</code> file on disk and create an appropriate
+  <code>DataObject</code> is what recognizes <code>.instance</code> files - after
+  all, the System Filesystem is a filesystem too.  There is simply a <code>DataLoader</code>
+
+  registered in the system that claims all files with the <code>.instance</code>
+  extension.
+  <p>
+  Under the hood, what's really happening is that the <code>DataObject</code>
+  for a <code>.instance</code> file provides an <code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-nodes/org/openide/cookies/InstanceCookie.html">InstanceCookie</a></code>.
+  So to get the actual object in question manually, you would do something
+  like this:
+
+<pre class="examplecode">
+FileObject file = Repository.getDefault().getDefaultFileSystem().findResource (
+    "someFolder/com-foo-mymodule-MyClass.instance");
+
+DataObject dob = DataObject.find (file);
+InstanceCookie cookie = (InstanceCookie) dob.getCookie (InstanceCookie.class);
+MyClass theInstance = (MyClass) cookie.instanceCreate();
+</pre>
+  
+<h2>Nodes:  The Presentation Layer</h2>
+  You've probably noticed that there are quite a few tree components in
+  NetBeans - the Files and Projects tabs, and others.  The <a href="http://bits.netbeans.org/dev/javadoc/org-openide-nodes/org/openide/nodes/doc-files/api.html">Nodes API</a> is what
+  provides the contents to those trees.  Think of <code>DataObject</code>s as being
+  the data model;  a Node is where interacting with the user comes in.
+  <p>
+  A <code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-nodes/org/openide/nodes/Node.html">Node</a></code> provides human-visible things like an icon and a
+  (possibly localized) display name to DataObjects.  And a Node provides a 
+  list of <code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/Actions.html">Actions</a></code> that can appear in a popup menu for that node.
+  <p>
+
+  <code>Node</code>s define <i>context</i> for NetBeans - at any given moment,
+  there is usually one or more <i>activated nodes</i> which determine what
+  menu and toolbar actions are enabled - they are the clue to the rest of the
+  system as to what the user is doing.  Each UI component (such as the Files tab
+  or the Editor) provides an array of <code>Node</code>s which are activated - 
+  selected.  In a tree component, it is rather obvious how this works;  but even
+  when editing in the editor, the activated node triggers what actions are
+  enabled, depending on where the caret is - if the caret is inside the body
+  of a method, the activated node is actually the same node you would find
+  if you expanded the structure tree of that java class in the Projects tab.
+  <p>
+  So, to get the <code>Node</code> corresponding to a <code>DataObject</code>, simply call 
+  <code>someDataObject.<a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/DataObject.html#getNodeDelegate()">getNodeDelegate()</a></code>.
+ 
+  <h3>Nodes, DataObjects and lookup Patterns</h3>
+
+  <code>Node</code>s use the same pattern as <code>DataObject</code> - they have
+  a <code>getCookie()</code> method that can be used as described above.  
+  <code>Node</code>s that represent <code>DataObject</code>s will typically 
+  delegate to their <code>DataObject</code>'s <code>getCookie()</code> method.
+  <p>
+
+  With <code>Node</code>, it is common to see a second form of this call:
+  <code>Node.<a href="http://bits.netbeans.org/dev/javadoc/org-openide-nodes/org/openide/nodes/Node.html#getLookup()">getLookup()</a>.<a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/util/Lookup.html#lookup(java.lang.Class)">lookup (SomeClass.class)</a></code>.  The latter is a
+  newer idiom, which will eventually replace <code>getCookie()</code> in both
+  <code>Node</code>s and <code>DataObject</code>s.  The specific reason is 
+  that <code>getCookie()</code> requires that the returned object implement
+  an empty marker interface, <code>Node.Cookie</code>, which unnecessarily
+  limits what can be returned by <code>getCookie()</code>.  The only thing you
+  need to remember is that the two are functionally equivalent, and in new
+  code, use <code>getLookup().lookup()</code> where possible.  There is further
+  discussion of what <code>Lookup</code> is <a href="#lookup">below</a>.
+  <p>
+
+  Note that all <code>Node</code>s do not represent <code>DataObject</code>s - 
+  the Nodes API is useful in and of itself for creating tree like hierarchies.
+  <p>
+  There are a number of UI components that can represent a tree of nodes as
+  trees, combo boxes, lists, etc. - so typically when one needs to display a 
+  UI with a list or tree in it, the natural choice is to use the Nodes API,
+  and simply create the appropriate component and set the root node appropriately.
+  <p>
+  A key thing to remember is that Nodes are intended as a presentation layer for
+  an underlying data model (which might be files on disk, or whatever you want).
+  If you find you're putting a lot of logic into your <code>Node</code> 
+  subclass, consider that your model is what needs enhancing - <code>Node</code>s
+  should be lightweight and simple, and the model should do the heavy lifting.
+  
+  
+  <h2>Lookup</h2>
+
+  <code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/util/Lookup.html">org.openide.util.Lookup</a></code> is NetBeans' form of
+  <a href="http://www.martinfowler.com/articles/injection.html">dependency
+  injection</a>.  As with <code>DataObject</code>s and <code>FileObject</code>s,
+  it has two common usages:
+  <ul>
+  <li><i>Local lookup</i> - asking an object for an instance of some interface,
+  as we saw above with <code>Node.getLookup().lookup (SomeClass.class)</code>
+
+  </li>
+  <li><i>Global lookup</i> - services - often singleton instances of some
+  class - can be registered into the <i>default lookup</i>.  </li>
+  </ul>
+  <h3>The Default Lookup</h3>
+  The default lookup is an instance of <code>Lookup</code> returned by
+  calling <code>Lookup.getDefault()</code>.  The OpenAPIs define a number of
+  abstract service classes which allow you to get an instance of some object
+  that is of general use - for example, <code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/ErrorManager.html">org.openide.ErrorManager</a></code>,
+  used to log errors and exceptions,
+  or <code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-dialogs/org/openide/DialogDisplayer.html">org.openide.DialogDisplayer</a></code>, which displays dialogs to
+  the user.  These are typically things that there only needs to be one of
+  in the system, so they are effectively singleton objects.  To get an
+  instance of <code>ErrorManager</code>, you could do as follows:
+
+<pre class="examplecode">
+ErrorManager err = (ErrorManager) Lookup.getDefault().lookup (ErrorManager.class);
+err.log (&quot;log message&quot;);
+</pre>
+  In practice this code is a little clunky to ask people to write all the time,
+  so most such abstract classes will have their own method <code>getDefault()</code>
+  implemented as:
+<pre class="examplecode">
+public abstract class MyService {
+   public static MyService getDefault() {
+      MyService result = (MyService) Lookup.getDefault().lookup (MyService.class);
+      if (result == null) {
+         result = new TrivialImplementationOfMyService();
+      }
+      return result;
+   }
+   
+   public abstract void doSomething (...);
+}
+</pre>
+  Modules can register their own objects into the default lookup in one of two
+  ways - via the Java <a href="http://java.sun.com/j2se/1.3/docs/guide/jar/jar.html#Provider%20Configuration%20File">
+
+  provider extension mechanism</a> - putting a file into the <code>META-INF/services</code>
+  directory of their module jar, or by putting a <code>.instance</code> file in
+  the <code>Services</code> folder of the System Filesystem.
+  <p>
+  The preferred mechanism is the provider extension mechanism, and doing this
+  is extremely simple:  To provide your own implementation of ErrorManager,
+  for example, simply create two folders under the <code>src/</code> folder 
+  of your module:  <code>META-INF/services</code>.  In the <code>services/</code>
+
+  folder, put a file called <code>org.openide.ErrorManager</code>.  That
+  file will contain one line of text - the name of the class in your module
+  that should be used - e.g. <code>com.mymodule.MyLog4JErrorManager</code>.
+  <p>
+  While we won't go into this in detail here, it is also possible to register
+  multiple instances of an interface into the default lookup, retrieve
+  all of them and even listen for changes on the result of that query.
+  <p>
+  A very thorough discussion of <code>Lookup</code> can be found
+  <a href="http://openide.netbeans.org/lookup/">here</a>.
+  
+  <h2>Summary</h2>
+
+  The salient points to remember are:
+  <ul>
+  <li>FileObjects wrap files (and sometimes other things)</li>
+  <li>DataObjects wrap FileObjects and understand what's in a file</li>
+  <li>You typically don't call methods on a DataObject, you ask it for objects via <code>getCookie()</code></li>
+  <li>Configuration information is just another filesystem you can get DataObjects out of</li>
+  <li>Nodes wrap DataObjects and provide human-displayable information - actions, icons, names</li>
+
+  <li>Nodes are a presentation layer, not the place to put lots of logic</li>
+  <li>Lookup is how you get globally registered services</li>
+  <li>Lookup is also how you ask individual objects (Nodes, DataObjects, Projects) for the
+      objects that do real work</li>
+  </ul>
+
+<h2>Interconverting between Files, DataObjects, FileObjects and Nodes</h2>
+  Very often you may be integrating an external tool that wants to be passed
+  instances of <code>java.io.File</code>;  also there are many cases where you need to interconvert between
+  the various types NetBeans offers which in some way or other represent files.
+  Here are the typical ways to interconvert between all of the above:
+
+<pre class="examplecode">
+<font color="gray">Find a file on disk</font>
+FileObject f = Repository.getDefault().getDefaultFilesystem().getRoot().getFileObject(&quot;some/folder/someFile.txt&quot;);
+<font color="gray"> or if something passes you a File...</font>
+FileObject f = FileUtil.toFileObject (new File(&quot;some/folder/someFile.txt&quot;))
+
+<font color="gray">Turn a FileObject into a File (may fail for virtual filesystems)</font>
+File f = FileUtil.toFile (someFileObject)
+
+<font color="gray">Get the DataObject for a FileObject</font>
+
+DataObject obj = DataObject.find (someFileObject)
+
+<font color="gray">Get the FileObject a DataObject represents</font>
+FileObject file = someDataObject.getPrimaryFile()
+
+<font color="gray">Get the Node that represents a FileObject</font>
+Node n = someDataObject.getNodeDelegate()
+
+<font color="gray">Get the DataObject a Node represents (if any)</font>
+DataObject obj = (DataObject) someNode.getLookup().lookup(DataObject.class)
+</pre>
+
+<h2>Other Things Worth Mentioning...</h2>
+Below we go through two other critical pieces of NetBeans APIs which complete
+the basic picture of things modules typically interact with;  they don't have 
+the type of dual-use issues that the previous topics do, but are included for
+completeness.
+<p>
+<h3>Explorer Views</h3>
+
+<code>Node</code>s provide a hierarchy of objects;  the Explorer API provides
+Swing UI components that display a <code>Node</code> and its children.  There
+are a large variety of Explorer view classes which can variously represent a
+hierarchy of <code>Node</code>s as a <code>JList</code>, a <code>JMenu</code>, 
+a <code>JComboBox</code>, a <code>JTree</code>,
+a JTable and more.  Typically when you want to display some hierarchical data
+structure in NetBeans, you locate or implement the appropriate Node, create
+an appropriate Explorer component for it, and set the Explorer view's root
+node to be the node you want to display.
+<p>
+In older versions of NetBeans, the place where the Files and Projects tabs
+live was a separate window with the title &quot;Explorer&quot; - you will see
+the phrase &quot;open in the Explorer&quot; in older documentation.  
+
+<p>
+<h3>The Window System</h3>
+The API of the Window System is found in <code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/org/openide/windows/package-summary.html">org.openide.windows</a></code>.  A
+basic overview is that in NetBeans, you don't deal with <code>JFrame</code>s or
+<code>JDialog</code>s - rather, you supply components which are displayed,
+and NetBeans window management system decides where and how they appear in
+terms of top-level frames.  The main thing to know is that all components in
+NetBeans are subclasses or usages of <code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/org/openide/windows/TopComponent.html">org.openide.windows.TopComponent</a></code>.
+<code>TopComponent</code> has relatively self-explanatory methods such as
+<code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/org/openide/windows/TopComponent.html#open()">open()</a></code> and <code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/org/openide/windows/TopComponent.html#requestActive()">requestActive()</a></code>.  <code>TopComponent</code>s
+live in <i>docking modes</i> (the somewhat confusingly named 
+
+<code><a href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/org/openide/windows/Mode.html">org.openide.windows.Mode</a></code>).  A <code>Mode</code> is a container for
+multiple <code>TopComponents</code> - a thing that has Tabs.  <code>Mode</code>
+itself is not a GUI component, it is an abstract class that acts as a controller.
+<p>
+<code>TopComponents</code> can be instantiated and opened on the fly, but typically
+a module installs its UI components via several XML files inside its jar file and
+pointers to those files in the module's XML layer file.  Fairly comprehensive
+examples of usage can be found in the NetBeans source base in 
+<code>platform/samples/window-system-*/</code>.
+
+
+<h2>When You're Wondering Where Something is Implemented</h2>
+  Sometimes you just want to go read the code - but it's a jungle of jars out there.
+  Here are some of the things people often want to track down - the locations
+  are the actual directories in a checkout of NetBeans sources:
+  <ul>
+  <li><b>Where are the standard menus defined?</b> - core/ui</li>
+  <li><b>Where is dialog and windowing handled?</b> - core/windows</li>
+  <li><b>Where is the tab control NetBeans uses for tabs?</b> - core/swing/tabcontrol</li>
+
+  <li><b>What sets the fonts for NetBeans?</b> - core/swing/plaf</li>
+  </ul>
+<br />
+<br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20NetBeans%20APIs%20in%20a%20Nutshell">Send Us Your Feedback</a></div>
+<br style="clear:both;" />
+
+</body>
+</html>

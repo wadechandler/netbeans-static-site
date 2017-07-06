@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<!--
+Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+<head>
+<title>Tech tip: Clean up your Bundle.properties entries with Bundlizer</title>
+  <meta name="DESCRIPTION" content="Tech Tip: How to optimize your code 
+              by removing duplicate or unused Bundle.properties entries 
+              from your Java project using the UNIX command line or 
+              the Bundlizer tool to identify possibly 'stale' keys."> 
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="AUTHOR" content="ruth.kusterer@sun.com">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TOPIC" content="Bundle.properties">
+  <link media="screen" href="../../netbeans.css" type="text/css" rel="stylesheet">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+
+<body>
+
+<div id="MainColumn">
+
+<h2>Tech Tip: Remove Duplicate and Unused Entries From Your Property Files</h2> 
+        <div class="articledate" style="margin-left:0px;">
+        Contributed by <a href="https://blogs.oracle.com/tor/entry/useful_tools_bundlizer_removes_duplicate">Tor Norbye</a>,
+        18 Aug 2005
+
+        </div>
+<div class="feedback-box">
+        <a href="/about/contact_form.html?to=3&amp;subject=Clean%20BundleProperties%20with%20Bundlizer">Feedback</a>
+</div>
+<p>This Tech Tip shows you how to clean up property files.
+It demonstrates the use of the UNIX command line as well as 
+the Bundlizer tool to identify duplicate or unused entries.
+
+<p>Removing &ldquo;stale&rdquo; Bundle.properties entries is important: 
+Not only do they create unnecessary work for localizers 
+who translate these files, 
+but unused keys also incur more runtime overhead.
+It is easy to accidentally end up with unused key entries
+while your code develops, so you ought 
+to check your property files even if you don't suspect
+any &ldquo;stale&rdquo; entries.
+</p>
+
+<h3>Using the Unix Command Line to Scan Bundle Files</h3>
+
+<p>
+In Unix, you can use the command line to scan your files
+for unused Bundle.properties entries.
+This is an example <a href="http://openide.netbeans.org/servlets/ReadMsg?msgId=266544&amp;listName=dev">Unix shell command</a> by Tor Norbye using nawk.
+</p>
+<pre class="examplecode">find . -name Bundle.properties -exec cat {} \; | /bin/grep "=" | sed
+'/^#/d' | sed '/^OpenIDE-Module-/d' | nawk 'BEGIN { FS="=" } {print $1}'
+| sort | uniq | nawk '{system("/bin/fgrep " $0 " `find . -name
+\"*.class\" -o -name \"*.xml\"` \| nawk \"BEGIN \{i=0\} \{ i++ \} END \{
+if \(i==0\) print key \}\" key=" $0)}' | /bin/xargs -n 1 -I @ grep @
+`find . -name Bundle.properties` 
+</pre>
+
+<h3>Using Bundlizer to Scan Bundle Files</h3>
+
+<p>
+If you prefer a graphical tool 
+to scan your Bundle files, take a look at Bundlizer.
+Bundlizer is a stand-alone tool and 
+is not integrated into the NetBeans IDE. 
+</p>
+<p>You can download the source code from 
+<a href="https://netbeans.org/source/browse/contrib/bundlizer/">contrib/bundlizer</a> or via the     
+<a href="https://netbeans.org/community/sources/cvs.html">NetBeans CVS</a>. 
+To start the tool, load it as a project in 
+<a href="http://www.netbeans.info/downloads/download.php?a=b&p=1">NetBeans IDE</a> and run it.</p>
+<p>
+Here is a screenshot of the utility in action (click for full size):
+</p>
+<p>
+<a href="http://blogs.oracle.com/roller/resources/tor/bundlizer.gif">
+<img src="http://blogs.oracle.com/roller/resources/tor/bundlizer-small.gif" class="b-none" alt="A screenshot of the Bundlizer tool GUI.">
+</a>
+</p>
+<p>
+Bundlizer helps you clean a Bundle.properties file in several ways:
+</p>
+<ul>
+ <li> It looks for unused keys: These are removed from the file. </li>
+ <li> It looks for duplicates: When the same key is used more than once,
+      you are alerted to this since you will need
+      to decide which value to keep. </li>
+ <li> It cleans up formatting in the file: 
+      For instance, it removes empty lines. </li>
+ <li> When you are done, it saves the resulting file.</li>
+</ul>
+
+<p>
+Be aware that you should <em>definitely</em> check the results
+before accepting any proposed changes.
+Determining if a key is unused or not is not a task which can be 
+done fully automatically.  
+If for instance your code is <em>computing</em> keys 
+rather than looking them up directly, 
+Bundlizer will not be able to identify them 
+and will erroneously report these keys unused. 
+</p>
+
+<h3>Patching Bundlizer</h3>
+
+<p>If you have downloaded the Bundlizer's source code,  
+you can adapt this utility to your own needs. 
+For example, the
+<a href="http://mediacast.sun.com/details.jsp?id=248">executable jar</a>
+file mentioned above includes two improvements by Tor Norbye. 
+The first patch makes Bundlizer also look in XML files for key references; 
+the second makes the tool more robust against the encounter of 
+non-commented lines that do not contain any  &ldquo;=&rdquo; signs.
+</ul>
+</p>
+
+<h4>XML Suffix Patch</h4>
+<p>
+<pre class="examplecode">Index: contrib/bundlizer/src/org/netbeans/modules/bundlizer/BundlizerPanel.java
+===================================================================
+RCS file: /cvs/contrib/bundlizer/src/org/netbeans/modules/bundlizer/BundlizerPanel.java,v
+retrieving revision 1.3
+diff -u -r1.3 BundlizerPanel.java
+--- contrib/bundlizer/src/org/netbeans/modules/bundlizer/BundlizerPanel.java   7 May 2004 23:48:40 -0000        1.3
++++ contrib/bundlizer/src/org/netbeans/modules/bundlizer/BundlizerPanel.java   2 Aug 2005 05:45:46 -0000
+@@ -449,7 +449,7 @@
+      
+     private class JavaFilenameFilter implements java.io.FilenameFilter {
+         public boolean accept(java.io.File file, String str) {
+-            return str.endsWith ("java");
++            return str.endsWith ("java") || str.endsWith("xml");
+         }
+     }
+</pre>      
+</p>
+
+<h4>Ignore Missing Equal-Sign Patch</h4>
+
+<p><pre class="examplecode">Index: contrib/bundlizer/src/org/netbeans/modules/bundlizer/Properties.java
+===================================================================
+RCS file: /cvs/contrib/bundlizer/src/org/netbeans/modules/bundlizer/Properties.java,v
+retrieving revision 1.2
+diff -u -r1.2 Properties.java
+--- contrib/bundlizer/src/org/netbeans/modules/bundlizer/Properties.java       1 May 2004 13:52:24 -0000        1.2
++++ contrib/bundlizer/src/org/netbeans/modules/bundlizer/Properties.java       2 Aug 2005 05:45:46 -0000
+@@ -115,6 +115,10 @@
+                 }
+                 String keyValuePair = line;
+                 int equals = keyValuePair.indexOf ("=");
++                if (equals == -1) {
++                    continue;
++                }
+                 assert equals != -1;
+                  
+                 String key = keyValuePair.substring (0, equals).trim();
+@@ -203,6 +207,9 @@
+      
+     private boolean isKeyValuePair (String line) {
+         int equals = line.indexOf("=");
++        if (equals == -1) {
++            return false;
++        }
+         int cmt = line.indexOf ("#");
+         return (cmt &gt; 0 &amp;&amp; equals &lt; cmt) || (cmt &lt; 0 &amp;&amp; equals &gt;= 0);
+     }
+</pre>
+</p>
+<div class="feedback-box">
+  <a href="/about/contact_form.html?to=3&amp;subject=Feedback:clean bundles">Send Feedback on This Tutorial</a>
+</div>
+<br style="clear:both;" />
+<h2>See also</h2>
+
+<ul>
+<li><a href="https://blogs.oracle.com/tor/entry/useful_tools_bundlizer_removes_duplicate">Original blog article by Tor Norbye</a>.
+<li>Download Bundlizer sources from <a href="https://netbeans.org/source/browse/contrib/bundlizer/">contrib/bundlizer</a> by <a href="http://weblogs.java.net/blog/timboudreau/">Tim Boudreau</a>.
+<li>Tor's explanation of <a href="http://openide.netbeans.org/servlets/ReadMsg?msgId=266544&amp;listName=dev">how his Unix command</a> works.
+<li>Download <a href="http://www.netbeans.info/downloads/download.php?a=b&p=1">NetBeans IDE</a>.
+<li><a href="https://netbeans.org/community/contribute/cvs.html">Contribute</a> your Bundlizer patches!
+</ul>
+
+</body></html>

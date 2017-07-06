@@ -1,0 +1,260 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>Tutorial do Perfilador do NetBeans IDE 4.0</title>
+<META NAME="description" CONTENT="NetBeans IDE 4.0 Profiler Tutorial">
+<link rel="stylesheet" type="text/css" href="../../netbeans.css">
+<META NAME="EXPIRES" CONTENT="N">
+<meta name="author" content=""/>
+<meta name="indexed" content="y"/>
+<meta name="description" content="NetBeans IDE 4.0 Profiler Tutorial"/>
+</head>
+<body>
+<h1>Tutorial do Perfilador do NetBeans IDE 4.0</h1>
+<div class="articledate" style="margin-left:0px;">Contribui&ccedil;&atilde;o de Gregg Sporar como parte da competi&ccedil;&atilde;o <a href="../win-with-netbeans.html">Win With NetBeans</a></div>
+<p>Este artigo deve ser usado em conjunto com o Perfilador do NetBeans, Marco 5. 
+
+<p>O Perfilador do NetBeans &eacute; uma poderosa ferramenta que fornece importantes informa&ccedil;&otilde;es sobre o comportamento do execut&aacute;vel de seu aplicativo. Ao impor relativamente pouco overhead, o Perfilador do NetBeans rastreia o desempenho da CPU e o uso da mem&oacute;ria. Este tutorial ir&aacute; mostr&aacute;-lo como usar o Perfilador com o NetBeans 4.0 para:</p>
+
+<ul>
+  <li><a href="#runtime">Monitorar o comportamento do execut&aacute;vel de um aplicativo da Web</a></li>
+  <li><a href="#cpu">Determinar o tempo de CPU usado pelos m&eacute;todos de um aplicativo</a></li>
+  <li><a href="#createObjects">Monitorar a cria&ccedil;&atilde;o de objetos por um aplicativo</a></li>
+</ul>
+
+<p>Partes deste tutorial aparecerem originalmente em Junho de 2004 no artigo <i>Jornal do Desenvolvedor Java</i> (http://sys-con.com/story/?storyid=45081&amp;DE=1) sobre o JFluid, a tecnologia subjacente usada pelo Perfilador do NetBeans. Todo o material reimpresso &eacute; utilizado sob permiss&atilde;o do <i>Jornal do Desenvolvedor do Java</i>.</p>
+
+<p><a name="top"></a>Este tutorial deveria levar cerca de uma hora para ser completado.</p>
+
+<h2><a name="genericsetup"></a>Definindo seu ambiente</h2></br><br />
+<div class="indent">
+<h3 class="tutorial">Instalando o Perfilador</h3>
+<p>
+
+O Perfilador do NetBeans est&aacute; em beta e est&aacute; dispon&iacute;vel como download separado. Para usar este tutorial &eacute; preciso instalar a vers&atilde;o mais recente do Perfilador do NetBeans. Siga as <a href="http://profiler.netbeans.org/index.html">instru&ccedil;&otilde;es de download e instala&ccedil;&atilde;o</a> do Perfilador do NetBeans.
+</p>
+<h3 class="tutorial"><a name="tomcat"></a>Configurando o Tomcat</h3>
+<p>
+
+O perfilamento de um aplicativo da Web requer que o servidor da Web seja executado com o JDK que est&aacute; inclu&iacute;do no Perfilador do NetBeans. Poranto, para usar o Perfilador com o servidor Tomcat que est&aacute; incorporado no NetBeans, &eacute; necess&aacute;ria uma pequena altera&ccedil;&atilde;o na forma de inicializa&ccedil;&atilde;o do Tomcat. A maneira mais f&aacute;cil para fazer isso &eacute; a de modificar o script que inicia o Tomcat. O script &eacute; o catalina.bat (no Windows) ou catalina.sh (no Unix). Estes scripts est&atilde;o localizados para pasta bin do Tomcat. Uma localiza&ccedil;&atilde;o t&iacute;pica no sistema Windows seria: <br>
+  <pre class="examplecode">
+  C:\Program Files\netbeans-4.0\nb4.0\jakarta-tomcat-5.0.28\bin\catalina.bat</pre>
+  E no Unix a localiza&ccedil;&atilde;o seria algo como:
+  <pre class="examplecode">
+  /export/home/gs/tools/netbeans/40/nb4.0/jakarta-tomcat-5.0.28/bin/catalina.sh</pre>
+  <ol>
+     <li>Salve uma c&oacute;pia do script como backup.</li>
+     <p><li>Logo abaixo do grande bloco de coment&aacute;rios que est&aacute; no topo do arquivo, adicione uma linha que define o <tt>JAVA_HOME</tt> para a pasta que cont&eacute;m o JDK inclu&iacute;do com o Perfilador do NetBeans. Escolha Perfilados &gt; Ajuda &gt; Sobre o Perfilador do NetBeans, para exibir o nome da pasta. Exemplo no Windows:
+     <pre class="examplecode">
+    set JAVA_HOME=c:\Documents and Settings\gs\.netbeans\4.0\modules\profiler-ea-vm\</pre>
+     Exemplo no Unix:
+     <pre class="examplecode">
+    JAVA_HOME=&quot;/home/gs/.netbeans/4.0/modules/profiler-ea-vm/&quot;
+</pre></li>
+  </ol>
+</p>
+<h3 class="tutorial">Obtendo os arquivos de c&oacute;digo-fonte necess&aacute;rios</h3>
+<p>
+Este tutorial usa um apalicativo da Web com base no projeto HelloWeb criado no <a href="../../kb/archive/index.html"> Guia de In&iacute;cio R&aacute;pido do NetBeans IDE 4.0 para Aplicativos da Web</a>. As modifica&ccedil;&otilde;es neste tutorial incluem a adi&ccedil;&atilde;o de um servlet que manuseia a solicita&ccedil;&atilde;o de entrada. Ele cria um bean Java e a seguir despacha para o JSP que cria a resposta. O servlet foi escrito de prop&oacute;sito de forma ruim para poder real&ccedil;ar os recursos do Perfilador do NetBeans.
+
+<p>Voc&ecirc; obt&eacute;m todos os arquivos do aplicativo no arquivo <tt>ProfilingTutorial.zip</tt>.</p>
+<ol>
+  <li>Em seu sistema de arquivos, crie uma pasta para os arquivos zipados do aplicativo. Deste ponto em diante, esta pasta ser&aacute; referida como <tt><i>$</i><i>UNZIPHOME</i></tt>.</li>
+  <p><li>Clique <tt><a href="https://netbeans.org/files/documents/4/387/ProfilingTutorial.zip">aqui</a></tt> para baixar o arquivo <tt>ProfilingTutorial.zip</tt>.</li><p></p>
+  <p><li>Use um aplicativo para extrair os arquivos do arquivo <tt>ProfilingTutorial.zip</tt> para <tt><i>$</i><i>UNZIPHOME</i></tt>.</li><p></p>
+  <p><tt><i>$</i><i>UNZIPHOME</i></tt> agora tem as pastas <tt>web</tt> e <tt>src</tt>. A pasta <tt>web</tt> cont&eacute;m os dois arquivos JSP e os descritores da implementa&ccedil;&atilde;o. A pasta <tt>src</tt> cont&eacute;m os arquivos de c&oacute;digo-fonte para o servlet e classe de bean Java.</p>
+</ol>
+</div>
+
+<h2><a name="create"></a>Criando um projeto</h2></br><br />
+<div class="indent">
+<h3 class="tutorial">Criando um projeto a partir dos arquivos de c&oacute;digo-fonte fornecido</h3>
+ <ol>
+  <li>Escolha Arquivo &gt; Novo projeto (Ctrl-Shift-N). Em Categorias, selecione Web. Em Projetos, selecione Projeto da Web com c&oacute;digos-fontes existentes. Clique em Pr&oacute;ximo.</li><p>
+  <li>Em Localiza&ccedil;&atilde;o, clique em Explorar para selecionar a raiz do documento da aplica&ccedil;&atilde;o Web. A raiz do documento &eacute; <tt><i>$</i><i>UNZIPHOME</i></tt>, a pasta na qual voc&ecirc; extraiu o arquivo <tt>ProfilingTutorial.zip</tt>.</li><p>
+  <li>En Nome do projeto, digite <tt>ProfilingTutorial</tt>. Clique em Pr&oacute;ximo.</li><p>
+  <li>Clique em Terminar. O IDE cria a pasta de projeto <tt><i>$</i><i>UNZIPHOME/nbproject</i></tt> e o arquivo <tt><i>$</i><i>UNZIPHOME/build.xml</i></tt>. O projeto Profiling Tutorial &eacute; aberto no IDE. Voc&ecirc; pode ver a estrutura l&oacute;gica na janela Projetos e a estrutura de arquivos na janela Arquivos.</li><p>
+  <li>A etapa final somente &eacute; necess&aacute;ria quando o NetBeans estiver configurado para usar o JDK v5 como a paltaforma Java padr&atilde;o. <p>
+    <ol type="i">
+    <li>O Perfilador atual somente suporta arquivos de classe criados pelo JDK v1.4.2, portanto, se voc&ecirc; n&atilde;o instalou um JDK v1.4.2 e configurou o mesmo como uma Plataforma Java NetBeans, ser&aacute; necess&aacute;rio faz&ecirc;-lo. Observe que em sua vers&atilde;o beta o Perfilador do NetBeans instala um JDL com base na v1.4.2 - voc&ecirc; o define como <tt>JAVA_HOME</tt> na etapa acima de <a href="#tomcat"> Configurando o Tomcat</a>. Para obter mais informa&ccedil;&otilde;es consulte a <a href="http://profiler.netbeans.org/docs/help/index.html">Ajuda do Perfilador</a> on-line.<p>
+    <li>Na janela Projetos, clique com o bot&atilde;o direito do mouse na entrada <tt>ProfilingTutorial</tt> e escolha Propriedades. Selecione a Plataforma Java que usa o JDK v1.4.2, e a seguir clique no bot&atilde;o OK.  </li><p>
+     <li>Na pasta bim do Tomcat, fa&ccedil;a um backup do catalina.50.bat (no Windows) ou catalina.50.sh (no Unix).</li><p>
+     <li>Fa&ccedil;a a mesma edi&ccedil;&atilde;o no catalina.50.bat (no Windows) ou catalina.50.sh (no Unix) feita na etapa de <a href="#tomcat"> Configurando o Tomcat</a>.</li><p>
+     </ol>
+</li>
+  </ol>
+  </div>
+<h3 class="tutorial">Executando o projeto</h3>
+
+<ol>
+<li>Na janela Projetos, clique com o bot&atilde;o direito do mouse na entrada <tt>ProfilingTutorial</tt> e escolha Limpar e construir o projeto. A seguir, clique com o bot&atilde;o direito do mouse novamente an entrada <tt>ProfilingTutorial</tt> e escolha Executar o projeto. Isso far&aacute; com que o IDE construa o projeto, inicie o Tomcat, e a seguir exiba a p&aacute;gina index.jsp em uma janela do navegador.</li><p>
+<li>Verifique se o Tomcat foi corretamente iniciado ao clicar na aba Tomcat incorporado na janela Sa&iacute;da do IDE. Navegue para o topo da sa&iacute;da Tomcat para verificar se o Tomvat foi iniciado com a JVM do Perfilador do NetBeans. Examine a linha que come&ccedil;a por <tt>Using JAVA_HOME</tt>; a Java home deveria ser a pasta que cont&eacute;m a JVM do Perfilador do NetBeans. Se o Tomcat n&atilde;o inicia ou o <tt>JAVA_HOME</tt> n&atilde;o &eacute; o diret&oacute;rio que cont&eacute;m a JVM do Perfilador do NetBeans, verifique ent&atilde;o se voc&ecirc; seguiu as instru&ccedil;&otilde;es na etapa de <a href="#tomcat">Configurando o Tomcat</a>. Sa&iacute;da de amostra para o Windows est&aacute; abaixo ilustrada.
+
+<p><a href="../../images_www/articles/win-with-netbeans/tomcat.png" title="Visualizar a sa&iacute;da do Tomcat - clique para obter uma imagem em tamanho total"><img src="../../images_www/articles/win-with-netbeans/tomcat-small.png" width="500" height="121" alt="Visualizar a sa&iacute;da do Tomcat - clique para obter uma imagem em tamanho total" vspace="5" hspace="5" class="b-none" style="display: block; margin-left:auto; margin-right:auto;"></a></li>
+
+<p><li>Uma janela do naveagor deve ter sido aberta e exibe a p&aacute;gina <tt>http://localhost:8084/ProfilingTutorial/</tt>. Verifique se o aplicativo da Web est&aacute; funcionando ao digitar <tt>Usu&aacute;rio do NetBeans</tt> no campo Nome e clique no bot&atilde;o OK. O resultado deveria ser similar a ilustra&ccedil;&atilde;o abaixo. <img src="../../images_www/articles/win-with-netbeans/hello.png" class="align-center" alt="Visualizar a sa&iacute;da do aplicativo" vspace="5" style="display: block; margin-left:auto; margin-right:auto;"></li><p>
+</ol>
+</div>
+
+<h2><a name="runtime"></a>Monitoranto o comportamento do execut&aacute;vel</h2></br><br />
+<div class="indent">
+<h3 class="tutorial">Anexando &agrave; um aplicativo em execu&ccedil;&atilde;o</h3>
+ <p>
+ Agora que voc&ecirc; verificou que o Tomcat est&aacute; usando a JVM inclu&iacute;da com o Perfilador do NetBeans, poder&aacute; anexar as ferramentas de perfilamento do IDE &agrave; aquela JVM e monitorar o comportamento do execut&aacute;vel.
+  <ol>
+ <li>Escolha Perfilador &gt; Anexar perfilador. A caixa de di&aacute;logo Especificar as configura&ccedil;&otilde;es para anexar &eacute; exibida.</li>
+ <p><li>Para Anexar &agrave;: escolha J2EE Web/App Server</li>
+ <p><li>Para Executando em: escolha o bot&atilde;o Este computador.</li>
+ <p><li>Para Configura&ccedil;&otilde;es para anexar, clique no bot&atilde;o Anexo din&acirc;mico, e a seguir clique no bot&atilde;o Selecionar a VM em execu&ccedil;&atilde;o. Selecione a entrada Tomcat (normalmente <tt>org.apache.catalina.startup.Bootstrap start</tt>) na lista de VM's.</li>
+ <p><li>No tipo de Diret&oacute;rio de trabalho, digite o nome completo e qualificado da pasta bin do Tomcat. Como em exemplo, uma valor t&iacute;pico no sistema Windows seria: <br>
+  <pre class="examplecode">
+  C:\Program Files\netbeans-4.0\nb4.0\jakarta-tomcat-5.0.28\bin</pre>
+  E no Unix a localiza&ccedil;&atilde;o seria algo como:
+  <pre class="examplecode">
+  /export/home/gs/tools/netbeans/40/nb4.0/jakarta-tomcat-5.0.28/bin</pre>
+  </li>
+  <p><li>Clique no bot&atilde;o OK. A caixa de di&aacute;logo Anexar e perfilar &eacute; aberta.</li>
+  <p><li>Clique no bot&atilde;o Aplicativo em tela cheia. Assegure que a op&ccedil;&atilde;o Ativar o monitoramente de threads <i>n&atilde;o</i> esteja selecionada.  </li><p>
+  <li>Clique no bot&atilde;o Anexar.</li>
+ </ol>
+
+ <h3 class="tutorial"><a name="interpretingMonitor">Interpretando os gr&aacute;ficos do monitor</a></h3>
+ O Perfilador do NetBeans exibe tr&ecirc;s gr&aacute;ficos na janela de sa&iacute;da, como abaixo ilustrado.
+
+<p><a href="../../images_www/articles/win-with-netbeans/monitorGraphs.png" title="Visualizar gr&aacute;ficos do monitor - clique para obter uma imagem em tamanho total"><img src="../../images_www/articles/win-with-netbeans/monitorGraphs-small.png" width="500" height="110" class="align-center" alt="Visualizar gr&aacute;ficos do monitor - clique para obter uma imagem em tamanho total" vspace="5" hspace="5" class="b-none" style="display: block; margin-left:auto; margin-right:auto;"></a>
+
+ <p>O gr&aacute;fico na esquerda &eacute; o mais f&aacute;cil de entender. A sombra vermelha indica o tamanho alocado para o heap da JVM, atualizado aproximadamente uma vez por segundo. A camada roxa indica a quantidade de espa&ccedil;o de heap de fato em uso. No exemplo acima, o tamanho de heap alocado na &uacute;ltima atualiza&ccedil;&atilde;o doi de quase 14 megabytes. Daqueles14 megabytes, um pouco mais de 4 megabytes est&aacute; de fato sendo usado para manter os objetos Java. </p>
+ <p>O gr&aacute;fico na direira tamb&eacute;m &eacute; f&aacute;cil de entender. Ele meramente mostra a contagem the threads ativos na JVM, atualizado aproximadamente uma vez por segundo.</p>
+ <p>O gr&aacute;fico no centro &eacute; o mais interessante. Ele mostra importantes estat&iacute;sticas do heap.
+ <ul>
+ <li>A linha azul &eacute; o precentual de tempo de execu&ccedil;&atilde;o gasto pela JVM em coletar lixo e o gr&aacute;fico est&aacute; no eixo Y na borda direita do gr&aacute;fico. O tempo gasto pela JVM fazendo a coleta de lixo &eacute; o tempo que n&atilde;o est&aacute; dispon&iacute;vel para executar seu aplicativo. Portanto, se a linha azul indica um percentual alto, voc&ecirc; deve considerar ajustar a JVM ao configurar uma tamanho maior de heap (consulte a <a href="http://java.sun.com/j2se/1.5.0/">documenta&ccedil;&atilde;o</a>) do par&acirc;metro -Xmx ou talvez troque para uma outra coleta de lixo, como <a href="http://java.sun.com/docs/hotspot/gc1.4.2/">algorithm</a>.</li><p>
+<li>
+ A linha vermelha est&aacute; sobrevivendo gera&ccedil;&otilde;es e tem seu gr&aacute;fico na escala do eixo Y na borda esquerda do gr&aacute;fico. O conte&uacute;do das gera&ccedil;&otilde;es sobreviventes &eacute; o n&uacute;mero de diferentes idades de todos os objetos Java no heap da JVM, onde &quot;idade&quot; &eacute; definida como o n&uacute;mero de coletas de lixo que o objeto sobreviveu. Quando o valor para gera&ccedil;&otilde;es sobreviventes for baixo, isso indica que a maioria dos objetos no heap t&ecirc;m estado ali na mesma quantidade de tempo. Se, no entanto, o valor para gera&ccedil;&otilde;es sobreviventes est&aacute; aumentado com uma taxa maior ao lono do tempo, ent&atilde;o isso indica que seu aplicativo est&aacute; alocando novos objetos, mas mantendo as refer&ecirc;ncias dos objetos antigos que ele j&aacute; alocou. Se estes objetos antigos de fato n&atilde;o s&atilde;o mais necess&aacute;rios, ent&atilde;o seu aplicativo est&aacute; desperdi&ccedil;ando (ou &quot;vazando&quot;) mem&oacute;ria.
+ </li>
+ </ul>
+ Clicar no bot&atilde;o <img src="../../images_www/articles/win-with-netbeans/telemetryGraphsButton.png" alt="Visualizar os gr&aacute;ficos de telemetria" > far&aacute; com que o IDE exiba vers&otilde;es maiores dos tr&ecirc;s gr&aacute;ficos na janela de exibi&ccedil;&atilde;o principal.<p>
+</div>
+
+<h2><a name="cpu"></a>Determinado o tempo de CPU usado por um m&eacute;todo</h2></br><br />
+<div class="indent">
+<h3 class="tutorial">Trocando para o modo de an&aacute;lise de desempenho</h3>
+<p>
+
+ O Perfilador &eacute; anexado &agrave; JVM do Tomcat, mas est&aacute; apenas monitorando as estat&iacute;sticas de alto n&iacute;vel. Para obter informa&ccedil;&otilde;es detalhadas sobre o desemepenho de um m&eacute;todo espec&iacute;fico (ou m&eacute;todos) no aplicativo, ser&aacute; necess&aacute;rio modificar as configura&ccedil;&otilde;es do Perfilador.
+ <ol>
+ <li>Clique no bot&atilde;o <img src="../../images_www/articles/win-with-netbeans/modifyProfilingButton.png" alt="Visualizar a modifica&ccedil;&atilde;o do perfilador" > ou escolhja Perfil &gt; Modificar perfilamento.<p></li>
+ <li>Clique no bot&atilde;o Analisar desempenho.<p></li>
+ <li>Selecione o bot&atilde;o Parte do aplicativo. A seguir, clique no bot&atilde;o Selecionar que est&aacute;junto ao bot&atilde;o Parte do aplicativo.<p></li>
+ <li>Clique no bot&atilde;o Adicionar.<p></li>
+ <li>Clique no bot&atilde;o Selecionar. O Perfilador exibe a &aacute;rvore Selecionar classe.<p></li>
+ <li>Expanda a entrada ProfilingTutorial ao clicar em seu &iacute;cone de sinal de mais.<p></li>
+ <li>Expanda a entrada Pacotes de c&oacute;digo-fonte ao clicar em seu &iacute;cone de sinal de mais.<p></li>
+ <li>Expanda a entrada org.me.hello.<p></li>
+ <li>Expanda a entrada RequestHandler.java.<p></li>
+ <li>Clique na entrada RequestHandler, e a seguir clique no bot&atilde;o OK.<p></li>
+ <li>Os m&eacute;todos na classe RequestHandler s&atilde;o agora exibidos na caixa de di&aacute;logo Selecionar m&eacute;todos, como abaixo ilustrado. Clique no m&eacute;todo <tt>processRequest</tt>, e a seguir clique no bot&atilde;o OK.
+
+<p><img src="../../images_www/articles/win-with-netbeans/selectMethods.png" alt="Caixa de di&aacute;logo Visualizar m&eacute;todos selecionados" vspace=5 style="display: block; margin-left:auto; margin-right:auto;"></li>
+
+<p><li>Selecione o m&eacute;todo <tt>processRequest</tt> ao clicar no esmo na lista de M&eacute;todos raiz, e a seguir clique no bot&atilde;o OK. Voc&ecirc; acaba de selecionar <tt>processRequest</tt> como o m&eacute;todo raiz para a an&aacute;lise de dempenho. Isso significa que o m&eacute;todo <tt>processRequest</tt> e todos os m&eacute;todos que ele chama, e todos os m&eacute;todos que por sua vez chamam (e assim pordiante) ser&atilde;o monitorados. Iniciando do <tt>processRequest</tt>, o Perfilador faz a an&aacute;lise do gr&aacute;fico de chamada de m&eacute;todo, para determinar quais m&eacute;todos precisam de perfilamento. Somente estes m&eacute;todos s&atilde;o perfilados - o restante de seu aplicativo continuar&aacute; a ser executado em velocidade completa sem nenhum overhead de perfilamento.<p></li>
+ <li>Clique no bot&atilde;o OK na caixa de di&aacute;logo Modificar perfilamento.<p></li>
+ </ol>
+<h3 class="tutorial">Executando o m&eacute;todo perfilado</h3>
+<p>
+
+ Agora que voc&ecirc; escolheu <tt>processRequest</tt> como o m&eacute;todo raiz, &eacute; preciso usar a parte do aplicativo da Web que causa a excu&ccedil;&atilde;o do m&eacute;todo raiz. Isso &eacute; f&aacute;cil de fazer, porque o m&eacute;todo <tt>processRequest</tt> manuseia todas as solicita&ccedil;&otilde;es da p&aacute;gina index.jsp.
+ <ol>
+ <li>Em seu navegador da Web clique no bot&atilde;o Voltar, para retornar para a p&aacute;gina <tt>http://localhost:8084/ProfilingTutorial/</tt>.<p></li>
+ <li>Clique no bot&atilde;o OK para reenviar &quot;Usu&aacute;rio de NetBeans&quot; como seu nome de usu&aacute;rio. Levar&aacute; um pouco mais de tempo para que a resposta apare&ccedil;a porque o Perfilador est&aacute; monitorando o desempenho do m&eacute;todo <tt>processRequest</tt>.
+ <li>Ap&oacute;s <b>Alo, Usu&aacute;rio do NetBeans!</b> ser exibido em seu navegador, clique no bot&atilde;o <img src="../../images_www/articles/win-with-netbeans/currentResultsButton.png" alt="Visualizar resultados atuais"> ou escolha Perfil &gt; Obter resultados atuais.
+ </ol>
+
+
+ <h3 class="tutorial">Interpretando o gr&aacute;fico de an&aacute;lise de desempenho</h3>
+  <p>
+
+
+
+ O Perfilador exibe os &uacute;ltimos resultados de desempenho, como abaixo ilustrado.
+
+ <p><a href="../../images_www/articles/win-with-netbeans/performanceResults.png" title="Visualizar resultados de desempenho - clique para obter uma imagem em tamanho total"><img src="../../images_www/articles/win-with-netbeans/performanceResults-small.png" width="500" height="352" class="align-center" alt="Visualizar resultados de desempenho - clique para obter uma imagem em tamanho total" class="b-none" style="display: block; margin-left:auto; margin-right:auto;"></a>
+
+ <p>A janela superior exibe o gr&aacute;fico completo de chamado do m&eacute;todo com o m&eacute;todo raiz. O m&eacute;todo <tt>processRequest</tt> foi executado por 168 millisegundos(ms). Observe, no entanto, que pouco tempo foi gasto para executar as instru&ccedil;&otilde;es do pr&oacute;prio m&eacute;todo <tt>processRequest</tt> - a sexta linha na janela mostra o &quot;tempo pr&oacute;prio&quot; para <tt>processRequest</tt> como sendo de apenas 0.421 ms. A grande maioria do tempo foi gasto em m&eacute;todos chamados pelo <tt>processRequest</tt>. Em particular, o m&eacute;todo <tt>forward</tt> usou 84.7% do tempo de execu&ccedil;&atilde;o. Isso n&atilde;o &eacute; uma surpresa, devido a quantidade de trabalho que o m&eacute;todo <tt>forward</tt> tem de fazer.</p>
+ <p>O poder do Perfilador do NetBeans &eacute; que ele ajuda a identificar os gargalos em seu c&oacute;digo, que n&atilde;o eram esperados ou que ir&atilde;o impedir que seu aplicativo dimensione bem. Observe que o m&eacute;todo <tt>createUniqueID</tt> usou 11.3% do tempo de execu&ccedil;&atilde;o. Voc&ecirc; pode clicar no sinal de mais junto a entrada <tt>createUniqueID</tt> para investigar exatamente onde foi gasto o tempo. Caso voc&ecirc; examine o c&oacute;digo-fonte para o <tt>createUniqueID</tt>, ir&aacute; descobrir que ele usa um algoritmo muito ineficiente e deveria ser reprojetado.
+ <p>A janela inferior &eacute; uma indica&ccedil;&atilde;o mais plana - elea mostra o &quot;tempo pr&oacute;prio&quot; de cada m&eacute;todo no gr&aacute;fico de chamadas.</p>
+
+</div>
+<br />
+
+<h2><a name="createObjects"></a>Monitorando a cria&ccedil;&atilde;o de objetos
+</h2></br><br />
+<div class="indent">
+<h3 class="tutorial">Trocando para o modo de an&aacute;lise de mem&oacute;ria</h3>
+<p>
+
+ O Perfilador pode fazer uma an&aacute;lise detalhada (tamb&eacute;m chamada de <i>instrumenta&ccedil;&atilde;o</i>) do desempenho da CPU ou uso da mem&oacute;ria ao mesmo tempo. Para obter informa&ccedil;&otilde;es detalhadas sobre a aloca&ccedil;&atilde;o e coleta de lixo de objetos no heap JVM, ser&aacute; preciso modificar as configura&ccedil;&otilde;es do Perfilador.
+ <ol>
+ <li>Clique no bot&atilde;o <img src="../../images_www/articles/win-with-netbeans/modifyProfilingButton.png" alt="Visualizar a modifica&ccedil;&atilde;o do perfilador" > ou escolhja Perfil &gt; Modificar perfilamento.<p></li>
+ <li>Clique no bot&atilde;o Analisar o uso da mem&oacute;ria.<p></li>
+ <li>Selecione o bot&atilde;o Registrar a cria&ccedil;&atilde;o de objeto e a coleta de lixo.<p></li>
+ <li>Clique no bot&atilde;o OK.<p></li>
+ </ol>
+
+ <h3 class="tutorial">Executando o aplicativo perfilado</h3>
+ <p>
+
+ Agora que voc&ecirc; escolheu analisar o uso da mem&oacute;ria, ser&aacute; necess&aacute;rio usar o aplicativo da Web para poder determinar se ele est&aacute; usando a mem&oacute;ria com efici&ecirc;ncia.
+ <ol>
+ <li>Em seu navegador da Web clique no bot&atilde;o Voltar, para retornar para a p&aacute;gina <tt>http://localhost:8084/ProfilingTutorial/</tt>.<p></li>
+ <li>Clique no bot&atilde;o OK para reenviar &quot;Usu&aacute;rio de NetBeans&quot; como seu nome de usu&aacute;rio.<p></li>
+ <li>Ap&oacute;s <b>Alo, Usu&aacute;rio do NetBeans!</b> ser exibido em seu navegador, clique no bot&atilde;o Voltar do navegador para retornar para a p&aacute;gina anterior.<p></li>
+ <li>Repita as etapas 2 a 3 nove vezes. O envio repetido do mesmo nome de usu&aacute;rio &eacute; necess&aacute;rio para esta demonstra&ccedil;&atilde;o.<p></li>
+ <li>Clique no bot&atilde;o <img src="../../images_www/articles/win-with-netbeans/currentResultsButton.png" alt="Visualizar resultados atuais"> ou escolha Perfil &gt; Obter resultados atuais.<p></li>
+ <li>O Perfilador exibe a an&aacute;lise mais recente da mem&oacute;ria em uma tabela. Clique na coluna Nome da classe para classificar as linhas pelo nome da classe.<p></li>
+ <li>Navegue atrav&eacute;s das linhas da tabela at&eacute; a linha para a classe <tt>org.me.hello.NameHandler</tt> que &eacute; exibida.<p></li>
+ </ol>
+
+ <h3 class="tutorial">Interpretando o gr&aacute;fico de an&aacute;lise de mem&oacute;ria</h3>
+<p>
+ A ilustra&ccedil;&atilde;o abaixo mostra as estat&iacute;sticas para a classe <tt>org.me.hello.NameHandler</tt>.
+
+<p><a href="../../images_www/articles/win-with-netbeans/liveObjects.png" title="Visualizar resultados da mem&oacute;ria - clique para obter uma imagem em tamanho total"><img src="../../images_www/articles/win-with-netbeans/liveObjects-small.png" class="align-center" width="500" height="273" alt="Visualizar resultados da mem&oacute;ria - clique para obter uma imagem em tamanho total" vspace=5 class="b-none" style="display: block; margin-left:auto; margin-right:auto;"></a>
+
+ <p>As colunas fornecem informa&ccedil;&otilde;es sobre a aloca&ccedil;&atilde;o de objetos e uso da mem&oacute;ria.
+ <ul>
+ <li>Total alocado Objeto (na extremidade direita) mais f&aacute;cil de entender. Esta &eacute; a contagem total de todos os objetos desta classe que foram criados. Para a classe <tt>NameHandler</tt> esta valor &eacute; 10, que &eacute; o n&uacute;mero de vezes que voc&ecirc; pressionou o bot&atilde;o OK no formul&aacute;rio do aplicativo da Web.<p></li>
+ <li>Ojbetos alocados &eacute; o n&uacute;mero de objetos que o Perfilador est&aacute; de fato monitorando. Neste exemplo, das 10 inst&acirc;ncias do <tt>NameHandler</tt> que foram criadas, o Perfilador somente est&aacute; monitorando 1 destas inst&acirc;ncias. Por padr&atilde;o, este n&uacute;mero ser&aacute; aproximadamente de 10 porcento do valor do total de objetos alocados (portanto, o n&uacute;mero que voc&ecirc; poder&aacute; ver variar um pouco da ilustra&ccedil;&atilde;o). Ao monitorar somnete um subconjunto dos objetos criados, o Perfilador &eacute; capaz de reduzir bastante o overheard que coloca na JVM, a qual ent&atilde;o aloca seu aplicativo para ser executado pr&oacute;ximo a velocidade completa.<p></li>
+ <li>Objetos ao-vivo &eacute; o n&uacute;mero de objetos alocados que ainda est&atilde;o no heap da JVM e, portanto, est&atilde;o ocupando a mem&oacute;ria.<p></li>
+ <li>As duas colunas de Bytes ao-vivo mostram a quantidade de mem&oacute;ria heap sendo usada pelos Objetos ao-vivo. Uma coluna exibe um gr&aacute;fico e a outra exibe texto.<p></li>
+ <li>O valor M&eacute;dia de idade &eacute; calculado usando os Objetos ao-vivo. A idade de cada objeto &eacute; o n&uacute;mero de coletas de lixo que ele sobreviveu. A soma das idades dividida pelo n&uacute;mero de Objetos ao-vivo &eacute; a M&eacute;dia de idade.<p></li>
+ <li>O valor Gera&ccedil;&atilde;o &eacute; calculado usando os Objetos ao-vivo. Da mesma forma com a M&eacute;dia de idade, a idade de um objeto &eacute; o n&uacute;mero de coletas de lixo que ele sobreviveu. O valor Gera&ccedil;&atilde;o &eacute; o n&uacute;mero de difernetes idades para os Objetos ao-vivo.<p></li>
+ </ul>
+ <p>Voc&ecirc; pode usar estas informa&ccedil;&otilde;es para ajudar a rastrear os vazamentos de mem&oacute;ria. O valor para Gera&ccedil;&atilde;o &eacute; o mesmo do valor das Gera&ccedil;&otilde;es sobreviventes, descrito na se&ccedil;&atilde;o <a href="#interpretingMonitor">Interpretando os gr&aacute;ficos de monitoramente</a>, mas restringido aos objetos de uma classe &uacute;nica. Esta granularidade mais fina do monitoramento pode ajudar a encontrar os objetos espec&iacute;ficos que est&atilde;o dispendendo espa&ccedil;o do heap.  </p>
+
+ <p>No entanto, neste exemplo, voc&ecirc; na&atilde;o precisa das Gera&ccedil;&otilde;es para ver um problema com a classe <tt>NameHandler</tt>. O total alocado. Objeto O valor &eacute; 10. A inten&ccedil;&atilde;o do c&oacute;digo servelt foi o de reutilizar objetos <tt>NameHandler</tt> quando o mesmo nome de usu&aacute;rio for inserido. De fato, isso n&atilde;o est&aacute; acontecendo. O bug est&aacute; no m&eacute;todo <tt>processRequest</tt>: a chave usada para verificar uma entrada no <tt>Map</tt> n&atilde;o &eacute; a mesma chave usada para armazenar a entrada. O resultado &eacute; um vazamento bem t&iacute;pico de mem&oacute;ria Java: um objeto &eacute; colocado em um <tt>Map</tt> e depois esquecido.</p>
+
+ <p>Outra ferramenta &uacute;til para entender o comportamento do aplicativo, &eacute; o de ver onde em seu c&oacute;digo os objetos de uma determinada classe est&atilde;o sendo alocados. Isso, com frequ&ecirc;ncia, oferece pistas sobre o motivo do objeto ainda estar no heap. O Perfilador do NetBeans ir&aacute; exibir tra&ccedil;os da pilha para qualquer classe na qual voc&ecirc; clica com o bot&atilde;o direito do mouse na entrada da classe na tabela e escolhe Mostar tra&ccedil;os de pilha de aloca&ccedil;&atilde;o.
+ </p>
+ <p>Para terminar a sess&atilde;o de perfilamento, escolha Perfil &gt; Desanexar.</p>
+  </div>
+ <br />
+
+
+<h2><a name="exploring"></a>Explorando mais</h2></br><br />
+<div class="indent">
+<p>
+   Este tutorial apenas arranhou a superf&iacute;cie dos muitos poderos recursos do Perfilador. Consulte o arquivo de ajuda do Perfilador do NetBeans para obter mais informa&ccedil;&otilde;es sobre estes t&oacute;picos.
+   <ul>
+  <li>Ao perfilar o uso da CPU, um filtro de classe pode ser definido para prevenir o perfilamento de m&eacute;todos fora do aplicativo (por exemplo, todos os m&eacute;todos no java.*). Isso ajuda a manter seu aplicativo em execu&ccedil;&atilde;o pr&oacute;ximo da velocidade completa.</li><p>
+  <li>O uso do Perfilamento da CPU pode interferir com a otimiza&ccedil;&atilde;o de c&oacute;digo de byte da JVM, causando a n&atilde;o coincid&ecirc;ncia dos tempos de CPU reportados com o desempenho do mundo real. H&aacute; t&eacute;cnicas para minimizar o efeito do Perfilador.</li><p>
+ <li>O resurso Analisar o uso da mem&oacute;ria pode ser limitado ao monitoramento de apenas a aloca&ccedil;&atilde;o de objeto. Isso ir&aacute; diminuir o impacto do Perfilador sobre o desempenho.</li><p>
+  <li>Se, ao analisar o uso da mem&oacute;ria, voc&ecirc; descobrir que somente algumas classes parecem estar causando o problema, poder&aacute; desativar o monitoramento dos objetos de todas as outras classes.</li><p>
+  <li>H&aacute; recursos dispon&iacute;veis que ir&atilde;o monitorar o tempo de inicializa&ccedil;&atilde;o de seu aplicativo ou um fragmento de c&oacute;digo espec&iacute;fico em seu aplicativo.</li><p>
+  <li>Estat&iacute;sticas detalhadas do thread est&atilde;o dispon&iacute;veis.</li><p>
+  <li>Perfilamento remoto - perfilar um aplicativo que esta sendo executado em outra m&aacute;quina.</li>
+ </ol>
+ </div>
+</body>
+
+</html>
+

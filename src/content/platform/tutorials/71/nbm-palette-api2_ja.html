@@ -1,0 +1,493 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+<!-- -*- xhtml -*- -->
+  <title>NetBeans コンポーネントパレットモジュールのチュートリアル</title>
+<!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. --><!--     Use is subject to license terms.-->
+  <link href="https://netbeans.org/netbeans.css" type="text/css"
+ rel="stylesheet">
+  <meta content="NBUSER" name="AUDIENCE">
+  <meta content="ARTICLE" name="TYPE">
+  <meta content="N" name="EXPIRES">
+  <meta content="gwielenga@netbeans.org" name="developer">
+  <meta content="y" name="indexed">
+  <meta content="  " name="description">
+         <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>NetBeans コンポーネントパレットモジュールのチュートリアル</h1>
+<div class="articledate" style="margin-left: 0px;">
+翻訳 : <a href="http://blogs.oracle.com/roller/page/katakai">片貝正紀</a> ,
+2006/7/10,
+レビュー/保守: <a href="http://ja.netbeans.org/index.html">NetBeans 日本語サイト</a>
+</div>
+<p><small><a
+ href="mailto:masaki@netbeans.org?subject=Feedback:%20NetBeans%20IDE%20Component%20Palette%20Module%20Tutorial">フィー
+ドバック</a></small></p>
+<p>このチュートリアルでは新しいファイルの種類のためのコードサンプル(コードスニペット)をドラッグ &amp;
+ドロップで作成できるコンポーネントパレットの作成方法を説明します。コードスニペットはコーディングを手助けします。IDE は JSP
+ファイル、HTML ファイルそしてフォームファイルにコンポーネントパレットを提供しています。このチュートリアルでは通常 IDE
+では識別されていないファイル用にコンポーネントパレットを作成する方法を説明します。まず最初に「新規ファイルの種類」ウィザードを用いて IDE
+で認識できる新しいファイルの種類を作成します。次に <a
+ href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/overview-summary.html">NetBeans
+パレット API</a> を使っていくつかのクラスを作成していきます。最後に <tt>layer.xml</tt>
+ファイルに新しいコンポーネントパレットを登録します。</p>
+<p>このチュートリアルで作成するコンポーネントパレットは JBoss の配備記述子ファイル (<tt>jboss-web.xml</tt>)
+に対して使用できるものです。<tt>jboss-web.xml</tt> ファイルは他の XML とは名前空間を使用して識別されます。</p>
+<pre class="examplecode">&lt;!DOCTYPE jboss-web<br>    PUBLIC "-//JBoss//DTD Web Application 2.3//EN"<br>    "http://www.jboss.org/j2ee/dtd/jboss-web_3_0.dtd"&gt;</pre>
+<p>このチュートリアルで作成されたコンポーネントパレットは上記の名前空間を持つファイルが IDE
+のソースエディタ上に開かれた時のみ有効になります。このファイルの種類のみの場合にコンポーネントパレットは <tt>jboss-web.xml</tt>
+ファイルの次の３つの基本的な要素のコードスニペットを提供します。 「Context Root」、 「Security
+Domain」と「Resource
+Reference」です。以下のようにツールチップはソースエディタにドラッグ＆ドロップしたときにカーソル位置に挿入されるタグがツールチップに表示
+されます。</p>
+<p><img
+ src="../../images/tutorials/componentpalette/completed-module_ja.png"
+ alt="完全なモジュール"></p>
+<p>新しいコンポーネントパレットを作成するのではなく、既存のコンポーネントパレットにコードスニペットを追加したいだけならば <a
+ href="nbm-palette-api1.html">NetBeans コードスニペットモジュールのチュートリアル</a>
+を参照してください。</p>
+<p>このチュートリアルでは以下のことを説明します:</p>
+<ul>
+  <li><a href="#installing">ソフトウェアのインストール</a>
+    <ul>
+      <li><a href="#installing-sample">サンプルのインストール</a></li>
+    </ul>
+  </li>
+  <li><a href="#creatingthemoduleproject">モジュールプロジェクトの設定</a> </li>
+  <li><a href="#recognizing-filetype">新しいファイルの種類の認識</a> </li>
+  <li><a href="#coding-module">コンポーネントパレットモジュールとコードスニペットの作成</a>
+    <ul>
+      <li><a href="#creating-palettes">コンポーネントパレットの作成</a> </li>
+      <li><a href="#creating-snippets">コードスニペットの作成</a> </li>
+    </ul>
+  </li>
+  <li><a href="#registering-module">モジュールの登録</a>
+    <ul>
+      <li><a href="#declaring-resources">リソースの宣言</a> </li>
+      <li><a href="#registering-resoucres">リソースの登録</a> </li>
+    </ul>
+  </li>
+  <li><a href="#building">モジュールの構築とインストール</a>
+    <ul>
+      <li><a href="#install-plugin">モジュールのインストールと使用</a> </li>
+      <li><a href="#share-plugin">共有可能なモジュールバイナリの作成</a> </li>
+    </ul>
+  </li>
+</ul>
+<p><a name="top"></a>このチュートリアルはソフトウェアがインストールできれば 45 分程度で完了します。</p>
+<p>モジュール開発に関する詳細は NetBeans サイトの <a
+ href="https://platform.netbeans.org/index.html">NetBeans 開発プロジェクトホーム</a>
+を参照してください。わからないところがあれば <a href="http://wiki.netbeans.org/wiki/view/NetBeansDeveloperFAQ">NetBeans 開発者 FAQ</a>
+を参照してください。またこのページの「フィードバック」リンクを使ってください。</p>
+<!-- ===================================================================================== --><br>
+<h2 class="tutorial"><a name="installing"></a>ソフトウェアのインストール</h2>
+<p>まずはじめにコンピュータにソフトウェアをインストールします:</p>
+<ul>
+  <li>NetBeans IDE 5.0 (<a
+ href="http://www.netbeans.info/downloads/download.php?a=n&amp;p=1">ダウンロード</a>)</li>
+  <li>Java Standard Development Kit (JDK) バージョン 1.4.2 (<a
+ href="http://java.sun.com/j2se/1.4.2/jadownload.html">ダウンロード</a>) または
+5.0 (<a href="http://java.sun.com/j2se/1.5.0/ja/download.html">ダウンロード</a>)</li>
+</ul>
+<br>
+<div class="indent">
+<h3 class="tutorial"><a name="installing-sample"></a>サンプルのインストール</h3>
+<p>次の手順でサンプルをインストールします:</p>
+<ol>
+  <li><a
+ href="https://netbeans.org/files/documents/4/651/jbosswebxml.zip">サン
+プルファイル</a> を展開 (unzip) します。 </li>
+  <li>IDE
+の「ファイル」&gt;「プロジェクトを開く」を選択し、解凍したファイルがあるフォルダまで移動します。モジュールプロジェクトを開きます。プロジェク
+トを開くと次のようになります:
+    <p><img
+ src="../../images/tutorials/componentpalette/completed-projects-window_ja.png"
+ alt="完成した「プロジェクト」ウィンドウ"></p>
+  </li>
+  <li>プロジェクトノードを右クリックし「ターゲットプラットフォームでのインストール/再読み込み」を選びます。ターゲットプラットフォームが開
+きモジュールがインストールされます。 </li>
+  <li>「ファイル」ウィンドウ(Ctrl-2)から <tt>test-jboss-web.xml</tt>
+ファイルをダブルクリップすることでモジュールが正しくインストールされているかどうか確認できます:
+    <p><img src="../../images/tutorials/componentpalette/test-jboss_ja.png"
+ alt="テストファイル"></p>
+    <p>ファイルがソースエディタに読み込まれるとコンポーネントパレットが開きます。するとこのチュートリアルの冒頭部分のスクリーンショットの
+ように３つのコードスニペットが表示されます。コンポーネントパレットが自動的に表示されない場合は Ctrl-Shift-8
+を押して手動で開いてください。</p>
+  </li>
+  <li>メニューバーから「ツール」 &gt; 「パレットマネージャー」を選択すると次のようになります:
+    <p><img
+ src="../../images/tutorials/componentpalette/palette-menu-item_ja.png"
+ alt="新規メニュー項目"></p>
+    <p>「パレットマネージャー」が表示されコードスニペットが含まれています:</p>
+    <p><img
+ src="../../images/tutorials/componentpalette/palette-manager_ja.png"
+ alt="パレットマネージャー"></p>
+  </li>
+</ol>
+<p>最終的な結果がどのようになるかわかったので、スクラッチからモジュールを作り作成の過程でそれぞれの部分を勉強してみましょう。</p>
+</div>
+<!-- ===================================================================================== -->
+<br>
+<h2 class="tutorial"><a name="creatingthemoduleproject"></a>モジュールプロジェクトの
+設定</h2>
+<p>モジュールを作成する前にまずプロジェクトが正しく設定されているか確認する必要があります。<a
+ href="http://www.netbeans.info/downloads/download.php?a=n&amp;p=1">NetBeans
+IDE 5.0</a> ではモジュールのための基本的なファイルを設定するためにウィザードを提供しています。</p>
+<ol>
+  <li>「ファイル」&gt;「新規プロジェクト」(Ctrl-Shift-N) を選択してください。「カテゴリ」で「NetBeans
+プラグインモジュール」を選択します。「プロジェクト」では「モジュールプロジェクト」を選択し「次へ」ボタンをクリックします。</li>
+  <li>「名前と場所」パネルでは「プロジェクト名」に「<tt>jbosswebxml</tt>」と入力します。「プロジェクトの場所」は適当な
+コンピューター上のディレクトリを指定します。たとえば <tt>c:\mymodules</tt>
+などです。「スタンドアロンモジュール」のラジオボタンはそのままにし「主プロジェクトとして設定」チェックボックスを選択します。「次へ」をクリックし
+ます。 </li>
+  <li>「基本モジュール構成」パネルでは「コード名ベース」で <tt>yourorghere</tt> を <tt>org.netbeans.modules</tt>
+に置き換え、<tt>org.netbeans.modules.jbosswebxml</tt> にします。「地域対応のバンドル」と「XML
+レイヤー」はそのままにし <tt>org/netbeans/modules/jbosswebxml</tt>
+にこれらのファイルが保存されるようにします。「完了」ボタンをクリックします。</li>
+</ol>
+<p>IDE は <tt>jbosswebxml</tt>
+プロジェクトを作成します。プロジェクトは必要なすべてのソースやメタデータ、たとえばプロジェクトの構築スクリプトなどを含んでいます。プロジェクトは
+IDE 上で開かれます。「プロジェクト」ウィンドウ(Ctrl-1)
+で理論的な構成を表示できます。また「ファイル」ウィンドウ(Ctrl-2)ではファイル構造を表示できます。<!-- ===================================================================================== -->
+<br>
+</p>
+<h2><a name="recognizing-filetype"></a>新しいファイルの種類の認識</h2>
+<ol>
+  <li>プロジェクトノードで右クリックして「新規」&gt;「ファイルの種類」を選択します。「次へ」をクリックします。</li>
+  <li>「ファイルの認識」パネルでは次のようにします:
+    <ul>
+      <li>「MIME タイプ」には <tt>text/x-jboss+xml</tt> と入力します。</li>
+      <li>「XML のルート要素」の編集ボックスに「<tt>public-id="-//JBoss//DTD Web
+Application 2.3//EN"</tt>」と入力します。</li>
+    </ul>
+    <p>「ファイルの認識」パネルはこのようになります:</p>
+    <p align="left"><img
+ src="../../images/tutorials/componentpalette/filewizard1_ja.png"
+ alt="新規ファイルウィザードのステップ１"> </p>
+    <p>「ファイルの認識」パネルのそれぞれの項目は次のようになっています:</p>
+    <ul>
+      <li><b>MIME タイプ</b> はデータオブジェクトの一意の MIME タイプを指定します。</li>
+      <li><b>認識方法</b>
+        <ul>
+          <li><b>ファイル拡張子</b> は IDE がその MIME
+タイプに割り当てるひとつあるいはそれ以上のファイル拡張子を指定します。ファイル拡張子は任意でドット(.)を先頭に付けることができます。セパレータ
+はコンマ、空白あるいはどちらでもかまいません。したがって以下の例はすべて有効です:
+            <ul>
+              <li><tt>.abc,.def</tt> </li>
+              <li><tt>.abc .def</tt> </li>
+              <li><tt>abc def</tt> </li>
+              <li><tt>abc,.def ghi, .wow</tt></li>
+            </ul>
+            <p>JAR ファイルのマニフェストファイルは "MANIFEST.MF" であり少なくとも UNIX
+プラットフォームでは大文字小文字が区別されます。そのためこのチュートリアルでは <i>２つ</i> の MIME タイプを使用します、<tt>.mf</tt>
+と <tt>.MF</tt> です。</p>
+          </li>
+          <li><b>XML ルート要素</b> は他の XML ファイルと区別するための一意に決められた名前空間です。XML
+ファイルは同じ拡張子 (<tt>xml</tt>) を持つので IDE はこの XML ルート要素を使って XML
+ファイルを区別します。さらに具体的に言うと、IDE は XML
+ファイルの最初の要素で名前空間を区別します。このチュートリアルではファイルの識別は XML ファイルの <tt>doctype</tt>
+要素で行われます。</li>
+        </ul>
+      </li>
+    </ul>
+    <p>「次へ」をクリックします。</p>
+  </li>
+  <li>「名前と場所」パネルでは「クラス名」に「<tt>jbossdd</tt>」と入力し、16x16
+ピクセルのイメージファイルを新しいファイルの種類のアイコンとして参照します。
+    <p align="left"><img
+ src="../../images/tutorials/componentpalette/filewizard2_ja.png"
+ alt="新規ファイルウィザードのステップ２"></p>
+    <p>NetBeans のインストールディレクトリにはいろいろな 16x16
+ピクセルのイメージファイルがあります。例えば次の場所にあります:</p>
+    <p><tt>enterprise2\jakarta-tomcat-5.5.7\server\webapps\admin\images</tt>
+    </p>
+    <p>たとえば上記ディレクトリの <tt>Datasource.gif</tt> を使うことができます。これは次のようなアイコンです:<img
+ src="../../images/tutorials/filetype/Datasource.gif" alt="Datasource.gif">
+    </p>
+  </li>
+  <li>「完了」ボタンをクリックします。
+    <p>これで「プロジェクト」ウィンドウはこのようになります:</p>
+    <p align="left"><img
+ src="../../images/tutorials/componentpalette/projectswindow2_ja.png"
+ alt="「プロジェクト」ウィンドウ"></p>
+  </li>
+</ol>
+<p>新規に作成されたファイルについて簡単に説明します:</p>
+<ul>
+  <li><b>jbossddDataLoader.java.</b> このファイルは <tt>text/x-jboss+xml</tt>
+MIME タイプを認識します。<tt>DataObject</tt> のファクトリとして機能します。詳しい説明は <a
+ href="http://wiki.netbeans.org/wiki/view/DevFaqDataLoader">What is
+a DataLoader?</a> を参照してください。 </li>
+  <li><b>jbossddResolver.xml.</b> このファイルは MIME タイプと <tt>&lt;xml-rule&gt;</tt>
+をマップします。これはこの <tt>DataLoader</tt> が <tt>&lt;xml-rule&gt;</tt> で一致した
+XML ファイルのみを認識するように制限します。<tt>&lt;doc-type&gt;</tt>
+を定義するように以下のように(太字の行が変更する行です)変更します:
+    <pre class="examplecode">&lt;?xml version="1.0" encoding="UTF-8"?&gt;<br>&lt;!DOCTYPE MIME-resolver PUBLIC "-//NetBeans//DTD MIME Resolver 1.0//EN"<br> "https://netbeans.org/dtds/mime-resolver-1_0.dtd"&gt;<br>&lt;MIME-resolver&gt;<br>    &lt;file&gt;<br>        &lt;ext name="xml"/&gt;<br>        &lt;resolver mime="text/x-jboss+xml"&gt;<br>            &lt;xml-rule&gt;<br>                <b>&lt;doctype public-id="-//JBoss//DTD Web Application 2.3//EN"/&gt;</b><br>            &lt;/xml-rule&gt;<br>        &lt;/resolver&gt;<br><br>    &lt;/file&gt;<br>&lt;/MIME-resolver&gt;</pre>
+  </li>
+  <li><b>jbossddDataObject.java.</b> このファイルは <tt>FileObject</tt>
+をラップします。<tt>DataObjects</tt> は <tt>DataLoaders</tt> によって生成されます。詳しい説明は <a
+ href="http://wiki.netbeans.org/wiki/view/DevFaqDataObject">What is
+a DataObject?</a> を参照してください。 </li>
+  <li><b>jbossddDataNode.java.</b> このファイルはアクションなどの機能、アイコンや地域対応された名前など
+IDE 上での <i>見え方</i> を提供します。 </li>
+  <li><b>jbossddDataLoaderBeanInfo.java.</b>
+このファイルは「オプション」ウィンドウの「オブジェクトの種類」セクションで<tt>DataLoader</tt>を表示するかしないかを制御しま
+す。</li>
+</ul>
+<!-- ===================================================================================== -->
+<br>
+<h2><a name="coding-module"></a>コンポーネントパレットモジュールとコードスニペットの作成</h2>
+<br>
+<div class="indent">
+<h3 class="tutorial"><a name="specifying"></a>モジュールの依存性の指定</h3>
+<p><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API</a>
+に属するいくつかのクラスのサブクラスが必要です。それぞれモジュールの依存関係に定義する必要があります。これは「プロジェクト」プロパティーを使って
+設定できます。</p>
+<ol>
+  <li>「プロジェクト」ウィンドウで <tt>jbosswebxml</tt>
+プロジェクトを右クリックし、「プロパティー」を選択します。プロジェクトプロパティーのダイアログボックスで、「ライブラリ」をクリックします。</li>
+  <li>次のそれぞれの API
+は「追加...」ボタンをクリックし「モジュールリスト」から名前を選択して「了解」ボタンを押すことで追加できます:
+    <p><img src="../../images/tutorials/componentpalette/projprops_ja.png"
+ alt="すべてのソースファイル"></p>
+  </li>
+  <li>「了解」をクリックしてプロジェクトの「プロパティー」ダイアログを閉じます。</li>
+  <li>「プロジェクト」ウィンドウで「重要なファイル」ノードを展開、「プロジェクトメタデータ」をダブルクリックしてモジュールの依存性が正しく
+宣言されているか確認できます。</li>
+</ol>
+<pre class="examplecode">&lt;?xml version="1.0" encoding="UTF-8"?&gt;<br>&lt;project xmlns="https://netbeans.org/ns/project/1"&gt;<br>    &lt;type&gt;org.netbeans.modules.apisupport.project&lt;/type&gt;<br>    &lt;configuration&gt;<br>        &lt;data xmlns="http://www.netbeans.org/ns/nb-module-project/2"&gt;<br>            &lt;code-name-base&gt;org.netbeans.modules.jbosswebxml&lt;/code-name-base&gt;<br>            &lt;standalone/&gt;<br>            &lt;module-dependencies&gt;<br>                &lt;dependency&gt;<br>                    &lt;code-name-base&gt;org.netbeans.modules.editor.lib&lt;/code-name-base&gt;<br>                    &lt;build-prerequisite/&gt;<br>                    &lt;compile-dependency/&gt;<br>                    &lt;run-dependency&gt;<br>                        &lt;release-version&gt;1&lt;/release-version&gt;<br>                        &lt;specification-version&gt;1.9.0.1&lt;/specification-version&gt;<br>                    &lt;/run-dependency&gt;<br>                &lt;/dependency&gt;<br>                &lt;dependency&gt;<br>                    &lt;code-name-base&gt;org.netbeans.modules.projectapi&lt;/code-name-base&gt;<br>                    &lt;build-prerequisite/&gt;<br>                    &lt;compile-dependency/&gt;<br>                    &lt;run-dependency&gt;<br>                        &lt;release-version&gt;1&lt;/release-version&gt;<br>                        &lt;specification-version&gt;1.9&lt;/specification-version&gt;<br>                    &lt;/run-dependency&gt;<br>                &lt;/dependency&gt;<br>                &lt;dependency&gt;<br>                    &lt;code-name-base&gt;org.netbeans.spi.palette&lt;/code-name-base&gt;<br>                    &lt;build-prerequisite/&gt;<br>                    &lt;compile-dependency/&gt;<br>                    &lt;run-dependency&gt;<br>                        &lt;release-version&gt;0&lt;/release-version&gt;<br>                        &lt;specification-version&gt;1.5&lt;/specification-version&gt;<br>                    &lt;/run-dependency&gt;<br>                &lt;/dependency&gt;<br>                &lt;dependency&gt;<br>                    &lt;code-name-base&gt;org.openide.dialogs&lt;/code-name-base&gt;<br>                    &lt;build-prerequisite/&gt;<br>                    &lt;compile-dependency/&gt;<br>                    &lt;run-dependency&gt;<br>                        &lt;specification-version&gt;6.4&lt;/specification-version&gt;<br>                    &lt;/run-dependency&gt;<br>                &lt;/dependency&gt;<br>                &lt;dependency&gt;<br>                    &lt;code-name-base&gt;org.openide.filesystems&lt;/code-name-base&gt;<br>                    &lt;build-prerequisite/&gt;<br>                    &lt;compile-dependency/&gt;<br>                    &lt;run-dependency&gt;<br>                        &lt;specification-version&gt;6.4&lt;/specification-version&gt;<br>                    &lt;/run-dependency&gt;<br>                &lt;/dependency&gt;<br>                &lt;dependency&gt;<br>                    &lt;code-name-base&gt;org.openide.loaders&lt;/code-name-base&gt;<br>                    &lt;build-prerequisite/&gt;<br>                    &lt;compile-dependency/&gt;<br>                    &lt;run-dependency&gt;<br>                        &lt;specification-version&gt;5.9&lt;/specification-version&gt;<br>                    &lt;/run-dependency&gt;<br>                &lt;/dependency&gt;<br>                &lt;dependency&gt;<br>                    &lt;code-name-base&gt;org.openide.nodes&lt;/code-name-base&gt;<br>                    &lt;build-prerequisite/&gt;<br>                    &lt;compile-dependency/&gt;<br>                    &lt;run-dependency&gt;<br>                        &lt;specification-version&gt;6.7&lt;/specification-version&gt;<br>                    &lt;/run-dependency&gt;<br>                &lt;/dependency&gt;<br>                &lt;dependency&gt;<br>                    &lt;code-name-base&gt;org.openide.text&lt;/code-name-base&gt;<br>                    &lt;build-prerequisite/&gt;<br>                    &lt;compile-dependency/&gt;<br>                    &lt;run-dependency&gt;<br>                        &lt;specification-version&gt;6.9&lt;/specification-version&gt;<br>                    &lt;/run-dependency&gt;<br>                &lt;/dependency&gt;<br>                &lt;dependency&gt;<br>                    &lt;code-name-base&gt;org.openide.util&lt;/code-name-base&gt;<br>                    &lt;build-prerequisite/&gt;<br>                    &lt;compile-dependency/&gt;<br>                    &lt;run-dependency&gt;<br>                        &lt;specification-version&gt;6.8&lt;/specification-version&gt;<br>                    &lt;/run-dependency&gt;<br>                &lt;/dependency&gt;<br>                &lt;dependency&gt;<br>                    &lt;code-name-base&gt;org.openide.windows&lt;/code-name-base&gt;<br>                    &lt;build-prerequisite/&gt;<br>                    &lt;compile-dependency/&gt;<br>                    &lt;run-dependency&gt;<br>                        &lt;specification-version&gt;6.5&lt;/specification-version&gt;<br>                    &lt;/run-dependency&gt;<br>                &lt;/dependency&gt;<br>            &lt;/module-dependencies&gt;<br>            &lt;public-packages/&gt;<br>        &lt;/data&gt;<br>    &lt;/configuration&gt;<br>&lt;/project&gt;</pre>
+<br>
+<h3 class="tutorial"><a name="creating-palettes"></a>コンポーネントパレットの作成</h3>
+<p>コンポーネントパレットは <a
+ href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/overview-summary.html">NetBeans
+パレット API</a> を使って定義されています。このチュートリアルで NetBeans パレット API を実装することは次の
+NetBeans Palette API クラスを実装することです:</p>
+<table border="1" width="76%">
+  <tbody>
+    <tr>
+      <td>
+      <div align="left"><b>ファイル</b></div>
+      </td>
+      <td>
+      <div align="left"><b>説明</b></div>
+      </td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt><a
+ href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/PaletteFactory.html">PaletteFactory</a></tt></td>
+      <td>コンポーネントパレットの新しいインスタンスを作成します。そのためには <tt>JBOSSPalette</tt>
+フォルダから新しいパレットを作成する <tt>createPalette</tt> メソッドを呼び出します。これは <tt>layer.xml</tt>
+ファイルに定義されています。</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt><a
+ href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/PaletteController.html">PaletteController</a></tt></td>
+      <td>コンポーネントパレットのデータへのアクセスを提供します。</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt><a
+ href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/PaletteActions.html">PaletteActions</a></tt></td>
+      <td> <br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<p>これにくわえて次のサポートクラスを作成する必要があります:</p>
+<table border="1" width="76%">
+  <tbody>
+    <tr>
+      <td>
+      <div align="left"><b>ファイル</b></div>
+      </td>
+      <td>
+      <div align="left"><b>説明</b></div>
+      </td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt>jbossddPaletteUtilities</tt></td>
+      <td>ドロップされたコードスニペットの挿入とフォーマットを扱います。２つの NetBeans API クラスで実装されます:
+      <ul>
+        <li><a
+ href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/editor/BaseDocument.html">org.netbeans.editor.BaseDocument</a>
+        </li>
+        <li><a
+ href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/editor/Formatter.html">org.netbeans.editor.Formatter</a></li>
+      </ul>
+      </td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt>jbossddPaletteCustomizerAction </tt></td>
+      <td>パレットマネージャーで使われるメニュー項目を提供します:
+      <p><img
+ src="../../images/tutorials/componentpalette/palette-menu-item_ja.png"
+ alt="すべてのソースファイル"> </p>
+      </td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt>jbossddPaletteDropDefault</tt></td>
+      <td> <br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<p>NetBeans パレット API を実装するには次のステップにしたがってください:</p>
+<ol>
+  <li><tt>org.netbeans.modules.jbosswebxml</tt>
+プロジェクトノードで右クリックして「新規」&gt;「Java
+クラス」を選択します。次のファイルの最初のファイルを作り、パッケージのドロップダウンリストには <tt>org.netbeans.modules.jbosswebxml.palette</tt>
+と入力し、「完了」ボタンを押します。他のファイルも同様に作成ます。
+    <ul>
+      <li><tt>jbossddPaletteActions</tt> </li>
+      <li><tt>jbossddPaletteCustomizerAction</tt> </li>
+      <li><tt>jbossddPaletteDropDefault</tt> </li>
+      <li><tt>jbossddPaletteFactory</tt> </li>
+      <li><tt>jbossddPaletteUtilities</tt></li>
+    </ul>
+    <p>次のファイルが作成されます。(スクリーンショットで選択されています):</p>
+    <p align="left"><img
+ src="../../images/tutorials/componentpalette/palette1_ja.png"
+ alt="主なパレットファイル。"> </p>
+  </li>
+  <li>以下のリンクをダブルクリックし以下の内容でファイルの内容を置き換えます:
+    <ul>
+      <li><tt>jbossddPaletteActions</tt> </li>
+      <li><tt>jbossddPaletteCustomizerAction</tt> </li>
+      <li><tt>jbossddPaletteDropDefault</tt> </li>
+      <li><tt>jbossddPaletteFactory</tt> </li>
+      <li><tt>jbossddPaletteUtilities</tt></li>
+    </ul>
+  </li>
+  <li><tt>jbossddPaletteFactory.java</tt> ファイルのデフォルトの内容を次で置き換えます:
+    <pre class="examplecode">package org.netbeans.modules.jbosswebxml.palette;<br><br>import java.io.IOException;<br>import <a
+ href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/PaletteController.html">org.netbeans.spi.palette.PaletteController</a>;<br>import <a
+ href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/PaletteFactory.html">org.netbeans.spi.palette.PaletteFactory</a>;<br><br>public class jbossddPaletteFactory {<br>    <br>    public static final String JBOSS_PALETTE_FOLDER = "JBOSSPalette";<br>    <br>    private static PaletteController palette = null;<br>    <br>    public static PaletteController getPalette() throws IOException {<br>        if (palette == null)<br>            palette = PaletteFactory.createPalette(JBOSS_PALETTE_FOLDER, new jbossddPaletteActions()); <br>        return palette;<br>    }<br>}</pre>
+  </li>
+  <li><tt>jbossddPaletteActions.java</tt> ファイルのデフォルトの内容を次で置き換えます:
+    <pre class="examplecode">package org.netbeans.modules.jbosswebxml.palette;<br><br>import java.awt.event.ActionEvent;<br>import java.io.IOException;<br>import javax.swing.AbstractAction;<br>import javax.swing.Action;<br>import javax.swing.text.JTextComponent;<br>import org.netbeans.editor.Utilities;<br>import org.netbeans.spi.palette.PaletteActions;<br>import org.netbeans.spi.palette.PaletteController;<br>import org.openide.DialogDisplayer;<br>import org.openide.NotifyDescriptor;<br>import org.openide.text.ActiveEditorDrop;<br>import org.openide.util.Lookup;<br>import org.openide.util.NbBundle;<br><br>public class jbossddPaletteActions extends <a
+ href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/PaletteActions.html">PaletteActions</a> {<br>    <br>    /** Creates a new instance of jbossddPaletteActions */<br>    public jbossddPaletteActions() {<br>    }<br><br>    public Action[] getImportActions() {<br>        return new Action[0]; //TODO implement this<br>    }<br><br>    public Action[] getCustomCategoryActions(Lookup category) {<br>        return new Action[0]; //TODO implement this<br>    }<br><br>    public Action[] getCustomItemActions(Lookup item) {<br>        return new Action[0]; //TODO implement this<br>    }<br><br>    public Action[] getCustomPaletteActions() {<br>        return new Action[0]; //TODO implement this<br>    }<br><br>    public Action getPreferredAction( Lookup item ) {<br>        return new MFPaletteInsertAction(item);<br>    }<br>    <br>    private static class MFPaletteInsertAction extends AbstractAction {<br>        <br>        private Lookup item;<br>        <br>        MFPaletteInsertAction(Lookup item) {<br>            this.item = item;<br>        }<br>                <br>        public void actionPerformed(ActionEvent e) {<br>      <br>            ActiveEditorDrop drop = (ActiveEditorDrop) item.lookup(ActiveEditorDrop.class);<br>            <br>            JTextComponent target = Utilities.getFocusedComponent();<br>            if (target == null) {<br>                String msg = NbBundle.getMessage(jbossddPaletteActions.class, "MSG_ErrorNoFocusedDocument");<br>                DialogDisplayer.getDefault().notify(new NotifyDescriptor.Message(msg, NotifyDescriptor.ERROR_MESSAGE));<br>                return;<br>            }<br>            <br>            try {<br>                drop.handleTransfer(target);<br>            }<br>            finally {<br>                Utilities.requestFocus(target);<br>            }<br>            <br>            try {<br>                PaletteController pc = jbossddPaletteFactory.getPalette();<br>                pc.clearSelection();<br>            }<br>            catch (IOException ioe) {<br>            } //should not occur<br><br>        }<br>    }<br>    <br>}</pre>
+  </li>
+  <li><tt>jbossddPaletteUtilities.java</tt> ファイルのデフォルトの内容を次で置き換えます:
+    <pre class="examplecode">package org.netbeans.modules.jbosswebxml.palette;<br><br>import java.awt.Component;<br>import java.awt.Container;<br>import java.util.StringTokenizer;<br>import javax.swing.JTree;<br>import javax.swing.text.BadLocationException;<br>import javax.swing.text.Caret;<br>import javax.swing.text.Document;<br>import javax.swing.text.JTextComponent;<br>import org.netbeans.api.project.FileOwnerQuery;<br>import org.netbeans.api.project.Project;<br>import org.netbeans.api.project.ProjectUtils;<br>import org.netbeans.api.project.SourceGroup;<br>import org.netbeans.api.project.Sources;<br>import org.netbeans.editor.BaseDocument;<br>import org.netbeans.editor.Formatter;<br>import org.openide.filesystems.FileObject;<br><br>public class jbossddPaletteUtilities {<br>    <br>    /** Creates a new instance of jbossddPaletteUtilities */<br>    public jbossddPaletteUtilities() {<br>    }<br>    <br>    public static void insert(String s, JTextComponent target)<br>    throws BadLocationException {<br>        insert(s, target, true);<br>    }<br>    <br>    public static void insert(String s, JTextComponent target, boolean reformat)<br>    throws BadLocationException {<br>        <br>        if (s == null)<br>            s = "";<br>        <br>        Document doc = target.getDocument();<br>        if (doc == null)<br>            return;<br>        <br>        if (doc instanceof BaseDocument)<br>            ((BaseDocument)doc).atomicLock();<br>        <br>        int start = insert(s, target, doc);<br>        <br>        if (reformat &amp;&amp; start &gt;= 0 &amp;&amp; doc instanceof BaseDocument) {  // format the inserted text<br>            int end = start + s.length();<br>            Formatter f = ((BaseDocument)doc).getFormatter();<br>            f.reformat((BaseDocument)doc, start, end);<br>        }<br>        <br>        if (doc instanceof BaseDocument)<br>            ((BaseDocument)doc).atomicUnlock();<br>        <br>    }<br>    <br>    private static int insert(String s, JTextComponent target, Document doc)<br>    throws BadLocationException {<br>        <br>        int start = -1;<br>        try {<br>            //at first, find selected text range<br>            Caret caret = target.getCaret();<br>            int p0 = Math.min(caret.getDot(), caret.getMark());<br>            int p1 = Math.max(caret.getDot(), caret.getMark());<br>            doc.remove(p0, p1 - p0);<br>            <br>            //replace selected text by the inserted one<br>            start = caret.getDot();<br>            doc.insertString(start, s, null);<br>        } catch (BadLocationException ble) {}<br>        <br>        return start;<br>    }<br>}</pre>
+  </li>
+  <li><tt>jbossddPaletteCustomizerAction.java</tt>
+ファイルのデフォルトの内容を次で置き換えます:
+    <pre class="examplecode">package org.netbeans.modules.jbosswebxml.palette;<br><br>import java.io.IOException;<br>import org.openide.ErrorManager;<br>import org.openide.util.HelpCtx;<br>import org.openide.util.NbBundle;<br>import <a
+ href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/actions/CallableSystemAction.html">org.openide.util.actions.CallableSystemAction</a>;<br><br>public class jbossddPaletteCustomizerAction extends <a
+ href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/actions/CallableSystemAction.html">CallableSystemAction</a> {<br><br>    private static String name;<br>    <br>    public jbossddPaletteCustomizerAction () {<br>        putValue("noIconInMenu", Boolean.TRUE); // NOI18N<br>    }<br><br>    protected boolean asynchronous() {<br>        return false;<br>    }<br><br>    /** Human presentable name of the action. This should be<br>     * presented as an item in a menu.<br>     * @return the name of the action<br>     */<br>    public String getName() {<br>        if (name == null)<br>            name = NbBundle.getBundle(jbossddPaletteCustomizerAction.class).getString("ACT_OpenjbossddCustomizer"); // NOI18N<br>        <br>        return name;<br>    }<br><br>    /** Help context where to find more about the action.<br>     * @return the help context for this action<br>     */<br>    public HelpCtx getHelpCtx() {<br>        return null;<br>    }<br><br>    /** This method is called by one of the "invokers" as a result of<br>     * some user's action that should lead to actual "performing" of the action.<br>     */<br>    public void performAction() {<br>        try {<br>            jbossddPaletteFactory.getPalette().showCustomizer();<br>        }<br>        catch (IOException ioe) {<br>            ErrorManager.getDefault().notify(ErrorManager.EXCEPTION, ioe);<br>        }<br>    }<br><br>}</pre>
+  </li>
+  <li><tt>jbossddPaletteDropDefault.java</tt> ファイルのデフォルトの内容を次で置き換えます:
+    <pre class="examplecode">package org.netbeans.modules.jbosswebxml.palette;<br><br>import javax.swing.text.BadLocationException;<br>import javax.swing.text.JTextComponent;<br>import org.openide.text.ActiveEditorDrop;<br><br>public class jbossddPaletteDropDefault implements ActiveEditorDrop {<br>    <br>    String body;<br><br>    public jbossddPaletteDropDefault(String body) {<br>        this.body = body;<br>    }<br><br>    public boolean handleTransfer(JTextComponent targetComponent) {<br><br>        if (targetComponent == null)<br>            return false;<br><br>        try {<br>            jbossddPaletteUtilities.insert(body, (JTextComponent)targetComponent);<br>        }<br>        catch (BadLocationException ble) {<br>            return false;<br>        }<br>        <br>        return true;<br>    }<br><br>}</pre>
+  </li>
+  <li><tt>org.netbeans.modules.jbosswebxml.palette</tt>
+ノードで右クリックし、「新規」、「ファイル/フォルダ」を選び、「その他」のカテゴリから「プロパティー」ファイルを選択します。「次へ」をクリックし
+ます。「名前」に「Bundle」と入力し「完了」ボタンを押します。この新しい <tt>Bundle.properties</tt>
+ファイルに次のキーを追加します:
+    <pre class="examplecode">MSG_ErrorNoFocusedDocument=No document selected. Please select a document to insert the item into.<br>ACT_OpenJbossddCustomizer=&amp;JBoss Code Clips</pre>
+  </li>
+</ol>
+<h3 class="tutorial"><a name="creating-snippets"></a>コードスニペットの作成</h3>
+<p>それぞれのコードスニペットには次のファイルが必要です:</p>
+<ul>
+  <li>ソースエディタへドラッグされるコードの一部を定義した Java クラス。この Java
+クラスはどのようにコードが挿入されるべきかを定義した <tt>jbossddPaletteUtilities.java</tt>
+を参照する必要があります。たとえば、インデント設定とフォーマットはここで定義されます。</li>
+  <li>プロパティーファイルはラベルとツールチップを定義します。</li>
+  <li>16x16 ピクセルイメージは小さいアイコンでの表示用です。</li>
+  <li>32x32 ピクセルイメージは大きいアイコンでの表示用です。</li>
+</ul>
+<p>NetBeans モジュールに上のファイルを作成し、追加したあとにこれらをリソース宣言 XML ファイルで宣言します。<tt>layer.xml</tt>
+を使って NetBeans システムファイルシステムに登録します。</p>
+<p>この詳細は <a href="nbm-palette-api1.html">NetBeans コードスニペットモジュールのチュートリアル</a>
+を参照してください。</p>
+<p>例として３つのコードスニペットを <tt>ContextRoot.java</tt>、<tt>ResourceReference.java</tt>、
+<tt>SecurityDomain.java</tt>
+として作成したとすると、結果は次のようになります。以下の選択されたパッケージにコードスニペットとサポートリソースが含まれています:</p>
+<p align="left"><img
+ src="../../images/tutorials/componentpalette/palette4_ja.png"
+ alt="主なパレットファイル。"> </p>
+</div>
+<br>
+<h2><a name="registering-module"></a>モジュールの登録</h2>
+<ol>
+  <li>次のタグを <tt>layer.xml</tt> ファイルに追加します:
+    <pre class="examplecode">&lt;folder name="Menu"&gt;<br>  &lt;folder name="Tools"&gt;<br> <br>    &lt;folder name="PaletteManager"&gt;<br>        &lt;file name="org-netbeans-modules-jbosswebxml-palette-jbossddPaletteCustomizerAction.instance"/&gt;<br>    &lt;/folder&gt;<br><br>  &lt;/folder&gt;<br>&lt;/folder&gt;<br><br>&lt;folder name="JBOSSPalette"&gt;<br>   &lt;folder name="JBoss"&gt;  <br><br>      &lt;attr name="SystemFileSystem.localizingBundle" <br>     stringvalue="org.netbeans.modules.jbosswebxml.palette.Bundle"/&gt;<br><br>      &lt;file name="ContextRoot.xml" <br>	     url="nbresloc:/org/netbeans/modules/jbosswebxml/palette/items/resources/ContextRoot.xml"/&gt;<br><br>      &lt;file name="SecurityDomain.xml" <br>	     url="nbresloc:/org/netbeans/modules/jbosswebxml/palette/items/resources/SecurityDomain.xml"/&gt;<br><br>      &lt;file name="ResourceReference.xml" <br>	     url="nbresloc:/org/netbeans/modules/jbosswebxml/palette/items/resources/ResourceReference.xml"/&gt;<br><br>   &lt;/folder&gt;<br>&lt;/folder&gt;</pre>
+  </li>
+  <li>以下を <tt>layer.xml</tt> ファイルと同じパッケージ内の <tt>Bundle.properties</tt>
+ファイルに追加します:
+    <pre class="examplecode">JBOSSPalette/JBoss=JBoss Deployment Descriptor<br><br>JBOSSPalette/JBoss/ContextRoot.xml=Context Root<br>JBOSSPalette/JBoss/ResourceReference.xml=Resource Reference<br>JBOSSPalette/JBoss/SecurityDomain.xml=Security Domain</pre>
+    <p>上記のキー-値のペアは <tt>layer.xml</tt> ファイルに登録された項目をローカライズします。</p>
+  </li>
+  <li>必要に応じて他のモジュールで提供されているコードスニペットとマージできます。たとえば、<tt>jboss-web.xml</tt>
+ファイルで JSP モジュールや HTML
+モジュールで提供されているコードスニペットにアクセスできるようにマージしたい場合は次のようにします:
+    <ul>
+      <li><tt>org.netbeans.modules.jbosswebxml.palette</tt> では、HTML
+モジュールと JSP モジュールが提供しているいくつかのアクション名と一致するように <tt>ACT_OpenJbossddCustomizer</tt>
+の値を変更します:
+        <pre class="examplecode">ACT_OpenJbossddCustomizer=&amp;HTML/JSP Code Clips</pre>
+      </li>
+      <li><tt>layer.xml</tt> ファイルに以下の２つの行を追加することによって２つのアクションを隠します。この部分は
+HTML モジュールと JSP モジュールのアクションを JSP/HTML コードクリップパレットマネージャーを表示しています。
+        <pre class="examplecode">&lt;folder name="Menu"&gt;<br>    &lt;folder name="Tools"&gt;<br><br>        &lt;folder name="PaletteManager"&gt;<br>	    &lt;file name="org-netbeans-modules-jbosswebxml-palette-jbossddPaletteCustomizerAction.instance"/&gt;<br>	    <b>&lt;file name="org-netbeans-modules-html-palette-HTMLPaletteCustomizerAction.instance_hidden"/&gt;<br>	    &lt;file name="org-netbeans-modules-web-core-palette-JSPPaletteCustomizerAction.instance_hidden"/&gt;</b><br>	&lt;/folder&gt;<br><br>    &lt;/folder&gt;<br>&lt;/folder&gt;</pre>
+      </li>
+      <li>最後に HTML モジュールと JSP モジュールのリソース宣言 XML ファイルを宣言します:
+        <pre class="examplecode">&lt;folder name="JBOSSPalette"&gt;<br>    &lt;folder name="JBoss"&gt;<br>        &lt;attr name="SystemFileSystem.localizingBundle" <br>       stringvalue="org.netbeans.modules.jbosswebxml.Bundle"/&gt;<br>        &lt;file name="ContextRoot.xml" <br>               url="ContextRoot.xml"/&gt;<br>        &lt;file name="ResourceReference.xml" <br>               url="ResourceReference.xml"/&gt;<br>        &lt;file name="SecurityDomain.xml" <br>               url="SecurityDomain.xml"/&gt;<br>    &lt;/folder&gt;<br>    <b>&lt;folder name="HTML.shadow"&gt;<br>        &lt;attr name="SystemFileSystem.localizingBundle" <br>       stringvalue="org.netbeans.modules.web.core.palette.Bundle"/&gt;<br>        &lt;attr name="originalFile" <br>       stringvalue="HTMLPalette/HTML"/&gt;<br>    &lt;/folder&gt;<br>    &lt;folder name="HTML_Forms.shadow"&gt;<br>        &lt;attr name="SystemFileSystem.localizingBundle" <br>       stringvalue="org.netbeans.modules.web.core.palette.Bundle"/&gt;<br>        &lt;attr name="originalFile" <br>       stringvalue="HTMLPalette/HTML_Forms"/&gt;<br>    &lt;/folder&gt;<br>    &lt;folder name="JSP.shadow"&gt;<br>        &lt;attr name="SystemFileSystem.localizingBundle" <br>       stringvalue="org.netbeans.modules.web.core.palette.Bundle"/&gt;<br>        &lt;attr name="originalFile" <br>       stringvalue="JSPPalette/JSP"/&gt;<br>    &lt;/folder&gt;<br>    &lt;folder name="Database.shadow"&gt;<br>        &lt;attr name="SystemFileSystem.localizingBundle" <br>       stringvalue="org.netbeans.modules.web.core.palette.Bundle"/&gt;<br>        &lt;attr name="originalFile" <br>       stringvalue="JSPPalette/Database"/&gt;<br>    &lt;/folder&gt;</b><br>&lt;/folder&gt;</pre>
+      </li>
+    </ul>
+    <p>これでモジュールを構築し、インストールすると、次のセクションで説明するように <tt>jboss-web.xml</tt>
+ファイル用のコンポーネントパレットが JSP モジュールで提供されている <i>すべての</i> コードスニペット、HTML
+モジュールで提供されている <i>すべての</i> コードスニペットを含んで表示されます。</p>
+  </li>
+</ol>
+<!-- ======================================================================================= -->
+<br>
+<h2><a name="building"></a>モジュールの構築とインストール</h2>
+<p>IDE はモジュールの構築およびインストールに Ant 構築スクリプトを使用します。構築スクリプトはプロジェクトの作成時に作成されます。</p>
+<div class="indent">
+<h3 class="tutorial"><a name="install-plugin"></a>モジュールのインストールと使用</h3>
+<ol>
+  <li>「プロジェクト」ウィンドウで「<tt>jbosswebxml</tt>」プロジェクトを右クリックし「ターゲットプラットフォームでのイ
+ンストール/再読み込み」を選びます。
+    <p>モジュールが構築されターゲットプラットフォームにインストールされます。ターゲットプラットフォームが起動し新規モジュールを試すことが
+できます。デフォルトのターゲットプラットフォームとは IDE の現在のインスタンスで使用しているインストールです。</p>
+  </li>
+  <li>使い方は <a href="#installing-sample">サンプルのインストール</a>
+セクションで説明していますのでモジュールが正しくインストールできているかどうか確認してください。</li>
+</ol>
+<h3 class="tutorial"><a name="share-plugin"></a>共有可能なモジュールバイナリの作成</h3>
+<ol>
+  <li>「プロジェクト」ウィンドウで <tt>newhtmlsnippet</tt> プロジェクトを右クリックし、「NBM
+を作成」を選択します。
+    <p>NBM ファイルが作成されます。「ファイル」ウィンドウ (Ctrl-2) で確認できます:</p>
+    <p align="left"><img
+ src="../../images/tutorials/componentpalette/create-nbm_ja.png"
+ alt="共有可能な NBM"> </p>
+  </li>
+  <li>メールなどで送付することにより他の人に配布、共有できます。 </li>
+  <li>アップデートセンターを使ってモジュールをインストールできます。メインメニューの「ツール」&gt;「アップデートセンター」
+を選択してください。</li>
+</ol>
+</div>
+<!-- ======================================================================================== -->
+<br>
+<h2><a name="nextsteps"></a>次のステップ</h2>
+<p>NetBeans モジュールの開発と作成の詳細は次のリソースを参照してください:</p>
+<ul>
+  <li><a href="https://platform.netbeans.org/index.html">モジュール開発者リソース</a></li>
+  <li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans
+API リスト (現行の開発バージョン)</a></li>
+  <li><a href="http://apisupport.netbeans.org/new-apisupport.html">新規
+API サポートの提案</a></li>
+</ul>
+<!-- ======================================================================================== -->
+<hr>
+<h2><a name="version"></a>バージョン</h2>
+<p>
+詳細な更新履歴は <a href="nbm-palette-api2_ja.html">原文の英文</a> をご覧下さい。このファイルはリビジョン 1.18 を翻訳しています。<p>
+
+
+</body>
+</html>

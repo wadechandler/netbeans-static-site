@@ -1,0 +1,251 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>NetBeans 4.0 向けの J2ME MIDP RSS リーダーチュートリアル</title>
+<META NAME="description" CONTENT="How to create a J2ME MIDP RSS Reader application with NetBeans 4.0">
+<META NAME="AUDIENCE" CONTENT="NBUSER">
+<META NAME="TYPE" CONTENT="ARTICLE">
+<META NAME="TOPIC" CONTENT="ADVANCED">
+<link rel="stylesheet" type="text/css" href="../../netbeans.css">
+
+</head>
+<body>
+
+
+			<h1>NetBeans 4.0 で J2ME MIDP RSS リーダーアプリケーションを作成する方法</h1>
+<div class="articledate" style="margin-left:0px;"><a href="../../competition/win-with-netbeans.html">Win With NetBeans</a> コンペティションの一部として Tommi Laukkanen 氏から寄稿</div></p>
+			<p>
+        このチュートリアルでは、NetBeans 4.0 で J2ME MIDP RSS リーダーアプリケーションを作成する方法について説明します。RSS リーダーがあれば、モバイルデバイスで RSS フィードを読むことができます。このアプリケーションは、MIDP 1.0 で動作するように設計されているため、比較的古いデバイスとの互換性もあります。 
+			</p>
+      <p>
+        RSS をご存じない方のために説明しておくと、RSS は <b>R</b>eally <b>S</b>imple <b>S</b>yndication を表しています。RSS は、ヘッドラインおよびブログやニュースなどのその他のコンテンツを共有するために設計された、軽量な XML 形式です。たとえば<a href="https://netbeans.org/rss-091.xml">ここ</a>から、最新の NetBeans.org ニュースを RSS フィードとして入手できます。 
+      </p>
+
+      <p>
+        次に、このアプリケーションの実行時のスクリーンショットをいくつか示します。<br/>
+        <table summary="Screenshots" class="b-none">
+        <tr>
+          <td><img src="../../images_www/articles/win-with-netbeans/pic1_launch.png" alt="起動" border="1" /></td>
+          <td><img src="../../images_www/articles/win-with-netbeans/pic2_bookmarks.png" alt="ブックマーク" border="1" /></td>
+          <td><img src="../../images_www/articles/win-with-netbeans/pic3_loading.png" alt="読み込み中" border="1" /></td>
+	</tr>
+ <tr>
+          <td>起動アイコン</td>
+          <td>ブックマークリスト</td>
+          <td>読み込み中フォーム</td>
+	</tr>
+
+	<tr>
+          <td><img src="../../images_www/articles/win-with-netbeans/pic4_headers.png" alt="ヘッダー" border="1" /></td>
+          <td><img src="../../images_www/articles/win-with-netbeans/pic5_topic.png" alt="トピック" border="1" /></td>
+	  <td></td>
+        </tr>
+       	<tr>
+          <td>ヘッダーリスト</td>
+          <td>トピックフォーム</td>
+	  <td></td>
+        </tr>        
+        </table>
+      </p>
+      <p>
+        このチュートリアルで取り上げる主題は次のとおりです。
+        <ul>
+        <li>NetBeans 4.0 での新しいモバイルアプリケーションプロジェクトの作成</li>
+        <li>NetBeans 4.0 プロジェクトを構成して他社製ライブラリ (kXML 2 など) を使用可能にする</li>
+
+        <li>NetBeans 4.0 で難読化を使用して、配布可能な JAR ファイルのサイズを低減する</li>
+        <li>NetBeans 4.0 でのエミュレータ上でのモバイルアプリケーションの実行</li>
+        </ul>
+      </p>
+      <h2>アプリケーションの設計</h2>
+      <div class='indent'>
+			<p>
+				 このプロジェクトには、5 つのソースコードファイルが含まれます。<br/></p>
+
+         <ul>
+				 <li><tt>RssFeed.java</tt>: RSS フィードクラスのコード</li>
+         <li><tt>RssItem.java</tt>: RSS フィード項目クラスのコード</li> 
+         <li><tt>RssFeedParser.java</tt>: RSS フィードパーサークラスのコード</li>
+         <li><tt>Settings.java</tt>: 設定ユーティリティークラスのコード</li>
+
+         <li><tt>RssReaderMIDlet.java</tt>: MIDlet クラスのコード</li>
+         </ul>
+         <p>
+            このチュートリアルでは、各クラスの機能については詳しく説明しません。ソースファイルは<a href="https://netbeans.org/files/documents/4/308/RssReader_src.zip">ここ</a>から入手できます。
+         </p>
+	 </div>
+         <h2>要件</h2>
+	 <div class='indent'>
+		 <p>
+
+        J2ME MIDP 開発を開始する前に、NetBeans IDE 4.0 と NetBeans Mobility Pack 4.0 をインストールする必要があります。完全な環境のダウンロードとインストールの手順については、J2ME MIDP Development Download ページを参照してください。<a href="http://www.kxml.org">kXML</a> モバイルクラスライブラリもダウンロードする必要があります。執筆時点でのこのライブラリの最新版は、2.1.9 でした。最新の kXML リリースは<a href="http://sourceforge.net/project/showfiles.php?group_id=9157">ここ</a>からダウンロードできます。kxml2-min.jar をコンピュータ上の任意のフォルダにダウンロードしてください。
+			</p>
+			</div>
+			<h2>モバイルクラスライブラリプロジェクトの作成</h2>
+			<div class='indent'>
+			<p>
+				<h3 class='tutorial'>新しいモバイルアプリケーションプロジェクトを作成する</h3>
+							<ol>
+								<li><p>「ファイル」&gt;「新規プロジェクト」(Ctrl-Shift-N キー) を選択します。「カテゴリ」で「<i>モバイル</i>」を選択します</p></li>
+								<li><p>「プロジェクト」で「<i>モバイルアプリケーション</i>」を選択します。「次へ」をクリックします。</p></li>
+
+								<li><p>「プロジェクト名」で <tt>RSS Reader</tt> と入力します。</p></li>
+								<li><p>「プロジェクトの場所」をローカルコンピュータ上の任意のフォルダに変更します。</p></li>
+                <li><p>「<tt>主プロジェクトとして設定</tt>」チェックボックスを選択します</p></li>
+                <li><p>「<tt>Hello MIDlet を作成</tt>」チェックボックスの選択を解除します</p></li>
+
+								<li><p>「完了」をクリックします。</p></li>
+                <p>この時点で、「プロジェクト」ウィンドウのプロジェクトノードは次のようになっているはずです。</p>
+                <img src="../../images_www/articles/win-with-netbeans/pic7_project.png" alt="プロジェクトノード" border="1" />
+							</ol>
+						<h3 class='tutorial'>ソースファイル用とアプリケーションアイコン用の新しい Java パッケージを作成する</h3>
+							<ol>
+								<li><p>「プロジェクト」ウィンドウで「RSS Reader」プロジェクトノードを右クリックし、「新規」&gt;「Java パッケージ」を選択します</p></li>
+                <p><img src="../../images_www/articles/win-with-netbeans/pic8_package.png" alt="" border="1" /></p>
+								<li><p>「パッケージ名」で <tt>RssReader</tt> と入力します。</p></li>
+								<li><p>「完了」をクリックします。</p></li>
+
+                <li><p>先のアクションを繰り返して <tt>icons</tt> パッケージを追加します</p></li>
+  							<p>
+                  これで、ソースコードファイルとアプリケーションアイコンで必要なパッケージが用意されました。
+  							</p>
+                <p><img src="../../images_www/articles/win-with-netbeans/pic9_packages.png" alt="" border="1" /></p>
+							</ol>
+						<h3 class='tutorial'>プロジェクトを構成する</h3>
+							<ol>
+								<li><p>「プロジェクト」ウィンドウで「RSS Reader」プロジェクトノードを右クリックし、「プロパティー」を選択します。</p></li>
+								<li><p>「アプリケーション記述子」&gt;「属性」を選択します。</p></li>
+
+								<li><p>汎用属性のリストで「MIDlet-Vendor」行を選択し、「編集」をクリックします。</p></li>
+                <li><p>「値」で、自分の名前を入力します。</p></li>
+                <li><p>「了解」ボタンをクリックして編集ウィンドウを閉じます。</p></li>
+                <p>次に、コンピュータにダウンロードした kXML ライブラリへの参照を追加します。</p>
+                <li><p>「構築」&gt;「ライブラリおよびリソース」を選択します。</p></li>
+                <li><p>「Jar/Zip を追加」をクリックします。</p></li>
+
+                <li><p>ダウンロードした kxml2-min.jar ファイルを参照します。</p></li>
+  							<p>
+                  kXML ライブラリへの参照を追加したので、kXML パーサーをアプリケーション内で使用できます。
+  							</p>
+							</ol>
+						<h3 class='tutorial'>ソースコードファイルの作成</h3>
+							<ol>
+                <p>
+                次に、このプロジェクトのソースコードを作成します。この時点で、「要件」節で言及した既存のソースコードファイルのダウンロードが完了しているはずです。それらを、プロジェクトフォルダの <tt>src/RssReader</tt> サブフォルダに移動するようにしてください。
+                </p>
+                <p>
+                RssReader フォルダへのソースコードファイルのコピーが完了すると、「プロジェクト」ウィンドウの RssReader パッケージが、次の図と同じようになっているはずです。プロジェクトウィンドウ内のパッケージの内容を更新するのに、数秒かかる場合があります。        
+                </p>
+
+                <p><img src="../../images_www/articles/win-with-netbeans/pic10_addfiles.png" alt="ファイルを追加" border="1" /></p>
+                <p>
+                準備の整ったソースコードがない場合は、「新規」&gt;「Java クラス」または「新規」&gt;「Midlet」機能を使用してから独自のコードを記述します。
+                </p> 
+							</ol>
+						<h3 class='tutorial'>アプリケーションにアイコンを追加する</h3>
+							<ol>
+                <p>
+                次に、モバイルアプリケーションにアイコンを追加します。
+                </p>
+                <li><p>次の画像を右クリックし、それを RSS Reader プロジェクトの src/icons/ サブフォルダにダウンロードします。</p></li>
+                <p><img src="../../images_www/articles/win-with-netbeans/rss.png" alt="アプリケーションアイコン" border="1"  /></p>
+								<li><p>「プロジェクト」ウィンドウで「RSS Reader」プロジェクトノードを右クリックし、「プロパティー」を選択します。</p></li>
+
+                <li><p>「アプリケーション記述子」&gt;「MIDlet」を選択します。</p></li>
+                <li><p>「追加」をクリックします。</p></li>
+                <p>NetBeans IDE はすべてのフィールドを設定できるだけの賢さを備えているので、アプリケーションに含めるアイコンを選択するだけで済みます。</p>
+                <li><p>「MIDlet アイコン」で <tt>/icons/rss.png</tt> を選択します。</p></li>
+                <p><img src="../../images_www/articles/win-with-netbeans/pic11_addmidlet.png" alt="MIDlet の追加" class="b-none"  /></p>
+                <li><p>「了解」ボタンをクリックすることで両方のウィンドウを閉じます。</p></li>
+
+							</ol>
+						
+			</p>
+			</div>
+			<h2>難読化を使用した MIDlet ファイルサイズの低減</h2>
+			<div class='incent'>
+			<p>
+				<h3 class='tutorial'>プロジェクトの構築</h3>
+							<ol>
+                <p>次に、プロジェクトを構築します。</p>
+                <li><p>F11 キーを押してプロジェクトを構築します。</p></li>
+                <p>あるいは、メインメニューから<tt>「構築」&gt;「主プロジェクトを構築」</tt>を選択してもかまいません。</p>
+
+                <li><p>「ファイル」ウィンドウで RSS_Reader.jar を右クリックし、「プロパティー」を選択します。</p></li>
+                <p><img src="../../images_www/articles/win-with-netbeans/pic12_files.png" alt="ファイル" border="1"  /></p>
+                <p>JAR ファイルのサイズは約 24K バイトです。</p>
+                <p><img src="../../images_www/articles/win-with-netbeans/pic13_jarsize.png" alt="JAR サイズ" class="b-none"  /></p>
+                <li><p>RSS Reader プロジェクトのノードを右クリックし、「プロパティー」を選択します。</p></li>
+                <li><p>「構築」&gt;「難読化」を選択します。</p></li>
+                <li><p>「難読化レベル」を最大値 (=「高」) に変更します。</p></li>
+
+                <li><p>「了解」ボタンをクリックします。</p></li>
+                <li><p>F11 キーを押してアプリケーションを再構築します。</p></li>
+                <li><p>「ファイル」ウィンドウで RSS_Reader.jar を右クリックし、「プロパティー」を選択します。</p></li>
+                <p>JAR ファイルのサイズが 15K バイトに減っています。</p>
+                <p><img src="../../images_www/articles/win-with-netbeans/pic14_jarsize.png" alt="JAR サイズ" border="1"  /></p>
+                <p>
+                比較的小さなモバイルデバイスでのメモリー使用量は重大な問題なので、難読化が、モバイルアプリケーション開発の非常に重要な部分となります。NetBeans IDE の難読化設定を変更するだけで、約 10K バイトのメモリーを節約できました。  
+                </p> 
+							</ol>
+
+						
+			</p></div>
+			<h2>エミュレータの使用</h2>
+			<div class='indent'>
+			<p>
+				<h3 class='tutorial'>プロジェクトを実行する</h3>
+							<ol>
+								<li><p>F6 キーを押して主プロジェクトを実行します</p></li>
+                <p>
+                <tt>「実行」&gt;「主プロジェクトを実行」</tt>を選択する方法もあります。
+                </p>
+
+                <li><p>デフォルトのエミュレータで「<tt>Launch</tt>」ボタンを押します。</li>
+                <p>
+                    これで RSS リーダーが実行中の状態になったので、これを使用して RSS フィードを表示できます。次のスクリーンショットは、Sony Ericsson のエミュレータから取得したものです。
+                </p>
+							</ol>
+						
+            				<table class="b-none">
+            				    <tr>
+                                    <td><img src="../../images_www/articles/win-with-netbeans/pic1_launch.png" alt="起動" border="1" /></td>
+                                    <td><img src="../../images_www/articles/win-with-netbeans/pic2_bookmarks.png" alt="ブックマーク" border="1" /></td>
+                                    <td><img src="../../images_www/articles/win-with-netbeans/pic3_loading.png" alt="読み込み中" border="1" /></td>
+                                   </tr>
+				<tr>
+                                  <td>起動アイコン</td>
+                                  <td>ブックマークリスト</td>
+                                  <td>読み込み中フォーム</td>
+				  </tr>
+				
+				   <tr>
+				    <td><img src="../../images_www/articles/win-with-netbeans/pic4_headers.png" alt="ヘッダー" border="1" /></td>
+				    <td><img src="../../images_www/articles/win-with-netbeans/pic5_topic.png" alt="トピック" border="1" /></td>
+				    <td></td>
+                                </tr>
+                                  <tr>
+                                  <td>ヘッダーリスト</td>
+                                  <td>トピックフォーム</td>
+				  <td></td>
+                                </tr>    
+                            </table>
+                       
+			</p></div>
+			<h2>まとめ</h2>
+			<div class='indent'>
+			<p>
+				<h3 class='tutorial'>まとめと開発のアイデア</h3>
+              <p>
+              これで、J2ME MIDP RSS リーダーチュートリアルは終わりです。このあとは、新機能を追加することでこのアプリケーションの開発を容易に続けることができます。たとえば、Atom XML フィードのサポートを追加できます。このコードで行うことに関する情報であれば、どのようなものでもお寄せください。
+              </p>
+						
+			</p>
+			</p>
+      <p>
+
+      </p>
+		</div>
+</body>
+</html>
+

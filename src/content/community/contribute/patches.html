@@ -1,0 +1,217 @@
+<HTML>
+
+<HEAD>
+<TITLE>Contributing Patches</TITLE>
+<META NAME="description" CONTENT="How to contribute patches for the NetBeans source code">
+<META NAME="NAV_LINK" content="Patches">
+<META NAME="NAV_PRIORITY" content="1">
+<META NAME="AUDIENCE" CONTENT="NBDEVELOPER">
+<META NAME="TYPE" CONTENT="ARTICLE">
+<META NAME="TOPIC" CONTENT="NB_ORG">
+<link rel="stylesheet" type="text/css" HREF="../../netbeans.css">
+<style type="text/css">
+.comment {color: grey; font-style: italic}
+</style>
+</HEAD>
+
+<body>
+
+<P><A NAME="patches"></A><h1>Contributing Patches</h1></p>
+
+<p>Well-described, easy-to-apply patches are a pleasure for a developer to
+receive and go a long way towards making the IDE more stable and powerful,
+so thank you in advance for contributing them! Here's how to do it.</p>
+
+<p>These instructions assume you are working on recent versions of NetBeans
+source code, starting with 6.1, which are kept in a Mercurial repository. If for
+some reason you need to submit a patch made against 6.0 sources or older (which
+is discouraged), the ideas are similar, but you will need to use CVS
+commands (generally <code>cvs diff -u -N</code>).</p>
+
+<P><h2>Making and applying a patch</h2></p>
+
+<p>First, make sure you are making changes in the most recent version of the
+sources - for this, it is best to use Mercurial to obtain out the source
+(usually from the <code>main</code> or <code>main-golden</code> repositories,
+unless you want to work on a release branch - ask if unsure),
+make your modifications, and then run (example
+for Unix, other operating systems similar):</p>
+
+<pre>
+$ cd /sources/netbeans/main
+<span class="comment">make your edits to fix bug #123456...</span>
+$ hg diff -g &gt; /tmp/123456.diff
+<span class="comment">sanity-check the patch</span>
+$ hg up -C
+<span class="comment">revert local modifications to get clean sources again</span>
+</pre>
+
+<p>Common patch mistakes include:</p>
+
+<ol>
+
+<li><p>Neglecting to use the <code>--git</code> flag as above so that renames,
+binary files, etc. are correctly handled.</p>
+
+<li><p>Manually editing patches. You may be tempted to concatenate
+patches, or manually edit them to exclude things you do not really
+want to submit. <em>Do not do this.</em> The patch may be corrupted as
+a result. Fix your sources to reflect what you want the result to be,
+and run a fresh diff. Include all affected files in the diff command,
+even if they are in different modules.</p></li>
+
+<li><p>Including extraneous changes. Look over your patch to make sure
+every change relates to the fix you are making, and is necessary.
+Remember other people will read your patch before applying it! Do not
+make gratuitous whitespace changes. Do not reformat existing code you
+are not modifying.</p></li>
+
+<li><p>Using the plain <code>diff</code> command. Use Mercurial commands to
+ensure that exact information about repository path and original
+version of the patched files is retained.</p></li>
+
+<li><p>Using old sources. Patches made against obsolete sources may be
+hard to use. Make sure you are using recent versions of all source
+file (<code>hg pull -u</code> first). If you must submit several
+patches against the same files, be sure to indicate if they must be
+applied in some particular order.</p></li>
+
+</ol>
+
+<p>You might prefer to commit your change locally (<code>hg ci</code>), in which
+case <code>hg export -g</code> can be used to save the patch to a file. In this
+case the change will remain permanently in your local copy of the repository; if
+you pull in updates from the server, you will need to merge. This approach has
+the disadvantage that if the patch is accepted and committed to the official
+repository, you will nevertheless need to do no-op merges indefinitely.</p>
+
+<p>If you plan to submit various patches and keep some of them active in your
+local copy of NetBeans sources unless and until they are accepted, a better
+approach is to use <dfn>Mercurial Queues</dfn>. First some setup in your
+<code>~/.hgrc</code>:</p>
+
+<pre>
+[extensions]
+mq =
+[hooks]
+<span class="comment"># For safety; would be different on non-Cygwin Windows:</span>
+prechangegroup.mq-no-pull = ! hg qtop &gt;/dev/null 2&gt;&amp;1
+</pre>
+
+<p>Now to work:</p>
+
+<pre>
+$ cd /sources/netbeans/main
+$ hg init --mq
+$ hg qnew 123456.diff
+<span class="comment">make your edits to fix bug #123456...</span>
+$ hg qrefresh -g
+$ hg export -g qtip &gt; /tmp/123456.diff
+<span class="comment">sanity-check the patch</span>
+</pre>
+
+<p>Later you can run <code>hg qnew</code> to start work on a new patch, or use
+<code>hg qgoto</code> to jump to an earlier patch, etc. When you want to update
+NB sources:</p>
+
+<pre>
+$ cd /sources/netbeans/main
+$ hg qpop -a
+$ hg pull -u
+<span class="comment">use hg qdel to remove any patches which have been accepted</span>
+</pre>
+
+<p>and see if you can apply your patches again. The Mercurial electronic book
+also describes how to use merging facilities to make it easier to apply patches
+which conflict with other changes, as well as many more details on using MQ.</p>
+
+<p>A properly made patch is easy to apply by someone with repository push
+access who has reviewed it:</p>
+
+<pre>
+<span class="comment">save patch to disk, say /tmp/123456.diff</span>
+$ cd /sources/netbeans/nb_all
+$ hg import /tmp/123456.diff
+<span class="comment">test, do a build, use hg rollback if patch is bad</span>
+</pre>
+
+<p>Note: Mercurial 0.9.5 will record the commit as having been made by you, in
+case the patch itself contains no authorship information. (<code>hg diff</code>
+produces a bare patch, whereas <code>hg export</code> records authorship, date,
+and log message.) It is preferable to record the commit as having been made by
+<code><i>submitter</i>@netbeans.org</code> where <i>submitter</i> is the login
+ID of the person submitting the patch, i.e. the actual author. You can do so by
+using <code>hg ci -u <i>submitter</i>@netbeans.org</code> to record the commit
+(after applying the patch to working sources); a future version of Mercurial may
+allow the <code>-u/--user</code> option to be passed to <code>hg import</code>
+too.</p>
+
+<P><h2>Making a patch available and accepting it</h2></p>
+
+<p>The best way to submit a patch is through Issuezilla.</p>
+
+<p>First, if an issue describing the problem (or feature) you are
+trying to solve already exists, use it. If it does not, create an
+issue now. The issue should
+include at least the following:</p>
+
+<UL>
+
+<LI><p>The patch file itself, of course - as an Issuezilla attachment,
+<em>not</em> pasted into the <b>Description</b> field. (Line-wrapped
+or reformatted patches are not usable. They must be exactly as
+produced by Mercurial.)</p></li>
+
+<LI><p>A description of what problem you are trying to fix, if
+possible with steps to reproduce it.</p></li>
+
+<LI><p>A description of what the behavior should be with the patch in
+place. Ideally also steps to demonstrate that the patch fixes the
+described problem.</p></li>
+
+<LI><p>If reasonable, a description of how the patch works.</p></li>
+
+<LI><p>If a significant amount of code is involved, it is safest to mention in
+the issue comments that you agree to let the patch be used under the
+<A HREF="https://netbeans.org/cddl-gplv2.html">Common Development and Distribution License (CDDL) v1.0 and the GNU General Public License (GPL) v2</A> as part of the IDE's code.
+If you are adding new source files, they must be marked with the license notice or
+the patch cannot be accepted.</p></li>
+
+<LI><P>If this is your first code submission to netbeans.org, you must fill in
+a Contributor Agreement - see <A HREF="http://www.oracle.com/technetwork/oca-faq-405384.pdf">the CA
+Policy</A> page for more info.<P></LI>
+
+<LI><p>The patch submitter should be either the submitter of the issue,
+or add his or her login ID to the CC list of the issue. This ensures that the
+submitter will see any comments or changes made to the issue and be
+able to respond if needed.</p></li>
+
+</UL>
+
+<P>The developer responsible for the section of code affected should either
+apply the patch and mark the issue <code>FIXED</code>; or
+add a comment with an objection if the patch does not seem safe, does not appear to fix the
+problem, or there is not really a problem to begin with.
+Developers <STRONG>must remember</STRONG> to record the authors of patches
+they apply for purposes of generating credits lists.
+Use the file <SAMP>ide.branding/release/CREDITS.html</SAMP> for this.  Developers
+must also confirm that the contributor has filled in and submitted a CA
+before commiting their patch - see <A HREF="http://www.oracle.com/technetwork/oca-faq-405384.pdf">the CA Policy</A>
+page for more info.</p>
+
+<p>Notifications of
+any changes to Issuezilla, as well as pushed Mercurial changesets, are automatically
+sent to the appropriate bug and source control mailing lists, so you can monitor if the
+patch has really been applied.  Make sure you subscribe to the appropriate
+mailing lists for the module(s) you are working on - see the
+<A HREF="../lists/index.html">mailing lists</A> page for details.</p>
+
+<P>Of course, if you do not know exactly how to fix a problem, but have an
+idea that it is being caused by a certain section of code somehow, you can
+just mention what you know on the developer list and maybe someone else will
+know how to fix it. And please <A HREF="../issues.html">report a bug</A> about it
+so it does not get lost.</p>
+
+</BODY>
+
+</HTML>

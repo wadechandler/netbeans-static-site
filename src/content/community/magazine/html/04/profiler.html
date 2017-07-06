@@ -1,0 +1,338 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta name="Title" content="Advanced Profiling: Theory in Practice with NetBeans"/>
+        <meta name="Author" content="Osvaldo Pinali Doederlein, opinali@gmail.com"/>
+        <meta name="description" content="Explore the latest Profiler features of NetBeans 6.0 and review profiling techniques and best practices in a real-world tutorial"/>
+        <meta name="copyright" content="© 2007 NetBeans"/>
+        <meta name="Designer" content="pH Design"/>
+        <link rel="stylesheet" type="text/css" href="../magazine.css" media="screen"/>
+        <title>NetBeans Magazine, Issue 4 . Advanced Profiling: Theory in Practice with NetBeans IDE</title>
+    </head>
+    <body>
+
+    <img src="../../../../images_www/magazine/issue04/top-profiler.jpg" alt="Advanced Profiling: Theory in Practice with NetBeans IDE" width="770" height="200" />
+<div class="story"> 
+	<p class="nb-body">In this article, I will walk you through a series of best practices in Java code profiling, using NetBeans 6.0. The approach is to show a realistic session of profiler-driven code optimization, using the NetBeans Profiler as the core tool.</p>
+				<p class="nb-section">Hunting for a real-world example</p>
+		<p class="nb-body">Too many articles, including most of my own production, are limited by sample projects that must “fit”. But using real-world code adds a whole new dimension of meaning – and readers don’t need to trust the author when he concludes that techniques shown through a contrived example will be effective in real applications. </p>
+  <p class="nb-body">So I picked a real project: iText, a popular open-source Java library for PDF generation and manipulation. Many developers will be familiar with it or use it indirectly (for example, iText is a dependency of many Java report generators and other tools that output PDF). Also, the work performed by iText is both complex and CPU-bound, so it’s a good profiling test bed.</p>
+  <p class="nb-body">My principle here is to use profiling techniques to learn something interesting about a complex project. And if we’re lucky, find performance problems and investigate their solution, with the help of these techniques and in particular of the NetBeans Profiler. Moreover, I selected a project that I knew only as a user, but whose source code I’ve never read before and an internal architecture I’m not familiar with. Thus I’ll not be in advantage over the reader, and we can learn together.</p>
+				<p class="nb-section">The right tool for the right job</p>
+				<p class="nb-body">The NetBeans Profiler is not the ideal tool for every optimization-related task. This is not due to any limitations, but because profilers are best for fine-grained or low-level performance investigation. Imagine a Java EE reporting application that’s not scaling well. The bottleneck could be some inefficient algorithm, but it can also be due to bad application server tuning, inefficient SQL queries, excessive use of remote calls, and many other factors. At this stage of the investigation, you’ll often prefer different tools. For example, GlassFish offers detailed monitoring capabilities, and most database servers provide tools to spot heavy queries. A profiling tool can still help here though; the NetBeans Profiler integrates well with application servers. But in my experience this integration is more suited to profiling sections of Java EE code that are hard to test outside the container.</p>
+				<p class="nb-body">Once you’ve narrowed the bottleneck to a specific subsystem, at the very least to your own application code or, hopefully, something more specific like “the front-end report generation code”, then it’s the time to start using a code profiler.</p>
+				<p class="nb-section">Identifying a problem – and benchmarking it</p>
+			  <p class="nb-body">If you plan to follow this article’s step by step, you need to first set up your environment as explained in the <span class="nb-body-bold">box</span> “Installation and setup”. In the project, open the class <span class="nb-body-italico">examples/com.lowagie.examples.objects.tables.AddBigTable</span>. This is one of iText’s standard samples and was selected because it’s complex enough to be interesting for our purposes. Indeed, this sample creates a ~120Kb, 26-page PDF file filled with a very big table. Not your average HelloWorld sample!</p>
+			  <table width="100%" border="1" cellpadding="0" cellspacing="0" bordercolor="#000033">
+                <tbody>
+                  <tr>
+                    <td bgcolor="#000033"><p class="nb-table-title">Installation and setup</p></td>
+                  </tr>
+                  <tr align="left">
+                    <td valign="top" bgcolor="#660066">
+                      <div class="story">
+                        <p class="nb-table-body">You can follow the steps in this article with any release of NetBeans 6.0 that supports Java development. The Profiler is a built-in feature. Start by creating a project using <span class="nb-tablebody-italico">New Project&gt;Java&gt;Java Class Library</span><span class="style4">.</span> Then visit iText’s download page at SourceForge (<span class="nb-tablebody-italico">sf.net/project/showfiles.php?group_id=15255</span>) and from the <span class="nb-tablebody-italico">iText</span> group get the <span class="nb-tablebody-italico">itext-src-2.0.6.tar.gz</span> file (or the equivalent zip). Unpack it and copy the top-level <span class="nb-tablebody-italico">com</span> directory into your NetBeans project’s <span class="nb-tablebody-italico">src</span> folder. At this point some classes will report compilation errors due to missing dependencies. To solve that, in the same download page go to the <span class="nb-tablebody-italico">extrajars</span> group and download the files <span class="nb-tablebody-italico">bcmail-jdk14-137.jar </span>and <span class="nb-tablebody-italico">bcprov-jdk14-137.jar</span>. Add those to the project’s libraries, and NetBeans should compile the whole project without errors.</p>
+                        <p class="nb-table-body"> Now we just need to add the sample code. Again in the download page, go to the <span class="nb-tablebody-italico">tutorial</span> group and get the file <span class="nb-tablebody-italico">tutorial.tar.gz</span>. Unpack it and copy the folder examples to the NetBeans project root. In the project’s Properties (<span class="nb-tablebody-italico">Sources/Source Package Folders</span>), click <span class="nb-tablebody-italico">Add Folder</span> and select the <span class="nb-tablebody-italico">examples </span>folder. </p>
+                        <p class="nb-table-body">After the rebuild, you’ll notice that four packages contain compilation errors; these are examples that use other dependencies, like JFreeChart or the Servlet API. We’re not going to use this part, so you can just delete the four packages, and we’re ready to go.</p>
+                      </div>                    </td>
+                  </tr>
+                </tbody>
+              </table>
+    <p class="nb-body">A good profiling session should be like any good scientific experiment. You must isolate the code you want to test from other code, and also avoid interference from environment “noise”. This sample is already well isolated. It does nothing beyond creating the PDF file; also there’s no alien code involved: no database access, no middleware. There is a potential source of environment noise, however: file I/O. The sample program writes the document to a PDF file, but this I/O operation is not relevant to what we are measuring. A larger application that uses iText would probably compose the PDF to a memory stream and serve it to some GUI, perhaps store it in a cache; but most likely it wouldn’t write it to a disk file. </p>
+    <p class="nb-body">The first step towards our profiling goal, then, is to get rid of the file I/O. This is easy to accomplish. I changed the <span class="nb-techtext-bold">AddBigTable</span> class, replacing “<span class="nb-techtext-bold">new FileOutputStream(…)</span>” with “<span class="nb-techtext-bold">new ByteArray OutputStream(…)</span>”. Notice that the memory stream is big enough to hold the entire finished PDF content, so there won’t be reallocations of this buffer to spoil benchmarking precision. Check out the resulting code in <span class="nb-body-bold">Listing 1 </span>(with changed parts in bold); <span class="nb-body-bold">Figure 1</span> shows the project loaded in NetBeans.</p>
+    <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+      <tbody>
+        <tr>
+          <td bgcolor="#660066"><span class="nb-codelist-title">Listing 1. Initial updates to the AddBigTable class</span></td>
+        </tr>
+        <tr>
+          <td valign="top"><pre><div class="nb-codelist-body">public static void main (String[] args) {<br />  //step1<br />  Document document = new Document(PageSize.A4.rotate(), 10, 10, 10, 10);<br />  try {<br />    //step2<br />    PdfWriter writer = PdfWriter.getInstance(<br />        document, new ByteArrayOutputStream(120000));<br />    // step3<br />    document.open();<br />    //step4<br />    //... omitted for space: build the document<br />  } catch (Exception de) { de.printStackTrace(); }<br />  // step5<br />  document.close();<br />}<br /></div></pre></td></tr></tbody></table><p class="nb-body"><img src="../../../../images_www/magazine/issue04/image19442_opt.jpeg" alt="Figure" width="388" height="285" /><br />
+            <strong>Figure 1. </strong>The iText project in NetBeans</p>
+  <p class="nb-sub-section">Benchmarking</p>
+				<p class="nb-body">Profiling and benchmarking are of course related disciplines, so before continuing it’s interesting to go through an exercise in benchmarking<a href="#footnote1">*1</a>. The basic requirement is avoiding the “Two Deadly Sins of Java Benchmarking”: dead code and short runs. </p>
+				<p class="nb-body"><span class="nb-body-bold">Dead code</span> happens when a benchmark is so simple that smart optimizers notice some code is computing data which is never used – so they just eliminate that code and execution times drop to the floor. This is not the case with our current code, however. Even though I don’t use the produced <span class="nb-techtext-bold">ByteArrayOutputStream</span> for any purpose, I know that the path from iText’s core through multiple layers of I/O objects (like its <span class="nb-techtext-bold">PdfWriter</span>), and into the byte array stream, is very complex – complex enough that the optimizer in the JVM won’t kill it.</p>
+				<p class="nb-body">However, the program is still guilty of <span class="nb-body-bold">short run</span>: short programs will run mostly in interpreted mode, so the measured results will be meaningless. From the command line, I measured 1.890 seconds with HotSpot Client 6.0u3 on a Pentium-IV 2,4GHz, which is not too bad. Ideally though, total execution time would be in the range of tens of seconds to a few minutes, to allow for JVM warm-up (initialization, classloading and dynamic optimization).</p>
+				<p class="nb-body">This is easy to fix: just add a loop that repeats the test several times. I renamed the original <span class="nb-techtext-bold">main()</span> method to <span class="nb-techtext-bold">test()</span>, and added a new <span class="nb-techtext-bold">main() </span>that takes the repeat number from the arguments. See the new method in <span class="nb-body-bold">Listing 2</span>. </p>
+				<table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                  <tbody>
+                    <tr>
+                      <td bgcolor="#660066"><span class="nb-codelist-title">Listing 2. New method main() for AddBigTable</span></td>
+                    </tr>
+                    <tr valign="top">
+                      <td ><pre>
+public static void main (String[] args) {
+  int times = Integer.parseInt(args[0]);
+  for (int i = 0; i < times; ++i) {
+    long t = System.currentTimeMillis();
+    new AddBigTable().test();
+    t = System.currentTimeMillis() - t;
+    System.out.println(t);
+  }
+}</pre></td></tr></tbody></table>
+<p class="nb-body">To set up and run this benchmark, go to the project’s Properties&gt;Run&gt;Main Class, click Browse and select our <span class="nb-techtext-bold">AddBigTable</span> class. In the same page make Arguments=10. Confirm changes and run the project. I did that for a few recent Java virtual machines; <span class="nb-body-bold">Table&nbsp;1</span> shows the results. For CPU-bound work, the increasing sophistication of JVM technology continues to extract more and more from the same hardware. In this particular test, HotSpot Server 6.0<a href="#footnote2">*2</a> saves 20% of your CPU, compared to release 1.4.2 of the same JVM, or 10% when compared to 5.0</p>
+			<p class="nb-body"><table width="270" border="1" cellpadding="0" cellspacing="0" bordercolor="#000033">
+  <tbody>
+                    <tr>
+                      <td width="160" height="30" bgcolor="#000033"><p class="nb-table-title">Runtime</p></td>
+                      <td width="104" bgcolor="#000033" ><p class="nb-table-title">Performance</p></td>
+                    </tr>
+                    <tr>
+                      <td height="20" bgcolor="#ECECFF"><p class="nb-body">HotSpot Client 1.4.2u16</p></td>
+                      <td height="20" bgcolor="#ECECFF"><p align="center" class="nb-body">843ms</p></td>
+                    </tr>
+                    <tr>
+                      <td height="20" bgcolor="#ECECFF"><p class="nb-body">HotSpot Server 1.4.2u16</p></td>
+                      <td height="20" bgcolor="#ECECFF"><p align="center" class="nb-body">703ms</p></td>
+                    </tr>
+                    <tr>
+                      <td height="20" bgcolor="#ECECFF"><p class="nb-body">HotSpot Client 5.0u13</p></td>
+                      <td height="20" bgcolor="#ECECFF"><p align="center" class="nb-body">750ms</p></td>
+                    </tr>
+                    <tr>
+                      <td height="20" bgcolor="#ECECFF"><p class="nb-body">HotSpot Server 5.0u13</p></td>
+                      <td height="20" bgcolor="#ECECFF"><p align="center" class="nb-body">625ms</p></td>
+                    </tr>
+                    <tr>
+                      <td height="20" bgcolor="#ECECFF"><p class="nb-body">HotSpot Client 6.0u3</p></td>
+                      <td height="20" bgcolor="#ECECFF"><p align="center" class="nb-body">672ms</p></td>
+                    </tr>
+                    <tr>
+                      <td height="20" bgcolor="#ECECFF"><p class="nb-body">HotSpot Server 6.0u3</p></td>
+                      <td height="20" bgcolor="#ECECFF"><p align="center" class="nb-body">562ms</p></td>
+                    </tr>
+                  </tbody>
+    </table>
+				<p class="nb-body"><strong>Table 1</strong>. iText’s benchmark on Sun JVMs from 1.4.2 up to 6.0; results are best of 10 cycles of each test</span>				</p>
+  <p class="nb-section">Profiling CPU usage</p>
+		<p class="nb-body">We’re a couple pages into the article and yet no use of the NetBeans Profiler. This is an important best practice though: planning before profiling. Now we are at the point where powerful tools should really help (and not just entertain us with beautiful data visualizations). </p>
+				<p class="nb-body">Booting the Profiler is easy. Just run Profile&gt;Profile Main Project and sit comfortably while watching the results come in… That, however, is not a very productive approach. I’ve spent too much time doing exactly this and waiting for the right moment to click “Reset data”, “Take snapshot” or similar buttons in several profilers. What we really need is data from an “area of interest”, and to have it discretized per iteration of the test, not accumulated for multiple iterations (the first iterations often have meaningless “cold start” performance). That’s why my top new profiling feature in NetBeans 6.0 is <span class="nb-body-bold">Profiling Points</span>. </p>
+				<p class="nb-body">In AddBigTable.java, go to the <span class="nb-techtext-bold">test()</span> method’s first line, right click it and choose Profiling&gt;Insert Profiling Point. Select the Reset Results type, accept the defaults for other options and finish the wizard. Then go to the last line of the same method, and create a Take Snapshot profiling point. <span class="nb-body-bold">Figure 2</span> shows the first page of the Profiling Point creation wizard</p>
+				<p class="nb-body"><a href="../../../../images_www/magazine/issue04/image19448_opt-small.jpg"><img src="../../../../images_www/magazine/issue04/image19448_opt-small.jpg" style="border: 0px;"  alt="Figure (click for full size)"  /></a><br />
+			    <strong>Figure 2.</strong>			    Creating a Profiling Point</p>
+	<p class="nb-body">Having created the two profiling points, we’ll collect a snapshot of each run of the <span class="nb-techtext-bold">test() </span>method. Since the <span class="nb-techtext-bold">AddBigTable</span> program loops, invoking this method several times, the Reset Results profiling point is important to avoid accumulation of an execution’s performance data with that for the previous one. There are other very useful types, like Stopwatch (which prints the execution time of a code section) and Timed Take Snapshot (for taking a snapshot at a fixed time after reaching the profiling point).</p>
+			<p class="nb-body">Now start the profiler with Profile&gt;Profile Main Project. Select CPU and make sure the Entire Application and Use defined Profiling Points options are checked; also set the Filter option to Profile only project classes (see <span class="nb-body-bold">Figure 3</span>).</p>
+			<p class="nb-body"><a href="../../../../images_www/magazine/issue04/image19460_opt-small.jpg"><img src="../../../../images_www/magazine/issue04/image19460_opt-small.jpg" style="border: 0px;"  alt="Figure (click for full size)"  /></a><br />
+		    <strong>Figure 3.</strong> Starting the profiler</p>
+  <br /><p class="nb-body">With these settings we instruct the Profiler to observe code execution performance only for classes from our project. As profiling has a significant probe effect (it slows down the observed program), the Profiler allows you to minimize this through several filtering options. The Advanced settings dialog also lets you fine-tune profiling precision. For this experiment, however, the default settings will do, and you can click Run to start the profiling session.</p>
+				<p class="nb-body"> The result of this session should be similar to <span class="nb-body-bold">Figure 4</span>, with ten new snapshots collected. Just look at the last snapshot, which is already “good” (fully optimized execution). You can inspect the results in the Call Tree page (top-down view), in the Hot Spots page (bottom-up view), or in the Combined page, which is split between these two views.<br />
+			      <br />
+	            <img src="../../../../images_www/magazine/issue04/image19454_opt.jpeg" alt="Figure" width="608" height="409" />				<br />
+                <strong>Figure 4.</strong>			    The NetBeans Profiler, focusing on method execution time</p>
+				<p class="nb-body">The <span class="nb-techtext-bold">ByteBuffer.formatDouble() </span>method’s “hot spot” can be easily identified. Apparently, this method alone takes ~20% of all the running time of the test, which is surely too long for a single method in a project as complex as iText. So, like vultures over rotting meat, let’s dive into the code, hoping to find something that can be optimized. </p>
+	<p class="nb-body">Double click the <span class="nb-techtext-bold">formatDouble()</span> method in the Call Tree page to show its source code (see <span class="nb-body-bold">Listing&nbsp;3</span><span class="nb-techtext-bold">)</span>. This method’s purpose is no rocket science: it just formats a <span class="nb-techtext-bold">double</span> value into a <span class="nb-techtext-bold">String</span>, with up to six digits of decimal precision. But the code is huge. If a static flag, <span class="nb-techtext-bold">HIGH_PRECISION</span>, is set to <span class="nb-techtext-bold">true</span>, the method just relies on Java SE’s <span class="nb-techtext-bold">DecimalFormat</span> class. But if <span class="nb-techtext-bold">HIGH_PRECISION==false</span> (the default), there follows a slab of code that’s guaranteed to violate every size and complexity limit enforced by code validation tools.</p>
+				<table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                  <tbody>
+                    <tr>
+                      <td bgcolor="#660066"><span class="nb-codelist-title">Listing 3. The suspected ByteBuffer.formatDouble() (edited for space)</span></td>
+                    </tr>
+                    <tr>
+                      <td valign="top"><pre>public static String formatDouble (double d, ByteBuffer buf) {
+  if (HIGH_PRECISION) {
+    // “Straight” formatting code
+    DecimalFormat dn = new DecimalFormat(“0.######”, dfs);
+    return dn.format(d);
+  }
+  // else... 200 lines(!) with custom formatting code.
+}</pre></td></tr></tbody></table>
+  <p class="nb-body">Now, the obvious – and ironic – fact is that we’ve landed in code that was obviously optimized before. This is after all a mature project. What happens, one may ask, if <span class="nb-techtext-bold">HIGH_PRECISION</span> is set to <span class="nb-techtext-bold">true</span>? Not a pretty outcome. With HotSpot Server 6.0u3, the best individual running time goes from 562ms to 1,610ms! As in the original code, <span class="nb-techtext-bold">formatDouble()</span> takes 20% of the total time, that means 112ms out of the total 562ms. With <span class="nb-techtext-bold">HIGH_PRECISION==true</span>, as no other code is affected by this flag (I checked this), <span class="nb-techtext-bold">formatDouble()</span> is consuming 72% of the total time. There’s a 1,030% slowdown for a single method, and a 186% slowdown for the whole test.</p>
+	<p class="nb-sub-section">The usual suspect</p>
+				<p class="nb-body">It’s not surprising to find that <span class="nb-techtext-bold">DecimalFormat</span> is a bottleneck. It’s a well-known fact that <span class="nb-techtext-bold">java.text</span>’s formatters are broken performance-wise. <span class="nb-techtext-bold">DecimalFormat</span> objects are very expensive to create since their constructors compile the format strings into an optimized representation that makes each parsing/formatting operation very fast. </p>
+				<p class="nb-body">This is only good, though, if you can reuse each formatter for a large number of operations; but these objects are not thread-safe, so reuse opportunities are limited. The result is that any multithreaded application – even those with container-managed threads like Java EE apps – are forced to continuously recreate formatters, what can be very expensive.</p>
+				<p class="nb-sub-section">The best is enemy of the good</p>
+				<p class="nb-body">Voltaire was hardly thinking about computer programming when he wrote this famous quote, but it serves us well. In the context of code optimization, almost any code can be enhanced a little further – but once any sufficiently complex code is “good enough”, the additional optimization effort increases exponentially as you slowly approach the ideal of perfect, fastest-possible code.</p>
+				<p class="nb-body">The developer who noticed that <span class="nb-techtext-bold">SimpleDateFormat</span> was chewing an insane amount of cycles may have jumped too early to the “perfect” solution: an extremely optimized, customized code that performs the required formatting as efficiently as physically possible in Java<a href="#footnote3">*3</a>. But is this really necessary? Aren’t there alternative solutions which wouldn’t lead to a method that’s so massive and hard to maintain?</p>
+				<p class="nb-body">Analyzing iText’s <span class="nb-techtext-bold">ByteBuffer</span> class<a href="#footnote4">*4</a>, you can see that it’s not thread-safe, because of several mutable fields and no synchronization. This is the common design of most buffer-esque objects: they are not often shared, and if they are, they’re better synchronized in upper layers. But this means that the optimization shown in <span class="nb-body-bold">Listing 4</span> is valid. Here I created a shared <span class="nb-techtext-bold">DecimalFormat</span> object, limiting the sharing to multiple invocations on the same <span class="nb-techtext-bold">ByteBuffer</span> instance. As the buffers are never shared, the thread-safety limitation of <span class="nb-techtext-bold">DecimalFormat</span> is meaningless. I performed the tests again with <span class="nb-techtext-bold">HIGH_PRECISION==true</span>. The result was 1,047ms; much better than the original result with this option set, but still a significant slowdown (86% worse) over the score for <span class="nb-techtext-bold">HIGH_PRECISION==false</span>.</p>
+				<table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                  <tbody>
+                    <tr>
+                      <td bgcolor="#660066"><span class="nb-codelist-title">Listing 4. Optimized ByteBuffer.formatDouble()</span></td>
+                    </tr>
+                    <tr>
+                      <td valign="top">
+                        <pre>public class ByteBuffer extends OutputStream {
+  ...
+  private static final DecimalFormatSymbols dfs = 
+      new DecimalFormatSymbols(Locale.US);
+  private DecimalFormat dnCached = 
+      new DecimalFormat(“0.######”, dfs);
+  ...
+  public static String formatDouble(double d, ByteBuffer buf){
+    if (HIGH_PRECISION) {
+      if (buf == null) {
+        DecimalFormat dn = new DecimalFormat(“0.######”, dfs);
+        return dn.format(d);
+      }
+      else {
+        buf.append(buf.dnCached.format(d));
+        return null;
+      }
+    }
+  ...
+}</pre></td>
+                    </tr>
+                  </tbody>
+    </table>
+			<p class="nb-body">This <span class="nb-techtext-bold">formatDouble()</span> method is tricky: though static, it can be invoked with a <span class="nb-techtext-bold">ByteBuffer</span> argument – an “optional <span class="nb-techtext-bold">this</span>”. If a buffer is received, the formatted value is appended to the buffer; otherwise (i.e. <span class="nb-techtext-bold">null is passed</span>), the formatted value is returned. So a good hypothesis is that I didn’t obtain all the speedup I wished for, because there are many invocations with <span class="nb-techtext-bold">buf==null</span>, and I couldn’t optimize this case to reuse the formatter.</p>
+		<p class="nb-sub-section">Back to the Profiler</p>
+	<p class="nb-body">Profilers are not only good for finding bottlenecks and performance bugs. They are also great for validating and refining your findings in an iterative and interactive process that should lead to the desired code enhancement.</p>
+				<p class="nb-body">In the same Call Tree page shown in <span class="nb-body-bold">Figure 4</span>, right click the <span class="nb-techtext-bold">formatDouble()</span> method and choose Show Back Traces. Now you have a new tab labeled “Back traces for: formatDouble”, showing all code paths that end in that method (see <span class="nb-body-bold">Figure 5</span>). You’ll see two branches. The top one shows traces where the immediate caller of <span class="nb-techtext-bold">formatDouble()</span> is the <span class="nb-techtext-bold">append(double) </span>instance method, which passes <span class="nb-techtext-bold">this</span> to its parameter <span class="nb-techtext-bold">buf</span>. In the bottom branch, the caller is a static method <span class="nb-techtext-bold">formatDouble(double)</span>, which passes <span class="nb-techtext-bold">null </span>for this parameter.</p>
+				<p class="nb-body"><a href="../../../../images_www/magazine/issue04/image19466_opt-small.jpg"><img src="../../../../images_www/magazine/issue04/image19466_opt-small.jpg" style="border: 0px;"  alt="Figure (click for full size)"  /></a><br />
+			    <strong>Figure 5.</strong> The Back Traces tab</p>
+				<p class="nb-body">We could imagine that the second branch is guilty for the remaining slowness; but a quick look at the numbers proves this not to be true. Even though each invocation in the “slow path” is very expensive, there are very few such invocations – a total of 130, compared to 157,532 invocations in the “fast path”. The “Time [%]” column in the same tab confirms that virtually all execution time goes to the fast-path branch.</p>
+				<p class="nb-body">This means that the remaining slowness is not caused by an excessive number of <span class="nb-techtext-bold">DecimalFormat</span> instantiations. It comes from the execution of this object’s <span class="nb-techtext-bold">format()</span> method, which is still slower than the highly customized code that <span class="nb-techtext-bold">ByteBuffer.formatDouble()</span> has for the <span class="nb-techtext-bold">HIGH_PRECISION==false</span> case. </p>
+				<p class="nb-body">Correct? Perhaps. There is one potential flaw in this conclusion: we don’t know how many <span class="nb-techtext-bold">ByteBuffer</span> objects are being created. Consequently we don’t know how many times our optimized instance field (<span class="nb-techtext-bold">DecimalFormat dnCached</span>) is being created. It’s time for a different profiling strategy.</p>
+				<p class="nb-section">Profiling memory allocation</p>
+				<p class="nb-body">Start the Profiler again, now with Profile&gt;Profile Main Project, Memory. Accept the defaults for all options and run a new profiling session. Now we have more interesting results: each test iteration allocates 9,440 instances of <span class="nb-techtext-bold">ByteBuffer</span> and 9,571 instances of <span class="nb-techtext-bold">DecimalFormat</span> (this is after optimization – remember that the shared formatting object is only used for one of two possible code paths into <span class="nb-techtext-bold">formatDouble()</span>). The original unoptimized code would allocate 166,973 instances of <span class="nb-techtext-bold">DecimalFormat</span> per iteration. </p>
+				<p class="nb-body">I managed to cut 95% of these allocations (as well as the expensive constructions involved), so my instincts say there’s not much to be gained by cutting the remaining 5%. The remaining cost of the simpler formatting code should come from the execution of <span class="nb-techtext-bold">DecimalFormat.format()</span>, not from the construction of <span class="nb-techtext-bold">DecimalFormat</span> objects.</p>
+				<p class="nb-body">That’s game over for our analysis of <span class="nb-techtext-bold">formatDouble().</span> The method is already very close to an optimum implementation if <span class="nb-techtext-bold">DecimalFormat</span> is to be used. See the <span class="nb-body-bold">box</span> “Next step for <span class="nb-techtext-bold">formatDouble()</span>?” for additional findings that are a final part of the optimization of that method – but follow me here in the investigation of the NetBeans Profiler.</p>
+				<table width="100%" border="1" cellpadding="0" cellspacing="0" bordercolor="#000033">
+                  <tbody>
+                    <tr>
+                      <td height="30" bgcolor="#000033"><p class="nb-table-title">Next step for formatDouble()?</p></td>
+                    </tr>
+                    <tr>
+                      <td valign="top" bgcolor="#660066">
+                        <div class="story">
+                          <p class="nb-table-body style3">In the investigation of iText summed up in the body of the article, I was able to optimize <span class="nb-table_techtext-bold">ByteBuffer.formatDouble()</span>’s “straight” formatting code significantly (using <span class="nb-table_techtext-bold">SimpleDateFormat</span>). But not enough to compete with the performance of the existing optimized formatter. </p>
+                          <p class="nb-table-body style3">Profiling and optimization are hard, but even more difficult is making tradeoffs. Specifically, is the optimized code good enough to be preferable – if not by default, then at least in some circumstances – over the existing custom formatter? There’s no easy answer.</p>
+                          <p class="nb-table-body style3">The original straight code was clearly unacceptable. You’ll notice, if you read iText’s full <span class="nb-tablebody-italico">ByteBuffer.java</span>, that the <span class="nb-table_techtext-bold">HIGH_PRECISION</span> flag has its value hardwired. The shipping iText binary is compiled with <span class="nb-table_techtext-bold">HIGH_PRECISION==false</span>, and this option can only be changed by editing the source code and recompiling the library.</p>
+                          <p class="nb-table-body style3">Now, the optimized straight code makes my benchmark only 86% slower (instead of 186%) than the custom format code. This is still significantly slower, so certainly iText users would prefer to keep using the existing optimized formatter. Or not? Speed is not everything, and the name of the <span class="nb-table_techtext-bold">HIGH_PRECISION</span> flag implies of course that when it’s set to <span class="nb-table_techtext-bold">false</span> some loss of precision is expected. Indeed, the optimized formatter performs some approximations like this one (edited):</p>
+                          <pre><p class="nb-table-code">if (Math.abs(d) &lt; 0.000015) {
+                          <br /> 	 return “0”;
+                          <br />}</p></pre>
+                          <p class="nb-table-body style3">This truncates many close-to-zero numbers, killing their sixth decimal position (plus roughly one bit of the fifth). There are additional approximations in the code.</p>
+                          <p class="nb-table-body style3">An experiment talks louder than any hypothesis, so I executed the program twice, first with <span class="nb-table_techtext-bold">HIGH_PRECISION</span> set to <span class="nb-table_techtext-bold">false</span> and then setting the flag to <span class="nb-table_techtext-bold">true</span> – with both runs writing the PDF content to a file as the original code did. The default low-precision setting produced a document with 119,262 bytes, but the high-precision document was significantly bigger: 135,007 bytes. Then I instrumented the program to format each value with both algorithms and dump the results. To my surprise, I saw that the optimized algorithm used only two decimal digits of precision for all numbers! Here’s a typical output for this instrumented run:</p><pre>
+                          <p class="nb-table-code">hi: 91.333344, lo: 91.33
+                          <br />hi: 18, lo: 18
+                          <br />hi: 1, lo: 1
+                          <br />hi: 333.818176, lo: 333.82</p></pre>
+                          <p class="nb-table-body style3">I discovered that <span class="nb-table_techtext-bold">my comparison is not fair</span>. I’m comparing an algorithm that formats with six decimal digits of precision against one that goes only to two decimal places. </p>
+                          <p class="nb-table-body style3">I fixed this by simply changing the format string to “0.##”. Touché: the PDF was created with 119,262 bytes, identical to the optimized formatter (which is also a good validation of our new code if we consider <span class="nb-table_techtext-bold">DecimalFormat</span> as the “canonical” formatter). As a result, the execution time went down to 984ms. This is still 75% worse than the optimized formatter, so it doesn’t change matters a lot…</p>
+                          <p class="nb-table-body style3">Unless the full precision is useful. If PDF files contain a large number of floating-point numbers, I’d expect additional precision to have an impact on the quality of the documents. I tried to measure this, but without success; the “high-precision” PDF looked identical to the “low-precision” one to my bare eyes (on 1280x1024 resolution and 
+                            using Adobe Reader 8.1). </p>
+                          <p class="nb-table-body style3">Perhaps the problem is that the test document is too simple for us to detect the difference – it’s just a huge table with heading and borders, and loads of dummy alphanumerical data filling the cells. But a program that produces PDFs with complex, high-precision graphics – say, a CAD tool – may result in a perceivable advantage for the high-precision flag, especially when printing the PDF on a high-DPI printer or plotter. I will have to leave this conclusion to iText’s developers and advanced users. </p>
+                          <p class="nb-table-body style3">If we consider that the high-precision output could be useful in some scenarios, the enhanced formatter might be a good option even with a significant speed hit. In this case I’d leave <span class="nb-table_techtext-bold">HIGH_PRECISON==false</span> as default, but provide some means of changing it. (It’s also possible that I picked a sample that depends on <span class="nb-table_techtext-bold">formatDouble()</span>’s performance much more than usual.) </p>
+                        </div>                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+				<p class="nb-body">The Memory Results view in <span class="nb-body-bold">Figure 6</span> shows the top allocations, which may be good enough for solving some performance diagnostics. Sometimes you’ll also need to consider the containment relationships between several classes: for example, most <span class="nb-techtext-bold">char[]</span> objects are private fields of <span class="nb-techtext-bold">String</span> or <span class="nb-techtext-bold">StringBuffer</span>/<span class="nb-techtext-bold">StringBuilder</span> objects, and all <span class="nb-techtext-bold">HashMap$Entry</span> objects are used inside <span class="nb-techtext-bold">HashMap</span> instances. So you can easily spot some common behaviors of iText; for example it creates a large number of <span class="nb-techtext-bold">String</span>s<span class="nb-techtext-bold"> – which is </span>not surprising since it’s a document-processing library. What seems less natural is that iText also allocates a good number of <span class="nb-techtext-bold">AbstractList$Itr</span> objects. This doesn’t look like an unavoidable cost of the task being performed.</p>
+				<p class="nb-body"><a href="../../../../images_www/magazine/issue04/image19472_opt-small.jpg"><img src="../../../../images_www/magazine/issue04/image19472_opt-small.jpg" style="border: 0px;"  alt="Figure (click for full size)"  /></a><br />
+			    <strong>Figure 6.</strong>				  Top allocated objects by heap usage</p>
+			<p class="nb-body">We’ve found a place that deserves further inspection. We’ll need require additional profiling data: run a new memory profiling session, this time activating the option Record stack trace for allocation. Now, for each class listed in the Memory Results tab, the NetBeans Profiler enables a context menu item: Show Allocation Stack Traces. </p>
+		<p class="nb-body">In <span class="nb-body-bold">Figure 7 </span>you can see all code locations where iterators are allocated. Java’s iterators often cause performance problems, because they are heap-allocated objects. They create additional costs as well: their “fail-fast” behavior makes their implementation more complex, requiring additional indirections and polymorphic calls inside loops. That’s why, in performance critical code, I avoid iterators like the plague<a href="#footnote5">*5</a>.</p>
+				<p class="nb-body"><a href="../../../../images_www/magazine/issue04/image19478_opt-small.jpg"><img src="../../../../images_www/magazine/issue04/image19478_opt-small.jpg" style="border: 0px;"  alt="Figure (click for full size)"  /></a><br />
+			    <strong>Figure 7.</strong> Allocation stack traces for list iterators</p>
+	<p class="nb-body">Most iterators identified in <span class="nb-body-bold">Figure 7</span> are being created gratuitously, in methods like <span class="nb-techtext-bold">Phrase.getChunks()</span> and <span class="nb-techtext-bold">PdfLine.toString()</span>. The static type of iterated collections is always <span class="nb-techtext-bold">ArrayList</span>, and iterators are used just for walking the collections (there are no other operations, like <span class="nb-techtext-bold">remove()</span>). This shows that iText is optimized to avoid using collection interfaces (like <span class="nb-techtext-bold">List</span>), when such flexibility is not necessary. In this case, why use iterators? Using loops with <span class="nb-techtext-bold">get()</span> and <span class="nb-techtext-bold">size()</span> would be faster. </p>
+				<p class="nb-body">A good excuse for iterators is dealing with collections whose static type is an interface, because you either don’t have access to more specialized access methods, or aren’t sure of their performance traits. In particular, iterating an arbitrary <span class="nb-techtext-bold">List</span> with indexing is a potential disaster, because if the list happens to be a <span class="nb-techtext-bold">LinkedList</span>, the random access methods are available but they’ll crawl, of course.</p>
+				<p class="nb-body">Both of these top iterator-allocating methods could benefit from indexed access and other optimizations. See <span class="nb-body-bold">Listing 5</span>. The <span class="nb-techtext-bold">toString()</span> method has two small problems. First, it uses <span class="nb-techtext-bold">StringBuffer</span> (instead of the much better <span class="nb-techtext-bold">StringBuilder</span> API of Java SE 5.0+); this is probably a concession to compatibility with older runtimes. Second, <span class="nb-techtext-bold">toString()</span> does not preallocate the size of the buffer, which is difficult to estimate, because each <span class="nb-techtext-bold">PdfChunk.toString()</span> may return a string with a different size. But in my experience, even a very raw and conservative estimation – say <span class="nb-techtext-bold">line.size()*16</span>, where 16 is a (somewhat arbitrary) small size per chunk – is much better than no estimation at all (which often causes excessive reallocation).</p>
+				<table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                  <tbody>
+                    <tr>
+                      <td bgcolor="#660066"><span class="nb-codelist-title">Listing 5. Methods deserving small optimizations</span></td>
+                    </tr>
+                    <tr>
+                      <td valign="top"><pre>// class PdfLine:
+public String toString() {
+  StringBuffer tmp = new StringBuffer();
+  for (Iterator i = line.iterator(); i.hasNext(); ) {
+    tmp.append(((PdfChunk) i.next()).toString());
+  }
+  return tmp.toString();
+}
+
+// class Phrase:
+public ArrayList getChunks() {
+  ArrayList tmp = new ArrayList();
+  for (Iterator i = iterator(); i.hasNext(); ){
+    tmp.addAll(((Element) i.next()).getChunks());
+  }
+  return tmp;
+}</pre></td></tr></tbody></table><p class="nb-body">There’s a similar problem in the <span class="nb-techtext-bold">getChunks() </span>method: the new <span class="nb-techtext-bold">ArrayList</span> that accumulates elements taken from the current object (<span class="nb-techtext-bold">Phrase</span> itself is a list) lacks preallocation. This case could also benefit from a conservative estimation, e.g. <span class="nb-techtext-bold">new ArrayList(size())</span>.</p>
+		<p class="nb-body">So there you go – no less than five optimization opportunities in just two methods totalling 14 lines of code. Should we go ahead and execute all five? This requires, as usual, some additional thought. Of course I’d need to have more experience with the iText codebase to determine if each of these optimizations is worth its cost (e.g., the cost of having less maintainable/readable code, if you think that iterators are better than explicit indexed access).</p>
+				<p class="nb-body">In any case, this is a good opportunity to remember that efficient programs are not created only with a handful of super optimizations with order-of-magnitude gains (also known as “having fun”). They are also created with hundreds of tiny optimizations which in aggregate can make a very significant difference.</p>
+				<p class="nb-sub-section">Walking the heap</p>
+				<p class="nb-body">The <span class="nb-body-bold">Heap Walker</span> is another major new feature of the Profiler in NetBeans 6.0. Performance problems can often be diagnosed on a relatively high-level, with coarse summary information like “too many instances of <span class="nb-techtext-bold">X</span> are being allocated”. But sometimes this isn’t enough; you need finer-grained data like “too many instances of <span class="nb-techtext-bold">X</span> are allocated as fields of <span class="nb-techtext-bold">Y</span>”. This leads to diagnostics like “perhaps I should lazy-initialize these fields since they’re <br />rarely used”.</p>
+				<p class="nb-body">To help handling these situations is the role of the Heap Walker. In order to test this feature, run a new profiling session (any profiling mode will do) and in the middle of the program’s execution run Profile&gt;Take Heap Dump. Pick Profiled project as the destination, stop the profiling session and open the heap dump (it’s available in the Saved snapshots window). Heap dumps will be opened by the Heap Walker, as in <span class="nb-body-bold">Figure 8</span>.</p>
+				<p class="nb-body"><a href="../../../../images_www/magazine/issue04/image19484_opt-small.jpg"><img src="../../../../images_www/magazine/issue04/image19484_opt-small.jpg" style="border: 0px;"  alt="Figure (click for full size)"  /></a><br />
+			    <strong>Figure 8. </strong>The Heap Walker</p>
+	<p class="nb-body">The Heap Walker’s default Summary view shows some basic statistics, like the total number of bytes in the whole heap. But this tool is more valuable for collecting very fine-grained data. Start selecting the Classes view. This shows a tabulation of instance counts and heap sizes per class, similar to the Memory Results tab of the memory profiling snapshots. The difference is that now you can select a class and right click Show in Instances view. </p>
+				<p class="nb-body">This brings a three-pane view. The Instance pane lists every single instance of the class (instances may be grouped in blocks of 500). Select any individual instance, and you see its fields in the Fields pane and the objects that point to it in the References pane. This information about references is usually the most interesting. </p>
+				<p class="nb-body">For example, when inspecting a random <span class="nb-techtext-bold">Phrase</span> object from iText, you’ll be able to see the whole tree of objects forming the PDF document’s object model. You can verify that a certain <span class="nb-techtext-bold">Phrase</span> object is contained by a <span class="nb-techtext-bold">PdfPCell[]</span> array, which is in a <span class="nb-techtext-bold">PdfPRow</span> object, and so forth. The structure below the <span class="nb-techtext-bold">PdfPCell[]</span> array seems to be a simple tree (each object having a single parent). Were I an iText developer, I would of course know this tree structure beforehand and wouldn’t be surprised with this piece of the heap dump. On the other hand, if I got a different dump than expected, e.g, with several live references to the same <span class="nb-techtext-bold">PdfPRow</span> object, this could be evidence of some problem, such as a memory leak or bugs in the document construction algorithms. </p>
+		<p class="nb-body">Indeed, heap walking tools are often as useful for debugging as they are for profiling, if not even more handy.</p>
+				<p class="nb-section">Conclusions</p>
+				<p class="nb-body">The focus of this article was to illustrate profiling techniques on a real-world example and concentrate on the major new features in the NetBeans 6.0 Profiler: Profiling Points and the Heap Walker. (Incidentally, there are many other improvements we didn’t cover, such as comparison of memory snapshots, drill-down graphs, integration with JMeter, and support for JDK 6’s dynamic attachment facility.)</p>
+				<p class="nb-body">As you could see from our sample profiling sessions, code profiling and optimization can be a laborious, trial-and-error process. You may need to write new code just to support this work, even if you have access to the best tools; then you’ll spend most of your time thinking about the consequences of each code tweak. In my experience, the actual code optimization is often the easiest part. It’s often obvious, once you fully understand the problem. </p>
+				<p class="nb-body">Writing high performance code is difficult, but it is much <br />easier with good tools. And the NetBeans Profiler is one of the best tools anywhere for that job: it automates repetitive tasks like taking snapshots at the right moment, runs efficiently so as to not break your creative mood with long pauses, and makes a lot of data easily accessible through clear visualizations. </p>
+				<p class="nb-body">If you go through the steps in this article following it as a tutorial, you’ll notice that the time spent in the Profiler (e.g., running a particular command) is minimal. That’s the mark of a great tool: not getting in your way – because you’re paid to build engines, not to use screwdrivers.</p>
+		  </div>
+		  <div class="group"><hr/>
+		  	<p class="nb-sub-section">Footnotes</p>
+		  <div class="story"></div>
+			<div class="story">
+			 <p class="nb-tips"><a name="footnote1" id="footnote1"></a>1 Profiling is the investigation of a program’s runtime behavior, specifically for this article, behavior, i.e. finding out how much computing resources are used and breaking up this use into specific regions or activities of the program. Benchmarking is assessing a program’s performance against some baseline. In application projects, you might create benchmarks for regression tests: if today’s build is 10% slower than yesterday’s build, that’s a performance regression. Profiling and benchmarking share some common issues, like avoiding dead code. The major technical difference is that benchmarks run at full speed, while profiling typically impacts the performance of the measured program. That’s because profiling must report fine-grained information about the subject, and this requires significant resources.</p>
+		  </div>
+          <div class="image"></div>
+	        <div class="story">
+	          <p class="nb-tips"><a name="footnote2" id="footnote2"></a>2  To test with HotSpot Server, set VM Options <span class="nb-techtext-bold">to --server</span> in the project properties’ Run page.</p>
+		  </div>
+			<div class="image"></div>
+            <div class="story">
+				<p class="nb-tips"><a name="footnote3" id="footnote3"></a>3 I don’t know the history of iText’s development, so this is really just a hypothesis that serves my reasoning here.</p>
+			</div>
+			<div class="story">
+				<p class="nb-tips"><a name="footnote4" id="footnote14"></a>4 From iText’s <span class="nb-techtext-bold">com.lowagie.text.pdf</span> package; no relation to <span class="nb-techtext-bold">java.nio.ByteBuffer</span>.</p>
+			</div>
+			<div class="story">
+				<p class="nb-tips"><a name="footnote5" id="footnote5"></a>5 Remember that Java 5’s enhanced-for does not avoid iterators; it only hides them from you: <span class="nb-techtext-bold">for (T item: items)</span> will walk the <span class="nb-techtext-bold">items</span> collection with an iterator. Incidentally, iterators are great candidates to be “lightweight objects”. This new language feature may appear in future JVMs; see John Rose’s Multi-language VM proposal at Another solution (specific to iterators and other objects that are typically used in local scope) is automatic stack allocation (driven by escape analysis), an optimization the HotSpot team is researching but which has not been implemented in production JVMs from Sun up to now.</p>
+			</div>
+			<div class="image">
+			  <table width="100%" border="1" cellpadding="0" cellspacing="0" bordercolor="#660066">
+                <tbody>
+                  <tr>
+                    <td height="30" bgcolor="#660066"><p class="NB-Listagenstitulos"><span class="nb-codelist-title">Links</span></p></td>
+                  </tr>
+                  <tr>
+                    <td valign="top">
+                        <div class="group">
+                          <div class="story">
+                            <p class="nb-link-legend-url"><br />
+                              <a href="http://profiler.netbeans.org/">http://profiler.netbeans.org/</a></p>
+                          </div>
+                          <div class="story">
+                            <p class="nb-link-legend">More information about the NetBeans Profiler</p>
+                          </div>
+                        </div>
+                      <div class="group">
+                          <div class="story">
+                            <p class="nb-link-legend-url"><a href="http://www.lowagie.com/iText">http://www.lowagie.com/iText</a></p>
+                        </div>
+                        <div class="story">
+                            <p class="nb-link-legend">iText, the PDF manipulation library that’s the victim of this article’s experiments</p>
+                          <p class="nb-link-legend"></p>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+			  <br />
+			</div>
+<div class="image"></div>
+            <div class="image"></div>
+          <div class="nb-figura-t-tulo"></div>
+	  <div class="image">
+	    <table width="100%" border="1" cellpadding="0" cellspacing="0" bordercolor="#660066">
+          <tr>
+                    <td><img src="../../../../images_www/magazine/issue04/osvaldo-doederlein_opt.jpeg" alt="Osvaldo Pinali Doederlein " /></td>
+    <td><div>
+                      <p class="nb-minibio"><span class="nb-autor-name">Osvaldo Pinali Doederlein <br />
+                      </span>is a software engineer and consultant, working with Java since 1.0beta. He is an independent expert for the JCP, having served for JSR-175 (Java SE 5), and is the Technology Architect for Visionnaire Informatica. Holding an MSc in Object Oriented Software Engineering, Osvaldo is a contributing editor for Java Magazine and has a blog at java.net/blog/opinali.</p>
+            </div></td>
+          </tr>
+        </table>
+	  </div>
+	</div>
+</body>
+</html>

@@ -1,0 +1,532 @@
+<html><head><style>
+BODY {
+  background-color: #ffffff;
+  font-size: 12px;
+  font-family: Verdana, "Verdana CE",  Arial, "Arial CE", "Lucida Grande CE", lucida, "Helvetica CE", sans-serif;
+  color: #000000;
+
+  margin-top:0px;
+  margin-left:10px;
+  margin-right:8px;
+  margin-bottom:16px;
+
+  padding:0px;
+  min-width:780px;
+}
+
+h1 {
+  font-family: Arial, "Arial CE", "Lucida Grande CE", lucida, "Helvetica CE", sans-serif;
+  border-bottom:1px solid #AFAFAF;
+  clear:both;
+  font-size: 16px;
+  font-weight:bold;
+  margin:0px;
+  padding:0px;
+  color:#D20005;
+}
+
+h2 {
+  font-size: 14px;
+  font-weight:bold;
+  margin:0px;
+  border-bottom:1px solid #808080;
+  margin-top:5px;
+  margin-bottom:5px;
+  color:#D20005;
+}
+
+h3 {
+  font-family: Arial, "Arial CE", "Lucida Grande CE", lucida, "Helvetica CE", sans-serif;
+  font-size: 13px;
+  font-weight:bold;
+  margin:0px;
+  padding:0px;
+  color:#D20005;
+}
+
+.examplecode {
+  font-family: "Courier New", monospace;
+  background-color: #ffffcc;
+}
+</style><title>NetBeans Palette API tutorial</title></head>
+
+
+
+<body>
+
+<h1>NetBeans Palette API Tutorial</h1>
+
+<p>This tutorial shows you how to use the <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/overview-summary.html">Palette API</a> and make a palette available for your
+<a href="https://netbeans.org/download/dev/javadoc/org-openide-windows/org/openide/windows/TopComponent.html">TopComponent</a>.
+You will also learn how to create a simple TopComponent using the wizard, how to display a status-bar message
+and a dialog. But all these other things are just so that you'll learn how to display a nice palette for
+your TopComponent, with icons, localized text and drag-and-drop support.
+
+</p><h2>Downloads</h2>
+
+<p>You are going to need for this tutorial
+</p><ul>
+<li>A functional NetBeans 5.x (with Java 1.4 or more)
+</li><li>Optionally, the source code of this tutorial (<a href="http://www.lisp.ro/nb/module2.zip">download</a>)
+</li></ul>
+
+<h2>Creating the module</h2>
+
+<ol>
+ <li>Choose File &gt; New Project. Under Categories, select
+NetBeans Plug-in Modules. Under projects, select Module Project and
+click Next. </li>
+ <li>In the Name and Location panel, type <b>palette-demo</b>
+in Project Name. Set the the Project Location and Project Folder to
+whatever folder you fancy. Select the Standalone Modulde radio button
+and select the Set as Main Project checkbox. Click Next. </li>
+ <li>In the Basic Module Configuration panel, set the Code Name Base to <b>com.example.palette</b> (or your preffered package name) and the Module Display Name to Palette Demo. Press Finish.
+ </li>
+ 
+</ol>
+
+<h2>Creating a window</h2>
+
+<p>
+As seen in the <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/overview-summary.html">Palette API javadoc</a>, you need to have an active <a href="http://www.netbeans.org/download/dev/javadoc/org-openide-windows/org/openide/windows/TopComponent.html">TopComponent</a> in order to see the palette. For help regarding TopComponents, please check some other NetBeans tutorials.
+</p>
+
+<ol>
+<li>In the Projects window, select the <b>Palette Demo</b> (this is not necessary if 
+Palette Demo is your only project open).
+</li>
+<li>Choose File &gt; New File... .Under Categories, select NetBeans Module Development,
+then Window Component under File Types. Click Next.
+</li>
+
+<li>In the Basic Settings panel, select <b>editor</b> for Window Position. Click Next.
+</li>
+<li>In the Name, Icon and Location panel, type <b>Drawing</b>. Click Finish.
+</li>
+</ol>
+
+<p>
+The DrawingTopComponent should open in the GUI Editor and you should have some new generated
+XML and Java files.
+
+</p><p>
+<img width="640" src="../images/tutorials/palette_api/shot-01.jpg" alt="The TopComponent">
+
+</p><p>
+To see what you have managed so far, right-click the Palette Demo project and select 
+Install/Reload in Target Platform. A build should start and a new NetBeans instance should
+run. In the new instance, select Window &gt; Open Drawing Window. You should see an empty
+window with the name Drawing Window.
+
+</p><h2>Adding a palette</h2>
+
+In order to use the Palette API you'll have to declare a dependency for your module.
+<ol>
+<li>Right-click the Palette Demo &gt; Properties.
+</li><li>Under the Libraries category click Add... . Select then Core - Component Palette and
+Nodes API. Click Ok.
+</li></ol>
+
+<p>	
+A Palette contains one or more categories with items. First you'll have to define a new item.
+
+</p><ol>
+<li>Right-click the project, select New -&gt; File/Folder... Choose XML under Categories then XML
+Document under File Types. Click Browse... and select src/com/example/palette (Click Select Folder).
+Click Next.
+</li><li>
+In the Name and Location panel, type simple-item for the File Name. Click Next.
+</li><li>
+In the Select Document Type choose DTD-Constrained Document. Click Next.
+</li><li>
+In the DTD Options, choose from the list for DTD Public ID <b>-//NetBeans//Editor Palette Item 1.0//EN</b>.
+Select <b>editor_palette_item</b> for the Document Root.
+Click Finish.
+</li></ol>
+
+<p>
+You should see this:
+
+</p><pre class="examplecode">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+
+&lt;!--
+    Document   : <tt>simple-item.xml</tt>
+    Created on : February 25, 2006, 12:57 AM
+    Author     : emi
+    Description:
+        Purpose of the document follows.
+--&gt;
+
+&lt;!DOCTYPE editor_palette_item PUBLIC '-//NetBeans//Editor Palette Item 1.0//EN' 
+<b> "https://netbeans.org/dtds/editor-palette-item-1_0.dtd"</b>&gt;
+&lt;editor_palette_item&gt;
+
+&lt;/editor_palette_item&gt;
+</pre>
+
+<p>
+Make sure to add the missing part above.
+
+</p><p>
+We have now a barebone Palette Item. Open now the <b><tt>layer.xml</tt></b> file and add the following lines at the bottom,
+before &lt;/ filesystem &gt;
+
+</p><pre class="examplecode">    &lt;folder name="MyPalette"&gt;
+        &lt;folder name="Category1"&gt;
+            &lt;file name="PaletteItem_1.xml" url="<tt>simple-item.xml</tt>"/&gt;
+        &lt;/folder&gt;
+        &lt;folder name="Category2"&gt;
+            &lt;file name="PaletteItem_2.xml" url="<tt>simple-item.xml</tt>"/&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+</pre>
+
+<p>
+What did we do? We declared a folder called MyPalette (which will represent our palette) and added some
+inner folders. These will be the categories. The files inside the categories folders are the items.
+The items may have any names you want but note the <b>url</b> refers to the <tt>simple-item.xml</tt>.
+
+</p><h3>More items</h3>
+
+<p>
+In order to have more than one item, you'll need to create more XML files (like <tt>simple-item.xml</tt>) and refer
+them via <b>url</b> in the <tt>layer.xml</tt> file. The are ways of programatically adding new items, but you'll have
+to refer to the Palette API Javadoc for that.
+
+</p><h3>Link it to the TopComponent</h3>
+
+<p>
+But so far there is no link between our rudimentary palette and our TopComponent. The <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/overview-summary.html">Palette API javadoc</a>
+helps us here. We need to create a <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/PaletteController.html">PaletteController</a> then link it to the <a href="http://www.netbeans.org/download/dev/javadoc/org-openide-windows/org/openide/windows/TopComponent.html">TopComponent</a> (via <a href="http://www.netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/Lookup.html">Lookup</a>).
+
+</p><ol>
+
+<li><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/PaletteFactory.html#createPalette%28java.lang.String,%20org.netbeans.spi.palette.PaletteActions%29">PaletteFactory.createPalette</a> takes care of the creation part. It just needs the palette name (meaning the
+folder declared in the <tt>layer.xml</tt> and the actions for the palette). Since we don't need any actions right now
+we'll just create a dummy anonymous inner class.
+
+<pre class="examplecode">    private PaletteController initializePalette() {
+        try {
+            return PaletteFactory.createPalette( "MyPalette", new <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/org/netbeans/spi/palette/PaletteActions.html">PaletteActions</a>() {
+                public Action[] getCustomCategoryActions(Lookup lookup) {
+                    return new Action[0];
+                }
+                public Action[] getCustomItemActions(Lookup lookup) {
+                    return new Action[0];
+                }
+                public Action[] getCustomPaletteActions() {
+                    return new Action[0];
+                }
+                public Action[] getImportActions() {
+                    return new Action[0];
+                }
+                public Action getPreferredAction(Lookup lookup) {
+                    return null; //TODO
+                }
+            });
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            
+        }
+        return null;
+    }
+    
+</pre>
+
+We add the initializePalette() method to the DrawingTopComponent class. Since there are going to be lots of import
+problems an Alt + Shift + F should help (Source &gt; Fix Imports). When you are asked about the Action class,
+just select javax.swing.Action
+
+</li>
+
+<li>
+We add the PaletteController in the Lookup of the TopComponent. We modify the DrawingTopComponent constructor
+to accept an InstanceLookup and we add a new no-arg constructor:
+
+<pre class="examplecode"><b>   private DrawingTopComponent(){
+        this(new InstanceContent());
+    }
+</b>    
+    private DrawingTopComponent(<b>InstanceContent content</b>) {
+<b>     	super( new AbstractLookup( content ) );
+        content.add( initializePalette() );
+     </b>   
+        initComponents();
+        setName(NbBundle.getMessage(DrawingTopComponent.class, "CTL_DrawingTopComponent"));
+        setToolTipText(NbBundle.getMessage(DrawingTopComponent.class, "HINT_DrawingTopComponent"));
+//        setIcon(Utilities.loadImage(ICON_PATH, true));
+    }
+</pre>
+</li>
+
+</ol>
+
+<p>
+Re-run the application (Right-click Palette Demo &gt; Install/Reload in
+Target Platform). Select Window &gt; Open Drawing Window should also
+show the palette.
+</p><p>
+<img width="640" src="../images/tutorials/palette_api/shot-02.jpg">
+
+</p><h2>But what does it do ?</h2>
+
+<p>
+So far our Palette Demo is quite simple. The palette isn't that nice, no icons and it also doesn't do anything.
+
+</p><p>
+First, let's add some icons for our palette items and localized text.
+
+</p><h3>Icons</h3>
+
+<p>The palette requires two versions of each icon for the palette item. A 16x16 pixel and a 32x32 version.
+
+</p><ol>
+<li>Take 2 icons (the 16 and the 32 pixel icons) and add them to your project (this seems amazingly complicated;
+just use your favorite file manager to copy the icons in src/com/example/palette). Name the two files
+configure-16.png and configure-32.png.
+</li><li>Edit the <tt>simple-item.xml</tt> file to configure the palette item with the new icon. The file should look like:
+
+<pre class="examplecode">&lt;!DOCTYPE editor_palette_item PUBLIC '-//NetBeans//Editor Palette Item 1.0//EN' 
+<b> "https://netbeans.org/dtds/editor-palette-item-1_0.dtd"</b>&gt;
+&lt;editor_palette_item&gt;<b>
+    &lt;icon16 urlvalue="com/example/palette/configure-16.png" /&gt;
+    &lt;icon32 urlvalue="com/example/palette/configure-32.png" /&gt;       
+</b>&lt;/editor_palette_item&gt;
+</pre>
+</li></ol>
+
+<h3>Text</h3>
+
+<ol>
+<li>We change the <tt>simple-item.xml</tt> file some more and add text description
+<pre class="examplecode">&lt;editor_palette_item&gt;
+    &lt;icon16 urlvalue="com/example/palette/configure-16.png" /&gt;
+    &lt;icon32 urlvalue="com/example/palette/configure-32.png" /&gt;    
+   
+    <b>
+    &lt;description localizing-bundle="com.example.palette.Bundle"
+    display-name-key="Item_Name"
+    tooltip-key="Item_Tooltip" /&gt;
+</b>
+&lt;/editor_palette_item&gt;
+
+</pre>
+
+<p>Each text should be possible to localize, you define the bundle (localizing-bundle) and then define the
+display and tooltip key.
+
+</p></li><li>Since we make a reference in the <tt>simple-item.xml</tt> to the Bundle, we must edit it to add the new keys.
+Open the Bundle.properties file and add the keys:
+
+<pre class="examplecode">CTL_DrawingAction=Open Drawing Window 
+CTL_DrawingTopComponent=Drawing Window
+HINT_DrawingTopComponent=This is a Drawing window
+OpenIDE-Module-Name=Palette Demo
+<b>Item_Name=Item name
+Item_Tooltip=A tooltip</b>
+</pre>
+
+</li></ol>
+
+<p>
+If you start the module in the platform, you should see the new icons and text:
+
+</p><p>
+<img width="640" src="../images/tutorials/palette_api/shot-03.jpg">
+
+</p><h2>Palette item class</h2>
+
+<p>
+Ok, if you looked at the messages in the output window, you would probably see some warnings about the bad
+XML format. Each palette item must have besides the icon and text an attached class. The class must implement
+<a href="https://netbeans.org/download/dev/javadoc/org-openide-text/org/openide/text/ActiveEditorDrop.html">ActiveEditorDrop</a> (which assumes a text-only situation but works for non-text data also). The main part
+of this class is to be instantiated by the Palette when doing a drag and drop operation. Here it goes:
+
+</p><ol>
+<li>Add a new class (File &gt; New File... &gt; Java Classes category &gt; Java Class) with the name <b>MyPaletteItem</b>. It should look like this:
+
+<pre class="examplecode">package com.example.palette;
+
+import javax.swing.text.JTextComponent;
+import org.openide.text.ActiveEditorDrop;
+
+public class MyPaletteItem implements ActiveEditorDrop{
+    public boolean handleTransfer(JTextComponent jTextComponent) {
+        //IGNORE, we don't really care
+        return true;
+    }   
+}
+</pre>
+
+</li><li>Configure the palette items with the new class. palette-item.xml should be now:
+
+<pre class="examplecode">&lt;editor_palette_item version='1.0'&gt;
+    
+   <b> &lt;class name="com.example.palette.MyPaletteItem"/&gt;</b>
+
+    &lt;icon16 urlvalue="com/example/palette/configure-16.png" /&gt;
+    &lt;icon32 urlvalue="com/example/palette/configure-32.png" /&gt;    
+    
+    &lt;description localizing-bundle="com.example.palette.Bundle"
+    display-name-key="Item_Name"
+    tooltip-key="Item_Tooltip" /&gt;
+
+&lt;/editor_palette_item&gt;
+</pre>
+
+</li></ol>
+
+<h3>Partial summary</h3>
+
+<p>So, in order to use the palette we must add to the Lookup of a TopComponent a PaletteController. When creating the
+PaletteController, we give to the PaletteFactory the name of a palette folder in the <tt>layer.xml</tt>.
+
+</p><p>The folder structure in the <tt>layer.xml</tt> is quite simple, with subfolders for categories and files for items. Each
+item must refer a standard XML file (with a specific Palette DTD). In the palette item XML we define the icons,
+the text (via bundle keys) and a corresponding class.
+
+</p><h2>Next</h2>
+
+<p>What we need now is a way to:
+</p><ul>
+<li>Find out which element is selected in the Palette
+</li><li>Do a drop of a Palette item
+</li></ul>
+
+<h3>Selected element in the Palette</h3>
+
+<p>The Palette API allows us to place a listener for changes. Thus we find out the selected object.
+
+</p><ol>
+<li>First, we add the <a href="https://netbeans.org/download/dev/javadoc/org-openide-awt/overview-summary.html">UI Utilities API</a>
+to the library (Right-click on Palette Demo &gt; Properties &gt;
+Libraries &gt; Add.. and select UI Utilities API). It's not mandatory -
+that is, you may add the listener without it - but it's nice to show
+messages in the status bar.
+</li><li>We edit the DrawingTopComponent constructor to place our listener:
+
+<pre class="examplecode">    private DrawingTopComponent(InstanceContent content) {
+        super( new AbstractLookup( content ) );
+     <b>   final PaletteController controller= initializePalette();
+        content.add( controller );
+        controller.addPropertyChangeListener( new PropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent evt) {
+                if( PaletteController.PROP_SELECTED_ITEM.equals( evt.getPropertyName() ) ) {
+                    Lookup selItem = controller.getSelectedItem();
+                    if( null != selItem ) {
+                        ActiveEditorDrop selNode = (ActiveEditorDrop)selItem.lookup( ActiveEditorDrop.class );
+                        if(null != selNode){
+                            <a href="https://netbeans.org/download/dev/javadoc/org-openide-awt/org/openide/awt/StatusDisplayer.html">StatusDisplayer</a>.getDefault().setStatusText("Selected "+selNode);
+                        }
+                    }
+                }
+            }
+            
+        });
+        </b>
+        initComponents();
+        setName(NbBundle.getMessage(DrawingTopComponent.class, "CTL_DrawingTopComponent"));
+        setToolTipText(NbBundle.getMessage(DrawingTopComponent.class, "HINT_DrawingTopComponent"));
+//        setIcon(Utilities.loadImage(ICON_PATH, true));
+    }
+</pre>
+
+Since there are going to be some import problems, a Source &gt; Fix Imports is necessary.
+</li></ol>
+
+<p>We now have the basic mechanism for our basic Palette implementation. We just need to modify the listener method
+and do whatever we need (like change mouse cursor, do an action on next mouse click on our TopComponent, etc).
+
+</p><p><img src="../images/tutorials/palette_api/shot-04.jpg">
+
+</p><h3>Drag and drop</h3>
+
+<p>
+The Palette already takes care of the drag part, we just have to provide the drop. (Actually we could also customize
+the drag with some custom flavors. Better check the <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-spi-palette/overview-summary.html">Palette API javadoc</a> if you are in need of such things).
+
+</p><p>Since we are going to display a message dialog, you need to add the <a href="https://netbeans.org/download/dev/javadoc/org-openide-dialogs/overview-summary.html">Dialogs API</a> to the module dependencies
+(Right-click Palette Demo &gt; Properties &gt; Libraries &gt; Add... &gt; Dialogs API)
+
+</p><p>
+
+Modify the DrawingTopComponent and add the following code
+
+</p><pre class="examplecode"> private DrawingTopComponent(InstanceContent content) {
+        super( new AbstractLookup( content ) );
+        final PaletteController controller= initializePalette();
+        content.add( controller );
+        controller.addPropertyChangeListener( XXX); // removed to save space
+        <b>setDropTarget(new DropTarget(this,new <a href="http://java.sun.com/j2se/1.4.2/docs/api/java/awt/dnd/DropTargetListener.html">DropTargetListener</a>() {
+            public void dragEnter(DropTargetDragEvent dropTargetDragEvent) {
+            }
+            public void dragExit(DropTargetEvent dropTargetEvent) {
+            }
+            public void dragOver(DropTargetDragEvent dropTargetDragEvent) {
+            }
+            public void drop(DropTargetDropEvent dropTargetDropEvent) {
+				 NotifyDescriptor d =new NotifyDescriptor.Message("Drop",
+                   NotifyDescriptor.INFORMATION_MESSAGE);
+                   DialogDisplayer.getDefault().notify(d);
+
+            }
+            public void dropActionChanged(DropTargetDragEvent dropTargetDragEvent) {
+            }
+        }));</b>
+        //the rest removed to save space
+</pre>
+
+<p>That's all there is to it. Our <b>drop</b> method is invoked when necessary and we may use the Palette API for
+fun and profit !
+
+</p><p>Please note that in order to make drop work nicely you should comment the select code (at least the display of
+the dialog) since it would interfere with the drop.
+
+</p><h2>Some fun</h2>
+
+<ol>
+<li>
+Open the DrawingTopComponent in Design mode, right-click the design window, select Layout and click Null Layout.
+</li><li>Open it now in Source mode, and modify the <b>drop</b> method:
+
+<pre class="examplecode">            public void drop(DropTargetDropEvent dropTargetDropEvent) {
+                JButton j=new JButton("drop");
+                j.setBounds(dropTargetDropEvent.getLocation().x,
+                        dropTargetDropEvent.getLocation().y,100,20);
+                add(j);
+                
+                validate();
+                repaint();
+
+				//accept drop
+                dropTargetDropEvent.acceptDrop(DnDConstants.ACTION_COPY_OR_MOVE);                
+            }
+</pre>
+
+<p>
+The code above adds a JButton on the coordinates of the drop.
+
+</p></li></ol>
+
+<p>
+<img src="../images/tutorials/palette_api/shot-05.jpg">
+
+
+<br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Palette%20API%20Module%20Tutorial">Send Us Your Feedback</a></div>
+<br style="clear:both;" />
+
+</p><h2>Versioning</h2>
+
+<ol>
+<li> 26 February 2006 - Initial version
+</li></ol>
+
+<h3>Notes</h3>
+
+<p>Tutorial made by Emilian Bold (http://web.info.uvt.ro/~fierarul/typo3/)
+
+</p><p>The sample code has two icons from the Nuvola set, which is LGPL. Feel free to contact me, as LGPL requires, in
+order to get the full set. Hopefully I'll replace those icons with some BSD ones.
+
+</p></body></html>

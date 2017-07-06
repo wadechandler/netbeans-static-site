@@ -1,0 +1,529 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <!-- -*- xhtml -*- -->
+        <title>Tutorial do m&oacute;dulo de modelo de arquivo NetBeans para Plataforma NetBeans 6.0</title>
+    <link rel="stylesheet" type="text/css" href="../../../netbeans.css"> 
+        <meta name="AUDIENCE" content="NBUSER">
+        <meta name="TYPE" content="ARTICLE">
+        <meta name="EXPIRES" content="N">
+        <meta name="developer" content="gwielenga@netbeans.org">
+        <meta name="indexed" content="y">
+        <meta name="description"
+        content="A short guide to using the Nodes API.">
+        <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+    <body>
+    <h1>Tutorial M&oacute;dulo do modelo de arquivo do NetBeans</h1>
+
+    <p>Este tutorial demonstra como criar um m&oacute;dulo contendo modelos de arquivo. Depois que os usu&aacute;rios tiverem instalado o m&oacute;dulo no IDE, os modelos de arquivo estar&atilde;o dispon&iacute;veis no assistente para Novo arquivo. O compartilhamento de modelos de arquivo &eacute; f&aacute;cil, desde que voc&ecirc; tenha um m&oacute;dulo que os contenha: o IDE permite que voc&ecirc; crie um bin&aacute;rio que pode ser disponibilizado para outras pessoas, que podem instal&aacute;-lo atrav&eacute;s do Gerenciador de plug-ins.
+
+    </p><p>Um modelo de arquivo consiste em um arquivo de modelo, um arquivo de descri&ccedil;&atilde;o HTML  e um &iacute;cone. O arquivo de descri&ccedil;&atilde;o HTML exibe informa&ccedil;&otilde;es sobre o modelo no assistente para Novo arquivo. O &iacute;cone identifica o modelo e o distingue de outros modelos no assistente para Novo arquivo. Neste tutorial, voc&ecirc; criar&aacute; um novo modelo de arquivo copiando o conte&uacute;do de um modelo de arquivo existente em um arquivo vazio. Em seguida, depois de ter definido um arquivo de descri&ccedil;&atilde;o para o assistente para Novo arquivo e um &iacute;cone de distin&ccedil;&atilde;o, registre o modelo, o arquivo de descri&ccedil;&atilde;o HTML e o &iacute;cone no arquivo de configura&ccedil;&atilde;o NetBeans, ou seja, no arquivo <tt>layer.xml</tt>.
+
+
+   </p><p><b>Conte&uacute;do</b></p>
+   
+      <img  src="../../images/articles/60/netbeans-stamp60-61.gif" class="stamp" width="114" height="114" alt="O conte&uacute;do desta p&aacute;gina se aplica ao IDE NetBeans 6.1 " title="O conte&uacute;do desta p&aacute;gina se aplica ao IDE NetBeans 6.1"> </p>
+      <ul class="toc">
+        <li><a href="#freemarker">Introdu&ccedil;&atilde;o ao FreeMarker</a></li>
+        <li><a href="#creatingthemoduleproject">Criando o projeto do m&oacute;dulo </a></li>
+        <li><a href="#creatingandgettingtoknowthemainfiles">Criando o modelo de arquivo</a>
+        <ul>
+            <li><a href="#creating-the-template-file">Criando o arquivo de modelo</a>
+            </li><li><a href="#creating-the-description-file">Criando o arquivo de descri&ccedil;&atilde;o</a>
+            </li><li><a href="#getting-an-icon">Obtendo um &iacute;cone</a>
+        </li></ul></li>
+        <li><a href="#registering">Registrando o modelo de arquivo</a></li>
+        <li><a href="#building">Construindo e instalando o m&oacute;dulo</a></li>
+        <li><a href="#additional">Fornecendo vari&aacute;veis adicionais</a></li>
+        <li><a href="#license">Fornecendo uma licen&ccedil;a de projeto</a></li>
+       </ul>
+         
+<p><b>Para seguir este tutorial, voc&ecirc; preciso dos softwares e recursos listados na tabela seguinte.</b></p>
+
+     <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software ou recurso</th>
+                <th class="tblheader" scope="col">Vers&atilde;o necess&aacute;ria</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1">NetBeans IDE</td>
+                <td class="tbltd1">vers&atilde;o <a href="http://download.netbeans.org/netbeans/6.1/final/">vers&atilde;o 6.1</a> ou<br>
+                vers&atilde;o 6.0</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">Java Developer Kit (JDK)</td>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">vers&atilde;o 6</a> ou<br>
+                vers&atilde;o 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+
+ <p class="tips">Opcionalmente, para fins de solu&ccedil;&atilde;o de problemas, voc&ecirc; pode <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=3755">baixar a amostra completa</a> e inspecionar os c&oacute;digos-fonte.
+   
+
+ </p><h2 class="tutorial"><a name="freemarker"></a>Introdu&ccedil;&atilde;o ao FreeMarker</h2>
+   
+
+<p>A partir do NetBeans IDE 6.0, &eacute; poss&iacute;vel usar opcionalmente a linguagem de modelo <a href="http://freemarker.org/">FreeMarker</a> para definir os modelos de arquivo. V&aacute;rios dos modelos inclu&iacute;dos no IDE s&atilde;o definidos dessa forma. Por exemplo, o modelo da classe Java &eacute; definido desta forma:
+
+</p><pre class="examplecode">&lt;#assign licenseFirst = &quot;/*&quot;&gt;
+&lt;#assign licensePrefix = &quot; * &quot;&gt;
+&lt;#assign licenseLast = &quot; */&quot;&gt;
+&lt;#include &quot;../Licenses/license-${project.license}.txt&quot;&gt;
+
+&lt;#if package?? &amp;&amp; package != &quot;&quot;&gt;
+package ${package};
+
+&lt;/#if&gt;
+/**
+ *
+ * @author ${user}
+ */
+public class ${name} {
+
+}</pre>
+
+<p>O benef&iacute;cio do uso do FreeMarker pode ser visto no modelo acima, ou seja, voc&ecirc; pode adicionar <i>l&oacute;gica</i> aos modelos, atrav&eacute;s de <i>diretivas</i> como if/elseif/else e constru&ccedil;&otilde;es loop. Para obter uma descri&ccedil;&atilde;o completa da linguagem de modelo FreeMarker, consulte o <a href="http://freemarker.org/docs/index.html">Manual do FreeMarker</a>, em particular, o cap&iacute;tulo <a href="http://freemarker.org/docs/dgui_template_directives.html">Diretivas</a>. Neste tutorial, voc&ecirc; ver&aacute;, entre outras coisas, quais s&atilde;o as etapas necess&aacute;rias para incorporar o FreeMarker nos modelos de arquivo.
+    
+
+
+    <!-- ===================================================================================== -->
+
+    </p><h2 class="tutorial"><a name="creatingthemoduleproject"></a>Criando o projeto do m&oacute;dulo </h2>
+    
+    
+        <p>Come&ccedil;aremos percorrendo o assistente para Novo projeto de m&oacute;dulo, que criar&aacute; uma estrutura de c&oacute;digo-fonte, com todos os requisitos m&iacute;nimos, para o novo m&oacute;dulo.
+    
+    </p><ol>
+    <li>Escolha Arquivo &gt; Novo projeto (Ctrl-Shift-N). Em Categorias, selecione M&oacute;dulos do NetBeans. Em Projetos, selecione Projeto de m&oacute;dulo e clique em Pr&oacute;ximo.</li>
+    <p></p><li>No painel Nome e localiza&ccedil;&atilde;o, digite <tt>AdditionalFileTemplates</tt> em Nome do projeto.
+ Altere Local do projeto para qualquer diret&oacute;rio no computador. Deixe marcados o bot&atilde;o de op&ccedil;&atilde;o M&oacute;dulo independente e a caixa de verifica&ccedil;&atilde;o Definir como projeto principal. Clique em Pr&oacute;ximo.
+
+    <p></p></li><li>No painel Configura&ccedil;&atilde;o b&aacute;sica de m&oacute;dulos, substitua <tt>yourorghere</tt> em Nome base de c&oacute;digo por <tt>myorg</tt>, de maneira que o nome base de c&oacute;digo inteiro seja <tt>org.myorg.additionalfiletemplates</tt>. Adicione espa&ccedil;os ao Nome de exibi&ccedil;&atilde;o do m&oacute;dulo padr&atilde;o, para que seja alterado para <tt>Modelos de arquivo adicionais</tt>. Deixe o local do conjunto de localiza&ccedil;&otilde;es e a camada XML, de modo que ser&atilde;o armazenados em um pacote com o nome <tt>org/myorg/additionalfiletemplates</tt>. Clique em Terminar.</li></ol>
+
+    <p> O IDE cria o projeto <tt>Modelos de arquivo adicionais</tt>. O projeto cont&eacute;m todos os metadados de projeto e fontes, como o script de constru&ccedil;&atilde;o Ant do projeto. O projeto se abre no IDE. Voc&ecirc; pode ver a estrutura l&oacute;gica na janela Projetos (Ctrl-1) e a estrutura de arquivos na janela Arquivos (Ctrl+2). Por exemplo, a janela Projetos agora deve ter esta apar&ecirc;ncia:
+
+    </p><p><img border="1" src="../../images/tutorials/filetemplates/initial-projects-window-60.png" alt="Janela Projetos iniciais.">
+
+   
+    <br />
+
+    <!-- ===================================================================================== -->
+    </p><h2><a name="creating-the-file-template"></a>Criando o modelo de arquivo</h2>
+    <p>Um modelo de arquivo consiste em um arquivo de modelo, um arquivo de descri&ccedil;&atilde;o HTML  e um &iacute;cone. Uma maneira f&aacute;cil de criar um novo modelo de arquivo &eacute; copiar o conte&uacute;do de um modelo de arquivo existente para um arquivo vazio. Em seguida, ap&oacute;s ter definido um arquivo de descri&ccedil;&atilde;o para o assistente para Novo arquivo e um &iacute;cone de distin&ccedil;&atilde;o, voc&ecirc; est&aacute; pronto para registrar o modelo no arquivo <tt>layer.xml</tt>.
+
+  
+    </p><div class="indent">
+        <p></p><h3 class="tutorial"><a name="creating-the-template-file"></a>Criando o arquivo de modelo</h3>
+<p>
+        
+        </p><ol>
+<li>Clique com o bot&atilde;o direito do mouse no n&oacute; <tt>Modelos de arquivo adicionais</tt> e escolha Novo &gt; Outro. No assistente para Novo arquivo, em Categorias, escolha Outra e em Tipos de arquivos, escolha HTML. Clique em Pr&oacute;ximo. 
+            <p></p></li><li>Digite <tt>Descri&ccedil;&atilde;o</tt> em Nome do arquivo. Clique em Explorar e v&aacute; para <tt>src/org/myorg/additionalfiletemplates</tt>. Clique em Selecionar pasta. Clique em Terminar.</p>
+
+            <p>Um novo arquivo HTML, chamado <tt>HTML.html</tt>, se abre no editor de c&oacute;digo-fonte, contendo o conte&uacute;do padr&atilde;o do arquivo HTML mostrado abaixo:
+
+              </p><pre class="examplecode">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot;&gt;
+
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+  
+  &lt;/body&gt;
+&lt;/html&gt;</pre>
+
+
+            <p></p></li><li>Altere o arquivo HTML de acordo com suas necessidades. Voc&ecirc; pode adicionar as seguintes vari&aacute;veis predefinidas, se necess&aacute;rio:
+            
+<p></p><ul>
+<li>${date} insere a data atual, neste formato: Fevereiro, 16, 2008
+</li><li>${encoding} insere a codifica&ccedil;&atilde;o padr&atilde;o, tal como: UTF-8
+</li><li>${name} insere o nome do arquivo.
+</li><li>${nameAndExt} insere o nome do arquivo, junto com sua extens&atilde;o.
+</li><li>${package} insere o nome do pacote em que o arquivo &eacute; criado.
+</li><li>${time} insere a hora atual, neste formato: 7:37:58 PM
+</li><li>${user} insere o nome do usu&aacute;rio.
+</li></ul>
+
+<p><b class="notes">Observa&ccedil;&atilde;o:</b> os usu&aacute;rios podem definir valores para estas vari&aacute;veis no Gerenciador de modelos, que fica no menu Ferramentas. L&aacute;, eles rolam para o final, para &quot;Propriedades da configura&ccedil;&atilde;o do usu&aacute;rio&quot;. O arquivo <tt>user.properties</tt> nesse n&oacute; pode ser usado para definir os valores acima, para substituir os fornecidos pelo sistema. Entretanto, geralmente, os usu&aacute;rios n&atilde;o fazem isso porque os valores padr&atilde;o das vari&aacute;veis acima fazem um bom trabalho.
+
+</p><p>Al&eacute;m das vari&aacute;veis predefinidas, voc&ecirc; pode fornecer vari&aacute;veis adicionais aos usu&aacute;rios, atrav&eacute;s do m&oacute;dulo. Isto ser&aacute; explicado posteriormente neste tutorial. A lista completa de diretivas do FreeMarker tamb&eacute;m pode ser usada para adicionar l&oacute;gica ao modelo:
+
+</p><p></p><ul>
+<li>#assign
+</li><li>#else
+</li><li>#elseif
+</li><li>#end
+</li><li>#foreach
+</li><li>#if
+</li><li>#include
+</li><li>#list
+</li><li>#macro
+</li><li>#parse
+</li><li>#set
+</li><li>#stop
+</li></ul>
+
+<p>Como um exemplo, observe a defini&ccedil;&atilde;o do modelo da classe Java:
+
+</p><pre class="examplecode">&lt;#assign licenseFirst = &quot;/*&quot;&gt;
+&lt;#assign licensePrefix = &quot; * &quot;&gt;
+&lt;#assign licenseLast = &quot; */&quot;&gt;
+&lt;#include &quot;../Licenses/license-${project.license}.txt&quot;&gt;
+
+&lt;#if package?? &amp;&amp; package != &quot;&quot;&gt;
+package ${package};
+
+&lt;/#if&gt;
+/**
+ *
+ * @author ${user}
+ */
+public class ${name} {
+
+}</pre>
+
+<p>Para obter informa&ccedil;&otilde;es sobre a diretiva #assign, consulte <a href="#license">Fornecendo uma licen&ccedil;a de projeto</a>. Para obter uma descri&ccedil;&atilde;o completa da linguagem de modelo FreeMarker, consulte o <a href="http://freemarker.org/docs/index.html">Manual do FreeMarker</a>, em particular, o cap&iacute;tulo <a href="http://freemarker.org/docs/dgui_template_directives.html">Diretivas</a>.
+
+        </p></li>
+
+
+        <h3 class="tutorial"><a name="creating-the-description-file"></a>Criando o arquivo de descri&ccedil;&atilde;o</h3>
+
+        <ol>
+            <li>Clique com o bot&atilde;o direito do mouse no n&oacute; <tt>org.myorg.additionalfiletemplates</tt> e escolha Novo &gt; Outro. Em Categorias, escolha Outro. Em Tipos de arquivo, escolha Arquivo HTML. Clique em Pr&oacute;ximo. Digite <tt>HTML</tt> em Nome do arquivo. Clique em Explorar e v&aacute; para <tt>src/org/myorg/additionalfiletemplates</tt>. Clique em Selecionar pasta. Clique em Terminar.
+
+            <p>Um arquivo HTML vazio &eacute; aberto no Editor de c&oacute;digo-fonte e seu n&oacute; aparece na janela Projetos.
+
+            </p><p></p></li><li>Digite &quot;<tt>Creates new HTML file</tt>&quot; (sem as aspas) entre as marcas <tt>&lt;body&gt;</tt>, para que o arquivo tenha esta apar&ecirc;ncia:
+
+            <pre class="examplecode">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot;&gt;
+&lt;html&gt;
+   &lt;head&gt;
+      &lt;title&gt;&lt;/title&gt;
+   &lt;/head&gt;
+   &lt;body&gt;
+      Creates new HTML file.
+   &lt;/body&gt;&lt;/html&gt;</pre>
+
+        </li></ol>
+
+        <h3 class="tutorial"><a name="getting-an-icon"></a>Obtendo um &iacute;cone</h3>
+
+        <p>O &iacute;cone acompanha o modelo de arquivo no assistente para Novo arquivo. Ele o identifica e o distingue de outros modelos de arquivo. O &iacute;cone deve ter uma dimens&atilde;o de 16x16 pixels. 
+        
+        </p><p>Nomeie o &iacute;cone como <tt>icon.png</tt> e adicione-o ao pacote <tt>org.myorg.additionalfiletemplates</tt>.
+
+        </p><p>A janela Projetos agora deve ter esta apar&ecirc;ncia:
+
+        </p><p align="left"><img border="1" src="../../images/tutorials/filetemplates/final-projects-window-60.png" alt="Janela Projetos finais.">
+
+    </p></ol></div>
+    <br />
+
+    <!-- ===================================================================================== -->
+
+    <h2><a name="registering"></a>Registrando o modelo de arquivo</h2>
+    <p>Depois de ter criado o modelo de arquivo, voc&ecirc; dever&aacute; registr&aacute;-lo no sistema de arquivos do sistema NetBeans. Esta &eacute; a finalidade do arquivo <tt>layer.xml</tt>.</p>
+
+    <ol><li>Adicione a seguinte entrada entre as marcas <tt>&lt;filesystem&gt;</tt> no arquivo <tt>layer.xml</tt>:
+
+<pre class="examplecode">&lt;folder name=&quot;Templates&quot;&gt;
+        
+        &lt;folder name=&quot;Other&quot;&gt;
+            
+            &lt;attr name=&quot;SystemFileSystem.localizingBundle&quot; stringvalue=&quot;org.myorg.additionalfiletemplates.Bundle&quot;/&gt;
+            &lt;file name=&quot;MyHTML.html&quot; url=&quot;HTML.html&quot;&gt;
+                &lt;attr name=&quot;template&quot; boolvalue=&quot;true&quot;/&gt;
+                &lt;attr name=&quot;SystemFileSystem.localizingBundle&quot; stringvalue=&quot;org.myorg.additionalfiletemplates.Bundle&quot;/&gt;
+                &lt;attr name=&quot;SystemFileSystem.icon&quot; urlvalue=&quot;nbresloc:/org/myorg/additionalfiletemplates/icon.png&quot;/&gt;
+                &lt;attr name=&quot;templateWizardURL&quot; urlvalue=&quot;nbresloc:/org/myorg/additionalfiletemplates/Description.html&quot;/&gt;
+                <b>&lt;!--Use this line only if your template makes use of the FreeMarker template language:--&gt;</b>
+                &lt;attr name=&quot;javax.script.ScriptEngine&quot; stringvalue=&quot;freemarker&quot;/&gt;
+            &lt;/file&gt;
+            
+        &lt;/folder&gt;
+        
+&lt;/folder&gt;</pre>
+
+        <p></p></li><li>Adicione o nome de exibi&ccedil;&atilde;o ao arquivo <tt>Bundle.properties</tt>:
+
+        <p></p><pre class="examplecode">Templates/Other/MyHTML.html=Meu arquivo HTML</pre>
+
+    </li></ol>
+
+    <br />
+
+    <!-- ======================================================================================= -->
+
+    <h2><a name="building"></a>Construindo e instalando o m&oacute;dulo</h2>
+    <p>O IDE utiliza um script de constru&ccedil;&atilde;o Ant para construir e instalar seu m&oacute;dulo.   O script de constru&ccedil;&atilde;o &eacute; criado quando o projeto de modulo &eacute; criado.</p>
+    <div class="indent">
+
+        <h3 class="tutorial">Instalando o m&oacute;dulo do NetBeans</h3>
+
+            <p>Na janela Projetos, clique com o bot&atilde;o direito do mouse no projeto <tt>Modelos de arquivo adicionais</tt> e escolha Instalar/recarregar na plataforma de destino. </p>
+            <p>O m&oacute;dulo &eacute; constru&iacute;do e instalado no IDE ou na plataforma de destino. A plataforma ou IDE de destino se abre, de modo que voc&ecirc; possa experimentar o novo m&oacute;dulo. O IDE ou a plataforma de destino padr&atilde;o &eacute; a instala&ccedil;&atilde;o usada pela inst&acirc;ncia atual do IDE de desenvolvimento. 
+            </p><p><b class="notes">Observa&ccedil;&atilde;o:</b> ao executar o m&oacute;dulo, voc&ecirc; usar&aacute; um diret&oacute;rio de usu&aacute;rio de teste tempor&aacute;rio, n&atilde;o o diret&oacute;rio de usu&aacute;rio do IDE de desenvolvimento. 
+
+        </p><h3 class="tutorial">Usando o m&oacute;dulo do NetBeans</h3>
+
+        <ol>
+            <li>Escolha Arquivo &gt; Novo projeto (Ctrl-Shift-N) e crie um novo projeto.
+            <p></p></li><li>Clique com o bot&atilde;o direito no projeto e escolha Novo &gt; Outro. O assistente para Novo arquivo &eacute; aberto e exibe a nova categoria com seu novo tipo de arquivo. Ele deve ter a apar&ecirc;ncia semelhante a esta, embora seu &iacute;cone provavelmente seja diferente:</p>
+            <p><img border="1" src="../../images/tutorials/filetemplates/new-file-wizard-60.png" alt="Assistente para Novo arquivo.">
+            </p><p></p></li><li>Selecione o novo tipo de arquivo, clique em Pr&oacute;ximo e crie um novo arquivo. Quando voc&ecirc; clicar em Terminar, o Editor de c&oacute;digo-fonte dever&aacute; exibir o modelo rec&eacute;m-criado.
+        </li></ol>
+        <h3 class="tutorial">Criando um bin&aacute;rio de m&oacute;dulo compartilh&aacute;vel</h3>
+  
+        <ol>
+            <li>Na janela Projetos, clique com o bot&atilde;o direito do mouse no projeto <tt>Modelos de arquivo adicionais</tt> e escolha Criar NBM.
+
+            <p>O arquivo NBM &eacute; criado e voc&ecirc; pode visualiz&aacute;-lo na janela Arquivos (Ctrl+-2):
+            </p><p><img border="1" src="../../images/tutorials/filetemplates/shareable-nbm-60.png" alt="NBM que pode ser compartilhado.">
+            </p></li><li>Disponibilize-o a outras pessoas atrav&eacute;s de, por exemplo, email.
+        </li></ol>
+ 
+</div>
+ <!-- ===================================================================================== -->
+
+    <h2><a name="additional"></a>Fornecendo vari&aacute;veis adicionais</h2>
+    <p>Como discutido anteriormente, &eacute; poss&iacute;vel complementar as vari&aacute;veis predefinidas, como ${user} e ${time}, com as suas pr&oacute;prias. Por exemplo, voc&ecirc; pode definir o seu modelo da seguinte forma, se desejar passar uma vari&aacute;vel representando uma lista de nomes:
+    
+     </p><pre class="examplecode">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot;&gt;
+
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+  
+        &lt;#list names as oneName&gt;
+            &lt;b&amp;gt${oneName}&lt;/b&amp;gt
+        &lt;/#list&gt;
+
+  &lt;/body&gt;
+&lt;/html&gt;</pre>
+
+<p>Acima, a diretiva #list do FreeMarker itera por meio de uma vari&aacute;vel chamada &quot;names&quot;, com cada inst&acirc;ncia chamada &quot;oneName&quot;. Cada valor da itera&ccedil;&atilde;o &eacute; impresso no arquivo, entre marcas de negrito. O valor de &quot;names&quot; poderia vir de uma s&eacute;rie de locais, geralmente do painel de um assistente, onde o usu&aacute;rio, neste caso, teria selecionado um conjunto de nomes de uma lista.
+    
+    </p><p>Para habilitar a vari&aacute;vel acima, ou seja, para iterar atrav&eacute;s de uma nova vari&aacute;vel, consulte <a href="http://netbeans.dzone.com/news/freemarker-netbeans-ide-60-first-scenario">FreeMarker no NetBeans IDE 6.0: Primeiro cen&aacute;rio</a> e veja a discuss&atilde;o de <tt>DataObject.createFromTemplate(df, targetName, hashMap)</tt> nesta <a href="http://blogs.oracle.com/geertjan/entry/freemarker_baked_into_netbeans_ide1">entrada de blog</a>.
+
+
+    <br />
+ <!-- ===================================================================================== -->
+
+    </p><h2><a name="license"></a>Fornecendo uma licen&ccedil;a de projeto</h2>
+   
+
+<p>Um ponto ainda n&atilde;o discutido est&aacute; relacionado &agrave; diretiva #assign do FreeMarker, que s&oacute; &eacute; relevante se voc&ecirc; estiver interessado em permitir que o usu&aacute;rio gere uma licen&ccedil;a de projeto quando o arquivo for criado. Para atender &agrave;s necessidades de licenciamento do usu&aacute;rio, voc&ecirc; pode fornecer diretivas de licenciamento no modelo de arquivo. Depois, todos os arquivos no projeto do usu&aacute;rio ser&atilde;o criados com as diretivas de licenciamento fornecidas. 
+
+</p><p>Para compreender isto, realize as seguintes etapas:
+
+</p><ol>
+<li>V&aacute; para o menu Ferramentas. Escolha Modelos. Abra o modelo Java | Classe Java no editor:
+<p></p><p>
+</p><p><img src="http://blogs.oracle.com/geertjan/resource/freemarker-in-nb-2.png" border="1"/>
+
+</p><p></p></li><li>O modelo acima, e as ramifica&ccedil;&otilde;es de sua defini&ccedil;&atilde;o no FreeMarker, foram discutidos anteriormente. Entretanto, vamos analisar especificamente as quatro primeiras linhas:
+
+<p></p><pre>&lt;#assign licenseFirst = &quot;/*&quot;&gt;
+&lt;#assign licensePrefix = &quot; * &quot;&gt;
+&lt;#assign licenseLast = &quot; */&quot;&gt;
+&lt;#include &quot;../Licenses/license-${project.license}.txt&quot;&gt;</pre>
+
+<p>Estas quatro linhas t&ecirc;m a ver com <i>licenciamento</i>. A &uacute;ltima linha determina a licen&ccedil;a que ser&aacute; usada, por projeto. As tr&ecirc;s primeiras determinam os caracteres na frente e atr&aacute;s de cada linha da licen&ccedil;a. Acima h&aacute; quatro linhas para os arquivos de c&oacute;digo-fonte Java. Aqui est&aacute; o mesmo conjunto de defini&ccedil;&otilde;es que voc&ecirc; encontrar&aacute; no in&iacute;cio do modelo de arquivo de propriedades:
+
+</p><p></p><pre>&lt;#assign licensePrefix = &quot;# &quot;&gt;
+&lt;#include &quot;../Licenses/license-${project.license}.txt&quot;&gt;</pre>
+
+<p>A primeira linha informa que cada linha na licen&ccedil;a ter&aacute; como prefixo um &quot;# &quot;, em vez de um &quot;*&quot;, que &eacute; o prefixo de arquivos de c&oacute;digo-fonte Java (com &quot;/*&quot; para a primeira linha e &quot; */&quot; para a &uacute;ltima linha). Para verificar isto, crie um arquivo de c&oacute;digo-fonte Java e crie um arquivo de propriedades. Voc&ecirc; ver&aacute; uma licen&ccedil;a em ambos os casos. Entretanto, os caracteres de prefixo e sufixo de cada linha s&atilde;o diferentes, devido &agrave;s defini&ccedil;&otilde;es acima.
+
+</p><p></p></li><li>Agora, vamos analisar a pr&oacute;pria licen&ccedil;a. Observe esta linha nos modelos acima:
+
+<p></p><pre>&lt;#include &quot;../Licenses/license-${project.license}.txt&quot;&gt;</pre>
+
+<p>Em particular, observe esta parte:
+
+</p><p></p><pre>${project.license}</pre>
+
+<p>Coloque-a, como uma chave, no arquivo <tt>nbproject/project.properties</tt> do aplicativo. Agora adicione um valor. Por exemplo:
+
+</p><pre>project.license=apache</pre>
+
+<p>Agora, observe o Gerenciador de modelos novamente, na pasta Licen&ccedil;as. Voc&ecirc; ver&aacute; alguns modelos nela. Crie um novo chamado &quot;<tt>license-apache.txt</tt>&quot;. Por enquanto, voc&ecirc; s&oacute; pode copiar um existente e col&aacute;-lo na mesma categoria no Gerenciador de modelos. Depois, na pr&oacute;xima vez que voc&ecirc; criar um arquivo definido por um modelo do FreeMarker que inclua esta linha:
+
+</p><p></p><pre>&lt;#include &quot;../Licenses/license-${project.license}.txt&quot;&gt;</pre>
+
+...voc&ecirc; ter&aacute; a licen&ccedil;a especificada incorporada ao arquivo rec&eacute;m-criado.
+
+</li></ol>
+
+<p>Em resumo, o NetBeans IDE 6.0 permite que o usu&aacute;rio defina, por projeto, a licen&ccedil;a que cada um dos arquivos deve exibir. Al&eacute;m disso, imagine se o usu&aacute;rio precisar criar um novo projeto com uma licen&ccedil;a diferente. Supondo que o usu&aacute;rio tenha um conjunto de licen&ccedil;as definido no Gerenciador de modelos, o uso de uma nova licen&ccedil;a &eacute; t&atilde;o simples quanto adicionar uma chave ou um par de valores ao arquivo <tt>nbproject/project.properties</tt>. Isso s&oacute; &eacute; poss&iacute;vel agora gra&ccedil;as ao suporte a FreeMarker no NetBeans IDE 6.0. Para mais leituras sobre licenciamento, especialmente os coment&aacute;rios ao final dele, consulte <a href="http://blogs.oracle.com/geertjan/date/20071126">esta entrada do blog</a>.
+</p><p>
+
+
+    <br />
+
+<br>
+   </p><div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20NetBeans%206.0%20File%20Template%20Module%20Tutorial">Envie-nos seus coment&aacute;rios</a></div>
+<br style="clear:both;" />
+    
+ <!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Pr&oacute;ximas etapas</h2>
+
+<p>Para obter mais informa&ccedil;&otilde;es sobre a cria&ccedil;&atilde;o e o desenvolvimento de m&oacute;dulos do NetBeans, consulte os seguintes recursos: 
+  </p><ul>
+	  <p></p><li><a href="https://netbeans.org/kb/trails/platform.html">Outros tutoriais relacionados</a></li>
+	  <p></p><li><a href="https://netbeans.org/download/dev/javadoc/">Javadoc da API da NetBeans </a></li>
+  </ul>
+  
+  <hr>
+    
+    <!-- ======================================================================================== -->
+
+
+<h2><a name="version"></a>Versionamento </h2>
+  
+    <p>
+
+    <table width="76%" border="1">
+        <tbody>
+            <tr>
+                <td>
+                    <div align="left"><b>Vers&atilde;o</b></div>
+                </td>
+                <td>
+                    <div align="left"><b>Data</b></div>
+                </td>
+                <td>
+                    <div align="left"><b>Altera&ccedil;&otilde;es</b></div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    1
+                </td>
+                <td>
+                    26 de junho de 2005
+                </td>
+                <td>
+                    Vers&atilde;o inicial
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    2
+                </td>
+                <td>
+                    28 de junho de 2005
+                </td>
+                <td>
+                    <ul>
+                    <li>Marcas de negrito adicionadas ao arquivo descritor para mostrar que a caixa Descri&ccedil;&atilde;o exibe marcas HTML.
+                    </li><li>Atributos de classifica&ccedil;&atilde;o adicionados.
+                    </li><li>Nomes de exibi&ccedil;&atilde;o movidos para Bundle.properties.
+                    </li><li>Captura de tela alterada em &quot;Usando o plug-in do NetBeans&quot;.
+                    </li><li>&quot;.template&quot; adicionado como extens&atilde;o do arquivo &quot;BrandedJavaClass&quot; porque <tt>layer.xml</tt> procura um arquivo chamado &quot;BrandedJavaClass.template&quot;. Al&eacute;m disso, a captura de tela da janela Projetos foi alterada no final da se&ccedil;&atilde;o &quot;Criando o modelo de arquivo&quot; para refletir a extens&atilde;o &quot;.template&quot;.
+                </li></ul></td>
+            </tr>
+            <tr>
+                <td>
+                    3
+                </td>
+                <td>
+                    2 de outubro de 2005
+                </td>
+                <td>
+                    <ul>
+                    <li>Tutorial percorrido por completo com a &uacute;ltima compila&ccedil;&atilde;o. V&aacute;rias altera&ccedil;&otilde;es feitas, especialmente porque Modelos substitui a janela Op&ccedil;&otilde;es em modelos.
+                    </li><li>Adi&ccedil;&atilde;o do 2o e 3o par&aacute;grafos &agrave; introdu&ccedil;&atilde;o, para explicar que este tutorial n&atilde;o &eacute; necess&aacute;rio se voc&ecirc; estiver criando um novo tipo de arquivo.
+                </li></ul></td>
+            </tr>
+            <tr>
+                <td>
+                    4
+                </td>
+                <td>
+                    3 de outubro de 2005
+                </td>
+                <td>
+                    <ul>
+                    <li>templateWizard[Iterator|URL] alterado em layer.xml para instanciar [Iterator|WizardURL] porque templateWizard[Iterator|URL] ficar&aacute; obsoleto.</li></ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    5
+                </td>
+                <td>
+                    16 de mar&ccedil;o de 2006
+                </td>
+                <td>
+                    <ul>
+                        <li>Tutorial percorrido por completo, espa&ccedil;o entre linhas ajustado um pouco, tudo funcionando perfeitamente.
+                        </li><li>&Eacute; preciso substituir as capturas de tela porque os &iacute;cones est&atilde;o um pouco diferentes.
+                        </li><li>&Eacute; preciso adicionar um &iacute;cone ao documento, n&atilde;o apenas fazer refer&ecirc;ncia &agrave; localiza&ccedil;&atilde;o.
+                        </li><li>&Eacute; preciso mostrar como v&aacute;rios modelos de arquivo podem ser criados ao mesmo tempo no assistente para Novo arquivo. </li></ul>
+                </td>
+            </tr>
+              <tr>
+                <td>
+                    6
+                </td>
+                <td>
+                    12 de setembro de 2006
+                </td>
+                <td>
+                    <ul>
+                        <li>Tutorial percorrido por completo em NetBeans IDE 5.5 Beta 2.
+                        </li><li>Sem problemas, funcionou exatamente como descrito.
+                        </li><li>Algumas capturas de tela atualizadas.
+                        </li><li>Recuos corrigidos no c&oacute;digo. </li></ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    7
+                </td>
+                <td>
+                    9 de junho de 2007
+                </td>
+                <td>
+                    In&iacute;cio da atualiza&ccedil;&atilde;o para o NetBeans 6.
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    8
+                </td>
+                <td>
+                    16 de fevereiro de 2008
+                </td>
+                <td>
+                    In&iacute;cio da migra&ccedil;&atilde;o das informa&ccedil;&otilde;es de <a href="http://blogs.oracle.com/geertjan/entry/freemarker_baked_into_netbeans_ide1">esta entrada de blog</a>, <a href="http://blogs.oracle.com/geertjan/entry/freemarker_baked_into_netbeans_ide2">esta entrada de blog</a> e <a href="http://blogs.oracle.com/geertjan/date/20071126">esta entrada de blog</a> e <a href="http://netbeans.dzone.com/news/freemarker-netbeans-ide-60-first-scenario">este artigo</a> para este tutorial.
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    9
+                </td>
+                <td>
+                    15 de abril de 2008
+                </td>
+                <td>
+                    Estilos (emblema, &iacute;ndice anal&iacute;tico, tabela de software necess&aacute;rio) atualizados para o novo formato.
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    </p></body>
+</html>

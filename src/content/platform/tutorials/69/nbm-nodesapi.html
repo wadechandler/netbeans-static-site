@@ -1,0 +1,807 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>NetBeans System Properties Module Tutorial for NetBeans Platform 6.5</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+  <meta name="AUDIENCE" content="NBUSER"/>
+  <meta name="TYPE" content="ARTICLE"/>
+  <meta name="EXPIRES" content="N"/>
+  <meta name="developer" content="gwielenga@netbeans.org"/>
+  <meta name="indexed" content="y"/>
+  <meta name="description"
+ content="A short guide to using the Nodes API."/>
+<!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>NetBeans System Properties Module Tutorial</h1>
+
+<p>This tutorial is intended to demonstrate aspects of the <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/package-summary.html">NetBeans Nodes API</a>.</p>
+
+ 
+     <p><b>Contents</b></p>
+   
+   <p><img src="../images/articles/69/netbeans-stamp7-8-9.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.5, 6.7, 6.8" title="Content on this page applies to NetBeans IDE 6.5, 6.7, 6.8"/></p>
+      <ul class="toc">
+  <li><a href="#gettingtoknowthesample">Getting to Know the Sample</a>
+  <ul>
+  <li><a href="#introducing-sample">Introducing the Sample</a></li>	
+  <li><a href="#introducing-sources">Introducing the Sources</a></li>
+  </ul></li>
+  <li><a href="#settingupthemoduleproject">Setting Up the Module Project</a>
+  <ul>
+  <li><a href="#creatingthemoduleproject">Creating the Module Project</a></li>
+  <li><a href="#specifying">Specifying the Module's Dependencies</a></li>
+  </ul></li>
+  <li><a href="#creatingandgettingtoknowthemainfiles">Creating the Main Files</a>
+  <ul>
+      <li><a href="#AllPropsNode"><tt>AllPropsNode.java</tt></a></li>
+    <li><a href="#PropertiesNotifier"><tt>PropertiesNotifier.java</tt></a></li>
+    <li><a href="#AllPropsChildren"><tt>AllPropsChildren.java</tt></a></li>
+    <li><a href="#OnePropNode"><tt>OnePropNode.java</tt></a></li>
+    <li><a href="#RefreshPropsAction"><tt>RefreshPropsAction.java</tt></a></li>
+  </ul></li>
+  <li><a href="#finetuning">Setting Up the Supporting Files</a></li>
+  <li><a href="#building">Building and Installing the Module</a></li>
+       </ul>
+         
+<p><b>To follow this tutorial, you need the software and resources listed in the following 
+table.</b></p>
+
+        <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.7 or above</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Version 6 or<br/>version 5</td>
+            </tr>
+        </tbody>
+    </table>
+
+<!-- ===================================================================================== -->
+<h2><a name="gettingtoknowthesample"></a>Getting to Know the Sample</h2>
+
+<p>This tutorial will help you understand the following:</p>
+<ul>
+<li>how to add a hierarchy of nodes to the Services window</li>
+<li>how to rename and delete nodes</li>
+<li>how to to display subnodes</li>
+<li>how to change the list of nodes</li>
+<li>how to create a property sheet</li>
+<li>how to assign properties</li>
+<li>how to perform other common tasks</li></ul>
+
+<p>Working through this sample is
+important because the <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/package-summary.html">NetBeans Nodes API</a> is one of the more ubiquitous APIs and reflects
+information that exists independently of the nodes. You interact
+through an interface to this live information.</p>
+
+<p>Before you start writing the module, you have to make sure you have all of the necessary software.
+ In addition, you might want to play with the sample before building it yourself. Getting to know the
+ sample lets you know what you are in for during the rest of this tutorial!</p>
+<div class="indent">
+
+    <h3 class="tutorial"><a name="installing-sample"></a>Installing the Sample</h3>
+<p>In this section, we download and install the sample, so that we can become
+acquainted with it before recreating it ourselves.
+<ol><li>Unzip the <a href="https://netbeans.org/files/documents/4/501/SystemProperties.zip">attached file</a>.
+    <li><p>In the IDE, choose File > Open Project and browse to the folder that contains the unzipped file.
+    Open the module project. It should look as follows:</p>
+<p><img src="../images/tutorials/sysprops/nbm-sysprops-65-2.png" alt="All source files.">
+        <li>Right-click the project node and choose Install/Reload in Target Platform. The target
+    platform opens and the module is installed.</ol>
+    
+    <h3 class="tutorial"><a name="introducing-sample"></a>Introducing the Sample</h3>
+    <p>In this section, we look at the functionality provided by the module, from
+    the perspective of an end user. Once we know in detail what the module will provide,
+    we will be in a better position to build it from scratch.
+    <ol>
+    <li><p>Open the Services window (Ctrl-5) and notice that you have a new node with a large number (~50) of subnodes,
+    each labeled according to a key for specific Java properties:</p>
+<p><img src="../images/tutorials/sysprops/nbm-sysprops-65-1.png" alt="System Properties module.">
+<p> Contextual menu items appear when you
+right-click the main node and subnodes. For the subnodes, the Java
+runtime's generalized properties are used to configure basic mechanisms such as
+search paths for fonts, location of the Java Virtual Machine (JVM), default locale,
+and so on. These are typically string keys, similar to <tt>name.name.name</tt>, and an
+associated string value. Values can be queried or set from within the Java language.
+In addition, they can be used to set default values at JVM start up. When the System Properties node is
+extended, it will display one node for each of the keys, each labeled according to the
+key. For example:</p>
+
+<ul>
+<li>The value <tt>java.vm.vendor</tt> may display the value Sun Microsystems, Inc.,
+for example.
+<li>The value <tt>path.separator</tt> may display a semicolon, depending on your
+configuration.
+<li>The value <tt>user.language</tt> may display the value English, depending on your
+configuration.</ul>
+<li>Play with the sample:
+<p><ul><li><b>Show the property sheet.</b> Right-click a subnode and choose Properties. 
+ The property sheet is displayed with a single Properties tab, 
+containing two properties. The first property is labeled Name and
+it gives the same name as the node (key), while the other is labeled Value and
+displays the string value of the property.
+<li><b>Rename a property.</b> Click on a subnode and then click it again. This lets you rename a key in
+place, while keeping the same value. Alternatively, click
+on the Name property in the property sheet, or right-click a subnode and choose Rename.
+<li><b>Change a value.</b> Click on the Value tab in the property sheet and type in a new value. This
+ resets the system property to the entered value.
+<li><b>Add a property.</b> Right click the main System Properties node and choose Add System Property. This lets you add a new system property
+ to the list.
+<li><b>Delete a property.</b> Select a property and press Delete. This removes the property.
+<li><b>Refresh the list.</b> Right click the main System Properties node and choose Refresh. This prompts the module
+ to recheck the values, refreshing the list as needed.</ul></ol>
+</p>
+
+<h3 class="tutorial"><a name="introducing-sources"></a>Introducing the Sources</h3>
+
+<p>The System Properties sample consists of main files and supporting files.</p>
+
+
+<ul><li><p><b>Main Files.</b> The module's main files are its Java classes (selected in the illustration below):</p>
+<p><img border="1" src="../images/tutorials/sysprops/main-files.png" alt="Main files.">
+<p>The Java classes are introduced in alphabetical order below:
+  <p><table width="76%" border="1">
+
+    <tbody><tr>
+      <td>
+	<div align="left"><b>File</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Description</b></div>
+
+      </td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt>AllPropsChildren.java</tt></td>
+      <td>
+
+This children object is responsible for keeping track of the list of nodes underneath
+the System Properties node. When first asked for the list, it retrieves all system
+properties and asks the node implementation to keep track of all the system
+property names. The interface for doing this is a class called Children.
+
+
+</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt>AllPropsNode.java</tt></td>
+
+      <td>
+
+This node specifies what children will be under it, and asks to use
+AllPropsChildren to keep track of the list of child nodes. The module takes care
+of things such as its context menu.
+
+
+
+      </td>
+    </tr>
+
+    <tr>
+      <td align="left" valign="top"><tt>OnePropNode.java</tt></td>
+      <td>
+
+This is the node representing a single property, and is an AbstractNode. Its
+constructor requires that the user supply the key, in the form of a string. For every
+system property name, OnePropNode is used to display it. When the user expands
+the system properties node, it builds a list of keys, then creates a corresponding
+number of OnePropNodes. Each OnePropNode displays a single key, and does not
+directly interact with its parent node -- its knowledge is limited to a single system
+property and how to deal with it, as well as notifying the PropertiesNotifier
+if there are any changes.This design makes it easier to reuse such nodes, including
+placing them in other contexts.
+
+
+
+</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt>PropertiesNotifier.java</tt></td>
+      <td>
+Manages routing events whenever there are changes, including adding, deleting,
+or renaming a property, or when a property value has changed.
+</td>
+    </tr>
+ <tr>
+      <td align="left" valign="top"><tt>RefreshPropsAction.java</tt></td>
+      <td>
+This action appears in the pop-up menu under System Properties with the label Refresh.
+It forces a refresh to occur, updating the display of information based
+on the current state of system properties.
+
+
+
+</td>
+
+    </tr>
+    </tbody>
+  </table>
+
+<li><p><b>Supporting Files.</b> The module's supporting files are in the <tt>org.myorg.systemproperties</tt> package and
+ in the Important Files node (selected in the illustration below):
+<p><img border="1" src="../images/tutorials/sysprops/supporting-files.png" alt="Supporting files.">
+<p>The supporting files in the <tt>org.myorg.systemproperties</tt> package are introduced in alphabetical order below:
+  <p><table width="76%" border="1">
+
+    <tbody><tr>
+      <td>
+	<div align="left"><b>File</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Description</b></div>
+
+      </td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt>allPropsIcon.gif</tt></td>
+      <td>Icon for the System Properties node.</td>
+    </tr>
+    <tr>
+	    <td align="left" valign="top"><tt>Bundle.properties</tt></td>
+
+      <td>
+This is a standard Java properties file, which uses the syntax <tt>Key=Value</tt>. Keys are
+code names for things that appear in the source code, with values designating those
+things which will be displayed to the user.
+This file is useful for localization. For example, by creating a properties file such
+as <tt>Bundle_ja.properties</tt>, and filling all the values with Japanese, this module will automatically display
+everything in Japanese, if the
+user is running the IDE in Japanese mode.
+
+      
+      </td>
+
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt>layer.xml</tt></td>
+
+      <td>
+       Registers <tt>AllPropsNode.java</tt> as a node in Services window. 
+      </td>
+    </tr>
+
+    <tr>
+	    <td align="left" valign="top"><tt>onePropIcon.gif</tt></td>
+
+      <td>
+	Icon for subnodes.
+      </td>
+
+    </tr>
+
+    </tbody>
+  </table>
+
+<p>The files in the Important Files node are introduced in the order in which they appear in the Projects window:
+  <p><table width="76%" border="1">
+
+    <tbody><tr>
+      <td>
+	<div align="left"><b>File</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Description</b></div>
+
+      </td>
+    </tr>
+    <tr>
+      <td align="left" valign="top">Module Manifest</td>
+      <td>Declares project as module.</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top">Build Script</td>
+
+      <td>
+       Contains Ant targets for building the project.
+      </td>
+    </tr>
+    <tr>
+	    <td align="left" valign="top">Project Metadata</td>
+
+      <td>
+	Contains project metadata, such as dependencies, for project.
+      </td>
+
+    </tr>
+    <tr>
+      <td align="left" valign="top">Project Properties</td>
+      <td>Contains project properties.</td>
+    </tr>
+    <tr>
+      <td align="left" valign="top">NetBeans Platform Config</td>
+      <td>Contains platform properties.</td>
+
+    </tr>
+    <tr>
+      <td align="left" valign="top">Per-user NetBeans Platform Config</td>
+      <td>Contains user-specific properties.</td>
+
+    </tr>
+    </tbody>
+  </table>
+
+</div>
+<br />
+
+
+
+<!-- ===================================================================================== -->
+<h2><a name="settingupthemoduleproject"></a>Setting Up the Module Project</h2>
+<p>Before you start writing the module, you have to make sure you
+  that your project is set up correctly. <a href="http://www.netbeans.info/downloads/download.php?a=n&p=1">NetBeans IDE Dev</a> provides a wizard that sets up all the basic files
+ needed for a module.</p>
+<div class="indent">
+
+<h3 class="tutorial"><a name="creatingthemoduleproject"></a>Creating the Module Project</h3>
+    
+<p>In this section, we use the New Module wizard to create the source structure needed by all
+module projects.
+
+
+<ol>
+    <li>Choose File &gt; New Project (Ctrl+Shift+N). Under Categories, select NetBeans Modules.
+        Under Projects, select Module. Click Next.</li>
+    <li>In the Name and Location panel, type <tt>SystemProperties</tt> in the Project Name field.
+        Change the Project Location to any directory on your computer. Leave the Standalone Module option
+        and Set as Main Project checkbox selected. Click Next.</li>
+    <li>In the Basic Module Configuration panel, type <tt>org.myorg.systemproperties</tt>
+     in Code Name Base.
+    <li>Select "Generate XML Layer". Leave the
+        locations of both the localizing bundle and the XML layer file
+        so that they will be stored in a package with
+        the name <tt>org/myorg/systemproperties</tt>. Click Finish.</li>
+</ol>
+
+<p> The IDE creates the <tt>System Properties</tt>
+project. The project contains all of your sources and
+project metadata, such as the project's Ant build script. The project
+opens in the IDE. You can view its logical structure in the Projects window (Ctrl-1) and its
+file structure in the Files window (Ctrl-2). For example, the Projects window should now look as follows:
+
+<p align="left"><img src="../images/tutorials/sysprops/initial-projects-view.png" border="1" alt="Initial Projects window.">
+
+<h3 class="tutorial"><a name="specifying"></a>Specifying the Module's Dependencies</h3>
+
+    <p>Later, you will need to subclass several classes that belong to NetBeans APIs. 
+        Each NetBeans API, provided by a module, has to be declared as a module dependency. 
+        Use the Project Properties dialog box for this purpose, as explained below.
+        <ol>
+        <li>In the Projects window, right-click the <tt>System Properties</tt> project and choose Properties.
+        In the Project Properties dialog box, click Libraries and then click Add... Start typing 'CallableSystemAction',
+        which is one of the NetBeans API classes you will need later. As you type, notice that the filter narrows,
+    displaying only those modules that can provide the class that you are typing, as shown below:</p>
+<p align="left"><img src="../images/tutorials/sysprops/nbm-moddependencies.png" border="1" alt="Basic Module Configuration panel."></li>
+	
+<li>For each of the following APIs, click "Add..." in the Libraries panel, 
+ select the name from the Module list, and then click OK to confirm it:
+<p><ul>
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-actions/overview-summary.html">Actions API</a></tt>
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-dialogs/overview-summary.html">Dialogs API</a></tt>
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/overview-summary.html">Nodes API</a></tt>
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-util/overview-summary.html">Utilities API</a></tt>
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-windows/overview-summary.html">Window System API</a></tt>
+</ul>
+<p>Click OK to exit the Project Properties dialog box.
+<li>In the Projects window, double-click Project Metadata and note that the APIs you selected have been
+ declared as Module dependencies.</li>
+
+  </ol>
+
+
+</div>
+      <br />
+
+<!-- ===================================================================================== -->
+<h2><a name="creatingandgettingtoknowthemainfiles"></a>Creating the Main Files</h2>
+<p>The meat of the Module is provided by its Java classes. In this section, you will create and examine each of them:
+
+<ul>
+    <li><a href="https://netbeans.org/files/documents/4/492/AllPropsNode.java"><tt>AllPropsNode.java</tt></a>
+    <li><a href="https://netbeans.org/files/documents/4/494/PropertiesNotifier.java"><tt>PropertiesNotifier.java</tt></a>
+    <li><a href="https://netbeans.org/files/documents/4/491/AllPropsChildren.java"><tt>AllPropsChildren.java</tt></a>
+    <li><a href="https://netbeans.org/files/documents/4/493/OnePropNode.java"><tt>OnePropNode.java</tt></a>
+    <li><a href="https://netbeans.org/files/documents/4/495/RefreshPropsAction.java"><tt>RefreshPropsAction.java</tt></a>
+</ul>	
+<div class="indent">
+<h3 class="tutorial"><a name="AllPropsNode"></a>AllPropsNode.java</h3>
+
+<p>This Java class specifies what children will be under the main node, and asks to use
+<tt>AllPropsChildren</tt> to keep track of the list of child nodes. The Module takes care
+of things such as its context menu.
+
+<p>Do the following:
+<ol>
+<li><b>Create the file.</b> Right-click the <tt>org.myorg.systemproperties</tt> node and choose New &gt; Other. Under
+ Categories, choose Java Classes. Under File Types, choose Java Class. 
+ Click Next and type <tt>AllPropsNode</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+ Replace the default code with code found <a href="https://netbeans.org/files/documents/4/492/AllPropsNode.java">here</a>.
+
+<li><b>Understand the file.</b> Here is an explanation of the class:
+
+<ul>
+
+<li><b><tt>public class AllPropsNode extends <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html">AbstractNode</a></tt>.</b> <tt>AbstractNode</tt> is a generic Node subclass. <tt><a href="http://www.netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Node.html">Node</a></tt> is the abstract
+class, <tt>AbstractNode</tt> is the common implementation that can be customized.
+
+<li><b><tt>private static ResourceBundle bundle = NbBundle.getBundle(AllPropsNode.class)</tt>.</b> Loads the <tt>Bundle.properties</tt> file for all localized text
+for this class. The rest of the class uses the variable bundle to get all localized text.
+Note that the other classes do something similar.
+
+<li><b>Constructor:</b>
+<ul>
+<li><b><tt>public AllPropsNode</tt>.</b> In creating this node, it first calls super -- the <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html#AbstractNode(org.openide.nodes.Children)">constructor
+for the super class (AbstractNode)</a>. This creates the infrastructure for
+AbstractNode, and shows that it is mandatory to supply a child object for its
+use. This object represents the list of children of the node, creating a separate class
+for clarity: AllPropsChildren.
+<ul>
+<li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html#setIconBase(java.lang.String)">setIconBase</a></tt>.</b> Designates the location for the associated icon.
+<li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html#setName(java.lang.String)">setName</a></tt>.</b> Sets the internal name. This is usually arbitrary but ideally should be
+unique among siblings.
+<li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Node.html#setDisplayName(java.lang.String)">setDisplayName</a></tt>.</b> Sets the name the user sees. This defaults to the internal name,
+but it is better to set it to something localized.
+<li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Node.html#setShortDescription(java.lang.String)">setShortDescription</a></tt>.</b> Sets the associated tool tip. This is the override to specify
+what goes into the node context menu. 
+</ul></ul>
+
+<li><b>Methods:</b>
+<ul>
+<li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Node.html#getActions(boolean)">getActions</a></tt>.</b> The following is a list of actions to be
+displayed in the menu, with separators between the menu items. The following
+methods are used:
+<ul>
+<li><tt>RefreshPropsAction</tt> is an action defined in another source file
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-actions/org/openide/actions/NewAction.html">NewAction</a></tt> enables the creation of a new subnode or key-value pair
+<li><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-actions/org/openide/actions/OpenLocalExplorerAction.html">OpenLocalExplorerAction</a></tt> permits the user to make a new Explorer window
+showing only system properties
+</ul>
+
+<p>Both <tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-actions/org/openide/actions/ToolsAction.html">ToolsAction</a></tt> and <tt><a href="http://www.netbeans.org/download/dev/javadoc/org-openide-actions/org/openide/actions/PropertiesAction.html">PropertiesAction</a></tt> are standard actions that most nodes
+should have.
+
+<li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html#getHelpCtx()">getHelpCtx</a></tt>.</b> Supplies an IDE key for the context help. When building context help
+for this Module, this is how you would associate a specific node with a
+specific help string.
+
+<li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html#cloneNode()">cloneNode</a></tt>.</b> Creates a new copy of the node that enables other parts of the IDE to
+display a separate copy of the System Properties list, other than the Runtime tab.
+This is more efficient than the fallback implementation, which is to delegate to the
+original.
+
+<li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html#getNewTypes()">getNewTypes</a></tt>.</b> Returns a list of <tt><a href="http://www.netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/datatransfer/NewType.html">NewType</a></tt> objects. When
+there is <tt>NewAction</tt> in the context menu, this action displays menu items
+corresponding to each of the <tt>NewTypes</tt> in the node. The action provides the actual
+GUI, such as showing a submenu. You specify abstract definitions
+ and make the new objects. In this example, only one <tt>NewType</tt> is returned,
+since there is only one type of thing that can reasonably be created (a new system
+property); however, more than one <tt>NewType</tt> could be returned, and they would be
+displayed in a submenu. Following this method is the definition of the name on the
+menu item, such as New System Property, and the help context.
+
+<ul><li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/datatransfer/NewType.html#create()">create</a></tt>.</b> Creates the new object. In this example, there
+will be dialog boxes for the key-in values.
+<ul>
+<li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-dialogs/org/openide/NotifyDescriptor.InputLine.html">NotifyDescriptor.InputLine</a></tt>.</b> The description of a small dialog with a single
+text entry field pop up, a title for the dialog, and a message.
+
+<li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-dialogs/org/openide/DialogDisplayer.html#notify(org.openide.NotifyDescriptor)">DialogDisplayer.getDefault().notify(desc)</a></tt>.</b> Displays all this in a pop-up dialog.
+
+<li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-dialogs/org/openide/NotifyDescriptor.InputLine.html#getInputText()">getInputText</a></tt>.</b> Retrieves the user input for the key.
+
+<p>The same is done for the value, again using <tt>DialogDisplayer.getDefault</tt> and
+<tt>getInputText</tt>.
+
+<p>Next, <tt>System.setProperty</tt>, from the Java API, is called to set the system
+property.
+
+<p>Finally, another class, <tt>PropertiesNotifier.changed</tt> (created next), is called to indicate
+to other classes and Module components that something about the current set of
+system properties has changed and updates are required. For example, there may
+be a new property, or an existing value may have changed.
+</ul>
+</ul></ul>
+</ul>
+</ol>
+<h3 class="tutorial"><a name="PropertiesNotifier"></a>PropertiesNotifier.java</h3>
+<p>This Java class manages routing events whenever there are changes, including adding, deleting,
+or renaming a property, or when a property value has changed. You could also see it as a helper routine, very similar 
+ to a JavaBeans component
+that has an event set attached to it. However, it is not strictly a JavaBeans component -- there
+are no instances of this class -- but its static methods are used like JavaBeans
+instance methods.
+
+<ol>
+<li><b>Create the file.</b> Right-click the <tt>org.myorg.systemproperties</tt> node, choose New &gt; Java Class,
+ and type <tt>PropertiesNotifier</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+ Replace the default code with code found <a href="https://netbeans.org/files/documents/4/494/PropertiesNotifier.java">here</a>.
+<li><b>Understand the file.</b> The methods defined for this class are as follows:
+<p><ul><li><b><tt><a name="PropertiesNotifierchanged" id="PropertiesNotifierchanged"></a>changed</tt>.</b> Fires an event to those processes that are listening. Every component that
+displays information based on a system property must listen for these events and
+update their displays as needed.
+<li><b><tt>addChangeListener</tt></b> and <b><tt>removeChangeListener</tt>.</b> Let components register
+themselves as listeners for these events. Processes which have displayed state can
+add a <tt>ChangeListener</tt> to this class. To ensure proper updates, processes that
+affect the state call <tt>changed</tt>.</ul></ol>
+
+
+<h3 class="tutorial"><a name="AllPropsChildren"></a>AllPropsChildren.java</h3>
+
+<p>This Java class is responsible for keeping track of the list of nodes underneath
+the System Properties node. When first asked for the list, it retrieves all system
+properties and asks the node implementation to keep track of all the system
+property names. The abstract class doing this is called <tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Children.html">Children</a></tt>.
+
+<p>In this example, a popular children implementation called <tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Children.Keys.html">Children.Keys</a></tt> is used.
+By subclassing <tt>Children.Keys</tt>, you need not explicitly keep track of
+the nodes -- this implementation does that. Instead, you keep track
+of a set of keys, which are lighter weight objects. Each key typically represents one
+node. You must tell the implementation how to create a
+node for each key. You can decide for yourself what type of keys to
+use.
+
+<p>In this example, the keys are names of system properties.
+
+<ol>
+<li><b>Create the file.</b> Right-click the <tt>org.myorg.systemproperties</tt> node, choose New &gt; Java Class,
+ and type <tt>AllPropsChildren</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+ Replace the default code with code found <a href="https://netbeans.org/files/documents/4/491/AllPropsChildren.java">here</a>.</li>
+
+<li><b>Understand the file.</b> The important methods that should be defined when implementing
+<tt>Children.Keys</tt> include:
+
+<ul><li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Children.html#addNotify()">addNotify</a></tt>.</b> Called the first time that a list of
+nodes is needed by the platform. An example of this is when the System Properties node
+is expanded. When <tt>addNotify</tt> is called, it calls the helper method <tt>refreshList</tt>
+to determine the keys, then it registers itself with the <tt>PropertiesNotifier</tt>,
+requesting notification of any system property changes. If there is such a change,
+the list will be refreshed.
+<li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Children.html#removeNotify()">removeNotify</a></tt>.</b> Called when the user collapses a System Properties node and
+starts working on something else. The platform will notice that the list of nodes is
+no longer needed, and it will free up the memory that is no longer being used.
+Note that momentarily collapsing the node will not trigger this call. When
+<tt>removeNotify</tt> is called, it removes the listener, as it is no longer interested in
+receiving notifications. In addition, <tt>setKeys</tt> is called with an empty set. This method
+is defined by <tt>Children.Keys</tt> for use by the subclasses.
+<li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Children.Keys.html#createNodes(java.lang.Object)">createNodes</a></tt>.</b> Called by the implementation whenever it needs to construct a
+child node. It is passed the key for which it is making a node. It returns either none,
+one, or more nodes corresponding to what should be displayed for the key. In this
+example, a new instance of one property node is being created, and the system
+property name is passed into its constructor.
+<li><b><tt>refreshList</tt>.</b> The <tt>System.getProperties</tt> call retrieves all of the properties
+currently defined in the system. This call goes through all of the property names,
+keeping and sorting this list. <tt>setKeys</tt> is called with the list, enabling the
+ subnodes to appear, one per system property, sorted by property name.</ul>
+
+</ol>
+
+
+
+
+<h3 class="tutorial"><a name="OnePropNode"></a>OnePropNode.java</h3>
+
+<p>This Java class provides the <tt>AbstractNode</tt> implementation for a single property. 
+Its constructor requires a string key. This class displays a single system property name. When the user expands
+the system properties node, it builds a list of keys, then creates a corresponding
+number of <tt>OnePropNodes</tt>. Each <tt>OnePropNode</tt> displays a single key, and does not
+directly interact with its parent node -- its knowledge is limited to a single system
+property and how to deal with it, as well as notifying the <tt>PropertiesNotifier</tt>
+if there are any changes. This design makes it easier to reuse such nodes, including
+placing them in other contexts.
+
+<ol>
+<li><b>Create the file.</b> Right-click the <tt>org.myorg.systemproperties</tt> node, choose New &gt; Java Class,
+ and type <tt>OnePropNode</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+ Replace the default code with code found <a href="https://netbeans.org/files/documents/4/493/OnePropNode.java">here</a>.</li>
+
+<li><b>Understand the file.</b> Here is an explanation of the class:
+
+<ol>
+
+<li><b><tt>public class OnePropNode extends AbstractNode</tt>.</b> <tt>AbstractNode</tt> is a generic Node subclass. <tt>Node</tt> is the abstract
+class, <tt>AbstractNode</tt> is the common implementation that can be customized.
+
+<li><b><tt>private static ResourceBundle bundle = <a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/NbBundle.html#getBundle(java.lang.Class)">NbBundle.getBundle(AllPropsNode.class)</a></tt>.</b> Loads the <tt>Bundle.properties</tt> file for all localized text
+for this class. The rest of the class uses the variable bundle to get all localized text.
+
+<li><b>Constructor:</b>
+
+<ul>
+
+<li><b><tt>super(<a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Children.html#LEAF">Children.LEAF</a>)</tt>.</b> Tells the node�s hierarchy that this
+is a leaf node that will not need to be expanded and will not have any children. It
+then stores the key and sets the icon.
+
+<li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html#setDefaultAction(org.openide.util.actions.SystemAction)">setDefaultAction</a></tt>.</b> Sets what is run by default if the node is double clicked or
+similar user actions are performed. In this example, the default action is to pop up
+the property sheet. 
+
+<li><b><tt>super.<a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html#setName(java.lang.String)">setName(key)</a></tt>.</b>  Sets the name of the key. The inherited version is used,
+to set the node name (it does not attempt to rename the actual property)..
+
+<li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Node.html#setShortDescription(java.lang.String)">setShortDescription</a></tt>.</b> Sets the associated tool tip. This is the override to specify
+what goes into the node context menu. 
+
+</ul>
+
+<li><b>Methods:</b>
+
+    <ul>
+        
+        <li><b><tt>createSheet</tt>.</b> Configures the look of
+        the property sheet. This creates the list of tabs in the property sheet, along with the
+        list of properties. <tt>createSheet</tt> is not called until there is a need to display the list
+        of properties.
+        
+        <ul>
+            
+            <li><b><tt>super.<a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html#createSheet()">createSheet</a></tt>.</b> Ensures there is a sheet to start with.
+            
+            <li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Sheet.html#get(java.lang.String)">sheet.get (Sheet.PROPERTIES)</a></tt>.</b> Checks to see if there is a tab named
+            <tt>Properties</tt>. If not, <tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Sheet.html#createPropertiesSet()">Sheet.createPropertiesSet</a></tt> makes one. Note that <tt><a href="http://www.netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Sheet.html">Sheet</a></tt>
+            refers to the entire set of properties for the node, and <tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Sheet.Set.html">Sheet.Set</a></tt> is one tab in the
+            property sheet.
+            
+            <li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/PropertySupport.Name.html">PropertySupport.Name</a></tt>.</b> Creates a <tt>Name</tt> property that reflects
+            the name of the node. The code is already synchronizing the node name with the
+            system property name.
+            
+            <li><b><tt>ValueProp</tt>.</b> Is an inner class, a custom property that is created for this example.
+            <tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/PropertySupport.ReadWrite.html">PropertySupport.ReadWrite</a></tt> is the base class for entering and viewing values.
+            The super call provides a code name for the property as well as a display name and
+            a tool tip for the user.
+            
+            
+            <ul>
+                <li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Node.Property.html#getValue()">getValue</a></tt>.</b> Looks up the system property.
+                <li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Node.Property.html#setValue(java.lang.Object)">setValue</a></tt>.</b> Sets a new value for the
+                system property and notifies other processes that the value has changed.
+            </ul>
+            
+            <p>The property is added to the property sheet, along with a <tt>ChangeListener</tt>, which
+            listens for changes in system properties, which may mean that this specific property
+            has changed. If true, then the <tt>firePropertyChange</tt> node fires a change to say that
+            one of the properties in its property sheet is no longer valid, and checks and updates
+            should be made accordingly. Note that the name of the property is value, which
+            matches the internal name assigned when creating <tt>ValueProp</tt>.
+        
+        </ul>
+        
+        <li><b><tt>finalize</tt>.</b> Called when the class is destroyed -- whenever this node
+        is destroyed, the <tt>ChangeListener</tt> is removed.
+        
+        <li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html#canRename()">canRename</a></tt>.</b> Returns <tt>true</tt>, allowing the node to be renamed.
+        
+        <li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html#setName(java.lang.String)">setName</a></tt>.</b> Called when the node is renamed, such as from the rename action, an inplace
+        rename from the Explorer, or from the Name property in the property sheet.
+        This action retrieves all system properties and associated values, removes the key,
+        adds a new property with a new name and value, and sets the system properties.
+        This action also notifies all concerned that it has changed, though it does not directly
+        rename itself (see <tt>AllPropsChildren</tt> next).
+        
+        <li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/AbstractNode.html#canDestroy()">canDestroy</a></tt>.</b> Gives permission to delete this node. 
+        
+        <li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/nodes/Node.html#destroy()">destroy</a>.</tt></b> Retrieves system properties, removes its key, sets
+        properties back, and notifies all concerned of changes. Note that this <tt>destroy</tt>
+        method does not remove the node -- it only removes the system property and
+        notifies interested parties that this property is gone. The node is actually removed
+        later, by <tt>AllPropsChildren</tt>. <tt>AllPropsChildren</tt> realizes this property no longer
+        exists, and creates a new set of keys that no longer includes this property. Then the
+        <tt>Children.Keys</tt> implementation automatically removes that node. This is done to
+        reflect the actual state of the system.
+    </ul>
+</ol></ol>
+
+
+<h3 class="tutorial"><a name="RefreshPropsAction"></a>RefreshPropsAction.java</h3>
+
+<p>This Java class provides the "Refresh" action that appears in the pop-up menu under the "System Properties" main node.
+It forces a refresh to occur, updating the display of information based
+        on the current state of system properties. It is a <tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/actions/CallableSystemAction.html">CallableSystemAction</a></tt> and is
+        always enabled, yet is not sensitive to what is selected. In principle, it could also be placed
+        as a button in a toolbar.
+    <ol>
+        <li><b>Create the file.</b> Right-click the <tt>org.myorg.systemproperties</tt> node, choose New &gt; Java Class,
+            and type <tt>RefreshPropsAction</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+        Replace the default code with code found <a href="https://netbeans.org/files/documents/4/495/RefreshPropsAction.java">here</a>.</li>
+        
+        <li><b>Understand the file.</b> The important methods that should be defined when implementing <tt>CallableSystemAction</tt> are:
+        <p><ul><li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/actions/CallableSystemAction.html#performAction()">performAction</a></tt>.</b> Calls <tt><a href="#PropertiesNotifierchanged">PropertiesNotifier.changed</a></tt> to indicate to other classes 
+            and Module components that something about the current set of system properties has changed and 
+            updates are required. For example, a new property may have been added or an existing value may have been changed.
+            <li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/actions/SystemAction.html#getName()">getName</a></tt>.</b> Gets the name of the action's label from <tt>Bundle.properties</tt>
+            <li><b><tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/actions/SystemAction.html#getHelpCtx()">getHelpCtx</a></tt>.</b> Supplies an IDE key for the context help. When building context help 
+            for this Module, this is how you would associate a specific node with a specific help string.
+</ul></ol></p>
+
+  <br />
+
+<!-- ===================================================================================== -->
+
+<h2><a name="finetuning"></a>Setting Up the Supporting Files</h2>
+<p>Once you have coded the main files, you must specify how you want your Module to
+ impact the filesystem and what labels and texts you want to display to the user. The <tt>layer.xml</tt> file
+ and the <tt>Bundle.properties</tt> file are made for this purpose.</p>
+
+
+                  <ol><li>Add the following entry between the &lt;filesystem&gt; tags in the <tt>layer.xml</tt> file:
+                      
+                      <pre class="examplecode">&lt;folder name="UI"&gt;
+  &lt;folder name="Runtime"&gt;
+     &lt;file name="org.myorg.systemproperties.AllPropsNode.instance" /&gt;     
+  &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+                      
+                      <li>Add the following properties to the <tt>Bundle.properties</tt> file:
+                      
+                      <pre class="examplecode">LBL_AllPropsNode=System Properties
+HINT_AllPropsNode=Shows all currently set system properties.
+LBL_NewProp=System Property
+LBL_NewProp_dialog=Create New Property
+MSG_NewProp_dialog_key=New property name:
+MSG_NewProp_dialog_value=New property value:
+HINT_OnePropNode=Represents one system property.
+PROP_value=Value
+HINT_value=Value of this system property.
+LBL_RefreshProps=Refresh
+LBL_MyOwnActionProps=My Own Action</pre>
+                      
+                      
+                      <li>For the icons used to display the nodes, you can use any 16x16 icons you want, so long as they are
+                      named <tt>allPropsIcon.gif</tt> and <tt>onePropIcon.gif</tt>, which
+                      is what they are named in the code above. Alternatively, 
+                      get the icons from the <a href="https://netbeans.org/files/documents/4/501/SystemProperties.zip">ZIP file attached to this tutorial</a>.
+                      Note that the <tt>setIconBase</tt> statements in the constructors of <a href="https://netbeans.org/files/documents/4/492/AllPropsNode.java"><tt>AllPropsNode.java</tt></a> and <a href="http://www.netbeans.org/files/documents/4/493/OnePropNode.java"><tt>OnePropNode.java</tt></a>
+                      set the location of the icons.
+                  </ol>                      
+                  <br />
+                  
+                  <!-- ======================================================================================= -->
+                  
+                  <h2><a name="building"></a>Building and Installing the Module</h2>
+                  <p>Now that you have completed your module, it is time to try it out.
+                      The IDE uses an Ant build script to build and install your module. The build script was created for you
+                  when you created the module project.</p>
+                  
+                  <ol>
+                  <li><p>In the Projects window, right-click the <tt>System Properties</tt> project and choose Install/Reload
+              in Target Platform.</p> 
+              <p>The module is built and installed in the target IDE or Platform. The target IDE or Platform opens so that you
+                  can try out your new Module. The default target IDE or Platform is the 
+                  installation used by the current instance of the development IDE. Note that when you run your Module, you will be using 
+                  a temporary test user directory, not the development IDE's user directory. 
+              <li><p>In the IDE's Services window (Ctrl-5), you should see the new node, together with its many subnodes:</p>
+                
+ <p><img src="../images/tutorials/sysprops/nbm-sysprops-65-1.png" alt="System Properties module."></p>
+
+ <li>Use the module as described in the <a href="#introducing-sample">Introducing the Sample</a> section.
+    </ol>
+
+<br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20System%20Properties%20Module%20Tutorial">Send Us Your Feedback</a></div>
+<br style="clear:both;" />
+
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Next Steps</h2>
+
+<p>For more information about creating and developing NetBeans Module, see the following resources: 
+  <ul>
+	  <li><a href="https://netbeans.org/kb/trails/platform.html">Other Related Tutorials</a></li>
+	  <li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API Javadoc</a></li>
+  </ul>
+  
+  <hr>
+    
+    
+</body>
+</html>

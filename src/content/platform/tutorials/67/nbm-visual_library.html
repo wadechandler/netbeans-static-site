@@ -1,0 +1,617 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+<title>NetBeans Visual Library Tutorial for NetBeans Platform 6.5</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="geertjan.wielenga@sun.com">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A walk-through of the basic features of the Visual Library API.">
+<!--      Copyright (c) 2006 Sun Microsystems, Inc. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>NetBeans Visual Library Tutorial</h1>
+
+<p>In this tutorial, you will learn how to use the main
+ features provided by the <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-api-visual/overview-summary.html">NetBeans Visual Library API</a>.
+ The library provides a set of reusable pieces, called "widgets".
+ When you compose them together, you are able to create a visualization
+ in a simple and flexible way.
+ Each widget has, built into it, various properties, such as "layout", "border",
+ and "actions". The set of predefined widgets provided by the library can be extended.
+ 
+ <p>All the pluggable pieces are declared as interfaces or abstract classes, such
+ as "WidgetAction", "Anchor", "AnchorShape", "PointShape", "Animator", "Border",
+ "GraphLayout", "LookFeel", "Layout", "SceneLayout", "Router", and "CollisionsCollector".
+
+<p>In summary, the Visual Library API
+  is a visualization API, useful in the context of modeling and graphing features.
+   
+     <p><b>Contents</b></p>
+   
+       <img  src="../images/articles/65/netbeans-stamp65.gif" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.5" title="Content on this page applies to NetBeans IDE 6.5"> </p>
+      <ul class="toc">
+<li><a href="#getting-started">Setting Up the Module</a>
+<li><a href="#creating-the-scene">Creating the Scene</a>
+<li><a href="#creating-a-palette">Creating a Component Palette for the Scene</a>
+<li><a href="#adding-a-layer-widget">Adding a LayerWidget</a>
+<li><a href="#adding-an-icon-widget">Adding an IconNodeWidget via Drag and Drop Functionality</a>
+<li><a href="#adding-to-scene">Adding Functionality to the Scene</a>
+<li><a href="#adding-to-widget">Adding Functionality to the IconNodeWidget</a>
+       </ul>
+         
+<p><b>To follow this tutorial, you need the software and resources listed in the following 
+table.</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.5</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Version 6 or<br/>version 5</td>
+            </tr>
+        </tbody>
+    </table>
+
+   <p class="tips">Optionally, for troubleshooting purposes, you can <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=14027">download the
+   completed sample for NetBeans Platform 6.5</a> and inspect the sources.
+
+  <p>Also, you will use 3 icons in the tutorial. You can right-click
+   them here and save them locally, then copy them to the module project's
+   location, after you create the module project later in this tutorial. Here are
+   the 3 icons:
+  
+   <p><img border="1" src="../images/tutorials/vislib/image1.png"/>
+    <img border="1" src="../images/tutorials/vislib/image2.png"/>
+    <img border="1" src="../images/tutorials/vislib/image3.png"/>
+
+  
+<p>All the information you need to know for working with the Visual Library API
+ is collected at these two locations:
+  
+ <ul>
+     <li><a href="http://graph.netbeans.org/">Visual Library Project Page</a>
+     <li><a href="http://graph.netbeans.org/documentation.html">Visual Library 2.0 - Documentation</a>
+ </ul>
+ 
+ <p>Also, see <a href="http://www.javalobby.org/eps/netbeans_visual_library/">Roman Strobl's Visual Library
+Screencast</a> on Javalobby.
+ 
+<!-- ===================================================================================== -->
+
+<p><h2><a name="getting-started"></a>Setting Up the Module</h2>
+
+<p>In this section, we use wizards to create a module project and
+ a custom window component. 
+
+
+<ol>
+    <li>Choose File &gt; New Project (Ctrl+Shift+N). Under Categories, select NetBeans Modules.
+        Under Projects, select Module. Click Next.</li>
+    <li>In the Name and Location panel, type <tt>ShapeSample</tt> in the Project Name field.
+        Change the Project Location to any directory on your computer. Leave the Standalone Module option
+        and Set as Main Project checkbox selected. Click Next.</li>
+    <li>In the Basic Module Configuration panel, type <tt>org.netbeans.shapesample</tt>
+     in Code Name Base.
+    <li><p>Select "Generate XML Layer". Leave the
+        locations of both the localizing bundle and the XML layer file
+        so that they will be stored in a package with
+        the name <tt>org/netbeans/shapesample</tt>. Click Finish.</p>
+        
+<p>The IDE creates the <tt>ShapeSample</tt> project. The project contains all of your sources and project
+    metadata, such as the project's Ant build script. The project opens in the IDE. You can view its logical
+    structure in the Projects window (Ctrl+1) and its file structure in the Files window (Ctrl+2).
+</li>
+    
+ <p><li>Right-click the project, choose Properties, click Libraries 
+in the Project Properties dialog box and declare a dependency on the following APIs:
+ 
+<p><ul>
+    <li>Visual Library API
+    <li>Utilities API
+</ul>
+
+
+  <p>Click OK.
+  
+<p><li>Right-click the module project, choose
+ New &gt; Other and choose Window Component from the
+ Module Development category. Click Next. Choose <tt>editor</tt>
+ in the drop-down list and select Open on Application Start. Click Next.
+ 
+ <p><li>Type <tt>Shape</tt> in Class Name Prefix. Optionally,
+ add an icon with a dimension of 16x16 pixels. Click Finish.</p> 
+ 
+ <p>Multiple files are generated, one of them is <tt>ShapeTopComponent</tt>.
+ Open this file in Design mode. You should now see this:
+ 
+ <p><img border="1" src="../images/tutorials/vislib/65-shapetopcomponent.png"/>
+
+ 
+<p><li>Right-click in the TopComponent in Design mode, choose Set Layout,
+  and select BorderLayout. 
+
+</ol>
+  
+
+<p><h2><a name="creating-the-scene"></a>Creating the Scene</h2>
+
+<p>Programming with the Visual Library API is similar to programming in Swing. You build
+  and modify a tree of visual elements that are called "widgets". The root of the tree is 
+ represented by a Scene class which holds all the visual data of the scene. The scene is a widget. 
+ You have to create a scene view, which is a JComponent. You must then add
+ the JComponent to a JScrollPane.
+
+ <p>In this section,
+ we add a JScrollPane to our TopComponent. Then we create a new
+  scene. Next, we pass the scene view to the TopComponent, so that it can be displayed in
+ the TopComponent's JScrollPane. We then install the module project and display
+   our first scene.</p>
+
+<ol>
+  
+<li>Use the Palette (Ctrl-Shift-8) to drop a 
+ <tt>JScrollPane</tt> on the TopComponent. In the Inspector, right-click
+  the <tt>JScrollPane</tt>, choose Change Variable Name and type <tt>shapePane</tt>. 
+ 
+  <p><li>In the <tt>org.netbeans.shapesample</tt> package, create a Java class called <tt>GraphSceneImpl</tt>.
+  Let the class extend <tt>GraphScene</tt>.</p>
+
+<p>A red error underline and a lightbulb appears. Let the IDE generate the import statement.
+
+<p>A red error underline and a lightbulb appears again. Let the IDE generate the class's abstract methods.
+
+<p><li>Create a dummy implementation of the class by adding
+meaningful identifiers and setting <tt>null</tt> to be returned where necessary, 
+so that all of the class's requirements are fulfilled:
+
+  
+<pre class="examplecode">public class GraphSceneImpl extends GraphScene {
+    
+    public GraphSceneImpl() {
+    }
+    
+    protected Widget attachNodeWidget(Object node) {
+        return null;
+    }
+    
+    protected Widget attachEdgeWidget(Object edge) {
+        return null;
+    }
+    
+    protected void attachEdgeSourceAnchor(Object edge, Object oldSourceNode, Object newSourceNode) {
+    
+    }
+    
+    protected void attachEdgeTargetAnchor(Object edge, Object oldTargetNode, Object newTargetNode) {
+            
+    }
+    
+}</pre>
+
+<p><li>Now use the TopComponent's 
+constructor to hold an instance of the <tt>GraphSceneImpl</tt> class. To do so, add
+the following to the end of the <tt>ShapeTopComponent</tt> class's constructor:
+
+<pre class="examplecode">GraphSceneImpl scene = new GraphSceneImpl();
+myView = scene.createView();
+
+shapePane.setViewportView(myView);
+add(scene.createSatelliteView(), BorderLayout.WEST);</pre>
+
+<p>Notice that we are creating two views. The first will be a large view for
+ visualization of your graphs or models, and so on. The second is a satellite view,
+ which we have placed in the WEST (i.e., the left side) of the TopComponent. This will
+ let the user navigate quickly across the view and gives an overview of the entire scene.</p>
+ 
+<p>Declare the view JComponent:
+
+<pre class="examplecode">private JComponent myView;</pre>
+
+ 
+<p><li>When the IDE restarts, there's no need to persist the TopComponent. In fact,
+ doing so will cause an error in this case. Therefore, change PERSISTENCE_ALWAYS
+  to PERSISTENCE_NEVER, as shown below:
+
+<pre class="examplecode">public int getPersistenceType() {
+   return TopComponent.PERSISTENCE_NEVER;
+}</pre>
+
+ 
+<p><li>Right-click the project node and choose "Run".</p>
+ 
+</ol>
+
+
+<p>When the module installs, look under the Window menu and you will find a new menu item
+ called "Shape", at the top of the list of menu items. 
+ Choose it and you will see the start of your Visual Library API implementation:
+
+ <p><img border="1" src="../images/tutorials/vislib/firstscene.png"/>
+ 
+ 
+
+
+
+<!-- ===================================================================================== -->
+<p><h2><a name="creating-a-palette"></a>Creating a Component Palette for the Scene</h2>
+
+<p>To do something useful with the Visual Library API, we will implement the <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-palette/overview-summary.html">Palette API</a>
+ so that we end up with a Component Palette containing the shapes shown at the start of this
+ tutorial. Later, we will add the Visual Library API's drag and drop functionality so that 
+ we can drag and drop the shapes
+ into the scene. After that, we will be able to enrich the scene with additional features,
+ such as the ability to zoom and pan in the scene.
+ 
+     <ol>
+         <li>Since the focus of this tutorial is the Visual Library API, and not the Palette API,
+         no time will be spent here explaining how the Palette API works. Many tutorials
+         exist on this subject already (<a href="https://netbeans.org/kb/trails/platform.html">here</a>).
+         Therefore, you can simply copy and paste the following files into a new package
+         called <tt>org.netbeans.shapesample.palette</tt>:
+         
+         <ul>
+             <li><a href="../images/tutorials/vislib/Category.java">Category.java</a>
+             <li><a href="../images/tutorials/vislib/CategoryChildren.java">CategoryChildren.java</a>  
+             <li><a href="../images/tutorials/vislib/CategoryNode.java">CategoryNode.java</a>
+             <li><a href="../images/tutorials/vislib/PaletteSupport.java">PaletteSupport.java</a>
+             <li><a href="../images/tutorials/vislib/Shape.java">Shape.java</a>
+             <li><a href="../images/tutorials/vislib/ShapeChildren.java">ShapeChildren.java</a>
+             <li><a href="../images/tutorials/vislib/ShapeNode.java">ShapeNode.java</a>
+         </ul>
+
+                  
+         <p><li>In the same way as explained in step 3 of the section called "Getting Started", earlier in this tutorial,
+         add dependencies on the Actions API, Nodes API, and Common Palette API.</p>
+
+         
+         <p><li>Next, add the palette to the TopComponent's Lookup, by adding this
+         line to the end of the TopComponent's constructor:
+         
+         <pre class="examplecode">associateLookup( Lookups.fixed( new Object[] { PaletteSupport.createPalette() } ) );</pre>
+         
+         <p><li>The IDE will prompt you to insert import statements for <tt>org.openide.util.lookup.Lookups</tt>
+         and <tt>org.netbeans.shapesample.palette.PaletteSupport</tt>. Accept the prompts and let
+         the IDE generate the import statements.
+         
+         <p><li>Place the images found at the start of this tutorial
+         into the <tt>org.netbeans.shapesample.palette</tt> package.</p>
+
+         <p>The Projects window should now look as follows:</p>
+     
+     <p><img src="../images/tutorials/vislib/proj-window-65.png"/>
+     
+     <p><li>Install the module again. When you open the TopComponent from the menu item, the new 
+     Component Palette is shown to the right of the scene:</p>
+ 
+  <p><img border="1" src="../images/tutorials/vislib/firstpalette.png"/>
+ 
+ 
+ 
+</ol>
+
+ <p>When you try to drag and drop a widget onto
+  the scene, nothing happens because you need
+  a <tt>LayerWidget</tt> on which you will be
+  able to drop your widgets. You will
+  be shown how to do so in the next section.
+
+<!-- ===================================================================================== -->
+<p><h2><a name="adding-a-layer-widget"></a>Adding a LayerWidget</h2>
+
+<p>A <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-api-visual/org/netbeans/api/visual/widget/LayerWidget.html">LayerWidget</a>
+ represents a glasspane, similar to JGlassPane in Swing. It is transparent by default. So,
+  before we go any further, we will add a LayerWidget to the scene, so that
+   we have somewhere to place the visible widgets that we will drag and drop onto the scene.
+   
+   <ol><li>In the <tt>GraphSceneImpl</tt> class, declare the LayerWidget:
+   
+<pre class="examplecode">private LayerWidget mainLayer;</pre>
+
+<p><li>In the <tt>GraphSceneImpl</tt> class's constructor, add the LayerWidget
+ as a child of the scene:
+
+<pre class="examplecode">mainLayer = new LayerWidget (this);
+addChild (mainLayer);</pre></ol>
+
+<p>Now, when we drag and drop items from the palette as widgets to the scene,
+ we will add them as children of the LayerWidget. Because LayerWidgets are
+  transparent by default, you could have various LayerWidgets transparently on
+   top of each other so that, for example, you can add a background image to the scene.
+   
+   <p>For details, see <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-api-visual/org/netbeans/api/visual/widget/LayerWidget.html">LayerWidget</a>
+    in the Javadoc.
+
+<!-- ===================================================================================== -->
+<p><h2><a name="adding-an-icon-widget"></a>Adding an IconNodeWidget via Drag and Drop Functionality</h2>
+
+<p>Earlier, we used the <tt>GraphSceneImpl</tt> class's constructor to pass a scene to the TopComponent's JScrollPane.
+  So far, the scene exists but has no behavior. Behavior is added through actions.
+   The action that we will look at in this section is called <tt><a href="http://graph.netbeans.org/documentation.html#AcceptAction">AcceptAction</a></tt>. This
+    action enables drag and drop functionality. The drag and drop functionality could
+     be applied to a widget, but here we apply it to the scene itself.
+      
+<p>We use <tt>createAcceptAction</tt> to specify what should happen
+  when an item from the palette is dragged over the scene. Two methods are involved
+   here. The first, <tt>isAcceptable()</tt>, is used to determine whether the
+    item is acceptable to the scene. Here you can test the item, by using
+     the transferable. You can also set the drag image, which is all that we
+     do in the implementation below. If <tt>true</tt> is returned, the <tt>accept</tt>
+      method is called. Here we get the image from the transferable, using the same
+       helper method as before. Then we call the <tt>addNode</tt> method, instantiating
+        a new <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-api-visual/org/netbeans/api/visual/widget/general/IconNodeWidget.html">IconNodeWidget</a>
+  and passing the image retrieved from the transferable.
+        
+        <p>All the code in this section is interrelated, and you will
+ receive red error underlines in your code until all the methods below
+ have been added, but we will try to add everything
+         in some kind of logical order anyway!
+
+<ol>
+<li>First, add the <tt>createAcceptAction</tt>, with its two methods, to the <tt>GraphSceneImpl</tt> class's constructor:
+
+<pre class="examplecode">getActions().addAction(ActionFactory.createAcceptAction(new AcceptProvider() {
+
+    public ConnectorState isAcceptable(Widget widget, Point point, Transferable transferable) {
+        Image dragImage = getImageFromTransferable(transferable);
+        JComponent view = getView();
+        Graphics2D g2 = (Graphics2D) view.getGraphics();
+        Rectangle visRect = view.getVisibleRect();
+        view.paintImmediately(visRect.x, visRect.y, visRect.width, visRect.height);
+        g2.drawImage(dragImage,
+                AffineTransform.getTranslateInstance(point.getLocation().getX(),
+                point.getLocation().getY()),
+                null);
+        return ConnectorState.ACCEPT;
+    }
+
+    public void accept(Widget widget, Point point, Transferable transferable) {
+        Image image = getImageFromTransferable(transferable);
+        Widget w = GraphSceneImpl.this.addNode(new MyNode(image));
+        w.setPreferredLocation(widget.convertLocalToScene(point));
+    }
+
+}));</pre>
+
+<p><strong class="notes">Note: </strong> After you add the above code, some red underlines will remain, denoting that there are errors.
+ These errors are because the code above refers to a method and a class that you have not yet created.
+ You will create them in the next steps.
+
+<p><li>Next, in the <tt>GraphSceneImpl</tt> class, add a helper method for retrieving the image from the transferable:
+
+<pre class="examplecode">private Image getImageFromTransferable(Transferable transferable) {
+    Object o = null;
+    try {
+        o = transferable.getTransferData(DataFlavor.imageFlavor);
+    } catch (IOException ex) {
+        ex.printStackTrace();
+    } catch (UnsupportedFlavorException ex) {
+        ex.printStackTrace();
+    }
+    return o instanceof Image ? (Image) o : ImageUtilities.loadImage("org/netbeans/shapesample/palette/shape1.png");
+}</pre>
+
+<p><strong class="notes">Note: </strong> You can define
+ any kind of image when an image
+is not successfully returned from this helper method. For now we will use the "<tt>shape1.png</tt>" image instead.</p>
+
+<p><li>Create a new class called <tt>MyNode</tt>. This class represents a node in a graph-oriented model.
+It cannot be an image directly, since each node has to be unique
+(checked by "equals" method) in the model. If you would use the images
+directly, then you would be able to have only 3 nodes (one for each
+image) in the scene. Using the MyNode class, you can have multiple nodes and
+each node can have its own or a shared image instance.
+
+<pre class="examplecode">public class MyNode {
+    
+    private Image image;
+    
+    public MyNode(Image image) {
+        this.image = image;
+    }
+    
+    public Image getImage() {
+        return image;
+    }
+}</pre>
+
+<p><li>Change the signature of the <tt>GraphSceneImpl</tt> class to the following, so that the node is
+ received by the Visual Library implementation class:</li>
+
+<pre class="examplecode">extends GraphScene&lt;MyNode, String&gt;</pre>
+
+<p>You must let the IDE generate new stubs for the abstract methods.
+ 
+ <p>Also, since we are now using generics, make sure that the IDE is using JDK 1.5.
+  If you are not sure whether 1.6 is being used, right-click the project, choose 
+  Properties, and go to the Sources page. Change the
+   Source Level drop-down to 1.5.
+
+ <p><li>Finally, define the new widget in the <tt>GraphSceneImpl</tt> class. This method is called automatically by the <tt>accept</tt>
+  method. Use it to define a Visual Library widget when the palette item is dropped.
+ 
+<pre class="examplecode">protected Widget attachNodeWidget(MyNode node) {
+    IconNodeWidget widget = new IconNodeWidget(this);
+    widget.setImage(node.getImage());
+    widget.setLabel(Long.toString(node.hashCode()));
+    widget.getActions().addAction(ActionFactory.createMoveAction());
+    mainLayer.addChild(widget);
+    return widget;
+}</pre>
+
+<p>Notice that we set the image retrieved from the node. We also generate a random
+ number so that we have a label. By default, the widget exists but has no behavior.
+ Here, we create a move action, so that the widget can be moved in the scene. Finally,
+ before returning the widget to the scene, we add it as a child to the LayerWidget that
+ we created in the previous section.</p>
+
+ <p><li>Reload the module and open the Shape window again.</p>
+
+<p>Now you can drag and drop items from the palette. As you drag an item over the scene,
+ you will see the drag image. When you drop an item, it becomes a widget and is visible
+ within the scene as well as within the satellite view, as you can see here:
+
+<p><img border="1" src="../images/tutorials/vislib/finishedscene.png"/></p>
+
+ 
+</ol>
+
+
+<!-- ===================================================================================== -->
+<p><h2><a name="adding-to-scene"></a>Adding Functionality to the Scene</h2>
+
+<p>In the previous section, we added <tt><a href="http://graph.netbeans.org/documentation.html#AcceptAction">AcceptAction</a></tt>
+ to the scene. We had to define two methods to specify whether the item should
+  be dropped and for resolving the item. In this section, we use <tt><a href="http://graph.netbeans.org/documentation.html#ZoomAction">ZoomAction</a></tt>,
+   to add zoom/unzoom functionality to the scene.
+
+<ol>
+    <li>At the end of the <tt>GraphSceneImpl</tt> class's constructor, add this line:
+    
+<pre class="examplecode">getActions().addAction(ActionFactory.createZoomAction());</pre>   
+    
+<p><li>Install the module again.
+
+<p><li>While holding CTRL key use the mouse wheel to zoom in and out of the scene:</p>
+
+<p><img border="1" src="../images/tutorials/vislib/zoom.png"/></p>
+
+<p><img border="1" src="../images/tutorials/vislib/unzoom.png"/></p>
+
+</ol>
+
+<p><strong class="notes">Note: </strong> The shapes are rendered as images. SVG is currently not supported.
+
+<p>In the same way as described above, you can add Pan functionality to the scene,
+ by means of this line:
+ 
+ <pre class="examplecode">getActions().addAction(ActionFactory.createPanAction());</pre>
+ 
+ <p>When you add this line, the user will be able to hold down the mouse wheel
+  and then scroll in any direction in the scene.
+
+<!-- ===================================================================================== -->
+<p><h2><a name="adding-to-widget"></a>Adding Functionality to the IconNodeWidget</h2>
+
+<p>Earlier we added <tt><a href="http://graph.netbeans.org/documentation.html#MoveAction">MoveAction</a></tt>
+ to the IconNodeWidget, to enable move behavior for the widget. In the same way, a lot
+  of other behavior can be added to the widget. In this section, we add
+   <tt><a href="http://graph.netbeans.org/documentation.html#HoverAction">HoverAction</a></tt>,
+    <tt><a href="http://graph.netbeans.org/documentation.html#SelectAction">SelectAction</a></tt>,
+     and <tt><a href="http://graph.netbeans.org/documentation.html#InplaceEditorAction">InplaceEditorAction</a></tt>.
+
+     <p>The <tt>InplaceEditorAction</tt> will let the user change the label:
+   
+  <p><img border="1" src="../images/tutorials/vislib/editable.png"/></p>
+  
+  <p>The <tt>SelectAction</tt> will change the color of the label when the widget is selected,
+   while the <tt>HoverAction</tt> will change the color of the label when the mouse hovers over the widget:
+   
+   <p><img border="1" src="../images/tutorials/vislib/selectable-hoverable.png"/></p>
+     
+     
+<ol>
+    <p><li>First define the editor action that we will add to the IconNodeWidget:
+    
+<pre class="examplecode">private WidgetAction editorAction = ActionFactory.createInplaceEditorAction(new LabelTextFieldEditor());</pre>   
+    
+<p><li>Now define the <tt>LabelTextFieldEditor</tt>, as follows:
+
+<pre class="examplecode">private class LabelTextFieldEditor implements TextFieldInplaceEditor {
+
+    public boolean isEnabled(Widget widget) {
+        return true;
+    }
+
+    public String getText(Widget widget) {
+        return ((LabelWidget) widget).getLabel();
+    }
+
+    public void setText(Widget widget, String text) {
+        ((LabelWidget) widget).setLabel(text);
+    }
+
+}</pre>
+
+<p><li>Finally, assign the editor action to the IconNodeWidget, in the same way
+ as done for the move action earlier:
+
+<pre class="examplecode">widget.getLabelWidget().getActions().addAction(editorAction);</pre>   
+ 
+<p>Here, we first get the IconNodeWidget's LabelWidget. Then we add the editor action
+ to the LabelWidget.</p>
+
+ <p><li>The IDE will prompt you to add several import statements. In each case,
+  accept the suggestion offered by the IDE.
+
+<p><li>Next, in the case of <tt>SelectAction</tt> and <tt>HoverAction</tt>, you need do
+ nothing more than assign these actions to the IconNodeWidget:
+ 
+<pre class="examplecode">widget.getActions().addAction(createSelectAction());
+widget.getActions().addAction(createObjectHoverAction());</pre>
+
+<p><li>Next, you need to think about the order of the actions that
+ you have created. For details, see the <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-api-visual/org/netbeans/api/visual/widget/doc-files/documentation.html#OrderOfActions">Order of Actions</a>
+  section in the documentation. After you have reordered
+ the actions, the <tt>attachNodeWidget</tt> should look as follows:
+
+<pre class="examplecode">protected Widget attachNodeWidget(MyNode node) {
+    IconNodeWidget widget = new IconNodeWidget(this);
+    widget.setImage(node.getImage());
+    widget.setLabel(Long.toString(node.hashCode()));
+
+    //double-click, the event is consumed while double-clicking only:
+    widget.getLabelWidget().getActions().addAction(editorAction);
+
+    //single-click, the event is not consumed:
+    widget.getActions().addAction(createSelectAction()); 
+
+    //mouse-dragged, the event is consumed while mouse is dragged:
+    widget.getActions().addAction(ActionFactory.createMoveAction()); 
+
+    //mouse-over, the event is consumed while the mouse is over the widget:
+    widget.getActions().addAction(createObjectHoverAction()); 
+
+    mainLayer.addChild(widget);
+    return widget;
+}</pre>
+
+<p><li>Install and try out the module again. As shown at the start of this section,
+when you hover over a widget's label, or when you select it, its color will change. Also,
+when you click on a label, you are able to edit its content.
+
+</ol>
+
+<p>Congratulations, you have completed your first Visual Library scene.</p>
+
+<br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Visual%20Library%20API%20Tutorial%20NetBeans">Send Us Your Feedback</a></div>
+<br style="clear:both;" />
+
+      
+        <a name="next_steps"></a><h2>Next Steps</h2>
+        <p>For more information
+        on working with the Visual Library API, see:</p> 
+  
+ <ul>
+      <li><a href="http://www.javalobby.org/eps/netbeans_visual_library/">Roman Strobl's Visual Library
+Screencast</a> on Javalobby.
+     <li><a href="http://graph.netbeans.org/">Visual Library Project Page</a>
+     <li><a href="http://graph.netbeans.org/documentation.html">Visual Library 2.0 - Documentation</a>
+ </ul>
+ 
+
+    </body>
+</html>

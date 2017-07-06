@@ -1,0 +1,105 @@
+buildscript {
+    //have to apply here for this to be applied at the right time
+    apply from: file("gradle/deps.gradle")
+    repositories sharedRepositories
+    dependencies sharedDependencies
+}
+apply from: file("gradle/utils.gradle")
+apply plugin: 'org.jbake.site'
+apply plugin: 'org.akhikhl.gretty'
+apply plugin: 'io.freefair.jsass-base'
+
+loadGlobals(globalsFile)
+
+//to build up content, assets, etc which JBake can process for us, we need to process:
+//SASS files
+//JS files
+//Image files
+//Any other content we want to preprocess
+//Content files such as .html and .md which just need metadata/front matter
+//GSP content templates which allow programming and replacement with Groovy templates
+//and we need to place all of these files in the appropriate location for JBake to do its job
+//...this means in either the content or the assets folders, and this will be the
+//generatedAssetsDir and generatedContentDir
+
+task compileSass(type: io.freefair.gradle.plugins.jsass.SassCompile,
+    description: "Compiles the projects SaSS files to the build directory.",
+    group: "Build") {
+    sourceDir = contentDir
+    destinationDir = generatedAssetDir
+}
+
+task preprocessContentStatics(type: Copy,
+description: "Pre-processes all .html, .md, and possibly other files which have metadata/front matter in a side car file of the same name and extension with an extra .yml extension after that",
+group: "Build") {
+
+}
+
+task preprocessContentTemplates(type: Copy,
+    description: "Pre-processes the *.gsp and *.gsp.yml files under content for baking as Groovy templates; edit global.yml to add data used in content other than YAML front matter",
+    group: "Build") {
+    
+    def mergeList = []
+
+    filteringCharset 'UTF-8'
+    includeEmptyDirs false
+    
+    from contentDir
+    into generatedContentDir
+
+    
+    //we need to do both of these to make sure we are or are not up to date
+    include "**/*.gsp", "**/*.gsp.yml"
+    
+    rename '(.*)\\.gsp', '$1'
+    
+    //expand the files using Groovy's SimpleTemplateEngine
+    //for processing content like templates are also processed
+    def props = [:]
+    props.putAll(globals)
+    expand props
+    
+    eachFile { details ->
+        if(details.sourcePath.endsWith(".yml")) {
+            details.exclude()
+            return
+        }
+        def contentFile = file("${contentDir}/${details.sourcePath}")
+        def ymlFile = file("${contentFile}.yml")
+        if(ymlFile.exists()) {
+            def mergeData = createMergeData(ymlFile.absolutePath,
+                file("${generatedContentDir}/${details.path}").absolutePath)
+            mergeList << mergeData
+        } else {
+            throw new Exception("The content file ${contentFile} can not be processed because the corresponding YAML file ${ymlFile} was not found.")
+        }
+    }
+    doLast {
+        //let's merge up the metadata with the content yml+content from the merge map
+        mergeList.each { data ->
+            mergeContentAndMetadata(data)
+        }
+    }
+
+}
+
+jbake {
+    groovyTemplatesVersion = "${libs.groovy}"
+    version  = "${libs.jbake}"
+    //we'll use the folder gretty sets up for this to be able to run a local server easily
+    //so what ever other job moves this to the asf-site branch will have to copy/update from here
+    destDirName = "${bakedDir}"
+    configuration.putAll(globals)
+    configuration['content.folder'] = "${buildDir}/generated-content"
+    configuration['asset.folder'] = "${buildDir}/generated-assets"
+    configuration['template.folder'] = "${templateDir}"
+}
+
+gretty {
+    servletContainer = "tomcat8"
+    contextPath = "/"
+}
+
+wrapper {
+    gradleVersion = libs.gradle
+}

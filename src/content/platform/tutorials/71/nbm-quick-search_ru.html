@@ -1,0 +1,506 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>Учебный курс по интеграции быстрого поиска для платформы NetBeans 6.5</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="gwielenga@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A short guide to using the Nodes API.">
+<!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+	<h1>Учебный курс по интеграции быстрого поиска</h1>
+
+<p>В этом руководстве показан способ написания модуля, интегрирующего новые элементы в функцию быстрого поиска NetBeans. 
+
+   <p><b>Содержание</b></p>
+   
+   <p><img  src="../../images/articles/69/netbeans-stamp7-8-9.png" class="stamp" width="114" height="114" alt="Содержимое на этой странице относится к среде IDE NetBeans 6.5, 6.7, 6.8" title="Содержимое на этой странице относится к среде IDE NetBeans 6.5, 6.7, 6.8" /></p>
+      <ul class="toc">
+  <li><a href="#intro">Введение в интеграцию быстрого поиска</a></li>
+  <li><a href="#creating">Создание проекта модуля</a></li>
+  <li><a href="#use">Использование диалогового окна &quot;Поставщик быстрого поиска&quot;</a></li>
+  <li><a href="#third">Интеграция внешнего синтаксического анализатора HTML DOM</a></li>
+  <li><a href="#code">Написание кода интеграции быстрого поиска</a></li>
+  <li><a href="#install">Установка и ознакомление с функциональными возможностями</a></li>
+  <li><a href="#platform">Использование функции быстрого поиска в платформе NetBeans</a></li>
+  <ul>
+     <li><a href="#enable">Включение функции быстрого поиска в платформе NetBeans</a></li>
+     <li><a href="#enable2">Включение поставщика интернет-поиска по умолчанию в платформе NetBeans</a></li>
+  </ul>
+  <li><a href="#share">Создание совместно используемого исполняемого файла</a></li>
+       </ul>
+         
+<p><b>Для работы с этим руководством требуется программное обеспечение и ресурсы, перечисленные в следующей таблице.</b></p>
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Программное обеспечение или ресурс</th>
+                <th class="tblheader" scope="col">Требуемая версия</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">Среда IDE NetBeans</a></td>
+                <td class="tbltd1">версия 6.7 или выше </td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Комплект для разработчика на языке Java (JDK)</a></td>
+                <td class="tbltd1">версия 6 или<br/>версия 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+ <p class="tips">Дополнительно, в целях поиска и устранения ошибок, можно <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=11179">загрузить готовый пример</a> и изучить исходный код.
+    
+
+
+<h2 class="tutorial"><a name="intro"></a>Введение в интеграцию быстрого поиска</h2>
+
+<p>Функция быстрого поиска, впервые появившаяся в среде IDE NetBeans 6.5, состоит из текстового поля в правом верхнем углу среды IDE. При вводе строки поиска в это поле выводится раскрывающийся список совпадающих элементов. По умолчанию элементами списка являются имена действий, зарегистрированных в среде IDE, а также темы справки по Java среды IDE. При выборе действия оно будет вызвано; при выборе темы справки она будет открыта в JavaHelp.
+ 
+ <p>Кроме того, для использования предоставляется <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/overview-summary.html">интерфейс API быстрого поиска</a>. С его помощью в функцию быстрого поиска можно интегрировать собственные объекты для поиска. Этой функцией можно пользоваться как в рамках среды IDE, так и в собственных приложениях, построенных на платформе NetBeans.
+
+<p>В этом руководстве показан способ написания модуля, интегрирующего новые элементы из <a href="http://netbeans.dzone.com">NetBeans Zone</a> в функцию быстрого поиска.
+
+<p><p align="left"><img border="1" src="../../images/tutorials/qsearch/deployed-result.png" alt="Развернутый результат">
+
+
+<!-- ===================================================================================== -->
+
+<h2 class="tutorial"><a name="creating"></a>Создание проекта модуля</h2>
+      
+<p>В этом разделе используется мастер для создания структуры исходного кода, требуемого любым модулем NetBeans. Эта структура исходного кода состоит из ряда папок в особых местах и набора файлов, которые требуются в любом случае. Например, для каждого модуля NetBeans требуется папка <tt>nbproject</tt>, в которой хранятся метаданные проекта, а также файл <tt>layer.xml</tt>, в котором объявляется регистрация таких элементов как кнопки панелей управления и окна.
+
+<ol>
+          
+	      <li>Выберите в меню &quot;Файл&quot; команду &quot;Новый проект&quot; (CTRL+SHIFT+N). В разделе &quot;Категории&quot; выберите параметр &quot;Модули NetBeans&quot;. В области &quot;Проекты&quot; выберите &quot;Модуль&quot; и нажмите кнопку &quot;Далее&quot;.</li>
+	<li>На панели &quot;Имя и расположение&quot; в поле &quot;Имя проекта&quot; введите <tt>NetBeansZoneSearch</tt>. В поле &quot;Расположение проекта&quot; укажите любой каталог на компьютере, например <tt>c:\mymodules</tt>. Оставьте переключатель &quot;Отдельный модуль&quot; выбранным. Панель должна выглядеть следующим образом:
+
+<p><p align="left"><img src="../../images/tutorials/qsearch/new-module-1.png" alt="Действие 1 мастера создания проекта">
+ <p>Нажмите кнопку &quot;Далее&quot;.
+
+<li>На панели &quot;Основные настройки модуля&quot; введите <tt>org.netbeans.modules.nbzone</tt> в поле &quot;Основа кодового имени&quot;. Добавьте пробелы к предложенному отображаемому имени модуля, и измените его на <tt>NetBeans Zone Search</tt>. Установите флажок &quot;Создать слой XML&quot; и оставьте местоположение локализуемого файла ресурсов и слоя XML по умолчанию; при этом они будут храниться в пакете с именем <tt>org/netbeans/modules/nbzone</tt>. Панель должна выглядеть следующим образом:
+
+<p><p align="left"><img src="../../images/tutorials/qsearch/new-module-2.png" alt="Действие 2 мастера создания проекта">
+
+<li>Нажмите кнопку &quot;Готово&quot;. </ol>
+
+<p> В среде IDE создается проект <tt>NetBeans Zone Search</tt>. Проект содержит все исходные файлы и метаданные проекта, например, сценарий сборки проекта Ant. Проект откроется в среде IDE. Логическую структуру проекта можно просмотреть в окне &quot;Проекты&quot; (CTRL+1), а его файловую структуру &ndash; в окне &quot;Файлы&quot; (CTRL+2). 
+
+
+      <br />
+
+<!-- ===================================================================================== -->
+<h2><a name="use"></a>Использование диалогового окна &quot;Поставщик быстрого поиска&quot;</h2>
+
+<p>В этом разделе с помощью мастера будет создан класс заглушки и сущности слоя, необходимые для начала интеграции с функцией быстрого поиска.
+
+  
+ <ol>
+	
+	 <li>Щелкните узел приложения правой кнопкой мыши и выберите в меню &quot;Создать&quot; команду &quot;Прочее&quot;. В диалоговом окне &quot;Новый файл&quot; выберите в меню &quot;Разработка модулей&quot; команду &quot;Поставщик быстрого поиска&quot;.</li>
+	      <li>Установите следующие значения на панели &quot;Поставщик быстрого поиска&quot;:
+        <p><ul>
+            <li><b>Имя класса поставщика.</b> Имя класса для заглушки, генерируемой мастером. Введите в это поле значение &quot;NBZoneSearchProvider&quot;.
+            <li><b>Пакет.</b> Пакет, в котором будет создан класс заглушки. Выберите в раскрывающемся списке пункт &quot;org.netbeans.modules.nbzone&quot;.
+            <li><b>Отображаемое имя категории.</b> Отображаемое имя для категории, создаваемой с помощью заглушки. Введите в это поле значение &quot;NetBeans Zone&quot;.
+            <li><b>Префикс команды.</b> Префикс для сужения поиска до категории, создаваемой с помощью заглушки. Введите в это поле значение &quot;nb&quot;.
+            <li><b>Позиция в контекстном меню.</b> Выберите позицию новой категории в пределах функции быстрого поиска. Значение по умолчанию &quot;0&quot; соответствует размещению категории в первой позиции.
+          </ul>
+          <p>На экране должны быть представлены следующие параметры:
+<p><p align="left"><img src="../../images/tutorials/qsearch/quick-search-template.png" alt="Шаблон быстрого поиска">
+          
+<li>Нажмите кнопку &quot;Готово&quot;. 
+
+<p><p>Окно &quot;Проекты&quot; должно выглядеть следующим образом:
+
+<p><p align="left"><img src="../../images/tutorials/qsearch/projects-window-final.png" alt="Итоговое окно &quot;Проекты&quot;. "></ol>
+
+      <p>В файле <tt>layer.xml</tt> должен содержаться следующий текст:
+      
+<pre>&lt;filesystem&gt;
+    &lt;folder name=&quot;QuickSearch&quot;&gt;
+        &lt;folder name=&quot;NetBeansZone&quot;&gt;
+            &lt;attr name=&quot;SystemFileSystem.localizingBundle&quot; stringvalue=&quot;org.netbeans.modules.nbzone.Bundle&quot;/&gt;
+            &lt;attr name=&quot;command&quot; stringvalue=&quot;nb&quot;/&gt;
+            &lt;attr name=&quot;position&quot; intvalue=&quot;0&quot;/&gt;
+            &lt;file name=&quot;org-netbeans-modules-nbzone-NBZoneSearchProvider.instance&quot;/&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/filesystem&gt;</pre>      
+
+      <br />
+      
+    <!-- ======================================================================================= -->
+      
+      <h2><a name="third"></a>Интеграция внешнего синтаксического анализатора HTML DOM</h2>
+<p>В следующем разделе потребуется синтаксический анализатор HTML DOM для синтаксического анализа NetBeans Zone. Можно воспользоваться любым подходящим синтаксическим анализатором по выбору. В данном учебным курсе используется <a href="http://sourceforge.net/project/showfiles.php?group_id=13153">JTidy</a>.</p>
+
+<p>Существует два способа предоставления внешнего файла JAR для использования в модуле. Первый способ состоит в размещении файла JAR в отдельном модуле, так называемом &quot;модуле-обертке библиотеки&quot;; в таком случае модуль функциональных возможностей <i>зависит от</i> модуля-обертки библиотеки. Оба модуля размещаются в наборе модулей. Преимущество использования двух раздельных модулей заключается в том, что при выпуске новой версии внешнего файла JAR требуется распространить небольшой по объему модуль, содержащий только внешний файл JAR, а не крупный модуль, содержащий также код функциональных возможностей. Второй способ заключается в добавлении файла JAR к модулю функциональных возможностей, как показано ниже. Преимущество этого подхода заключается в большем удобстве в краткосрочной перспективе, поскольку распространять требуется только один модуль, однако недостаток заключается в смешении внешней библиотеки с кодом функциональных возможностей, что нарушает принцип модульности.
+
+<div class="indent">
+    
+ <ol>
+    
+    <li>Загрузите <a href="http://sourceforge.net/project/showfiles.php?group_id=13153">JTidy</a> и найдите файл <tt>Tidy.jar</tt> в пакете загрузки.
+    
+    <li>В окне &quot;Файлы&quot; создайте структуру папок, показанную ниже, и разместите файл <tt>Tidy.jar</tt> в папке <tt>release/modules/ext</tt>:
+     
+    <p><p align="left"><img src="../../images/tutorials/qsearch/tidyjar.png" alt="Файл JAR JTidy." />
+
+<li>В конце файла <tt>project.xml</tt>, расположенного в папке <tt>nbproject</tt>, добавьте теги, выделенные полужирным шрифтом:
+ 
+ <pre>
+            ...
+            ...
+            ...
+            <b>&lt;class-path-extension&gt;
+                &lt;runtime-relative-path&gt;ext/Tidy.jar&lt;/runtime-relative-path&gt;
+                &lt;binary-origin&gt;release/modules/ext/Tidy.jar&lt;/binary-origin&gt;
+            &lt;/class-path-extension&gt;</b>
+        &lt;/data&gt;
+    &lt;/configuration&gt;
+ &lt;/project&gt;</pre>
+ 
+ <li>Добавьте следующую строку в файл <tt>project.properties</tt>:
+ 
+ <pre>cp.extra=release/modules/ext/Tidy.jar</pre>
+
+ </ol>
+ 
+    </div>
+ <p>Внешний синтаксический анализатор HTML DOM теперь включен в путь к классам модуля. Теперь эти классы можно использовать в файле JAR; эта возможность будет реализована в следующем разделе.
+    
+    
+    <!-- ======================================================================================= -->
+      
+      <h2><a name="code"></a>Написание кода интеграции быстрого поиска</h2>
+<p>Далее необходимо реализовать интерфейс API. Используются следующие классы интерфейса API:</p>
+
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Класс</th>
+                <th class="tblheader" scope="col">Описание</th>
+            </tr>
+            <tr>
+              <td class="tbltd1"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchProvider.html">SearchProvider</a></td>
+                <td class="tbltd1">Главный интерфейс API быстрого поиска. Этот интерфейс необходимо реализовать для предоставления новой группы результатов для быстрого поиска.</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchRequest.html">SearchRequest</a></td>
+                <td class="tbltd1">Описание запроса на быстрый поиск.</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchResponse.html">SearchResponse</a></td>
+                <td class="tbltd1">Объект ответа для сбора результатов SearchRequest.</td>
+            </tr>
+        </tbody>
+    </table>
+    
+<p><p>Ниже указываются зависимости требуемых модулей, которые затем реализуются в собственном модуле.
+
+<div class="indent">
+    
+    <ol>
+        
+        <li>Щелкните правой кнопкой мыши проект, выберите &quot;Свойства&quot;, а затем укажите следующие зависимости на панели &quot;Библиотеки&quot;:
+        
+     <p><p align="left"><img src="../../images/tutorials/qsearch/set-dependencies.png" alt="Установка зависимостей." />
+        
+        <li>Откройте созданный класс.
+        
+        <li>Измените класс следующим образом:
+    
+ <pre>public class NBZoneSearchProvider implements <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchProvider.html">SearchProvider</a> {
+
+    /**
+     * Метод вызывается инфраструктурой при запросе операции поиска.
+     * Реализующие его объекты должны обрабатывать полученный запрос и заполнять объект ответа
+     * соответствующими результатами
+     *
+     * @param request Объект запроса на поиск, содержащий строку поиска
+     * @param response Объект ответа поиска, в котором хранятся результаты поиска 
+     * Обратите внимание, что важно реагировать на значение, возвращаемое методом 
+     * SearchResponse.addResult(...) и останавливать вычисления, 
+     * если возвращается значение &quot;false&quot;.
+     */
+    @Override 
+    public void evaluate(<a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchRequest.html">SearchRequest request</a>, <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchResponse.html">SearchResponse response</a>) {
+        try {
+
+            <b>//Адрес URL, для которого предоставляется поиск:</b>
+            URL url = new URL(&quot;http://netbeans.dzone.com&quot;);
+            <b>//Stuff needed by Tidy:</b>
+            Tidy tidy = new Tidy();
+            tidy.setXHTML(true);
+            tidy.setTidyMark(false);
+            tidy.setShowWarnings(false);
+            tidy.setQuiet(true);
+
+            <b>//Получение org.w3c.dom.Document от Tidy,
+            //или использование другого синтаксического анализатора по выбору:</b>
+            Document doc = tidy.parseDOM(url.openStream(), null);
+
+            <b>//Получение всех элементов &quot;a&quot;:</b>
+            NodeList list = doc.getElementsByTagName(&quot;a&quot;);
+
+            <b>//Получение количества элементов:</b>
+            int length = list.getLength();
+
+            <b>//Итерация по всем элементам &quot;a&quot;:</b>
+            for (int i = 0; i &lt; length; i++) {
+
+                String href = null;
+                if (null != list.item(i).getAttributes().getNamedItem(&quot;href&quot;)) {
+                    <b>//Получение атрибута &quot;href&quot; для текущего элемента &quot;a&quot;:</b>
+                    href = list.item(i).getAttributes().getNamedItem(&quot;href&quot;).getNodeValue();
+                }
+
+                <b>//Получение атрибута &quot;title&quot; для текущего элемента &quot;a&quot;:</b>
+                if (null != list.item(i).getAttributes().getNamedItem(&quot;title&quot;)) {
+                    String title = list.item(i).getAttributes().getNamedItem(&quot;title&quot;).getNodeValue();
+
+                    <b>//Заголовок совпадает с запрошенным текстом:</b>
+                    if (title.toLowerCase().indexOf(<a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchRequest.html">request.getText().toLowerCase()</a>) != -1) {
+
+                        <b>//Добавление выполняемого объекта и заголовка к запросу
+                        //и возвращение пустого результата, если ничего не добавлено:</b>
+                        if (!<a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchResponse.html">response.addResult(new OpenFoundArticle(href), title)</a>) {
+                            return;
+                        }
+
+                    }
+
+                }
+
+            }
+
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+    }
+
+    private static class OpenFoundArticle implements Runnable {
+
+        private String article;
+
+        public OpenFoundArticle(String article) {
+            this.article = article;
+        }
+
+        public void run() {
+            try {
+                URL url = new URL(&quot;http://netbeans.dzone.com&quot; + article);
+                StatusDisplayer.getDefault().setStatusText(url.toString());
+                URLDisplayer.getDefault().showURL(url);
+            } catch (MalformedURLException ex) {
+                Logger.getLogger(NBZoneSearchProvider.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        
+    } 
+    
+ }</pre>
+ 
+ <li>Убедитесь в том, что определены следующие выражения импорта:
+ 
+<pre>import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.netbeans.spi.quicksearch.SearchProvider;
+import org.netbeans.spi.quicksearch.SearchRequest;
+import org.netbeans.spi.quicksearch.SearchResponse;
+import org.openide.awt.HtmlBrowser.URLDisplayer;
+import org.openide.awt.StatusDisplayer;
+import org.openide.util.Exceptions;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.w3c.tidy.Tidy;</pre> 
+ 
+ </ol>
+    </div>
+
+      
+    <!-- ======================================================================================= -->
+
+<h2><a name="install"></a>Установка и ознакомление с функциональными возможностями</h2>
+<p>Теперь установим модуль и воспользуемся функцией интеграции быстрого поиска. Для построения и установки модуля в среде IDE используется сценарий построения Ant. При создании проекта автоматически создается сценарий построения.</p>
+<div class="indent">
+
+
+      <ol>
+	      <li>В окне &quot;Проекты&quot; щелкните проект правой кнопкой мыши и выберите &quot;Выполнить&quot;.
+	      <p><p>Запускается новый экземпляр среды IDE, и выполняется установка модуля интеграции быстрого поиска. 
+               <li>Введите строку в средство быстрого поиска; если строка совпадает с заголовком одного из элементов в NetBeans Zone, к результату добавляется этот элемент из NetBeans Zone.
+<p><p align="left"><img border="1" src="../../images/tutorials/qsearch/deployed-result.png" alt="Развернутый результат">
+<p>При вводе префикса команды, определенного в файле <tt>layer.xml</tt>, с последующим пробелом, выполняется поиск только по связанной категории:
+<p><p align="left"><img border="1" src="../../images/tutorials/qsearch/command.png" alt="Префикс команды">
+		 <li>Щелкните элемент, и если в среде IDE настроен обозреватель, в нем выводится выбранная статья.
+       </ol>          
+   </div>
+      <br />
+
+
+<!-- ======================================================================================= -->
+
+<h2><a name="platform"></a>Использование функции быстрого поиска в платформе NetBeans</h2>
+
+<p>В предыдущих разделах подразумевалось создание модуля для существующего приложения. Оставшиеся две темы имеют смысл, если создается не модуль, а отдельное приложение на платформе NetBeans.
+
+<div class="indent">
+    
+<h3><a name="enable"></a>Включение функции быстрого поиска в платформе NetBeans</h3>
+
+<p>Несмотря на то, что среда IDE NetBeans поставляется с поддержкой функции быстрого поиска, в платформе NetBeans эта функция не предоставляется. По умолчанию функция быстрого поиска скрыта. Для включения этой функции необходимо выполнить шаги, приведенные ниже.
+
+<div class="indent">
+  
+      <ol>
+          <li>Добавьте в файл <tt>layer.xml</tt> следующие теги:
+<pre>&lt;folder name=&quot;Toolbars&quot;&gt;
+    &lt;folder name=&quot;QuickSearch&quot;&gt;
+        &lt;attr name=&quot;SystemFileSystem.localizingBundle&quot; stringvalue=&quot;org.netbeans.modules.nbzone.Bundle&quot;/&gt;
+        &lt;file name=&quot;org-netbeans-modules-quicksearch-QuickSearchAction.shadow&quot;&gt;
+            &lt;attr name=&quot;originalFile&quot; 
+            stringvalue=&quot;Actions/Edit/org-netbeans-modules-quicksearch-QuickSearchAction.instance&quot;/&gt;
+        &lt;/file&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>           
+
+<li>Добавьте в файл <tt>Bundle.properties</tt> следующую пару &quot;ключ-значение&quot;:
+ 
+ <pre>Toolbars/QuickSearch=Quick Search</pre>
+
+              <li>Запустите приложение на платформе NetBeans и обратите внимание на то, что функция быстрого поиска доступна для использования и работает.
+
+<p><p align="left"><img src="../../images/tutorials/qsearch/netbeans-platform-qsearch.png" alt="Платформа NetBeans с функцией быстрого поиска">
+
+
+       </ol>
+ 
+    </div>
+<!-- ======================================================================================= -->
+
+<h3><a name="enable2"></a>Включение поставщика интернет-поиска по умолчанию в платформе NetBeans</h3>
+
+<p>В исходных файлах NetBeans доступна реализация поставщика интернет-поиска по умолчанию. Этот поставщик используется для поиска текста, совпадающего со строкой поиска, в Google. В среде IDE эта функция была предназначена для поиска по <tt>netbeans.org</tt> и связанным сайтам, содержащим интерактивную документацию по среде IDE. 
+ 
+ <p><b>Примечание.</b> К сожалению, поставщик интернет-поиска в среде IDE пришлось отключить, поскольку после продолжительного использования компания Google выступила с жалобой о несоответствии автоматического поиска соглашению об использовании, и работа данной функции была остановлена.
+ 
+ <p>С учетом вышеуказанного ограничения этот поставщик интернет-поиска можно подвергнуть брэндингу и использовать в приложении на платформе NetBeans. 
+ 
+ 
+
+<div class="indent">
+  
+      <ol>
+          <li>Убедитесь в том, что функция быстрого поиска включена, в соответствии с описанием в предыдущем разделе.
+          <li>Добавьте в файл <tt>layer.xml</tt> следующие теги:
+<pre>&lt;folder name=&quot;Guardian&quot;&gt;
+   &lt;file name=&quot;org-netbeans-modules-quicksearch-web-WebQuickSearchProviderImpl.instance&quot;/&gt;
+&lt;/folder&gt;</pre>           
+
+<li>Создайте в папке <tt>branding</tt> приложения иерархию папок, показанную ниже, а также файл <tt>Bundle.properties</tt>, показанный на снимке экрана:
+ 
+<p><p align="left"><img border="1" src="../../images/tutorials/qsearch/brand-provider.png" alt="Поставщик брэндинга">
+
+<p><p>В среде IDE вышеупомянутые свойства жестко запрограммированы в следующем коде, однако в платформе NetBeans они не определены, поэтому требуется их брэндинг, как показано выше:
+
+<pre>quicksearch.web.site=netbeans.org
+quicksearch.web.url_patterns=.*netbeans\.org/kb.*,\
+    /.*wiki\.netbeans\.org/.*faq.*,.*wiki\.netbeans\.org/.*howto.*,\
+    .*platform\.netbeans\.org/tutorials.*</pre>
+
+              <li>Запустите приложение на платформе NetBeans и обратите внимание на то, что поставщик быстрого интернет-поиска по умолчанию доступен для использования и работает.
+
+<p><p align="left"><img border="1" src="../../images/tutorials/qsearch/clare-wigfall.png" alt="Поиск по Guardian">
+
+
+       </ol>
+ 
+    </div>
+ </div>
+    
+<!-- ======================================================================================= -->
+
+<h2><a name="share"></a>Создание совместно используемого исполняемого файла модуля</h2>
+
+<p>Готовый модуль можно предоставить для использования другими разработчиками. Для этого необходимо создать и распространить двоичный файл &quot;NBM&quot; (модуль NetBeans). 
+
+<div class="indent">
+  
+      <ol>
+	      <li>В окне &quot;Проекты&quot; щелкните правой кнопкой мыши проект <tt>NetBeans Zone Search</tt> и выберите &quot;Создать файл распространения модуля NBM&quot;.
+
+	      <p><p>Создается файл NBM, который можно просмотреть в окне &quot;Файлы&quot; (CTRL+2).
+	      <p><p align="left"><img border="1" src="../../images/tutorials/qsearch/shareable-binary.png" alt="Файл распространения модуля NBM, предназначенный для совместного использования.">
+	      <li>Чтобы предоставить этот файл для использования другим разработчикам, можно, например, воспользоваться <a href="http://plugins.netbeans.org/PluginPortal/">порталом подключаемых модулей NetBeans</a>. Для установки модуля получатель должен воспользоваться диспетчером подключаемых модулей (&quot;Сервис &gt; Подключаемые модули&quot;).
+       </ol>
+ 
+    </div>
+
+
+<!-- ======================================================================================== -->
+
+
+  <br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Quick%20Search%20Integration%20Tutorial">Мы ждем ваших отзывов</a></div>
+<br style="clear:both;" />
+  
+  
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Что дальше?</h2>
+
+<p>Дополнительные сведения о создании и разработке модулей NetBeans приведены в следующих ресурсах: 
+  <ul>
+	  <li><a href="https://platform.netbeans.org/index.html">Домашняя страница платформы NetBeans</a></li>
+	  <li><a href="http://bits.netbeans.org/dev/javadoc/index.html">Список интерфейсов API среды NetBeans (текущая версия разработки)</a></li>
+  <li><a href="https://netbeans.org/kb/trails/platform_ru.html">Другие связанные руководства</a></li></ul>
+  </p>
+  
+  <p><p>
+<!-- ======================================================================================== -->
+<!-- 
+<h2><a name="version"></a>Versioning </h2>
+<p>
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+         19 July 2008
+      </td>
+      <td>
+      Initial version.
+      </td>
+  </tr>
+ </tbody>
+</table>
+-->
+</body>
+</html>

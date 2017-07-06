@@ -1,0 +1,272 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+           
+ 
+ <head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+                                                  <title>NetBeans Platform 6.0 セレクション管理のチュートリアル</title><!-- -*- xhtml -*- --><!--      Copyright (c) 2006 Sun Microsystems, Inc. All rights reserved. --><!--     Use is subject to license terms.-->
+ 
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+        <meta name="AUDIENCE" content="NBUSER">
+        <meta name="TYPE" content="ARTICLE">
+        <meta name="EXPIRES" content="N">
+        <meta name="developer" content="tboudreau@netbeans.org">
+        <meta name="indexed" content="y">
+        <meta name="description"
+        content="A short guide to managing selection.">
+        
+        
+    
+</head>
+ 
+   <body>
+    <h1>NetBeans セレクション管理のチュートリアル I—TopComponent の Lookup を使う方法</h1>
+    <img  src="../../images/articles/60/netbeans-stamp60-61.gif" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.1" title="Content on this page applies to NetBeans IDE 6.1"> </p>
+ 
+    <p>このチュートリアルでは、セレクト可能なオブジェクトを提供するコンポーネントの実装方法や、セレクションの変更に応じて変化するコンポーネントの実装方法について学びます。</p><p>ある程度複雑なアプリケーションにとって、セレクションは重要なコンセプトです。NetBeans には主に、 <code><a href="http://wiki.netbeans.org/wiki/view/DevFaqWindowsTopComponent">TopComponent</a></code> の <code><a href="http://wiki.netbeans.org/wiki/view/DevFaqLookup">Lookup</a></code> を使う方法と <code><a href="http://wiki.netbeans.org/wiki/view/DevFaqWhatIsANode">Node</a></code> を使う方法があります。ここでは Lookup を用いた方法のみを扱い、より上級者向けの方法は後のチュートリアルで取り扱います。</p><p>セレクションを使用すると、表示内容に応じて有効または無効になる状況依存のアクションを可能にしたり、選択されている項目に関する情報を表示する、IDE のプロパティーシートコンポーネントやナビゲータコンポーネントのようなパレットウィンドウを作成したりできます。</p><p>基本的に、 <code>TopComponent</code> はオブジェクトを詰め込んだバッグを持っていて、外部より中に入っている物を問い合わせることができます。このバッグこそが <i>Lookup</i>であり、キーはクラスオブジェクトに、値はキークラスの派生または実装オブジェクトにマップされます。この方法が素晴らしく役に立つ理由は、提供するコンポーネントと消費するコンポーネントを分離するメカニズムにあります。そのため、提供側と消費側のコンポーネントはそれぞれ別のモジュールで実装することが可能ですし、既存のオブジェクトに対して新しいエディタが提供されても、残りのシステムは関係なく動き続けることができるでしょう。</p><p>サンプルをダウンロードするには<a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=3146">ここ</a>をクリックしてください。<!-- ===================================================================================== -->
+    </p><p></p><h2 class="tutorial"><a name="setup"></a>モジュールスイートとプロジェクトの作成</h2>
+    <p>このチュートリアルの例では、下の画像のように、１つのモジュールスイートに含まれた３つのモジュールを作成します:</p>  
+ <p>
+    <img border="1" align="center" src="../../images/tutorials/selection-1/project-setup-60_ja.png"/>
+    
+</p><p>まず３つのモジュールを格納するためのモジュールスイートを作成してください:</p><ol>
+        <li>「ファイル」&gt;「新規プロジェクト」(Ctrl-Shift-N) を選択します。「カテゴリ」で「NetBeans モジュール」を選択します。「プロジェクト」で「モジュールスイート」を選択し、「次へ」をクリックします。</li>
+
+        <li>「プロジェクト名」を <tt>SelectionSuite</tt> にします。「プロジェクトの場所」を使用コンピュータ上の任意のフォルダに変更します。「完了」をクリックします。</li>
+
+        <li>再び「ファイル」&gt;「新規プロジェクト」(Ctrl-Shift-N) を選択します。「カテゴリ」で「NetBeans モジュール」を選択します。「プロジェクト」で「モジュール」を選択し、「次へ」をクリックします。</li>
+
+    <li>プロジェクト名を <tt>MyAPI</tt> にします。デフォルトでは、「プロジェクトの場所」は、モジュールスイートが作成されたディレクトリの下になります。「次へ」をクリックします。</li><li>「コード名ベース」の <tt>yourorg</tt> を <tt>myorg</tt> に変更し、 <tt>org.myorg.myapi</tt> とします。「モジュール表示名」でデフォルト値に空白を付け加えて、 <tt>My API</tt> とします。「ローカライズ版バンドル」と「XML レイヤー」はそのまま、 パッケージ <tt>org/myorg/myapi</tt> に含まれるようにします。「完了」をクリックします。</li><li>同じように、 MyEditor と MyViewer という名前のプロジェクトを作成します。なぜ３つのモジュールを作るのかは、チュートリアルを続けるうちにわかるでしょう。</li>    
+    
+    </ol>
+    <p></p><h2 class="tutorial"><a name="createapi"></a>API の作成と依存関係の設定</h2>これよりシンプルな API クラスを作成します。実際には、 API はファイルやその他のモデル化されたデータを表すことになるでしょう。しかしこのチュートリアルでは、いくつかのプロパティーを持つシンプルなオブジェクトで十分です。<ol><li><p><code>org.myorg.myapi</code> パッケージを右クリックし、「新規」&gt;「Java クラス」を選択します:</p>
+    <p>
+        <img border="1" src="../../images/tutorials/selection-1/create-java-class-60_ja.png"/></p>
+    </li>
+    <li>クラス名を <code>APIObject</code> とします。</li>
+    <li>ソースコードを次のように書き換えます:<pre class=examplecode>
+public final class APIObject {
+
+   private final Date date = new Date();
+   private static int count = 0;
+   private final int index;
+
+   public APIObject() {
+      index = count++;
+   }
+
+   public Date getDate() {
+      return date;
+   }
+
+   public int getIndex() {
+      return index;
+   }
+   
+   public String toString() {
+       return index + " - " + date;
+   }
+   
+}
+</pre>このモジュールのコードは以上です。見てわかるように、 <code>APIObject</code> が生成されるたびにカウンタが増加します。つまり、それぞれのインスタンスはユニークな属性値を持つことになります。
+</li>
+    <li>次に、他のモジュールから参照できるようにするため、 <code>org.myorg.myapi</code> パッケージをエクスポートします。My API プロジェクトを右クリックし、 「プロパティー」を選択します。</li>
+    
+    <li><p>「API のバージョン管理」カテゴリの「公開パッケージ」で、以下のように <code>org.myorg.api</code> のチェックボックスにチェックを入れます:</p>
+    <p>
+    <img border="1" src="../../images/tutorials/selection-1/export-package-60_ja.png"/>
+    
+    </p></li>
+
+    <li>さらに、モジュール間の依存関係を設定する必要があります。My Editor と My Viewer は <code>APIObject</code> クラスを使用する予定なので、これらのモジュールは API モジュールに<i>依存</i>するといえます。これらのプロジェクトのノードを順に右クリックし、「プロパティー」を選択します。</li>
+    
+    <li>
+    <p>「ライブラリ」カテゴリの「依存関係を追加」をクリックします。ポップアップダイアログの「フィルタ」に <code>APIObject</code> と入力すると、作成した API モジュールだけが一致するはずです。これを選択して「了解」をクリックし、依存関係を追加します。</p>
+    <p>
+    <img border="1" src="../../images/tutorials/selection-1/add-deps-60_ja.png"/>
+    
+    
+    </p></li>
+    </ol>
+    
+    <p></p><h2><a name="creating-the-viewer-component"></a>ビューアコンポーネントの作成</h2>
+    <p>これより、 <code>APIObject</code> がセレクト可能かどうか、つまりフォーカス中のトップコンポーネントの Lookup 内に <code>APIObject</code> があるか監視するシングルトンコンポーネントを作成します。もしあれば、そのオブジェクトに関するデータを表示します。同じような方法として、一般的なものの１つにマスター/詳細ビューの作成があります。</p>
+    <p>シングルトンコンポーネントとは、 NetBeans IDE のプロジェクトウィンドウやプロパティーシート、ナビゲータなどのように、システムにたった１つしか存在しないコンポーネントのことです。ウィンドウコンポーネントの作成ウィザードを使えば、シングルトンコンポーネントの作成に必要なコードが自動的に生成されるので、後はフォームデザイナーを使ったリ、中身のコードを付け加えるだけです。</p><ol>
+        <li><code>org.myorg.myviewer</code> パッケージを右クリックし、「新規」&gt;「その他」を選択します。</li>
+        <li>
+出てきたダイアログで「モジュールの開発」カテゴリの「ウィンドウコンポーネント」を選択し、「次へ」をクリックします (もしくは Enter キーを押す)。</li>
+        <li><p>「ウィンドウの位置」で、 <code>navigator</code> を選択し、「アプリケーションの起動時に開く」のチェックボックスにチェックを入れます:</p>  
+        <p>
+        <img border="1" src="../../images/tutorials/selection-1/new-window-60_ja.png"/>
+            </p>
+        </li>
+        <li>「次へ」をクリックし、「名前、アイコン、および場所」ページを開きます。</li>
+        <li>「クラス名の接頭辞」を <code>MyViewer</code> とし、「完了」をクリックします (もしくは Enter キーを押す)。</li>
+    </ol>これで、 <code>MyViewerTopComponent</code> という名前のシングルトントップコンポーネントのスケルトンコードが作成されました。<code>MyViewerTopComponent</code> の「デザイン」タブをクリックするとフォームエディタが表示されるはずです。フォーム上にラベルを２つ追加し、選択中の <code>APIObject</code> がある場合にその情報を表示させます。<ol>
+        <li><p>「パレット」ウィンドウの「Swing」カテゴリから JLabel を２つフォーム上にドラッグし、上下に配置します。</p>
+        <p>
+        <img border="1" src="../../images/tutorials/selection-1/viewer-form-editor.png"/>
+        </p>
+        <p>１つ目のラベルのテキストを [nothing selected] に変更します。</p></li>
+        <li>「ソース」ボタンをクリックしてソースエディタに切り替えます。</li>
+        <li><code>MyViewerTopComponent</code> が <code>LookupListener</code> を実装するように、クラスのシグネチャを変更します:<pre class=examplecode>
+public class MyViewerTopComponent extends TopComponent implements LookupListener {
+</pre>        
+        </li>
+        <li>エディタ上で右クリックし、「インポートを修正」を選択して、 <code>LookupListener</code> をインポートします。</li>
+        
+        <li><p>
+シグネチャの行にカーソルを移動してください。欄外に電球が見えているはずです。Alt-Enter キーを押すと「すべての抽象メソッドの実装」というメッセージがポップアップ表示されるので Enter キーを押します。これで LookupListerner のメソッドが追加されます。</p>
+    <p>
+    <img border="1" src="../../images/tutorials/selection-1/implement-methods_ja.png"/>
+            </p>
+        </li>
+        
+        <li><code>LookupListener</code> の実装クラスができました。何か監視 (listen) するものが必要です。<code>Utilities.actionsGlobalContext()</code> メソッドにより、いわば多様な Lookup のプロキシである、便利なグローバル Lookup オブジェクトを取得することができます。ですから、どのコンポーネントがフォーカス中であるかを監視するよりも、このグローバルなセレクション Lookup から通知を受け取れば良いのです。フォーカスが移動した時には、このグローバル Lookup が適当な変更通知を発行してくれるでしょう。ソースコードを以下のように変更します:<pre class=examplecode>
+    private Lookup.Result result = null;
+    public void componentOpened() {
+        Lookup.Template tpl = new Lookup.Template (APIObject.class);
+        result = Utilities.actionsGlobalContext().lookup(tpl);
+        result.addLookupListener (this);
+    }
+    
+    public void componentClosed() {
+        result.removeLookupListener (this);
+        result = null;
+    }
+    
+    public void resultChanged(LookupEvent lookupEvent) {
+        Lookup.Result r = (Lookup.Result) lookupEvent.getSource();
+        Collection c = r.allInstances();
+        if (!c.isEmpty()) {
+            APIObject o = (APIObject) c.iterator().next();
+            jLabel1.setText (Integer.toString(o.getIndex()));
+            jLabel2.setText (o.getDate().toString());
+        } else {
+            jLabel1.setText("[no selection]");
+            jLabel2.setText ("");
+        }
+    }
+</pre>
+      <p><code>componentOpened()</code> はコンポーネントが表示される度に呼ばれ、 <code>componentClosed()</code> はユーザーがウィンドウを閉じる度に呼ばれます。コンポーネントの表示中にセレクションの状態を知りたいので以上のようにコーディングします。</p><p><code>resultChanged()</code> は <code>LookupListener</code> の実装メソッドです。このメソッドは、選択中の <code>APIObject</code> が変わる毎に、ビューアの <code>JLabel</code> を更新します。</p></li>
+    </ol>
+    
+    <p></p><h2><a name="creating-the-editor-component"></a>エディタコンポーネントの作成</h2>
+    <p>このサンプルコードを使えるようにするには、何か <code>APIObject</code> を提供するものが必要です。幸いこれはとても簡単です。</p>
+    <p>エディタ位置にトップコンポーネントをもう１つ作り、その <code>Lookup</code> に <code>APIObject</code> のインスタンスを提供させます。もちろんウィンドウコンポーネント作成のテンプレートを使ってもいいのですが、このテンプレートはいくつも生成可能なコンポーネントよりも、むしろシングルトンコンポーネントを作るように考えられているのです。ですから、テンプレートは使わず、単純にトップコンポーネントのサブクラスと、これをオープンするためのアクションを作成します。</p><ol>
+        
+        <li>まず必要なクラスを参照できるように、 My Editor モジュールに３つの依存関係を追加します。My Editor プロジェクトを右クリックし、 「プロパティー」を選択します。「ライブラリ」ページで「依存関係を追加」をクリックし、<code>TopComponent</code> と入力します。ダイアログは自動的に「ウィンドウシステム API」を候補に挙げるはずです。同じように、 <code>Lookups</code> を入力して、「ユーティリティー API」を追加します。</li>
+        
+        <li>My Editor プロジェクトの <code>org.myorg.myeditor</code> パッケージを右クリックし、「新規」&gt;「JPanel フォーム」を選択します。</li>
+
+        <li>クラス名を "My Editor" とし、ウィザードを終了します。</li>
+
+        <li>フォームエディタを開いて、 ２つのJTextFiled を上下に配置します。それぞれ、プロパティーシートで「editable」プロパティのチェックを外し、値を false にします。</li>
+
+        <li>「ソース」ボタンをクリックしてソースエディタに切り替えます。</li>
+
+        <li><code>MyEditor</code> のシグネチャを変更して、 <code>javax.swing.JPanel</code> の代わりに <code>TopComponent</code> を継承するようにします:<pre class=examplecode>
+public class MyEditor extends TopComponent {</pre>
+        </li>
+        
+        <li>以下のコードを <code>MyEditor</code> のコンストラクタに追加します:<pre class=examplecode>
+APIObject obj = new APIObject();
+associateLookup (Lookups.singleton (obj));
+jTextField1.setText ("APIObject #" + obj.getIndex());
+jTextField2.setText ("Created: " + obj.getDate());
+setDisplayName ("MyEditor " + obj.getIndex());
+</pre>エディタ上で右クリックし、「インポートを修正」を選択します。</li>
+    </ol>
+
+    <p><code>associateLookup (Lookups.singleton (obj));</code> の行では、新しい <code>APIObject</code> のインスタンスだけを含む Lookup を作成します。これは、 <code>MyEditor.getLookup()</code> で取得することができます。これは例に過ぎませんから、 <code>APIObject</code> がファイルやデータベースのエンティティなど、実際に編集したり、表示したいと思うものを表すとどうなるか、思い浮かべてみると良いでしょう。もしかすると複数の <code>APIObject</code> のインスタンスを選択したいと思うかもしれません。この方法については次回のチュートリアルで扱います。</p><p>実際には何も編集しないにしろ、最低限エディタコンポーネントを見栄えのするものにするには、テキストフィールドに <code>APIObject</code> の値を表示させます。</p><p></p><h2><a name="opening-the-editor-component"></a>エディタコンポーネントを開く</h2>何か表示させるためには、 <code>MyEditor</code> をエディタ位置に開くための手段が必要です。セレクションが意味を成すためには、少なくとも１つ以上の <code>APIObject</code> が必要で、結果１つ以上のエディタが必要です。複数のエディタが欲しいのですから、 <code>MyEditor</code> のインスタンスを作成して表示するアクションがメインメニューに必要です。これは、ウィンドウコンポーネント作成テンプレートが作成する、 IDE のナビゲータやプロパティーシートのようなシングルトンコンポーネントを開くアクションとは別のものです。<ol>
+        <li><code>org.myorg.myeditor</code> パッケージを右クリックし、「新規」&gt;「その他」を選択します。</li>
+        <li>出てきたダイアログで「モジュールの開発」カテゴリの「アクション」を選択し、「次へ」をクリックします。</li>
+        <li>そのまま「常に有効」を選択して「次へ」をクリックします。</li>
+        <li>「GUI の登録」ページでは、そのままにして「次へ」をクリックします (そうすると、アクションは「ファイル」メニューの先頭に追加されるでしょう)。</li>
+        <li>ウィザードの最後のページで、クラス名を <code>OpenEditorAction</code> とし、表示名を Open Editor とします。</li>
+        <li>「完了」をクリックしてアクションクラスを生成します。</li>
+        <li>すると、 <code>CallableSystemAction</code> のサブクラスである <code>OpenEditorAction</code> という名前のクラスのソースエディタが開くでしょう。 <code>CallableSystemAction</code> は、NetBeans API で定義されている、 <code>javax.swing.Action</code> のサブクラスで、状況依存のアクションを作成することができます。以下のコードをメソッド <code>performAction()</code> に追加します:<pre class=examplecode>
+MyEditor editor = new MyEditor();
+editor.open();
+editor.requestActive();</pre>上のコードは、単に <code>MyEditor</code> のインスタンスを作成し (同時に<code>APIObject</code> の新しいインスタンスを作成し、 <code>Lookup</code> の中にしまうことを意味します)、そして表示するという作業をしています。</li>
+    </ol>
+    
+    <p></p><h2><a name="running"></a>サンプルコードの実行</h2>
+    <p>これでチュートリアルのサンプルコードを実行する準備が整いました。作成した３つのモジュールを格納する <code>SelectionSuite</code> を右クリックし、ポップアップメニューから「実行」を選択します。IDE が立ち上がったら、「ファイル」&gt;「Open Editor」を選択してアクションを実行します。同じ作業を繰り返し、いくつかのエディタコンポーネントを開きます。シングルトンコンポーネントの <code>MyViewer</code> ウィンドウも開いているはずです。異なるエディタのタブをクリックする毎に <code>MyViewer</code> ウィンドウの内容が変わります:</p><p>
+        <img border="1" src="../../images/tutorials/selection-1/result-1-60_ja.png"/>
+        </p>
+    <p>プロジェクトウィンドウをクリックすると、ラベルのテキストは [No Selection] と表示されます:</p>
+    <p>
+        <img border="1" src="../../images/tutorials/selection-1/result-2-60_ja.png"/>
+        </p>
+    <p>もしも <code>MyViewer</code> ウィンドウが表示されていなかったら、多分ウィザードで「アプリケーションの起動時に開く」のチェックボックスをチェックしなかったためです。「ウィンドウ」メニューから「MyViewer ウィンドウを開く」を選択して表示することができます。</p>
+    
+    <p></p><h2><a name="the-point"></a>つまり、ポイントは?</h2>これらの作業のポイントは何だろうとあなたは思っているかもしれませんね。あなたはセレクション管理が可能であることを証明したのです。すごいことではありませんか！重要なポイントはモジュールを３つに分けた点です。 My Viewer モジュールは My Editor モジュールについて全く関知しておらず、それぞれ単独で実行することができます。これらのモジュールは My API を共有しているというだけです。これは２つの意味で重要です。 1. My Viewer と My Editor を別々に開発し、配布することができます、そして 2. 他のモジュールが My Editor とは異なったエディタを提供した場合でも、Lookup に <code>APIObject</code> のインスタンスを提供しさえすれば、ビューアコンポーネントは完璧に動作することができるでしょう。</p>
+    
+    <p>この価値をわかりやすくするために、 <code>APIObject</code> がより複雑であると仮定して想像してみてください。例えば、 <code>MyEditor</code> がイメージエディタで、 <code> APIObject</code> が編集中のイメージファイルであるといった具合です。<code>MyEditor</code> を SVG エディタに置き換えても良いでしょう。おそらく編集中のイメージの属性値を表示することになるでしょうが、ビューアは新しいエディタと透過的に動作するでしょう。これは、 NetBeans IDE に新しいツールを追加するためのモデルです。例えば Java ファイルを扱うそのツールは、 NetBeans の異なるバージョンで動作することができるでしょう。さらにフォームエディタのようなエディタを追加しても、ツールのすべてのコンポーネントとアクションは問題なく動作するでしょう。</p><p>これがまさに NetBeans が Java ファイルなどのソースファイルを扱うやり方なのです。そこではエディタの Lookup は <code><a href="http://wiki.netbeans.org/wiki/view/DevFaqDataObject">DataObject</a></code> で、ナビゲータやプロパティシートは、フォーカス中のトップコンポーネントで何が選択可能か監視しているだけなのです。</p><p>このアプローチは、既存のアプリケーションを NetBeans プラットフォーム上に移行する上でも有効です。データモデルの一部であるオブジェクトに関するコードがきっとあるでしょうが、これは NetBeans へ移行する際に修正されるべきではない箇所です。データモデルの API を独立したモジュールに退避させることで、 NetBeans プラットフォームへの移行はコアのロジックには触れないで行うことができます。 </p><p></p><h2><a name="change-on-the-fly"></a>現在選択中のオブジェクトを変更する</h2>このアプローチがいかに強力であるかを証明するために、もう一仕事します。エディタに、選択中の <code>APIObject</code> を新しいものに変更するボタンを追加します。<ol>
+        <li>フォームエディタで MyEditor を開き、 <code>JButton</code> を追加します。</li>
+        
+        <li>「<code>text</code>」プロパティを "Replace" とします。</li>
+        
+        <li><code>JButton</code> を右クリックして、「イベント」&gt; 「Action」&gt;「actionPerformed」を選択します。すると、ソースエディタでイベントハンドラメソッドの箇所に飛ぶはずです。</li>
+        
+        <li>クラス定義の先頭に final フィールドを追加します:<pre class=examplecode>
+public class MyEditor extends TopComponent {
+    private final InstanceContent content = new InstanceContent();</pre>InstanceContent  は進行中の Lookup、特に<code>AbstractLookup</code> インスタンスの中身を変更するためのクラスです。</li>
+        <li>先に追加したコンストラクタのコードを丸ごとクリップボードにコピーし、"associateLookup..." の行だけ残して削除します。その行を以下のように変更します:<pre class=examplecode>
+associateLookup (new AbstractLookup (content)); </pre>
+        </li>
+        <li>クリップボードにコピーしたコードを JButton のアクションハンドラに使用するのですが、これをコンポーネントの初期化時に１度、実行する必要があります。上の行の後に、以下の行を追加します:<pre class=examplecode>
+jButton1ActionPerformed (null);</pre>
+        </li>
+        <li>イベントハンドラメソッドにクリップボードのコードをコピーし、最後に１行追加して、以下のように変更します:<pre class=examplecode>
+private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {
+    APIObject obj = new APIObject();
+    jTextField1.setText ("APIObject #" + obj.getIndex());
+    jTextField2.setText ("Created: " + obj.getDate());
+    setDisplayName ("MyEditor " + obj.getIndex());
+    content.set(Collections.singleton (obj), null);
+}</pre>
+        </li>
+        <li>エディタ上で右クリックし、「インポートを修正」を選択します。</li>
+    </ol>
+    <p>これで再びスイートを実行する準備が整いました。SelectionSuite を右クリックし、「実行」を選択します。Replace ボタンをクリックすると、MyViewer のインスタンスを含めすべてのコンポーネントがどのように変更されるかに注目してください。</p>
+    
+    <p>
+    <img border="1" src="../../images/tutorials/selection-1/first-run-60_ja.png"/>
+    </p>
+    
+    <p></p><h2><a name="multiple-objects"></a>複数オブジェクトの提供</h2>分離という点では十分な例ですが、１つのオブジェクトしか提供しないのでは、まるで１組のキーと値しか持っていない <code>Map</code> のようではありませんか?その通りです。複数の API から 複数のオブジェクトを提供してこそこのテクニックはより強力なものになるのです。</p>
+    
+    <p>例えば NetBeans にも状況依存のアクションがあります。その一例は NetBeans のアクション API の提供する組み込み済の <code>SaveAction</code> です。このアクションがやっていることは、ビューアコンポーネントが <code>APIObject</code> を監視しているように、 <code>SaveCookie</code> と呼ばれるものを監視することです。表示中のファイルに未保存の編集がある場合など、 <code>SaveCookie</code> がある場合にはアクションは有効となり、「保存」のメニューとツールバーのボタンが有効となります。保存アクションが実行されると <code>SaveCookie.save()</code> が呼ばれ、 <code>SaveCookie</code> が消えるので、保存アクションは新たな <code>SaveCookie</code> が作成されるまで無効となります。</p><p>お気づきかもしれませんが、状況依存性は新規アクションウィザードのオプションの１つです。現在、ウィザードによって生成されるアクションは、実際には Lookup 以前の方法を使用しています。このような状況依存アクションを Lookup に基づいて行う方法は、<a href="http://wiki.netbeans.org/wiki/view/DevFaqActionContextSensitive">開発者 FAQ</a> に記述されています。</p><p>オブジェクトを様々な角度から編集するために、単一のオブジェクトを提供するよりは、異なる複数の補助コンポーネントやアクションを提供する方が現実的でしょう。オブジェクトの様々な側面は、それぞれ各補助コンポーネントや各アクションが依存し、監視可能なインターフェースに切り分けることができるでしょう。</p><p></p><h2><a name="misc-things-worth-noticing"></a>その他の注意点</h2>
+    
+    <p>このチュートリアルの主題とは直接関係ありませんが、３つの <code>MyEditor</code> インスタンスを開いたままアプリケーションを終了し、再起動すると、再び３つの <code>MyEditor</code> インスタンスがまるで魔法のように現れることに気付いたのではないでしょうか。エディタはデフォルトで終了時の状態を保存し、再起動時に復元します。</p>
+    <p>このような振る舞いを望まないのであれば、２つの方法があります。再起動時にエディタが二度と開かれることのないよう、<code>MyEditor</code> のメソッドを以下のように上書きします:</p><pre class=examplecode>
+public int getPersistenceType() {
+    return PERSISTENCE_NEVER;
+}</pre>
+    <p>もし、開いているコンポーネントだけ残したいときは、 <code>PERSISTENCE_ONLY_OPENED</code> を戻り値として返します。デフォルトではこの戻り値は <code>PERSISTENCE_ALWAYS</code> となっていますが、この設定ではクローズしたものまで保存され、永遠に再起動時に再ロードされるので、エディタ形式のコンポーネントには不適当です。</p>
+    <p>もっとも、保存される情報の中にはメインウィンドウ内の位置情報も含まれていることに注意してください。従って、プロパティシートやサンプルのビューアコンポーネントなどのシングルトンコンポーネントは、 <code>PERSISTENCE_ALWAYS</code> を戻り値にする必要があります。そうしなくては、再起動後はエディタ位置に表示されるようになってしまいます。</p>
+    
+    <p></p><h2><a name="optional-clean-up"></a>おまけのお掃除</h2>モジュール作成テンプレートは、デフォルトで layer.xml を作成します。My API モジュールの場合にはこれは使用しません。従って、起動時間を少しでも改善するために次のようにします:<ol>
+        <li>My API プロジェクトの「重要なファイル」ノードを開きます。</li>
+        <li>「モジュールのマニフェスト」ノードをダブルクリックします。</li>
+        <li>以下の１文を削除します:<pre class=examplecode>
+OpenIDE-Module-Layer: org/myorg/myapi/layer.xml</pre>
+        </li>
+        <li>該当する <code>org.myorg.myapi</code> の <code>layer.xml</code> ファイルを削除します。</li>
+    </ol>
+    
+    <br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Selection%20Tutorial%20Part%201%20for%206.0">ご意見をお寄せください</a></div>
+<br style="clear:both;" />
+
+    
+    <p></p><h2><a name="next-steps"></a>次の手順</h2>あるコンポーネントはより詳細なセレクションロジックを持ち、複数のセレクションを必要とすることにお気づきでしょうか。<a href="nbm-selection-2_ja.html">次のチュートリアル</a>では、これを可能にするために<a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/overview-summary.html">ノード API</a> の使い方について学びます。<!-- /Servlet-Specific template -->
+    <br><br>
+    <hr>
+    <h3>この翻訳は、nora さんに提供していただきました。</h3>
+    <br>
+
+</body>
+</html>

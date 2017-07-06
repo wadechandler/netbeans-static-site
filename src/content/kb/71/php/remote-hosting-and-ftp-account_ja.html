@@ -1,0 +1,142 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+<html>
+   <head>
+      <title>NetBeans IDE を使用するリモート Web サーバーへの PHP アプリケーションの配備  </title>
+     <meta name="KEYWORDS" content="NETBEANS, PHP">
+     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+      <meta name="DESCRIPTION" content="Deploying a PHP application on a remote hosting account through FTP using NetBeans" >
+      <link rel="stylesheet" type="text/css" href="../../../netbeans.css" media="screen"></head>
+   <body>
+        <h1>NetBeans IDE を使用するリモート Web サーバーへの PHP アプリケーションの配備</h1>
+        <p>通常、実際の PHP アプリケーションはリモートサーバー上で実行されます。リモートアプリケーションは、バージョン管理システムか、ファイル転送プロトコル (FTP) のいずれかでアクセスされます。 </p> 
+        <p class="alert"><b>注意:</b> NetBeans では、単独の開発者が簡単なプロジェクトで作業するには十分な、FTP/SFTP の基本的なサポートが提供されています。複雑なプロジェクトまたは複数の開発者で作業する場合は、バージョン管理システムを使用するようにしてください。NetBeans IDE は多くのバージョン管理システムをサポートしています。たとえば <a href="../../docs/ide/subversion.html">Subversion</a> および <a href="../../docs/ide/git.html">Git</a> チュートリアルを参照してください。複雑なプロジェクトで FTP/SFTP を使用する必要がある場合、各種機能を備えた FTP クライアントと一緒に IDE を使用すること、および IDE 内の PHP プロジェクトをローカル Web サイトとして編集することを検討してください。</p>
+        <p class="alert"><b>JDK 7 + Windows 7/Vista:</b> Windows 7 および Windows Vista のファイアウォールは、JDK 7 によって起動された一部の FTP 操作をブロックします。回避策については「<a target="_blank" href="http://forums.netbeans.org/post-115176.html#113923">NetBeans フォーラム</a>」を参照してください。</p>
+   <p>リモートサーバー上に PHP アプリケーションを配備するには、ホスティングプロバイダでアカウントを登録する必要があります。また、ホスティングアカウントを持つリモートサーバー上に MySQL データベースを配備することもできます。</p>
+        <p class="notes">ユーザー名、パスワード、および電子メールアドレスはすべて偽のもので、単なる例として使用されています。ユーザーが 1 週間以上フォーラムに現れない場合、ホスティングの管理によってアカウントがブロックされます。そのため、チュートリアルとまったく同じユーザー名、パスワード、電子メールアドレス、およびその他の証明書を適用できない場合があります。</p>
+   
+        <p><b>目次</b></p><img src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" class="stamp" width="114" height="114" alt="このページの内容は NetBeans IDE 6.9-7.0 が対象です" title="このページの内容は NetBeans IDE 6.9-7.0 が対象です">
+<ul>
+		<li><a href="#runPHPApplicationOnRemoteServer">リモートでホスティングされる PHP プロジェクトの実行構成の設定</a>
+		  <ul>
+		<li><a href="#chooisngRunConfigurationType">実行構成の種類の選択</a></li>
+		<li><a href="#specifyFTPConnectionSettings">FTP 接続設定の指定</a></li>
+		</ul>
+		</li>
+		<li><a href="#uploadSourcesOnRemoteServer">ソースファイルのリモートサーバーへのアップロード</a></li>
+		<li><a href="#runPHPApplication">PHP アプリケーションの実行</a></li>
+                <li><a href="#remote-mysql-database">リモート MySQL データベースの使用</a></li>
+		
+		
+   </ul>
+   
+   <p><b>このチュートリアルに従うには、次のソフトウェアとリソースが必要です。</b></p>
+   <table>
+     <tbody>
+       <tr>
+         <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+         <th class="tblheader" scope="col">必須バージョン</th>
+       </tr>
+       <tr>
+         <td class="tbltd1"><a target="_blank" href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+         <td class="tbltd1">PHP ダウンロードバンドル</td>
+       </tr>
+       <tr>
+         <td class="tbltd1">PHP エンジン</td>
+         <td class="tbltd1">version 5
+       </tr>
+       <tr>
+         <td class="tbltd1">リモートサーバー上のホスティングアカウント <br>
+         および FTP アカウント</td>
+         <td>たとえば、<a target="_blank" href="http://x10hosting.com/">x10Hosting</a> には、 <br>フリーの FTP アカウントホスティングが用意されています。</td>
+       </tr>
+       <tr>
+         <td class="tbltd1">PHP デバッガ (任意)</td>
+         <td><a target="_blank" href="http://www.xdebug.org">XDebug 2.0 以降</a></td>
+       </tr>
+     </tbody>
+   </table>
+   
+		
+   
+		
+
+		<h2><a name="runPHPApplicationOnRemoteServer"></a>リモートでホスティングされる PHP プロジェクトの実行構成の設定 </h2>
+		<p>リモート Web サーバー上にホスティングアカウント、およびソースファイルをリモートサーバーに転送するための FTP アカウントを持っている場合、PHP プロジェクトをローカルで作成およびデバッグし、それをリモートサーバー上に配備できます。実行構成の概念では、実行構成の種類をローカル Web サイトからリモート Web サイトに変更することによって、同じ NetBeans PHP プロジェクト内でワークフローを切り替えることができます。 </p>
+		<p>リモート Web サーバー上で PHP アプリケーションを実行できるようにするには、FTP 接続プロファイルを含む実行構成を設定する必要があります。 </p>
+		<p>デフォルトの実行構成を使用するプロジェクトがすでにあり、新しくリモート実行構成を追加する場合は、次のように<a href="../../docs/php/project-setup.html#managingProjectSetup">プロジェクトをカスタマイズします</a>。</p>
+		<ol>
+<li>プロジェクトノードでマウスボタンを右クリックし、ポップアップメニューから「プロパティー」を選択します。「プロジェクトプロパティー」パネルが開きます。</li>
+<li>「カテゴリ」リストから「実行構成」を選択します。「実行構成」パネルが開きます。 </li>
+<li><a href="#chooisngRunConfigurationType">実行構成の種類を選択し</a>、以降の節で説明しているように <a href="#specifyFTPConnectionSettings">FTP 接続設定を指定します</a>。 </li>
+   </ol>
+リモートサーバー上に PHP アプリケーション用の NetBeans プロジェクトを作成する、またはリモートの実行構成をデフォルトで使用するプロジェクトを新規作成するには、次の手順に従います。<br>		
+		<ol>
+		<li>IDE を起動し、「ファイル」&gt;「新規プロジェクト」を選択します。「新規プロジェクト」パネルが開きます。</li>
+		<li>「カテゴリ」から「PHP」を選択し、「リモートサーバー」で「PHP アプリケーション」を選択します。「次へ」をクリックします。「名前と場所」パネルが開きます。 </li>
+		<li>プロジェクト名、アプリケーションソースファイルの場所、およびプロジェクトの内部ファイルの場所 (任意) を指定します。「次へ」をクリックします。「実行構成」パネルが開きます。</li>
+		<li>以降の節で説明しているように、<a href="#specifyFTPConnectionSettings">FTP 接続設定を指定します</a>。 </li>
+   </ol>
+		<div class="indent">
+		<h3><a name="chooisngRunConfigurationType"></a>実行構成の種類の選択</h3>
+		<p>「実行構成」パネルで、「実行方法」ドロップダウンリストから「リモート Web サイト (FTP、SFTP)」を選択します。構成の設定用の非表示領域が表示されます。</p>
+		<p class="notes">「リモートサーバーからの PHP アプリケーション」ウィザードで新規プロジェクトを作成する場合、「実行方法」ドロップダウンリストから選択する必要はありません。ウィザードは自動的に「リモート接続」パネルを表示します。このパネルには、「プロジェクト URL」、「リモート接続」、および「アップロードディレクトリ」フィールドのみが存在します。</p>
+		<img src="../../../images_www/articles/72/php/remote-hosting/ftp-run-config-blank.png" height="425" width="600" alt="構成が選択されていない、リモート Web サイト用の「実行構成」画面" class="margin-around">
+		<h3><a name="specifyFTPConnectionSettings" id="specifyFTPConnectionSettings"></a>FTP、SFTP 接続設定の指定 </h3>
+		FTP 接続を作成するには、次の手順に従います。<br><br>
+		<ol>
+		<li>「FTP 接続」ドロップダウンリストの横にある「管理」をクリックします。「リモート接続を管理」ダイアログが表示されます。</li>
+		<li>「追加」をクリックします。「新規接続を作成」ダイアログが開きます。最初の接続を定義すると自動で開く場合もあります。</li>
+		<li>「接続名」フィールドで、新しい接続の名前を入力します。この例では、接続名は <tt>x10hosting</tt> です。「型」ドロップダウンリストから「FTP」または「SFTP」を選択します。「了解」をクリックします。「リモート接続を管理」ダイアログが表示され、「接続名」表示フィールドに新規接続名が表示されます。</li>
+		<li>「ホスト名」フィールドで、<a href="#ftpAccountCreatedConfirmation">FTP アカウント作成の確認メッセージ</a>に記載されていた FTP サーバー名を入力します。この例では、FTP サーバーは <tt>nbuser.x10.mx</tt> です。</li>
+		<li>「ポート」フィールドで、21 を指定します。</li>
+		<li>「ユーザー名」フィールドで、<a href="#ftpAccountCreatedConfirmation">FTP アカウント作成の確認メッセージ</a>に記載されていた FTP ユーザー名を入力します。この例では、FTP ユーザー名は <tt>nbuser</tt> です。</li>
+		<li>「パスワード」フィールドに入力します。この例でのパスワードは <tt>qwerty1234</tt> です。 </li>
+		<li>「初期ディレクトリ」フィールドで、FTP サーバー上の<a href="#accountDirectory">アカウントディレクトリ</a>の名前を入力します。この例ではアカウントディレクトリは指定されていません。フィールドにスラッシュを入力します。 <br>
+		  <img src="../../../images_www/articles/71/php/ftp/manageremoteconnections.png" height="487" width="599" alt="「FTP 接続を管理」ダイアログ。"  class="margin-around"></li>
+		<li>「了解」をクリックします。「実行構成」パネルに戻ります。 </li>
+		<li>「アップロードディレクトリ」フィールドで、初期ディレクトリのサブフォルダの名前を入力します。ここにソースファイルがアップロードされます。このフィールドの下のプロンプトに FTP ホストの URL が表示されます。 </li>
+		<!--
+		<li>To specify when the files will be uploaded, choose the relevant option from the <a name="uploadFilesDropdownBox"></a>Upload Files dropdown list. The available options are: Manually and On Run.</li>
+		
+		<li>Click OK if you are updating the existing project settings.</li> -->
+		<li>新規プロジェクトの設定を完了するには、「完了」をクリックします。 </li>
+		</ol>
+   </div>
+		<h2><a name="uploadSourcesOnRemoteServer"></a>ソースファイルのリモートサーバーへのアップロード </h2>
+		<p>プロジェクトに対してリモート接続を選択したあと、どの時点 (実行時、保存時、または手動) でソースファイルをアップロードするかを選択します。</p>
+		<ul>
+		  <li><strong>実行時:</strong> ソースファイルは、プロジェクトを実行するときにサーバーにアップロードされます。</li>
+          <li><strong>保存時:</strong> すべての変更 (作成、編集、名前の変更、削除) は、リモートサーバーにすぐに伝えられます。操作に 1 秒以上かかる場合は、進捗バーが表示されます。</li>
+          <li><strong>手動:</strong> ファイルは自動的にアップロードされません。この節で説明する、IDE の手動アップロード機能を使用する必要があります。</li>
+   </ul>
+		<p><img src="../../../images_www/articles/72/php/remote-hosting/ftp-run-config.png" alt="「実行構成」パネルの保存オプション" height="67" width="589" class="margin-around"></p>
+   <p>ファイルをプロジェクトから手動で FTP サーバーにアップロードするには、プロジェクトの「ソースファイル」ノードを右クリックし、「アップロード」を選択します。同じメニューで、FTP サーバーからファイルをダウンロードすることもできます。</p>
+		<img src="../../../images_www/articles/72/php/remote-hosting/beta-source-upload.png" border="1" alt="PHP プロジェクトのソースファイルの「アップロード」オプションを示すプロジェクトマネージャーのコンテキストメニュー" class="margin-around" >
+		    
+   
+		<p>ファイルのアップロードを開始すると、ダイアログが開き、ソースファイルがツリー表示されます。このダイアログで、アップロードするファイルとアップロードしないファイルを個別に選択できます。詳細については、「ファイルアップロード」ダイアログに関する <a target="_blank" href="http://blogs.sun.com/netbeansphp/entry/new_download_upload_dialog">NetBeans PHP のブログエントリ</a>を参照してください。</p>
+        <p><img src="../../../images_www/articles/72/php/remote-hosting/file-upload-dialog.png" alt="アップロードするファイルを選択できるダイアログ" height="359" width="439">        </p>
+        <p>ファイルのアップロード中は、アップロードの結果が「出力」タブに表示されます。</p>
+        <p><img src="../../../images_www/articles/72/php/remote-hosting/upload-output.png" alt="ファイルアップロードの「出力」タブ" width="465" height="319"></p>
+   <h2><a name="runPHPApplication"></a>PHP アプリケーションの実行</h2>
+		<br>リモートサーバー上で PHP アプリケーションを実行するには、次の手順に従います。
+		<ol>
+		<li>「プロパティー」パネルの<a href="#chooisngRunConfigurationType">「実行方法」ドロップダウンリスト</a>から、リモート Web サイトが選択されていることを確認します。 </li>
+		<li>実行構成の設定を確認します。</li>
+                <li>プロジェクトが主として設定されている場合は、ツールバーの <img src="../../../images_www/articles/72/php/remote-hosting/run-main-project-button.png" width="24" height="26" alt="「主プロジェクトを実行」ボタン"> をクリックします。  </li>
+		<li>プロジェクトが主として設定されていない場合は、プロジェクトノードにカーソルを置き、ポップアップメニューから「実行」を選択します。 </li>
+		
+		</ol>
+                <h2 id="remote-mysql-database">リモート MySQL データベースの使用</h2>
+   <p>x10Hosting.com のようなリモートホスティングサービスを使用すると、通常、そのサーバー上に MySQL データベースを設定できます。リモートホスティングサービスが提供するツールを使用して、データベースの作成、ユーザーの管理、およびデータのコピー、読み取り、更新、削除 (CRUD) を行うことができます。 </p>
+   <p>たとえば、x10Hosting.com を使用している場合は、<a href="remote-hosting-and-ftp-account.html#cpanelLogin">x10Hosting cPanel</a> にログオンして「MySQL Databases」パネルを開くことによって、MySQL データベースを作成できます。また、「MySQL Databases」パネルでは、ユーザーの作成、データベースへのユーザーの割り当て、およびユーザーへの権限の付与を行うことができます。次に、「phpMyAdmin」パネルで CRUD ツールを使用できます。</p>
+   <p>リモートデータベースの CRUD ツールを操作する別の方法として、NetBeans IDE の CURD 機能を使用してローカルデータベースを操作する方法があります。そのあと、ローカルデータベースをリモートデータベースにコピーまたはダンプできます。x10Hosting.com では、「phpMyAdmin」パネルを使用してローカルデータベースをアップロードできます。</p>
+   <div class="feedback-box" ><a href="/about/contact_form.html?to=3&amp;subject=Feedback:%20PHP%20Remote%20Hosting%20and%20FTP">ご意見をお寄せください</a></div>
+<br style="clear:both;" >
+<p><a href="../../../community/lists/top.html">users@php.netbeans.org メーリングリストに登録する</a>ことによって、NetBeans IDE PHP 開発機能に関するご意見やご提案を送信したり、サポートを受けたり、最新の開発情報を入手したりできます。</p>
+		<p><a href="../../trails/php.html">学習に戻る</a></p>
+   </body>
+</html>

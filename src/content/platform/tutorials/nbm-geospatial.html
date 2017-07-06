@@ -1,0 +1,747 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>Platform Tutorial for Geospatial Systems</title>
+        <meta name="AUDIENCE" content="NBUSER"/>
+        <meta name="TYPE" content="ARTICLE"/>
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+        <meta name="EXPIRES" content="N"/>
+        <meta name="developer" content="gwielenga@netbeans.org"/>
+        <meta name="indexed" content="y"/>
+        <meta name="description"
+              content="A short guide to setting up a geospatial environment
+              with the NetBeans Platform."/>
+        <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+    <body>
+
+        <h1>NetBeans Platform Tutorial for Geospatial Systems</h1>
+
+        <p>The NetBeans Platform is a solid infrastructure for
+            geospatial systems. It provides
+            a docking framework with full screen mode, an application frame
+            within which a map can be placed, and a loosely coupled module system for
+            the organization of code into feature-oriented interdependent plugins.</p>
+
+        <p>In this tutorial, you are shown how to set up a typical
+            geospatial application structure, leveraging the central features
+            of the NetBeans Platform. You start by creating a new application,
+            you add several modules, each representing a feature in
+            your geospatial system, you configure the application to start
+            up in full screen mode and hide tabs, while you integrate various
+            mapping solutions.</p>
+
+        <p>By the end of this tutorial, you will have learned how to
+            set up a powerful geospatial application infrastructure and
+            configure the NetBeans Platform to optimize it for typical
+            geospatial scenarios, while also learning how to integrate a variety
+            of map technologies into your NetBeans Platform application,
+            such as OpenMap, shown below:</p>
+
+        <p><img alt="openmap" src="../images/tutorials/air/72/openmap-nb-small.png"/></p>
+
+        <p><b class="notes">Note:</b> This document uses NetBeans IDE 8.0 and NetBeans Platform 8.0. If you
+            are using an earlier version, see <a href="74/nbm-geospatial.html">the previous version
+                of this document</a>.</p>
+
+        <p><b>Contents</b></p>
+
+        <p><img src="../images/articles/81/netbeans-stamp.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 8.0" title="Content on this page applies to NetBeans IDE 8.0"/></p>
+        <ul class="toc">
+            <li><a href="#application">Creating the Application</a></li>
+            <li><a href="#feature">Creating Features</a></li>
+            <li><a href="#map">Integrating Map Technologies</a>
+                <ul>
+                    <li><a href="#openmap">Scenario 1: OpenMap</a></li>
+                    <li><a href="#geotk">Scenario 2: Geotoolkit</a></li>
+                </ul>
+            </li>
+            <li><a href="#publish">Publishing and Subscribing to Objects of Interest</a></li>
+            <li><a href="#configure">Configuring the Geospatial System</a>
+                <ul>
+                    <li><a href="#fullscreen">Starting Up in Full Screen Mode</a></li>
+                    <li><a href="#tabs">Removing Tabs</a></li>
+                </ul>
+            </li>
+        </ul>
+
+        <p><b>To follow this tutorial, you need the software and resources listed in the following
+                table.</b></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Software or Resource</th>
+                    <th class="tblheader" scope="col">Version Required</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                    <td class="tbltd1">version 8.0 or above</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                    <td class="tbltd1">version 7 or above</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p class="tips">For troubleshooting purposes, you are welcome to download the <a href="http://java.net/projects/nb-api-samples/sources/api-samples/show/versions/8.0/tutorials/geospatial">completed tutorial source code</a>.</p>
+
+        <!-- ===================================================================================== -->
+
+        <h2 class="tutorial"><a name="application"></a>Creating the Application</h2>
+        <p>We start by creating a new NetBeans Platform application as a starting
+            point for our geospatial system.</p>
+        <div class="indent">
+            <ol>
+                <li><p>Choose File | New Project and then choose NetBeans Modules.
+                        Select "NetBeans Platform Application", as shown below:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/air/73/new-app-1.png" alt="Fig 2"/></p>
+                    <br/>
+                    <p>Click Next. Name your new application "MyGeospatialSystem" and specify a folder on disk
+                        for storing it:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/air/73/new-app-2.png" alt="Fig 2"/></p>
+                    <br/>
+                    <p>Click Finish. The new project appears as follows in the Projects window:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/air/73/new-app-3.png" alt="Fig 2-1"/></p>
+                </li>
+                <li><p>Right-click the application and choose Run. The application
+                        deploys and you should see this:</p>
+                    <br/>
+                    <p><img alt="create new module" src="../images/tutorials/air/73/new-app-4.png"/></p>
+                    <br/>
+                    <p>Explore the menus and toolbars to see the available features
+                        that are part of your geospatial system out of the box.</p>
+                </li>
+            </ol>
+        </div>
+        <p>You have learned how to create a new NetBeans Platform application,
+            which is the starting point for your geospatial system.</p>
+        <!-- ===================================================================================== -->
+
+        <h2 class="tutorial"><a name="feature"></a>Creating Features</h2>
+        <p>Each feature in your application, such as a map feature or a country browser feature,
+            will be contained within a NetBeans module. Modulerizing your features in this way
+            lets you create multiple different distributions of your software, each consisting
+            of a variety of different features provided by different modules. We start by creating
+            a new NetBeans module to contain a map feature.</p>
+        <div class="indent">
+            <ol>
+                <li><p>Right-click the Modules node and choose Add New, as shown below:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/air/73/new-mod-1.png" alt="mod 1"/></p>
+                </li>
+                <li>
+                    <p>Type Map and specify that the module should be stored within the application:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/air/73/new-mod-2.png" alt="mod 2"/></p>
+                    <br/>
+                    <p>Click Next.</p>
+                </li>
+                <li>
+                    <p>Type <tt>org.geospatial.map</tt> as the unique identifier for the module:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/air/73/new-mod-3.png" alt="mod 3"/></p>
+                    <br/>
+                    <p>Click Finish. You should see that your application has a new module:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/air/73/new-mod-4.png" alt="mod 4"/></p>
+                    <p>You now have the container for a new feature. Next, we're going to
+                        add some JARs providing NetBeans APIs to the classpath of the module
+                        so that we can begin creating the starting point of our features.</p>
+                </li>
+                <li>
+                    <p>Right-click the Libraries node and choose Add Module Dependency, as shown
+                        below:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/air/73/add-lib-1.png" alt="mod 3"/></p>
+                    <br/>
+                    <p>Choose the following modules:</p>
+                    <br/>
+                    <ul>
+                        <li>Lookup API</li>
+                        <li>UI Utilities API</li>
+                        <li>Utilities API</li>
+                        <li>Window System API</li>
+                    </ul>
+                    <br/>
+                    <p>Click OK and notice that the Libraries node now lists the
+                        new module dependencies you selected:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/air/73/add-lib-3.png" alt="mod 4"/></p>
+                </li>
+                <li>
+                    <p>Right-click the <tt>org.geospatial.map</tt> and create a new Java class. Name
+                        it <tt>MyMapTopComponent.java</tt>. Define it as follows:</p>
+                    <pre class="examplecode">package org.geospatial.map;
+
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.util.NbBundle.Messages;
+import org.openide.windows.TopComponent;
+
+@TopComponent.Description(
+        preferredID = "MyMapTopComponent",
+        persistenceType = TopComponent.PERSISTENCE_ALWAYS)
+@TopComponent.Registration(
+        mode = "editor", 
+        openAtStartup = true)
+@ActionID(
+        category = "Window", 
+        id = "org.geospatial.map.MyMapTopComponent")
+@ActionReferences({
+    @ActionReference(
+        path = "Menu/Window", 
+        position = 0)
+})
+@TopComponent.OpenActionRegistration(
+        displayName = "#CTL_MyMapAction")
+@Messages(
+        "CTL_MyMapAction=Open Map")
+public class MyMapTopComponent extends TopComponent {
+
+    @Messages("CTL_MyMapName=Map")
+    public MyMapTopComponent() {
+        setDisplayName(Bundle.CTL_MyMapName());
+    }
+    
+}</pre>
+                </li>
+                <li>
+                    <p>Run the application again and notice that you now have a new window:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/air/73/new-map-1.png" alt="mod 3"/></p>
+                    <p class="tips">In the same way as you have now done, you can very easily
+                        create more new windows throughout your application.</p>
+                </li>
+            </ol>
+        </div>
+        <p>You have the basis of your first feature. In the next section, you will
+            integrate one or more map technologies into your feature.</p>
+
+        <!-- ===================================================================================== -->
+
+        <h2 class="tutorial"><a name="map"></a>Integrating Map Technologies</h2>
+
+        <p>A variety of map technologies exist. In the subsections that follow,
+            you will learn how to integrate a range of different map technologies
+            into your NetBeans Platform application. Each of the scenarios below
+            are alternatives, each building on top of the previous sections of this tutorial.</p>
+        <div class="indent">
+            <h3 class="tutorial"><a name="openmap"></a>Scenario 1: OpenMap</h3>
+            <p><a href="https://code.google.com/p/openmap/downloads/list">OpenMap</a> is
+                an open-source map technology.</p>
+            <p><img alt="openmap" src="../images/tutorials/air/72/openmap-nb-small.png"/></p>
+            <div class="indent">
+                <ol>
+                    <li>Download OpenMap: <a href="http://openmap.bbn.com/cgi-bin/license.cgi">http://openmap.bbn.com/cgi-bin/license.cgi</a></li>
+                    <li><p>Right-click the application's Modules node,
+                            choose Add New Library:</p>
+                        <br/>
+                        <p><img src="../images/tutorials/air/73/openmap-1.png" alt="mod 3"/></p>
+                        <p>Then create a library
+                            wrapper module that wraps the OpenMap JAR files. Name
+                            the module OpenMapLib and use <tt>org.openmap</tt> as the code name base.
+                            When you complete the wizard, you should see your new module, with the Libraries
+                            node listing the OpenMap JARs:</p>
+                        <br/>
+                        <p><img src="../images/tutorials/air/73/openmap-2.png" alt="mod 3"/></p>
+                        <p>Next, set a dependency on the OpenMapLib module after right-clicking
+                            the Map module's Libraries node and choosing Add Module Dependency,
+                            as shown below:</p>
+                        <br/>
+                        <p><img src="../images/tutorials/air/73/add-dep-1.png" alt="mod 3"/></p>
+                        <br/>
+                        <p>You should notice that the OpenMapLib module is now a dependency
+                            in your Map module, so that you can use the OpenMap JARs in
+                            your Map module:</p>
+                        <br/>
+                        <p><img src="../images/tutorials/air/73/add-dep-2.png" alt="mod 3"/></p>
+                    </li>
+                    <li><p>In the MapTopComponent, use OpenMap as follows, as a first
+                            example to get started with your OpenMap/NetBeans Platform
+                            integration:</p>
+
+                        <pre class="examplecode">public class MyMapTopComponent extends TopComponent {
+
+    private final InstanceContent ic = new InstanceContent();
+
+    @Messages("CTL_MyMapName=Map")
+    public MyMapTopComponent() {
+
+        setDisplayName(Bundle.CTL_MyMapName());
+
+        setLayout(new BorderLayout());
+
+        try {
+
+            //MapPanel:
+            MapPanel mapPanel = new BasicMapPanel();
+
+            //MapHandler:
+            MapHandler mapHandler = mapPanel.getMapHandler();
+            mapHandler.add(new LayerHandler());
+            mapHandler.add(this);
+
+            //MapBean:
+            MapBean mapBean = mapPanel.getMapBean();
+            mapBean.setScale(120000000f);
+
+            //Selection:
+            MouseDelegator mouseDelegator = new MouseDelegator();
+            mapHandler.add(mouseDelegator);
+            SelectMouseMode selectMouseMode = new SelectMouseMode();
+            mapHandler.add(selectMouseMode);
+            mouseDelegator.setActive(selectMouseMode);
+
+            //MapMouseListener:
+            final MyMapMouseListener myMapMouseListener = new MyMapMouseListener();
+
+            //ShapeLayer:
+            ShapeLayer shapeLayer = new ShapeLayer() {
+                @Override
+                public synchronized MapMouseListener getMapMouseListener() {
+                    return myMapMouseListener;
+                }
+            };
+
+            //Properties:
+            Properties shapeLayerProps = new Properties();
+            shapeLayerProps.put("lineColor", "000000");
+            shapeLayerProps.put("fillColor", "BDDE83");
+            shapeLayerProps.put("shapeFile", "org/geospatial/map/dcwpo-browse.shp");
+            shapeLayerProps.put("spatialIndex", "org/geospatial/map/dcwpo-browse.ssx");
+
+            //Assign properties to ShapeLayer:
+            shapeLayer.setProperties(shapeLayerProps);
+            shapeLayer.setVisible(true);
+
+            //Assign ShapeLayer to MapHandler:
+            mapHandler.add(shapeLayer);
+
+            add(mapPanel.getMapBean(), BorderLayout.CENTER);
+
+        } catch (MultipleSoloMapComponentException msmce) {
+        }
+
+        associateLookup(new AbstractLookup(ic));
+
+    }
+
+    public class MyMapMouseListener implements MapMouseListener {
+        @Override
+        public String[] getMouseModeServiceList() {
+            return new String[]{SelectMouseMode.modeID};
+        }
+        @Override
+        public boolean mouseClicked(MouseEvent e) {
+            MapMouseEvent mme = (MapMouseEvent) e;
+            //Optionally:
+            //LatLonPoint latLonPoint = LatLonPoint.getFloat(mme.getLatLon());
+            //UTMPoint utmPoint = UTMPoint.LLtoUTM(latLonPoint);
+            //Publish something into Lookup:
+            ic.set(Collections.singleton(mme.getLatLon()), null);
+            StatusDisplayer.getDefault().setStatusText(mme.getLatLon().toString());
+            return true;
+        }
+        @Override
+        public boolean mousePressed(MouseEvent e) {return true;}
+        @Override
+        public boolean mouseReleased(MouseEvent e) {return true;}
+        @Override
+        public void mouseEntered(MouseEvent e) {}
+        @Override
+        public void mouseExited(MouseEvent e) {}
+        @Override
+        public boolean mouseDragged(MouseEvent e) {return true;}
+        @Override
+        public boolean mouseMoved(MouseEvent e) {return true;}
+        @Override
+        public void mouseMoved() {}
+    }
+
+}</pre>
+
+                        <p>You should notice that you have the following import statements:</p>
+                        <pre class="examplecode">import com.bbn.openmap.LayerHandler;
+import com.bbn.openmap.MapBean;
+import com.bbn.openmap.MapHandler;
+import com.bbn.openmap.MouseDelegator;
+import com.bbn.openmap.MultipleSoloMapComponentException;
+import com.bbn.openmap.event.MapMouseEvent;
+import com.bbn.openmap.event.MapMouseListener;
+import com.bbn.openmap.event.SelectMouseMode;
+import com.bbn.openmap.gui.BasicMapPanel;
+import com.bbn.openmap.gui.MapPanel;
+import com.bbn.openmap.layer.shape.ShapeLayer;
+import java.awt.BorderLayout;
+import java.awt.event.MouseEvent;
+import java.util.Collections;
+import java.util.Properties;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.util.NbBundle.Messages;
+import org.openide.util.lookup.AbstractLookup;
+import org.openide.util.lookup.InstanceContent;
+import org.openide.windows.TopComponent;</pre>
+                        <p class="tips">From "share/data/shape" in the OpenMap distribution, copy
+                            <tt>dcwpo-browse.shp</tt> and <tt>dcwpo-browse.ssx</tt>
+                            into your module. In the source code above, make sure
+                            the references to the files point to the correct location
+                            in your module.</p>
+                    </li>
+
+                    <li><p>Run the application, click on the map, and you will
+                            be publishing new <tt>Point2D</tt> objects into the <tt>Lookup</tt>
+                            of the <tt>TopComponent</tt>, while the status bar will also
+                            show new information whenever you click on the map:</p>
+                        <br/>
+                        <p><img src="../images/tutorials/air/73/openmap-3.png" alt="mod 3"/></p>
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="indent">
+            <h3 class="tutorial"><a name="geotk"></a>Scenario 2: Geotoolkit</h3>
+            <p><a href="http://download.geotoolkit.org/">Geotoolkit</a> is
+                an open-source map technology.</p>
+            <div class="indent">
+                <ol>
+                    <li>Download Geotoolkit: <a href="http://www.geotoolkit.org/download.html">http://www.geotoolkit.org/download.html</a></li>
+                    <li><p>Right-click the application's Modules node,
+                            choose Add New Library:</p>
+                        <br/>
+                        <p><img src="../images/tutorials/air/73/openmap-1.png" alt="mod 3"/></p>
+                        <p>Then create a library
+                            wrapper module that wraps the GeoToolkit JAR file. Name
+                            the module GeoToolkit and use <tt>org.geotoolkit</tt> as the code name base.
+                            When you complete the wizard, you should see your new module, with the Libraries
+                            node listing the GeoToolkit JAR:</p>
+                        <br/>
+                        <p><img src="../images/tutorials/air/73/geotoolkit-1.png" alt="mod 3"/></p>
+                        <p>Next, set a dependency on the OpenMapLib module after right-clicking
+                            the Map module's Libraries node and choosing Add Module Dependency,
+                            as shown below:</p>
+                        <br/>
+                        <p><img src="../images/tutorials/air/73/add-dep-1.png" alt="mod 3"/></p>
+                        <br/>
+                        <p>You should notice that the OpenMapLib module is now a dependency
+                            in your Map module, so that you can use the OpenMap JARs in
+                            your Map module:</p>
+                        <br/>
+                        <p><img src="../images/tutorials/air/73/geotoolkit-2.png" alt="mod 3"/></p>
+                    </li>
+                    <li><p>From the Geotoolkit distribution, copy
+                        <tt>Countries.shp</tt> file, as well as the DBF, PRJ, and SHX file
+                        into your module.</p>
+                        
+                        <p>Alternatively, get these files here:</p>
+                        
+                        <p><a href="http://www.naturalearthdata.com/downloads/">http://www.naturalearthdata.com/downloads/</a></p>
+                        
+                        <p>In the source code below, make sure
+                        the references to the files point to the correct location
+                        in your module.</p></li>
+
+                    <li><p>In the MapTopComponent, use Geotoolkit as follows, as a first
+                            example to get started with your Geotoolkit/NetBeans Platform
+                            integration:</p>
+
+                        <pre class="examplecode">public class MyMapTopComponent extends TopComponent {
+
+    @Messages("CTL_MyMapName=Map")
+    public MyMapTopComponent() {
+
+        setDisplayName(Bundle.CTL_MyMapName());
+
+        setLayout(new BorderLayout());
+
+        MapContext mapContext = MapBuilder.createContext(DefaultGeographicCRS.SPHERE);
+        addShpData(mapContext);
+        JMap2D map = new JMap2D();
+        map.getContainer().setContext(mapContext);
+        map.setBackground(new Color(0, 150, 150));
+        JNavigationBar navBar = new JNavigationBar(map);
+        add(navBar, BorderLayout.NORTH);
+        add(map, BorderLayout.CENTER);
+
+    }
+
+    public void addShpData(MapContext context) {
+
+        try {
+
+            DataStore store = DataStoreFinder.getDataStore("url",
+                    MyMapTopComponent.class.getResource("Countries.shp"));
+
+            Name name = store.getNames().iterator().next();
+
+            Session session = store.createSession(true);
+
+            FeatureCollection fs = session.getFeatureCollection(QueryBuilder.all(name));
+
+            MapLayer layer = MapBuilder.createFeatureLayer(fs,
+                    RandomStyleFactory.createDefaultVectorStyle(fs));
+
+            layer.setVisible(true);
+
+            context.layers().add(layer);
+
+        } catch (DataStoreException e) {
+        }
+
+    }
+
+}</pre>
+
+                        <p class="notes"><b>Note:</b> The import statements are as follows:</p>
+
+                        <pre class="examplecode">import java.awt.*;
+import org.geotoolkit.data.*;
+import org.geotoolkit.data.query.QueryBuilder;
+import org.geotoolkit.gui.swing.go2.JMap2D;
+import org.geotoolkit.gui.swing.go2.control.JNavigationBar;
+import org.geotoolkit.map.*;
+import org.geotoolkit.referencing.crs.DefaultGeographicCRS;
+import org.geotoolkit.storage.DataStoreException;
+import org.opengis.feature.type.Name;
+import org.geotoolkit.util.RandomStyleFactory;
+import org.geotoolkit.data.session.Session;
+import org.openide.awt.*;
+import org.openide.util.NbBundle.Messages;
+import org.openide.windows.TopComponent;</pre>                    
+
+                    </li>
+
+
+                    <li>Run the application and you will see your Geotoolkit map component
+                        displayed in a window in your NetBeans Platform application.</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- ===================================================================================== -->
+
+        <h2 class="tutorial"><a name="publish"></a>Publishing and Subscribing to Objects of Interest</h2>
+
+        <p>When a mouse click is performed in your map,
+            you need to publish an object into the Lookup of the TopComponent. For example,
+            you could publish the current Point on the map.</p>
+        <p>In the supporting windows, you need to implement a LookupListener. When the
+            window opens, subscribe to the Lookup of the map window, while indicating that
+            you want to be notified when a Point is published there. Whenever a new Point
+            is made available, you can do something with it, for example, display it in
+            the supporting window.</p>
+        <p>Conversely, you might need the map to be updated when one or more
+            of the supporting windows change. In that case, the map window must
+            be subscribed to the Lookup of the currently selected window or to
+            the specific supporting window that it is interested in. The supporting
+            window needs to published objects of interest to the map window.</p>
+        <p class="tips">The <a href="https://platform.netbeans.org/tutorials/nbm-quick-start.html">NetBeans Platform Quick Start</a> describes this mechanism in detail.</p>
+
+
+        <!-- ===================================================================================== -->
+
+        <h2 class="tutorial"><a name="configure"></a>Configuring the Geospatial System</h2>
+
+        <p>In this section, you learn how to change a variety of default
+            features of the NetBeans Platform to optimize them for usage
+            in a geospatial environment.</p>
+
+        <p>All the configuration settings that follow are optional. Depending
+            on your business needs, follow the instructions below to
+            adapt your system to your needs.</p>
+
+        <div class="indent">
+
+            <h3 class="tutorial"><a name="fullscreen"></a>Starting Up in Full Screen Mode</h3>
+
+            <p>In this section, we start the application in full screen mode. Full
+                screen mode is supported by default by the NetBeans Platform. It can be
+                invoked by the user via View | Full Screen or by pressing Alt-Shift-Enter.
+                However, in geospatial systems, you typically need to start the application in full screen
+                mode automatically, so that the user will not need to take this step
+                over and over again manually.</p>
+            <div class="indent">
+                <ol>
+                    <li><p>Create a new Java class named Installer.</p></li>
+                    <li><p>Define the Installer class as follows:</p>
+                        <pre class="examplecode">package org.geospatial.map;
+
+import org.openide.awt.Actions;
+import org.openide.windows.OnShowing;
+
+@OnShowing
+public class Installer implements Runnable {
+
+    @Override
+    public void run() {
+        Actions.forID("Window", "org.netbeans.core.windows.actions.ToggleFullScreenAction").actionPerformed(null);
+    }
+
+}</pre>
+
+                    </li>
+                </ol>
+                <p>Run the application and notice that it starts in full screen mode.</p>
+            </div>
+        </div>
+
+        <div class="indent">
+            <h3 class="tutorial"><a name="tabs"></a>Removing Tabs</h3>
+            <p>In this section, we remove the tabs from all the
+                windows in the application.</p>
+            <div class="indent">
+                <ol>
+                    <li><p>Set dependencies on the "Look & Feel Customization Library"
+                            and "Tab Control".</p></li>
+                    <li><p>Create a class named <code>NoTabsTabDisplayerUI</code>, with this content</p>
+
+                        <pre class="�xamplecode">import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.Polygon;
+import java.awt.Rectangle;
+import javax.swing.DefaultSingleSelectionModel;
+import javax.swing.JComponent;
+import javax.swing.SingleSelectionModel;
+import javax.swing.plaf.ComponentUI;
+import org.netbeans.swing.tabcontrol.TabDisplayer;
+import org.netbeans.swing.tabcontrol.TabDisplayerUI;
+
+public class NoTabsTabDisplayerUI extends TabDisplayerUI {
+
+    public NoTabsTabDisplayerUI(TabDisplayer displayer) {
+        super(displayer);
+    }
+
+    public static ComponentUI createUI(JComponent jc) {
+        assert jc instanceof TabDisplayer;
+        return new NoTabsTabDisplayerUI((TabDisplayer) jc);
+    }
+
+    private static final int[] PTS = new int[] { 0, 0, 0 };
+
+    @Override
+    public Polygon getExactTabIndication(int i) {
+        //Should never be called
+        return new Polygon(PTS, PTS, PTS.length);
+    }
+
+    @Override
+    public Polygon getInsertTabIndication(int i) {
+        return new Polygon(PTS, PTS, PTS.length);
+    }
+
+    @Override
+    public int tabForCoordinate(Point point) {
+        return -1;
+    }
+
+    @Override
+    public Rectangle getTabRect(int i, Rectangle rectangle) {
+        return new Rectangle(0,0,0,0);
+    }
+
+    @Override
+    protected SingleSelectionModel createSelectionModel() {
+        return new DefaultSingleSelectionModel();
+    }
+
+    public java.lang.String getCommandAtPoint(Point point) {
+        return null;
+    }
+
+    @Override
+    public int dropIndexOfPoint(Point point) {
+        return -1;
+    }
+
+    @Override
+    public void registerShortcuts(javax.swing.JComponent jComponent) {
+        //do nothing
+    }
+
+    @Override
+    public void unregisterShortcuts(javax.swing.JComponent jComponent) {
+        //do nothing
+    }
+
+    @Override
+    protected void requestAttention(int i) {
+        //do nothing
+    }
+
+    @Override
+    protected void cancelRequestAttention(int i) {
+        //do nothing
+    }
+
+    @Override
+    public Dimension getPreferredSize(javax.swing.JComponent c) {
+        return new Dimension(0, 0);
+    }
+
+    @Override
+    public Dimension getMinimumSize(javax.swing.JComponent c) {
+        return new Dimension(0, 0);
+    }
+
+    @Override
+    public Dimension getMaximumSize(javax.swing.JComponent c) {
+        return new Dimension(0, 0);
+    }
+
+}</pre>
+
+                    </li>
+                    <li><p>Add to the Installer created in the previous section the statements in bold below:</p>
+
+                        <pre class="examplecode">import javax.swing.UIManager;
+import org.openide.awt.Actions;
+import org.openide.windows.OnShowing;
+
+@OnShowing
+public class Installer implements Runnable {
+
+    @Override
+    public void run() {
+        Actions.forID("Window", "org.netbeans.core.windows.actions.ToggleFullScreenAction").actionPerformed(null);
+        <b>UIManager.put("ViewTabDisplayerUI", "org.geospatial.map.NoTabsTabDisplayerUI");
+        UIManager.put("EditorTabDisplayerUI", "org.geospatial.map.NoTabsTabDisplayerUI");</b>
+    }
+
+}</pre>
+
+                    </li>
+                </ol>
+                <p>Run the application and notice that the tabs are removed.</p>
+            </div>
+        </div>
+
+        <p>Congratulations! At this stage, with very little coding,
+            you have created the starting point of an air-traffic control system.</p>
+
+        <p class="tips"> To continue learning about the NetBeans Platform, head on to
+            the four-part "NetBeans Platform Selection
+            Management" series, <a href="https://platform.netbeans.org/tutorials/nbm-selection-1.html">which starts here</a>.
+            After that, get started with the <a href="https://netbeans.org/kb/trails/platform.html">NetBeans Platform Learning Trail</a>, choosing
+            the tutorials that are most relevant to your particular business scenario. Also,
+            whenever you have questions about the NetBeans Platform, of any kind, feel free
+            to write to the mailing list, dev@platform.netbeans.org; its related
+            archive <a href="https://netbeans.org/projects/platform/lists/dev/archive">is here</a>.</p>
+
+        <p>Have fun with the NetBeans Platform and see you on the mailing list!</p>
+
+        <div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback: NetBeans Platform 8.0 Geospatial Tutorial">Send Us Your Feedback</a>
+            <br style="clear:both;" /></div>
+
+    </body>
+
+</html>

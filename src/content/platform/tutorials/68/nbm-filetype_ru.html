@@ -1,0 +1,759 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>Учебный кур�? по интеграции типов файлов дл�? платформы NetBeans 6.5</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="gwielenga@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A short guide to using the Nodes API.">
+<!--      Copyright (c) 2005 Sun Microsystems, Inc. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+	<h1>Учебный кур�? по интеграции типов файлов</h1>
+
+<p>В �?том учебном кур�?е показано напи�?ание модул�?, позвол�?ющего �?реде IDE, а также любому другому приложению, о�?нованному на платформе NetBeans, ра�?позначать новый тип файлов. 
+
+   <p><b class="notes">Примечание.</b> В �?том документе и�?пользует�?�? �?реда IDE NetBeans вер�?ии 6.5. Е�?ли у�?тановлена �?реда IDE NetBeans 6.x, �?м <a href="60/nbm-filetype.html">вер�?ию 6.1 �?того документа</a>.
+
+   <p><b>Содержание</b></p>
+   
+   <img  src="../images/articles/68/netbeans-stamp-65-67-68.gif" class="stamp" width="114" height="114" alt="Содержимое на �?той �?транице отно�?ит�?�? к �?реде IDE NetBeans 6.5, 6.7, 6.8" title="Содержимое на �?той �?транице отно�?ит�?�? к �?реде IDE NetBeans 6.5, 6.7, 6.8"> </p>
+      <ul class="toc">
+  <li><a href="#intro">Введение в интеграцию типов файлов</a></li>
+  <li><a href="#creating">Создание проекта модул�?</a></li>
+  <li><a href="#recognizing">Ра�?познавание файлов Abc</a></li>
+  <li><a href="#install">У�?тановка и ознакомление �? функциональными возможно�?т�?ми</a></li>
+  <li><a href="#adding">Создание функциональных возможно�?тей дл�? файлов Abc</a></li>
+  <ul>
+      <li><a href="#action">Добавление дей�?тви�?</a>
+      <li><a href="#topcomponent">Открытие файла в окне</a>    
+      <li><a href="#multiview">Создание окна �? не�?колькими пред�?тавлени�?ми</a>
+  </ul>
+  <li><a href="#share">Создание �?овме�?тно и�?пользуемого и�?полн�?емого файла</a></li>
+       </ul>
+         
+<p><b>Дл�? работы �? �?тим руковод�?твом требует�?�? программное обе�?печение и ре�?ур�?ы, перечи�?ленные в �?ледующей таблице.</b></p>
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Программное обе�?печение или ре�?ур�?</th>
+                <th class="tblheader" scope="col">Требуема�? вер�?и�?</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">Среда IDE NetBeans</a></td>
+                <td class="tbltd1">вер�?и�? 6.5 или выше </td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Комплект дл�? разработчика на �?зыке Java (JDK)</a></td>
+                <td class="tbltd1">вер�?и�? 6 или<br/>вер�?и�? 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+
+
+
+<h2 class="tutorial"><a name="intro"></a>Введение в интеграцию типов файлов</h2>
+
+<p>Типам файлов, ра�?познаваемых �?редой IDE, �?опо�?тавлены �?оответ�?твующие значки, пункты меню и режимы поведени�?. Показаные ниже &quot;файлы&quot; пред�?тавл�?ют �?обой объекты <tt>FileObject</tt>, т.е. обертки вокруг <tt>java.io.File</tt> или, в �?лучае файлов на�?тройки, обычно обертки вокруг данных, �?охран�?емых другим �?по�?обом, например внутри файлов XML в модул�?х. Фактиче�?ки <i>видны</i> <tt>узлы (Node)</tt>, предо�?тавл�?ющие функциональные возможно�?ти, такие как дей�?тви�? и локализованные имена дл�? объектов, подобных файлам. Между узлами <tt>Node</tt> и объектами <tt>FileObject</tt> ра�?полагают�?�? объекты <tt>DataObject</tt>. Объект <tt>DataObject</tt> во в�?ем подобен объекту <tt>FileObject</tt>, однако �?одержит информацию о типе отображаемого файла, и дл�? файлов �? разными ра�?ширени�?ми (или файлов XML �? разными про�?тран�?твами имен) и�?пользуют�?�? разные типы <tt>DataObject</tt>. Каждый из объектов <tt>DataObject</tt> предо�?тавл�?ет�?�? отдельным модулем, причем в каждом из них реализована поддержка одного или более типов файлов &ndash; например, в модуль Image предо�?тавл�?ет возможно�?ть ра�?познавани�? и открыти�? файлов <tt>.gif</tt> и <tt>.png</tt>.
+
+<p>Модуль, ра�?познающий тип файла, у�?танавливает объект <tt>DataLoader</tt> &ndash; фабрику дл�? <tt>DataObject</tt> дл�? конкретного типа файла. При развертывании папки �?реда IDE опрашивает каждый изве�?тный объект <tt>DataLoader</tt> в цел�?х опознани�? типа файлов. Первый объект, ответивший &quot;да&quot; на запро�?, �?оздает объект <tt>DataObject</tt> дл�? �?того файла. Дл�? фактиче�?кого отображени�? �?одержимого файла вызывает�?�? функци�? <tt>DataObject.getNodeDelegate()</tt> дл�? каждого объекта <tt>DataObject</tt>, и в �?реде IDE на �?амом деле отображают�?�? узлы <tt>Node</tt>. 
+
+<p>�?иже и �?лева показана �?хема данных, предо�?тавл�?емых каждым из �?лементов, опи�?анных выше.
+
+<p><p align="left"><img  src="../images/tutorials/filetype/diagram-dataobject2.png" alt="Схема.">
+
+<p>Это руковод�?тво по�?в�?щено �?озданию модул�?, у�?танавливающего объект <tt>DataLoader</tt> дл�? вымышленного типа файлов &quot;Abc&quot; (ра�?ширение файлов <tt>.abc</tt>). По умолчанию файл �? ра�?ширением &quot;abc&quot; обрабатывает�?�? аналогично любому другому неопознанному файлу &ndash; как тек�?товый файл, и в результате дл�? файлов Abc предо�?тавл�?ют�?�? те же функциональные возможно�?ти �?реды IDE, что и дл�? тек�?товых файлов. По�?ле �?оздани�? модул�? будет показан �?по�?об ра�?ширени�? �?тих функциональных возможно�?тей, уникальных дл�? файлов Abc. По завершении цикла разработки дргуим разработчикам не�?ложно предо�?тавить возможно�?ть и�?пользовани�? �?озданного модул�? &ndash; в �?реде IDE предо�?тавл�?ет�?�? возможно�?ть �?оздани�? двоичного файла, который можно передать другим разработчикам, которые затем �?могут у�?тановить его по�?ред�?твом центра обновлений. 
+
+<!-- ===================================================================================== -->
+
+<h2 class="tutorial"><a name="creating"></a>Создание проекта модул�?</h2>
+      
+<p>В �?том разделе и�?пользует�?�? ма�?тер дл�? �?оздани�? �?труктуры и�?ходного кода, требуемого любым модулем NetBeans. Эта �?труктура и�?ходного кода �?о�?тоит из р�?да папок в о�?обых ме�?тах и набора файлов, которые требуют�?�? в любом �?лучае. �?апример, дл�? каждого модул�? NetBeans требует�?�? папка <tt>nbproject</tt>, в которой хран�?т�?�? метаданные проекта, а также файл <tt>layer.xml</tt>, в котором объ�?вл�?ет�?�? реги�?траци�? таких �?лементов как кнопки панелей управлени�? и окна.
+
+<ol>
+          
+	      <li>Выберите &quot;File&quot; &gt; &quot;New Project&quot; (Ctrl+Shift+N). В разделе &quot;Категории&quot; выберите параметр &quot;Модули NetBeans&quot;. В обла�?ти &quot;Проекты&quot; выберите &quot;Модуль&quot; и нажмите кнопку &quot;Далее&quot;.</li>
+	<li>�?а панели &quot;Им�? и ра�?положение&quot; в поле &quot;Им�? проекта&quot; введите <tt>AbcFileType</tt>. В поле &quot;Ра�?положение проекта&quot; укажите любой каталог на компьютере, например <tt>c:\mymodules</tt>. О�?тавьте переключатель &quot;Отдельный модуль&quot; выбранным. Панель должна выгл�?деть �?ледующим образом:
+
+<p><p align="left"><img  src="../images/tutorials/filetype/65-projectwizard1.png" alt="Дей�?твие 1 ма�?тера �?оздани�? проекта">
+ <p>�?ажмите кнопку &quot;Далее&quot;.
+
+<li>�?а панели &quot;О�?новные на�?тройки модул�?&quot; введите <tt>org.myorg.abcfiletype</tt> в поле &quot;О�?нова кодового имени&quot;. Добавьте пробелы к предложенному отображаемому имени модул�?, и измените его на <tt>Abc File Type</tt>. У�?тановите флажок &quot;Создать �?лой XML&quot; и о�?тавьте ме�?тоположение локализуемого файла ре�?ур�?ов и �?ло�? XML по умолчанию; при �?том они будут хранить�?�? в пакете �? именем <tt>org/myorg/abcfiletype</tt>. Панель должна выгл�?деть �?ледующим образом:
+
+<p><p align="left"><img  src="../images/tutorials/filetype/65-projectwizard2.png" alt="Дей�?твие 2 ма�?тера �?оздани�? проекта">
+
+<li>�?ажмите кнопку &quot;Готово&quot;. </ol>
+
+<p> В �?реде IDE �?оздает�?�? проект <tt>Abc File Type</tt>. Проект �?одержит в�?е и�?ходные файлы и метаданные проекта, например, �?ценарий �?борки проекта Ant. Проект откроет�?�? в �?реде IDE. Логиче�?кую �?труктуру проекта можно про�?мотреть в окне &quot;Проекты&quot; (Ctrl+1), а его файловую �?труктуру &ndash; в окне &quot;Файлы&quot; (Ctrl+2). �?апример, окно &quot;Проекты&quot; должно выгл�?деть �?ледующим образом:
+
+<p><p align="left"><img  src="../images/tutorials/filetype/65-projectswindow1.png" alt="Первоначальный вид окна &quot;Проекты&quot;. ">
+
+
+      <br />
+
+<!-- ===================================================================================== -->
+<h2><a name="recognizing"></a>Ра�?познавание файлов Abc</h2>
+
+<p>В �?том разделе �? помощью ма�?тера �?оздают�?�? кла�?�?ы, необходимые дл�? ра�?познавани�? файлов Abc как отличных от файлов в�?ех других видов. Как уже указывало�?ь в начале учебного кур�?а, дл�? �?того потребует�?�? объект данных и загрузчик данных, а также �?ред�?тво разрешени�? типа MIME и �?ущно�?ти реги�?трации в файле <tt>layer.xml</tt>. В�?е �?ти �?лементы �?оздают�?�? автоматиче�?ки �? помощью ма�?тера �?оздани�? файла.
+
+  
+ <ol>
+	
+	 <li>Щелкните узел проекта правой кнопкой мыши и выберите команду &quot;Создать &gt; Тип файлов&quot;.</li>
+	      <li>У�?тановите �?ледующие значени�? на панели &quot;Ра�?познавание файлов&quot;:
+<p><ul><li>Введите <tt>text/x-abc</tt> в поле &quot;Тип MIME&quot;.
+<li>Введите <tt>.abc .ABC</tt> в поле &quot;Ра�?ширение файла&quot;.</ul>
+<p>Панель &quot;Ра�?познавание файлов&quot; должна выгл�?деть �?ледующим образом:
+
+	       <p><p align="left"><img border="1"  src="../images/tutorials/filetype/60-filewizard1.png" alt="Дей�?твие 1 ма�?тера �?оздани�? файла">
+
+	       <p>Обратите внимание на �?ледующие �?ведени�? о пол�?х на панели &quot;Ра�?познавание файлов&quot;:
+	       <ul>
+		       <li><b>Тип MIME.</b> Указывает�?�? уникальный тип MIME объекта данных.
+		       <li>по
+			       <ul><li><b>Ра�?ширение файла.</b> Указывает�?�? одно или более ра�?ширений файлов, по которым �?редой IDE ра�?познает�?�? принадлежно�?ть файла к указанному типу MIME. Ра�?ширение файла можно в факультативном пор�?дке предвар�?ть точкой. В каче�?тве разделителей и�?пользуют�?�? зап�?тые, пробелы, или зап�?тые вме�?те �? пробелами. Следовательно, дей�?твительными �?вл�?ют�?�? в�?е �?ледующие варианты запи�?и:
+		       <p><ul><li><tt>.abc,.def</tt>
+			       <li><tt>.abc .def</tt>
+			       <li><tt>abc def</tt>
+			       <li><tt>abc,.def ghi, .wow</tt></ul>
+			<p>Пред�?тавим, что дл�? файлов Abc учитывает�?�? реги�?тр. По�?тому в �?том учебном кур�?е указывает�?�? <i>два</i> типа MIME: <tt>.abc</tt> и <tt>.ABC</tt>.		      
+		       <li><b>Корневой �?лемент XML.</b> Указывает�?�? уникальное про�?тран�?тво имен, отличающее тип файла XML от в�?ех о�?тальных типов файлов XML. По�?кольку многие файлы XML обладают одинаковым ра�?ширением (<tt>xml</tt>), различие между файлами XML проводит�?�? в �?реде IDE по их корневым �?лементам XML. Точнее, в �?реде IDE возможно различие между про�?тран�?твами имен и первым �?лементом XML в файлах XML. Это, например, можно и�?пользовать дл�? различи�? между опи�?ателем развертывани�? JBoss и опи�?ателем развертывани�? WebLogic. Е�?ли �?то различие �?делано, можно обе�?печить недо�?тупно�?ть пунктов меню, добавленных к контек�?тному меню опи�?ател�? развертывани�? JBoss, дл�? опи�?ател�? развертывани�? WebLogic. См., например, <a href="nbm-palette-api2.html">Руковод�?тво по модулю палитры компонентов NetBeans</a>.
+	</ul></ul>
+	      
+	      <p>�?ажмите кнопку &quot;Далее&quot;.
+
+	      <li>�?а панели &quot;Им�? и ра�?положение&quot; введите <tt>Abc</tt> в каче�?тве префик�?а имени кла�?�?а и выберите любой файл изображени�? размером 16 на 16 пик�?елей в каче�?тве значка нового типа файлов, в �?оответ�?твии �? иллю�?трацией ниже.
+	      
+<p align="left"><p><p align="left"><img  src="../images/tutorials/filetype/65-filewizard2.png" alt="Дей�?твие 2 ма�?тера �?оздани�? файла">
+
+
+              <p><b>Примечание.</b> Можно и�?пользовать любой значок размером 16x16 пик�?елей. Е�?ли требует�?�?, можно щелкнуть �?тот значок, �?охранить его локально, а затем указать его в ма�?тере, как указано выше: <img  src="../images/tutorials/filetype/Datasource.gif" alt="Datasource.gif">
+
+<li>�?ажмите кнопку &quot;Готово&quot;. 
+
+<p><p>Окно &quot;Проекты&quot; должно выгл�?деть �?ледующим образом:
+
+<p><p align="left"><img  src="../images/tutorials/filetype/65-projectswindow2.png" alt="Итоговое окно &quot;Проекты&quot;. "></ol>
+
+<p>Ра�?�?мотрим краткое опи�?ание каждого из �?генерированных файлов:
+ <ul>
+	<li><b>AbcDataObject.java.</b> Обертывает <tt>FileObject</tt>. Объекты данных (DataObject) �?оздают�?�? загрузчиками данных (DataLoader). Подробные �?ведени�? �?м. в документе <a href="http://wiki.netbeans.org/wiki/view/DevFaqDataObject">Что такое DataObject?</a>.
+ <li><b>AbcResolver.xml.</b> Отображает ра�?ширени�? <tt>.abc</tt> и <tt>.ABC</tt> на тип MIME. <tt>AbcDataLoader</tt> ра�?познает только тип MIME; о ра�?ширении файлов ему ничего не изве�?тно.
+	 <li><b>AbcTemplate.abc.</b> Предо�?тавл�?ет о�?нову шаблона файла, зареги�?трированного в файле <tt>layer.xml</tt> так, чтобы он у�?танавливал�?�? в диалоговом окне &quot;�?овый файл&quot; в каче�?тве нового шаблона.
+         <li><b>AbcDataObjectTest.java.</b> кла�?�? те�?та JUnit дл�? <tt>DataObject</tt>.
+</ul>
+      </p>
+      
+      <p>В файле <tt>layer.xml</tt> должен �?одержать�?�? �?ледующий тек�?т:
+      
+<pre>&lt;folder name=&quot;Loaders&quot;&gt;
+    &lt;folder name=&quot;text&quot;&gt;
+        &lt;folder name=&quot;x-abc&quot;&gt;
+            &lt;folder name=&quot;Actions&quot;&gt;
+                &lt;file name=&quot;org-myorg-abcfiletype-MyAction.shadow&quot;&gt;
+                    &lt;attr name=&quot;originalFile&quot; stringvalue=&quot;Actions/Edit/org-myorg-abcfiletype-MyAction.instance&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;600&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-CopyAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;100&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-CutAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;200&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-DeleteAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;300&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-FileSystemAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;400&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-OpenAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;500&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-PropertiesAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;700&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-RenameAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;800&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-SaveAsTemplateAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;900&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-ToolsAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1000&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;sep-1.instance&quot;&gt;
+                    &lt;attr name=&quot;instanceClass&quot; stringvalue=&quot;javax.swing.JSeparator&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1100&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;sep-2.instance&quot;&gt;
+                    &lt;attr name=&quot;instanceClass&quot; stringvalue=&quot;javax.swing.JSeparator&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1200&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;sep-3.instance&quot;&gt;
+                    &lt;attr name=&quot;instanceClass&quot; stringvalue=&quot;javax.swing.JSeparator&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1300&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;sep-4.instance&quot;&gt;
+                    &lt;attr name=&quot;instanceClass&quot; stringvalue=&quot;javax.swing.JSeparator&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1400&quot;/&gt;
+                &lt;/file&gt;
+            &lt;/folder&gt;
+            &lt;folder name=&quot;Factories&quot;&gt;
+                &lt;file name=&quot;AbcDataLoader.instance&quot;&gt;
+                    &lt;attr name=&quot;SystemFileSystem.icon&quot; urlvalue=&quot;nbresloc:/org/myorg/abcfiletype/Datasource.gif&quot;/&gt;
+                    &lt;attr name=&quot;dataObjectClass&quot; stringvalue=&quot;org.myorg.abcfiletype.AbcDataObject&quot;/&gt;
+                    &lt;attr name=&quot;instanceCreate&quot; methodvalue=&quot;org.openide.loaders.DataLoaderPool.factory&quot;/&gt;
+                    &lt;attr name=&quot;mimeType&quot; stringvalue=&quot;text/x-abc&quot;/&gt;
+                &lt;/file&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>      
+
+
+      <br />
+      
+    <!-- ======================================================================================= -->
+
+<h2><a name="install"></a>У�?тановка и ознакомление �? функциональными возможно�?т�?ми</h2>
+<p>Теперь у�?тановим модуль и во�?пользуем�?�? базовыми функциональными возможно�?т�?ми, �?озданными на данный момент. Дл�? по�?троени�? и у�?тановки модул�? в �?реде IDE и�?пользует�?�? �?ценарий по�?троени�? Ant. При �?оздании проекта автоматиче�?ки �?оздает�?�? �?ценарий по�?троени�?.</p>
+<div class="indent">
+
+
+      <ol>
+	      <li>В окне &quot;Проекты&quot; щелкните правой кнопкой мыши проект <tt>Abc File Type</tt> и выберите &quot;Выполнить&quot;.
+	      <p><p>Запу�?тит�?�? новый �?кземпл�?р �?реды IDE, выполн�?ющий у�?тановку модул�? в �?еб�?.
+	       <li>Создайте приложение любого типа в �?реде IDE �? помощью диалогового окна &quot;�?овый проект&quot; (Ctrl+Shift+N).
+               <li>Щелкните узел приложени�? правой кнопкой мыши и выберите команду &quot;Создать &gt; Прочее&quot;. В категории &quot;Прочее&quot; до�?тупен шаблон дл�? работы �? новым типом файлов:
+         <p><p align="left"><img border="1"  src="../images/tutorials/filetype/60-action4.png" alt="Фиктивный шаблон."></p>
+         <p>Выполните ма�?тер до конца; в результате будет �?оздан шаблон, который может и�?пользовать�?�? пользователем дл�? работы �? данным типом файлов.</p>
+		 <p class="tips">Е�?ли по�?ред�?твом шаблона должен предо�?тавл�?ть�?�? код по умолчанию, добавьте �?тот код к файлу <tt>AbcTemplate.abc</tt>, автоматиче�?ки �?озданному ма�?тером &quot;�?овый тип файла&quot;.
+       </ol>          
+   </div>
+      <br />
+
+<!-- ===================================================================================== -->
+<h2><a name="adding"></a>Создание функциональных возможно�?тей дл�? файлов Abc</h2>
+<p>Теперь, когда в платформу NetBeans внедрена возможно�?ть отличени�? файлов Abc от других типов файлов, пришло врем�? добавить функциональные возможно�?ти, �?пециально предназначенные дл�? работы �? файлами �?того типа. В �?том разделе добавл�?ет�?�? пункт меню в контек�?тное меню узла файла в окнах обозревателей, например в окне &quot;Проекты&quot;, и добавл�?ет�?�? возможно�?ть открыти�? файла в окне, а не в редакторе.
+
+      <div class="indent">
+          
+          <h3 class="tutorial"><a name="action"></a>Добавление дей�?тви�?</h3>
+          
+          <p>В �?том подразделе �? помощью ма�?тера �?оздани�? дей�?тви�? �?оздает�?�? кла�?�? Java, выполн�?ющее дей�?твие дл�? ра�?�?матриваемого типа файлов. Ма�?тер также реги�?трирует кла�?�? в файле <tt>layer.xml</tt>, по�?ле чего у пользовател�? по�?вл�?ет�?�? возможно�?ть вызывать �?озданное дей�?твие из контек�?тного меню узла типа файла в окне обозревател�?.
+          
+          <ol>
+              
+              <li>Щелкните узел проекта правой кнопкой мыши и выберите команду &quot;Создать &gt; Дей�?твие&quot;</li>
+              <li>В панели &quot;Тип дей�?тви�?&quot; выберите &quot;Включено по у�?ловию&quot;. Введите <tt>AbcDataObject</tt>, т.е. им�? объекта данных, �?озданного выше по�?ред�?твом ма�?тера �?оздани�? типов файлов, как показано ниже:
+              
+              <p><p align="left"><img border="1"  src="../images/tutorials/filetype/60-action1.png" alt="Дей�?твие 1 ма�?тера �?оздани�? дей�?тви�?">
+              
+              
+              
+              <p>�?ажмите кнопку &quot;Далее&quot;.
+              
+              <li>�?а панели &quot;Реги�?траци�? в интерфей�?е&quot; выберите категорию &quot;Изменить&quot; в ра�?крывающем�?�? �?пи�?ке &quot;Категори�?&quot;. Значение, выбранное в ра�?крываюшем�?�? �?пи�?ке &quot;Категори�?&quot;, определ�?ет ме�?то отображени�? дей�?тви�? в редакторе �?очетаний клавиш в �?реде IDE.
+              <p><p>Затем �?нимите флажок &quot;Глобальный пункт меню&quot; и у�?тановите флажок &quot;Пункт контек�?тного меню типа файла&quot;. В ра�?крывающем�?�? �?пи�?ке &quot;Тип �?одержимого&quot; выберите тип MIME, указанный выше в ма�?тере �?оздани�? типов файлов, в �?оответ�?твии �? иллю�?трацией ниже:
+              
+              <p align="left"><p><p align="left"><img border="1"  src="../images/tutorials/filetype/60-action2.png" alt="Дей�?твие 2 ма�?тера �?оздани�? дей�?тви�?">
+              
+              <p>Отметим, что �?уще�?твует возможно�?ть задани�? положени�? пункта меню, и что пункт меню можно разграничить от предыдушего и �?ледующего пункта. �?ажмите кнопку &quot;Далее&quot;.
+              
+              <li>�?а панели &quot;Им�? и ра�?положение&quot; введите <tt>MyAction</tt> в каче�?тве имени кла�?�?а и <tt>My Action</tt> в поле &quot;Видимое им�?&quot;. В пунктах контек�?тных меню не отображают�?�? значки. По�?тому нажмите кнопку &quot;Готово&quot;, по�?лу чего файл <tt>MyAction.java</tt> будет добавлен к пакету <tt>org.myorg.abcfiletype</tt>.
+              
+              <li>В редакторе и�?ходного кода добавьте код к методу <tt>performAction</tt> дей�?тви�?:
+              
+<pre class="examplecode">protected void performAction(Node[] activatedNodes) {
+	AbcDataObject abcDataObject = activatedNodes[0].getLookup().lookup(AbcDataObject.class);
+	FileObject f = abcDataObject.getPrimaryFile();
+	String displayName = FileUtil.getFileDisplayName(f);
+	String msg = &quot;Я &quot; + displayName + &quot;. Зверь рыкающий!&quot;; 
+	NotifyDescriptor nd = new NotifyDescriptor.Message(msg);
+	DialogDisplayer.getDefault().notify(nd);
+}</pre>
+              <p>�?ажмите Ctrl+Shift+I. В верхнюю ча�?ть кла�?�?а автоматиче�?ки добавл�?ют�?�? выражени�? импорта.</p>
+
+<p class="tips">Ча�?ть кода по-прежнему выделена кра�?ным подчеркиванием, что указывает на от�?ут�?твие р�?да требуемых пакетов в пути кла�?�?ов. Щелкните правой кнопкой мыши узел проекта, выберите &quot;Свой�?тва&quot; и щелкните &quot;Библиотеки&quot; в диалоговом окне &quot;Свой�?тва проекта&quot;. Щелкните в верхней ча�?ти панели &quot;Библиотеки&quot; и добавьте интерфей�? API диалогов.</p>
+              
+              <p>В кла�?�?е <tt>MyAction.java</tt> �?нова нажмите Ctrl+Shift+I. Выделение кра�?ным подчеркиванием �?нимает�?�?, по�?кольку требуемые пакеты обнаруживают�?�? �?редой IDE в интерфей�?е API диалогов.</p>
+              
+              <li>В узле &quot;Важные файлы&quot; разверните подузел &quot;Слой XML&quot;. Обозреватель <a href="https://platform.netbeans.org/tutorials/nbm-glossary.html">Файлова�? �?и�?тема �?реды</a> �?о�?тоит из двух узлов: <tt>&lt;�?тот �?лой&gt;</tt> и <tt>&lt;�?тот �?лой в контек�?те&gt;</tt>, а также их подузлов. Разверните узел <tt>&lt;�?тот �?лой&gt;</tt>, разверните подузел <tt>Загрузчики</tt>, и продолжайте разворачивать узлы, пока не �?танет видно <tt>дей�?твие</tt>, �?озданное ранее.
+              
+              <li>Перетащите <tt>My Action</tt> в позицию ниже дей�?тви�? <tt>Open</tt>, как показано ниже:
+              <p align="left"><p><p align="left"><img border="1"  src="../images/tutorials/filetype/60-action3.png" alt="Обозреватель файловой �?и�?темы �?реды">
+              
+              <p>Как было показано в двух предыдущих дей�?тви�?х, обозреватель файловой �?и�?темы �?реды можно и�?пользовать дл�? бы�?трой реорганизации по�?ледовательно�?ти �?лементов, зареги�?трированных в файловой �?и�?теме �?реды.
+              
+              <li>Снова выполните модуль, как в предыдущем разделе.
+              <li>Создайте файл ABC на о�?нове шаблона, показанного в предыдущем разделе, и щелкните правой кнопкой мыши узел файла в одном из пред�?тавлений обозревател�?, например, в окнах &quot;Проекты&quot; или &quot;Избранное&quot;.
+	       <p><p>Обратите внимание, что файл Abc �?набжен значком, который был назначен ему в �?оответ�?твующем модуле, и что �?пи�?ок дей�?твий, назначенный в �?оответ�?твующем файле <tt>layer.xml</tt>, выводит�?�? в контек�?тном меню, вызываемом щелчком правой кнопкой мыши:
+		<p><p align="left"><img  border="1" src="../images/tutorials/filetype/60-dummytemplate.png" alt="Итоговое окно &quot;Проекты&quot;. ">
+		<li>Выберите новый пункт меню; отображает�?�? им�? и ме�?тоположение файла Abc.
+		<p><p align="left"><img border="1" src="../images/tutorials/filetype/60-information.png" alt="Сведени�?.">
+		
+              
+          </ol>
+
+ <p>Итак, было ра�?�?мотрено �?оздание нового дей�?тви�?, до�?тупного из контек�?тного меню дл�? файла определенного типа, в окнах &quot;Проекты&quot;, &quot;Файлы&quot; или &quot;Избранное&quot;.</p>
+
+          <h3 class="tutorial"><a name="topcomponent"></a>Открытие файла в окне</h3>
+          <p>По умолчанию при открытии файла, тип которого был определен в �?том учебном кур�?е, такой файл открывает�?�? в базовом редакторе. Однако иногда может потребовать�?�? �?оздать визуальное пред�?тавление файла, и предо�?тавить пользователю возможно�?ть перета�?кивать �?лементы оформлени�? в �?то визуальное пред�?тавление. Первый �?тап �?оздани�? подобного интерфей�?а пользовател�? - �?то предо�?тавление пользователю возможно�?ти открыти�? файла в окне. В �?том подразделе приведена по�?ледовательно�?ть необходимых дей�?твий.
+          <ol>
+              <li>Щелкните узел проекта правой кнопкой мыши и выберите команду &quot;Создать &gt; Оконный компонент&quot;. У�?тановите дл�? параметра &quot;Позици�? окна&quot; значение &quot;editor&quot; и у�?тановите флажок &quot;Открывать при запу�?ке приложени�?&quot;, как показано ниже:
+              
+ <p><p><p align="left"><img  src="../images/tutorials/filetype/65-topc-1.png" alt="Дей�?твие 1 ма�?тера �?оздани�? дей�?тви�?">
+<li>�?ажмите кнопку &quot;Далее&quot; и введите &quot;Abc&quot; в каче�?тве префик�?а имени кла�?�?ов.
+ <p><p><p align="left"><img  src="../images/tutorials/filetype/65-topc-2.png" alt="Дей�?твие 1 ма�?тера �?оздани�? дей�?тви�?"></p>
+ <p>�?ажмите кнопку &quot;Готово&quot;. </p>
+              </li>
+              <li>Измените <tt>DataObject</tt>: укажите и�?пользование <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/OpenSupport.html">OpenSupport</a></tt> вме�?то DataEditorSupport, дл�? чего измените кон�?труктор <tt>DataObject</tt> �?ледующим образом:
+
+<p><pre>public AbcDataObject(FileObject pf, MultiFileLoader loader)
+        throws DataObjectExistsException, IOException {
+
+    super(pf, loader);
+    CookieSet cookies = getCookieSet();
+    <b>//cookies.add((Node.Cookie) DataEditorSupport.create(this, getPrimaryEntry(), cookies));
+    cookies.add((Node.Cookie) new AbcOpenSupport(getPrimaryEntry()));</b>
+              
+}</pre>
+              
+              
+              <li>Создайте кла�?�? <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/OpenSupport.html">OpenSupport</a></tt>:
+              
+<p><pre>class AbcOpenSupport extends OpenSupport implements OpenCookie, CloseCookie {
+
+    public AbcOpenSupport(AbcDataObject.Entry entry) {
+        super(entry);
+    }
+
+    protected CloneableTopComponent createCloneableTopComponent() {
+        AbcDataObject dobj = (AbcDataObject) entry.getDataObject();
+        AbcTopComponent tc = new AbcTopComponent();
+        tc.setDisplayName(dobj.getName());
+        return tc;
+    }
+ 
+}</pre>              
+              
+              <p class="tips">�?а�?тройте TopComponent: он должен ра�?шир�?ть CloneableTopComponent, а не TopComponent. У�?тановите дл�? модификатора кла�?�?а TopComponent и модификатора его кон�?труктора параметр public вме�?то private.
+          </ol>	
+<p>Снова выполните модуль; когда при открытии файла Abc его открытие обрабатывает�?�? кла�?�?ом <tt>OpenSupport</tt>, обе�?печивает�?�? открытие файла в <tt>TopComponent</tt>, а не в базовом редакторе, предо�?тавл�?емом <tt>DataEditorSupport</tt>:
+ 
+  <p><p align="left"><img  src="../images/tutorials/filetype/65-topc-3.png" alt="Дей�?твие 1 ма�?тера �?оздани�? дей�?тви�?"></p>
+
+     <p class="tips">В документе <a href="https://platform.netbeans.org/tutorials/nbm-visual_library.html">Руковод�?тво по Visual Library NetBeans</a> приведен пример дальнейшей разработки TopComponent дл�? визуального отображени�? �?одержимого файла, �?оответ�?твующего типу файла, определенному в �?том руковод�?тве.</p>
+          
+      <br />
+
+<!-- ======================================================================================= -->
+
+<h3><a name="multiview"></a>Создание окна �? не�?колькими пред�?тавлени�?ми</h3>
+
+<p>Теперь файл можно открыть в окне; добавим к �?тому окну дополнительные функциональные возможно�?ти. Создадим окно �? не�?колькими пред�?тавлени�?ми. �?а первой вкладке окна �? не�?колькими пред�?тавлени�?ми обычно выводит�?�? визуальное пред�?тавление файла, а на второй вкладке обычно �?одержит�?�? пред�?тавление и�?ходного кода. Кроме �?тих двух можно и�?пользовать дополнительные закладки, �?одержащие более подробные данные об открытом файле.
+
+      <ol>
+	      <li>Щелкните правой кнопкой узел проекта и выберите команду &quot;Properties&quot;. В диалоговом окне &quot;Свой�?тва проекта&quot; выберите &quot;Библиотеки&quot; и нажмите &quot;Добавить&quot;. Укажите зави�?имо�?ть от &quot;MultiView Windows&quot;. �?ажмите кнопку &quot;OK&quot;, а затем �?нова нажмите кнопку &quot;OK&quot; дл�? закрыти�? диалогового окна &quot;Свой�?тва проекта&quot;.
+	      <li><p>Дл�? каждой закладки, дл�? которой требует�?�? �?оздать окно �? не�?колькими пред�?тавлени�?ми, необходимо �?оздать кла�?�?, реализующий <tt>MultiViewDescription</tt> и <tt>Serializable</tt>.</p><p>В рамках �?того учебного кур�?а начнем �? кла�?�?а, который назовем <tt>AbcMultiviewDescription1</tt>. Этот кла�?�? реализует �?ледующие указанные кла�?�?ы:</p>
+<pre>public class AbcMultiviewDescription1 implements MultiViewDescription, Serializable {
+
+    public int getPersistenceType() {
+        throw new UnsupportedOperationException(&quot;Пока не поддерживает�?�?.&quot;);
+    }
+
+    public String getDisplayName() {
+        throw new UnsupportedOperationException(&quot;Пока не поддерживает�?�?.&quot;);
+    }
+
+    public Image getIcon() {
+        throw new UnsupportedOperationException(&quot;Пока не поддерживает�?�?.&quot;);
+    }
+
+    public HelpCtx getHelpCtx() {
+        throw new UnsupportedOperationException(&quot;Пока не поддерживает�?�?.&quot;);
+    }
+
+    public String preferredID() {
+        throw new UnsupportedOperationException(&quot;Пока не поддерживает�?�?.&quot;);
+    }
+
+    public MultiViewElement createElement() {
+        throw new UnsupportedOperationException(&quot;Пока не поддерживает�?�?.&quot;);
+    }
+
+}</pre>
+
+          <p class="tips">В кла�?�?е <tt>AbcMultiviewDescription1</tt>, приведенном выше, метод <tt>createElement()</tt> возвращает объект MultiViewElement. Однако требует�?�? возвращать �?озданный <tt>TopComponent</tt>, дл�? чего перейдем к �?ледующему дей�?твию.</p>
+
+  <li>Перепишите �?игнатуру кла�?�?а. Дл�? предо�?тавлени�? �?лемента �? не�?колькими пред�?тавлени�?ми дл�? опи�?ани�?, приведенного на предыдущем �?тапе, потребует�?�? ра�?ширить <tt>JPanel</tt> вме�?то <tt>TopComponent</tt>; также потребует�?�? �?оздать реализацию <tt>MultiViewElement</tt>:
+
+<pre>public final class AbcTopComponent extends JPanel implements MultiViewElement {</pre>
+
+<p>В кла�?�?е <tt>TopComponent</tt> необходимо удалить (или закомментировать) методы <tt>findInstance()</tt>, <tt>getPersistenceType()</tt>, <tt>writeReplace()</tt> и <tt>preferredID()</tt>.
+
+<li>Дл�? начала �?оздадим очень про�?тые реализации дл�? каждого из требуемых методов. Сначала определим новый �?лемент <tt>JToolbar</tt> в верхней ча�?ти кла�?�?а <tt>TopComponent</tt>:
+
+ <pre>private JToolBar toolbar = new JToolBar();</pre>
+
+<p>Затем реализуем методы �?ледующим образом:
+
+ <pre>    public JComponent getVisualRepresentation() {
+        return this;
+    }
+
+    public JComponent getToolbarRepresentation() {
+        return toolbar;
+    }
+
+    public void setMultiViewCallback(MultiViewElementCallback arg0) {
+    }
+
+    public CloseOperationState canCloseElement() {
+        return null;
+    }
+
+    public Action[] getActions() {
+        return new Action[]{};
+    }
+
+    public Lookup getLookup() {
+        return Lookups.singleton(this);
+    }
+
+    public void componentShowing() {
+    }
+
+    public void componentHidden() {
+    }
+
+    public void componentActivated() {
+    }
+
+    public void componentDeactivated() {
+    }
+
+    public UndoRedo getUndoRedo() {
+        return UndoRedo.NONE;
+    }</pre>
+
+ <li>Теперь переопределим <tt>AbcMultiviewDescription1</tt> �?ледующим образом:
+
+ <pre>public class AbcMultiviewDescription1 implements MultiViewDescription, Serializable {
+
+    public int getPersistenceType() {
+        return TopComponent.PERSISTENCE_ALWAYS;
+    }
+
+    public String getDisplayName() {
+        return &quot;Tab 1&quot;;
+    }
+
+    public Image getIcon() {
+        return ImageUtilities.loadImage(&quot;/org/myorg/abcfiletype/Datasource.gif&quot;);
+    }
+
+    public HelpCtx getHelpCtx() {
+        return null;
+    }
+
+    public String preferredID() {
+       return &quot;AbcMultiviewDescription1&quot;;
+    }
+
+    public MultiViewElement createElement() {
+        return new AbcTopComponent();
+    }
+
+}</pre>
+
+          <li>Измените метод <tt>createCloneableTopComponent</tt> в кла�?�?е <tt>OpenSupport</tt> дл�? открыти�? <tt>TopComponent</tt> по�?ред�?твом кла�?�?а <tt>MultiViewDescription</tt>, �?озданного выше:
+
+<pre>protected CloneableTopComponent createCloneableTopComponent() {
+
+    // Создание ма�?�?ива де�?крипторов множе�?тва пред�?тавлений:
+    AbcMultiviewDescription1 firstTab = new AbcMultiviewDescription1();
+    MultiViewDescription[] descriptionArray = { firstTab };
+
+    // Создание окна �? не�?колькими пред�?тавлени�?ми:
+    CloneableTopComponent tc = MultiViewFactory.createCloneableMultiView(descriptionArray, firstTab,  null);
+    tc.setDisplayName(entry.getDataObject().getName());
+    return tc;
+
+}</pre>
+
+
+ <p class="tips">Второй аргумент метода <tt>MultiViewFactory.createCloneableMultiView</tt> определ�?ет вкладку, открываемую по умолчанию. В данном �?лучае выбрана вкладка <tt>firstTab</tt>, определ�?ема�? в <tt>AbcMultiViewDescription1</tt>.</p>
+
+<li><p>Выполните у�?тановку и �?нова откройте файл. Теперь в окне �? не�?колькими пред�?тавлени�?ми �?оздана одна вкладка:</p>
+
+<p><img border="1" src="../images/tutorials/filetype/65-mvdeployed.png" alt="развернутое окно �? не�?колькими пред�?тавлени�?ми">
+
+       </ol>
+
+ <p>Теперь в окне �? не�?колькими пред�?тавлени�?ми �?оздана одна вкладка. Дл�? каждой дополнительной вкладки необходимо �?оздать новый кла�?�? <tt>MultiviewDescription</tt> �? новым �?лементом <tt>JPanel</tt>, а затем �?оздать �?кземпл�?р кла�?�?а <tt>MultiViewDescription</tt> в кла�?�?е ра�?ширени�? <tt>OpenSupport</tt>, как показано выше.
+
+    </div>
+
+
+<!-- ======================================================================================= -->
+
+<h2><a name="share"></a>Создание �?овме�?тно и�?пользуемого и�?полн�?емого файла модул�?</h2>
+
+<p>Готовый модуль можно предо�?тавить дл�? и�?пользовани�? другими разработчиками. Дл�? �?того необходимо �?оздать и ра�?про�?транить двоичный файл &quot;NBM&quot; (модуль NetBeans).
+
+<div class="indent">
+
+      <ol>
+	      <li>В окне &quot;Проекты&quot; щелкните правой кнопкой мыши проект <tt>Abc File Type</tt> и выберите &quot;Создать файл ра�?про�?транени�? модул�? NBM&quot;.
+
+	      <p><p>Создает�?�? файл NBM, который можно про�?мотреть в окне &quot;Файлы&quot; (Ctrl+2).
+	      <p><p align="left"><img border="1" src="../images/tutorials/filetype/60-shareable-nbm.png" alt="Файл ра�?про�?транени�? модул�? NBM, предназначенный дл�? �?овме�?тного и�?пользовани�?.">
+	      <li>Чтобы предо�?тавить �?тот файл дл�? и�?пользовани�? другим разработчикам, можно, например, во�?пользовать�?�? <a href="http://plugins.netbeans.org/PluginPortal/">порталом подключаемых модулкй NetBeans</a>. Дл�? у�?тановки модул�? получатель должен во�?пользовать�?�? ди�?петчером подключаемых модулей (&quot;Серви�? &gt; Подключаемые модули&quot;).
+       </ol>
+
+    </div>
+
+
+<!-- ======================================================================================== -->
+
+
+  <br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20File%20Type%20Module%20Tutorial">Мы ждем ваших отзывов</a></div>
+<br style="clear:both;" />
+  
+  
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Что дальше?</h2>
+
+<p>Дополнительные �?ведени�? о �?оздании и разработке модулей NetBeans приведены в �?ледующих ре�?ур�?ах: 
+  <ul>
+	  <li><a href="https://platform.netbeans.org/index.html">Домашна�?�? �?траница платформы NetBeans</a></li>
+	  <li><a href="https://netbeans.org/download/dev/javadoc/">Спи�?ок интерфей�?ов API �?реды NetBeans (текуща�? вер�?и�? разработки)</a></li>
+  <li><a href="https://netbeans.org/kb/trails/platform_ru.html">Другие �?в�?занные руковод�?тва</a></li></ul>
+  </p>
+  
+<!-- ======================================================================================== -->
+<!-- 
+<h2><a name="version"></a>Versioning </h2>
+  
+<p>
+
+<table width="76%" >
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+         25 August 2005
+      </td>
+      <td>
+	      <ul><li>Initial version.
+		      <li>To do:
+		      <ul><li>Add post-creation customizations (i.e., the "Extending Support for the New File Type" section).
+		      <li>Explain what the generated files are for (placeholders currently).
+		      <li>Explain the layer file's entries.
+		      <li>Explain the first File Type panel (placeholders currently).
+		      <li>Maybe create a separate tutorial for recognizing XML files.</ul></ul>
+      </td>
+  </tr>
+<tr>
+      <td>
+         2
+      </td>
+      <td>
+         23 September 2005
+      </td>
+      <td>
+	      <ul><li>A lot of info added from the FAQ and added the Action wizard and System Filesystem Browser.
+		      <li>To do:
+		      <ul><li>Explain <tt>LoaderBeanInfo.java</tt> and <tt>Resolver.xml</tt> (one line each)
+			      <li>Maybe create a separate tutorial for recognizing XML files.
+			      <li>Using Tomcat GIF maybe not good idea.
+			      <li>Maybe the action should do something useful.
+			      <li>Maybe direct links to FAQ not good idea.
+			      <li>Probably more needed on <tt>layer.xml</tt> file.
+			      <li>Maybe other useful apisupport functionality could be added to this scenario.
+			      <li>More info needed on MIME types.
+			      <li>The introductory paragraphs should be illustrated with a graphic. A diagram to
+			      show relationship between node, dataobject, fileobject, dataloader, etc.</ul></ul> 
+      </td>
+  </tr>
+
+<tr>
+      <td>
+         3
+      </td>
+      <td>
+         28 September 2005
+      </td>
+      <td>
+	      <ul><li>Integrated comments from Jesse Glick.
+		      <li>To do:
+		      <ul>    <li>More info needed on MIME types.
+			      <li>The introductory paragraphs should be illustrated with a graphic. A diagram to
+			      show relationship between node, dataobject, fileobject, dataloader, etc.
+			      <li>Many Javadoc links to be added (also for <tt>performAction</tt>.
+			      <li>Info on cookies, cookie actions, cookie classes needed.
+			      <li>Action ended up in text-html even though I chose my own mime type.
+			      <li>Need to explain or link to explanation for instance, shadow, etc.
+			      <li>Platform Manager needs to be mentioned in the context of installing
+			      in target platform.
+			      <li>Show how to add properties to the property sheet.</ul></ul> 
+      </td>
+  </tr>
+<tr>
+      <td>
+         4
+      </td>
+      <td>
+         4 October 2005
+      </td>
+      <td>
+	      <ul><li>Added two diagrams in the introductory paragraphs, from Tim Boudreau's JavaOne presentation.
+ <li>To do:
+		      <ul>    <li>More info needed on MIME types.
+			      <li>Many Javadoc links to be added (also for <tt>performAction</tt>).
+			      <li>Need to create section near the start: "Related FAQs":
+			      <ul><li>Info on cookies, cookie actions, cookie classes needed.
+				      <li>Need to explain or link to explanation for instance, shadow, etc.
+			      <li>DataLoader, DataObject, etc.</ul>
+			      <li>Platform Manager needs to be mentioned in the context of installing
+			      in target platform.
+			      <li>Show how to add properties to the property sheet.
+			      <li>Mention the dummy template that you get, how to modify it,
+	       			and how to set the description in the New File wizard.</ul></ul> 
+		     
+      </td>
+  </tr>
+<tr>
+      <td>
+         4
+      </td>
+      <td>
+         4 November 2005
+      </td>
+      <td>
+	      <ul><li>Added downloadable source code, new 'Installing the Sample' section, and link to
+		       Syntax Highlighting tutorial at the end.
+ <li>To do:
+ <ul>   <li>Same items as on 4 October still to be done.</ul> 
+		     
+      </td>
+  </tr>
+<tr>
+      <td>
+         5
+      </td>
+      <td>
+         29 November 2005
+      </td>
+      <td>
+	      <ul><li>Added links to brand new Component Palette tutorial.
+ <li>To do:
+ <ul>   <li>Same items as on 4 October still to be done.</ul> 
+		     
+      </td>
+  </tr>
+<tr>
+      <td>
+         6
+      </td>
+      <td>
+	      21 April 2006
+      </td>
+      <td>
+	      <ul><li>Changed the title from "DataLoader Module Tutorial" to "Recognizing a File Type Tutorial".
+ <li>To do:
+ <ul>   <li>Same items as on 4 October still to be done.</ul> 
+		     
+      </td>
+  </tr>
+  <tr>
+      <td>
+         7
+      </td>
+      <td>
+	      17 November 2007
+      </td>
+      <td>
+	      <ul><li>Updated the whole tutorial to 6.0, replaced all screenshots, and
+              now [because the 6.0 IDE already provides support for manifest files], the
+              tutorial focuses on imaginary Abc files.
+ <li>To do:
+ <ul>   <li>Need to replace the download, which is the same as before, dealing with manifest files.
+       <li>Same items as on 4 October still to be done.
+       <li>Added OpenSupport into TopComponent, with a reference to Visual Library.</ul>  
+	<li>Changed title to File Type Integration Tutorial
+        <li>Tweaked several places throughout tutorial, for 6.0
+      </td>
+  </tr>
+   <tr>
+                <td>
+                    8
+                </td>
+                <td>
+                    15 April 2008
+                </td>
+                <td>
+                    Updated the styles (badge, table of contents, required software table)
+                    to the new format.
+                </td>
+            </tr>
+   <tr>
+                <td>
+                    9
+                </td>
+                <td>
+                    16 July 2008
+                </td>
+                <td>
+                    Created new version for 6.5, because of changes to the
+                    way file type recognition is done in that release. To do:
+                    <ul>
+                        <li>6.5-specific badge
+                        <li>Required software table
+                        <li>Search for DataNode, BeanInfo, DataLoader and reword
+                        <li>Check screenshots
+                        <li>Make sure all the sections work as before
+                    </ul>
+                </td>
+            </tr>
+   <tr>
+                <td>
+                    10
+                </td>
+                <td>
+                    4 April 2009
+                </td>
+                <td>
+                    Worked through everything and added the multiview section.
+                </td>
+            </tr>
+  </tbody>
+</table>
+-->
+</body>
+</html>

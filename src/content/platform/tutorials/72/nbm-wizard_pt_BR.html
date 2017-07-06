@@ -1,0 +1,591 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+<title>Tutorial do m&oacute;dulo de assistente do NetBeans para a plataforma NetBeans 6.5</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="geertjan.wielenga@sun.com">
+  <meta name="indexed" content="y">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="description"
+ content="A walk-through of the 
+ basic features of the Wizard API classes.">
+         <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+
+<body>
+
+<h1>Tutorial do m&oacute;dulo de assistente do NetBeans</h1>
+
+<p>Neste tutorial, voc&ecirc; aprender&aacute; como utilizar os recursos principais fornecidos pelas classes de assistente da <a href="http://bits.netbeans.org/dev/javadoc/org-openide-dialogs/org/openide/package-summary.html">API de di&aacute;logos do NetBeans</a>.</p>
+
+     <p><b>Conte&uacute;do</b></p>
+   
+   <p><img  src="../../images/articles/69/netbeans-stamp7-8-9.png" class="stamp" width="114" height="114" alt="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.5, 6.7, 6.8" title="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.5, 6.7, 6.8" /></p>
+
+      <ul class="toc">
+<li><a href="#set">Criando o projeto do m&oacute;dulo</a>
+<li><a href="#wiz">Criando a infraestrutura do assistente</a>
+<li><a href="#action">Registrando a classe de a&ccedil;&atilde;o do assistente</a>
+<li><a href="#design">Criando o conte&uacute;do do assistente</a>
+<li><a href="#process">Processando os dados do usu&aacute;rio</a>
+<li><a href="#validate">Validando os dados do usu&aacute;rio</a>
+<li><a href="#persist">Persistindo dados nas reinicializa&ccedil;&otilde;es</a>
+<li><a href="#brand">Marcando o assistente</a>
+<li><a href="#further">Leituras adicionais</a>
+       </ul>
+
+
+<p class="tips"> Nos aplicativos da plataforma NetBeans, &eacute; poss&iacute;vel criar diferentes tipos de assistentes. Se deseja criar um assistente que apare&ccedil;a na caixa de di&aacute;logo Novo projeto, consulte o <a href="https://platform.netbeans.org/tutorials/nbm-projectsamples.html">Tutorial do m&oacute;dulo de amostra do projeto</a>. Se deseja criar um assistente que apare&ccedil;a na caixa de di&aacute;logo Novo arquivo, consulte o <a href="http://platform.netbeans.org/tutorials/nbm-filetemplates.html">Tutorial do m&oacute;dulo de arquivo de modelo</a>. Neste tutorial, &eacute; criado um assistente geral que aparece ao clicar em um bot&atilde;o na barra de ferramentas.
+
+
+<p><b>Para seguir este tutorial, os softwares e recursos listados na tabela seguinte s&atilde;o necess&aacute;rios.</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software ou recurso</th>
+                <th class="tblheader" scope="col">Vers&atilde;o necess&aacute;ria</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">vers&atilde;o 6.7 ou superior</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Vers&atilde;o 6 ou<br/>vers&atilde;o 5</td>
+            </tr>
+        </tbody>
+    </table>
+
+<!-- ===================================================================================== -->
+
+    <h2 class="tutorial"><a name="set"></a>Criando o projeto do m&oacute;dulo</h2>
+
+    <p>Come&ccedil;amos a trabalhar atrav&eacute;s do assistente para novo projeto de m&oacute;dulo. No final, teremos uma estrutura de c&oacute;digo-fonte b&aacute;sica com alguns arquivos padr&atilde;o, que todos os m&oacute;dulos NetBeans exigem.
+
+         <ol>
+    <li>Escolha Arquivo &gt; Novo projeto (Ctrl-Shift-N). Em Categorias, selecione M&oacute;dulos do NetBeans. Em Projetos, selecione M&oacute;dulo. Clique em Pr&oacute;ximo.</li>
+    <li>No painel Nome e localiza&ccedil;&atilde;o, digite <tt>DemoWizard</tt> no campo Nome do projeto. Altere Local do projeto para qualquer diret&oacute;rio no computador. Deixe marcadas a op&ccedil;&atilde;o M&oacute;dulo independente e a caixa de verifica&ccedil;&atilde;o Definir como projeto principal. Clique em Pr&oacute;ximo.</li>
+    <li>No painel Configura&ccedil;&atilde;o b&aacute;sica de m&oacute;dulos, digite <tt>org.demo.wizard</tt> no Nome de base de c&oacute;digo.</li>
+      <li>Selecione &quot;Gerar camada XML&quot;. Deixe as localiza&ccedil;&otilde;es do pacote de localiza&ccedil;&otilde;es e da camada XML de modo que sejam armazenados em um pacote com o nome <tt>org/demo/wizard</tt>. Clique em Terminar.</li>
+</ol>
+
+    <p> O IDE cria o projeto <tt>DemoWizard</tt>. O projeto cont&eacute;m todos os metadados de projeto e c&oacute;digos-fonte, como o script de constru&ccedil;&atilde;o Ant do projeto. O projeto se abre no IDE. &Eacute; poss&iacute;vel ver a estrutura l&oacute;gica na janela Projetos (Ctrl-1) e a estrutura de arquivos na janela Arquivos (Ctrl+2).</p>
+
+
+    <br />
+
+ <!-- ===================================================================================== -->
+
+<p><h2><a name="wiz"></a>Criando a infraestrutura do assistente</h2>
+
+<p>Nesta se&ccedil;&atilde;o, utilizamos o assistente Wizard para adicionar stubs de um assistente ao nosso m&oacute;dulo.
+
+<ol>
+    <li><p>Na janela Projetos, clique com o bot&atilde;o direito do mouse no n&oacute; do projeto DemoWizard e selecione Desenvolvimento do m&oacute;dulo | Assistente:</p>
+    <p><img border="1" src="../../images/tutorials/wizard/wizard-wizard.png"/>
+    <p>Clique em Avan&ccedil;ar.</p>
+    </li>
+    <li><p>No painel Tipo de assistente, digite 2 no campo &quot;N&uacute;mero de pain&eacute;is do assistente&quot; e deixe os outros valores inalterados:</p>
+    <p><img border="1" src="../../images/tutorials/wizard/wizard-wizard-3.png"/>
+    <p>Os campos no painel acima s&atilde;o os seguintes:
+    <ul>
+        <li><b>Tipo de registro.</b> Determina onde o usu&aacute;rio acessar&aacute; o assistente. Se selecionar &quot;Personalizado&quot;, o assistente Wizard criar&aacute; uma nova classe de a&ccedil;&atilde;o que voc&ecirc; pode utilizar para abrir e inicializar seu assistente. Se selecionar &quot;Novo arquivo&quot;, o assistente Wizard registrar&aacute; seu assistente no arquivo <tt>layer.xml</tt> do m&oacute;dulo.
+        <li><b>Sequ&ecirc;ncia de etapas do assistente.</b> Determina se o assistente ser&aacute; linear ou se o usu&aacute;rio do assistente poder&aacute; saltar etapas dependendo das escolhas feitas anteriormente. Os assistentes lineares s&atilde;o 'est&aacute;ticos', que &eacute; o padr&atilde;o, enquanto que os assistentes com etapas que podem ser saltadas requerem uma classe de repetidor personalizada, que &eacute; criada se voc&ecirc; seleciona 'din&acirc;mico'.
+        <li><b>N&uacute;mero de pain&eacute;is do assistente.</b> Determina o n&uacute;mero de pain&eacute;is que ser&atilde;o criados. Para cada etapa do assistente, ser&atilde;o criados dois arquivos Java: uma visualiza&ccedil;&atilde;o e um controlador.
+    </ul>
+    <p>Clique em Avan&ccedil;ar.</p>
+    </li>
+    <li><p>No painel Nome e localiza&ccedil;&atilde;o, digite <tt>Demo</tt> no Prefixo do nome da classe e selecione o pacote principal na lista suspensa Pacote:</p>
+    <p><img border="1" src="../../images/tutorials/wizard/wizard-wizard-4.png"/>
+    <p>Clique em Terminar.</p>
+    </li>
+</ol>
+
+<p>Na janela Projetos, agora deveria aparecer o seguinte:
+<p><img border="1" src="../../images/tutorials/wizard/projects-window.png"/>
+
+<p><h2><a name="action"></a>Registrando a classe de a&ccedil;&atilde;o do assistente</h2>
+
+<p>Nesta se&ccedil;&atilde;o, modificamos a classe Action e a registramos no arquivo <tt>layer.xml</tt>.
+
+<ol>
+    <li>Abra o arquivo <tt>DemoWizardAction.java</tt> e substitua todos os c&oacute;digos pelo seguinte:
+
+<pre class=examplecode>
+package org.demo.wizard;
+
+import java.awt.Component;
+import java.awt.Dialog;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.text.MessageFormat;
+import javax.swing.JComponent;
+import org.openide.DialogDisplayer;
+import org.openide.WizardDescriptor;
+
+public final class DemoWizardAction implements ActionListener {
+
+    private WizardDescriptor.Panel[] panels;
+
+    public void actionPerformed(ActionEvent e) {
+        WizardDescriptor wizardDescriptor = new WizardDescriptor(getPanels());
+        // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()
+        wizardDescriptor.setTitleFormat(new MessageFormat(&quot;{0}&quot;));
+        wizardDescriptor.setTitle(&quot;Your wizard dialog title here&quot;);
+        Dialog dialog = DialogDisplayer.getDefault().createDialog(wizardDescriptor);
+        dialog.setVisible(true);
+        dialog.toFront();
+        boolean cancelled = wizardDescriptor.getValue() != WizardDescriptor.FINISH_OPTION;
+        if (!cancelled) {
+            // do something
+        }
+    }
+
+    /**
+     * Initialize panels representing individual wizard's steps and sets
+     * various properties for them influencing wizard appearance.
+     */
+    private WizardDescriptor.Panel[] getPanels() {
+        if (panels == null) {
+            panels = new WizardDescriptor.Panel[]{
+                        new DemoWizardPanel1(),
+                        new DemoWizardPanel2()
+                    };
+            String[] steps = new String[panels.length];
+            for (int i = 0; i &lt; panels.length; i++) {
+                Component c = panels[i].getComponent();
+                // Default step name to component name of panel. Mainly useful
+                // for getting the name of the target chooser to appear in the
+                // list of steps.
+                steps[i] = c.getName();
+                if (c instanceof JComponent) { // assume Swing components
+                    JComponent jc = (JComponent) c;
+                    // Sets step number of a component
+                    // TODO if using org.openide.dialogs &gt;= 7.8, can use WizardDescriptor.PROP_*:
+                    jc.putClientProperty(&quot;WizardPanel_contentSelectedIndex&quot;, new Integer(i));
+                    // Sets steps names for a panel
+                    jc.putClientProperty(&quot;WizardPanel_contentData&quot;, steps);
+                    // Turn on subtitle creation on each step
+                    jc.putClientProperty(&quot;WizardPanel_autoWizardStyle&quot;, Boolean.TRUE);
+                    // Show steps on the left side with the image on the background
+                    jc.putClientProperty(&quot;WizardPanel_contentDisplayed&quot;, Boolean.TRUE);
+                    // Turn on numbering of all steps
+                    jc.putClientProperty(&quot;WizardPanel_contentNumbered&quot;, Boolean.TRUE);
+                }
+            }
+        }
+        return panels;
+    }
+
+    public String getName() {
+        return &quot;Start Sample Wizard&quot;;
+    }
+
+}
+</pre>
+
+    </li>
+
+<p class="tips"> Estamos utilizando o mesmo c&oacute;digo que foi gerado, exceto que implementamos o <tt>ActionListener</tt> em vez do <tt>CallableSystemAction</tt>. Fazemos isso porque <tt>ActionListener</tt> &eacute; uma classe JDK padr&atilde;o, enquanto que <tt>CallableSystemAction</tt> n&atilde;o. A partir da plataforma NetBeans 6.5, &eacute; poss&iacute;vel utilizar a classe JDK padr&atilde;o, que &eacute; mais apropriada e exige menos c&oacute;digo.
+
+    <li>Registre a classe de a&ccedil;&atilde;o no arquivo <tt>layer.xml</tt> da seguinte forma:
+
+<pre class=examplecode>
+&lt;filesystem&gt;
+    &lt;folder name=&quot;Actions&quot;&gt;
+        &lt;folder name=&quot;File&quot;&gt;
+            &lt;file name=&quot;org-demo-wizard-DemoWizardAction.instance&quot;&gt;
+                &lt;attr name=&quot;delegate&quot; newvalue=&quot;org.demo.wizard.DemoWizardAction&quot;/&gt;
+                &lt;attr name=&quot;iconBase&quot; stringvalue=&quot;org/demo/wizard/icon.png&quot;/&gt;
+                &lt;attr name=&quot;instanceCreate&quot; methodvalue=&quot;org.openide.awt.Actions.alwaysEnabled&quot;/&gt;
+                &lt;attr name=&quot;noIconInMenu&quot; stringvalue=&quot;false&quot;/&gt;
+            &lt;/file&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+    &lt;folder name=&quot;Toolbars&quot;&gt;
+        &lt;folder name=&quot;File&quot;&gt;
+            &lt;file name=&quot;org-demo-wizard-DemoWizardAction.shadow&quot;&gt;
+                &lt;attr name=&quot;originalFile&quot; stringvalue=&quot;Actions/File/org-demo-wizard-DemoWizardAction.instance&quot;/&gt;
+                &lt;attr name=&quot;position&quot; intvalue=&quot;0&quot;/&gt;
+            &lt;/file&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/filesystem&gt;
+</pre>
+
+<p class="tips"> O elemento &quot;iconBase&quot; aponta para uma imagem denominada &quot;icon.png&quot; do pacote principal. Utilize sua pr&oacute;pria imagem com tal nome, certificando-se de que o tamanho seja de 16x16 pixels ou utilize a imagem seguinte: <img border="1" src="../../images/tutorials/wizard/icon.png"/>
+
+<li>Execute o m&oacute;dulo. O aplicativo se inicia e o bot&atilde;o deveria ser visto na barra de ferramentas que foi especificada no arquivo <tt>layer.xml</tt>:
+
+<p><img border="1" src="../../images/tutorials/wizard/result-1.png"/>
+
+<p>Clique no bot&atilde;o e o assistente &eacute; exibido:
+<p><img border="1" src="../../images/tutorials/wizard/result-2.png"/>
+<p>Clique em Pr&oacute;ximo e observe que no painel final o bot&atilde;o Terminar est&aacute; habilitado:
+<p><img border="1" src="../../images/tutorials/wizard/result-3.png"/>
+
+     </li>
+
+</ol>
+
+<p>Agora que a infraestrutura do assistente est&aacute; funcionando, vamos adicionar algum tipo de conte&uacute;do.
+
+<p><h2><a name="design"></a>Criando o conte&uacute;do do assistente</h2>
+
+<p>Nesta se&ccedil;&atilde;o, adicionamos o conte&uacute;do ao assistente e personalizamos os recursos b&aacute;sicos.
+
+<ol>
+    <li><p>Abra o arquivo <tt>DemoWizardAction.java</tt> e observe que &eacute; poss&iacute;vel definir v&aacute;rias propriedades de personaliza&ccedil;&atilde;o para o assistente:</p>
+     <p><img border="1" src="../../images/tutorials/wizard/wizard-tweaking.png"/></p>
+     <p>Leia mais sobre estas propriedades <a href="http://ui.netbeans.org/docs/ui_apis/wide/index.html">aqui</a>.
+    </li>
+    <li><p>Em <tt>DemoWizardAction.java</tt>, altere <tt>wizardDescriptor.setTitle</tt> pelo seguinte:
+<pre class=examplecode>
+wizardDescriptor.setTitle(&quot;Music Selection&quot;);
+</pre>
+    <li><p>Abra os arquivos <tt>DemoVisualPanel1.java</tt> e <tt>DemoVisualPanel2.java</tt> e utilize o construtor de GUI &quot;Matisse&quot; para adicionar alguns componentes Swing, como os seguintes:</p>
+     <p><img border="1" src="../../images/tutorials/wizard/panel-1-design.png"/></p>
+     <p><img border="1" src="../../images/tutorials/wizard/panel-2-design.png"/></p>
+     <p>Acima, voc&ecirc; v&ecirc; os arquivos <tt>DemoVisualPanel1.java</tt> e <tt>DemoVisualPanel2.java</tt> com alguns componentes Swing.
+    </li>
+    <li>Abra os dois pain&eacute;is na visualiza&ccedil;&atilde;o C&oacute;digo-fonte e altere seus m&eacute;todos <tt>getName()</tt> por &quot;Name and Address&quot; e &quot;Musician Details&quot;, respectivamente.
+    <li><p>Execute o m&oacute;dulo novamente. Quando o assistente for aberto, voc&ecirc; deveria ver algo semelhante ao exibido abaixo, dependendo dos componentes Swing adicionados e das personaliza&ccedil;&otilde;es feitas:</p>
+<p><img border="1" src="../../images/tutorials/wizard/result-4.png"/></p>
+
+<p class="tips"> A imagem na barra lateral esquerda do assistente acima &eacute; definida no arquivo <tt>DemoWizardAction.java</tt>, da seguinte forma:
+
+<pre class=examplecode>
+wizardDescriptor.putProperty(&quot;WizardPanel_image&quot;, ImageUtilities.loadImage(&quot;org/demo/wizard/banner.png&quot;, true));
+</pre>
+     
+</ol>
+
+<p>Agora que o conte&uacute;do do assistente foi criado, vamos adicionar c&oacute;digo para o processamento dos dados que o usu&aacute;rio gerar&aacute; introduzir.
+
+ <!-- ===================================================================================== -->
+
+    <h2 class="tutorial"><a name="process"></a>Processando os dados do usu&aacute;rio</h2>
+
+    <p>Nesta se&ccedil;&atilde;o, voc&ecirc; aprende como passar os dados do usu&aacute;rio de um painel a outro e como exibir os resultados para o usu&aacute;rio quando ele clicar em Terminar.
+
+         <ol>
+    <li><p>Nas classes de <tt>WizardPanel</tt>, utilize o m&eacute;todo <tt>storeSettings</tt> para recuperar os dados definidos no painel visual. Por exemplo, crie getters no arquivo <tt>DemoVisualPanel1.java</tt> e, em seguida, acesse-os da seguinte forma a partir do arquivo <tt>DemoWizardPanel1.java</tt>:</p>
+
+<pre class=examplecode>
+public void storeSettings(Object settings) {
+    ((WizardDescriptor) settings).putProperty(&quot;name&quot;, ((DemoVisualPanel1)getComponent()).getNameField());
+    ((WizardDescriptor) settings).putProperty(&quot;address&quot;, ((DemoVisualPanel1)getComponent()).getAddressField());
+}
+</pre>
+
+    </li>
+    <li><p>Depois, utilize o arquivo <tt>DemoWizardAction.java</tt> para recuperar as propriedades que voc&ecirc; definiu e adote o seguinte procedimento com tais propriedades:</p>
+
+<pre class=examplecode>
+public void actionPerformed(ActionEvent e) {
+    WizardDescriptor wizardDescriptor = new WizardDescriptor(getPanels());
+    // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()
+    wizardDescriptor.setTitleFormat(new MessageFormat(&quot;{0}&quot;));
+    wizardDescriptor.setTitle(&quot;Music Selection&quot;);
+    Dialog dialog = DialogDisplayer.getDefault().createDialog(wizardDescriptor);
+    dialog.setVisible(true);
+    dialog.toFront();
+    boolean cancelled = wizardDescriptor.getValue() != WizardDescriptor.FINISH_OPTION;
+    if (!cancelled) {
+        <b>String name = (String) wizardDescriptor.getProperty(&quot;name&quot;);
+        String address = (String) wizardDescriptor.getProperty(&quot;address&quot;);
+        DialogDisplayer.getDefault().notify(new NotifyDescriptor.Message(name + &quot; &quot; + address));</b>
+    }
+}
+</pre>
+
+<p class="tips"> O <tt>NotifyDescriptor</tt> pode ser utilizado tamb&eacute;m de outras formas, conforme indicado pela caixa de autocompletar c&oacute;digo:
+
+<p><img border="1" src="../../images/tutorials/wizard/notifydescriptor.png"/></p>
+
+
+         </ol>
+
+<p>Agora voc&ecirc; j&aacute; sabe como processar os dados introduzidos pelo usu&aacute;rio.
+
+    <br />
+
+ <!-- ===================================================================================== -->
+
+    <h2 class="tutorial"><a name="validate"></a>Validando os dados do usu&aacute;rio</h2>
+
+    <p>Nesta se&ccedil;&atilde;o, voc&ecirc; aprende como validar a entrada do usu&aacute;rio quando o bot&atilde;o &quot;Next&quot; for clicado no assistente.
+
+         <ol>
+    <li><p>Em <tt>DemoWizardPanel1</tt>, altere a assinatura de classe, implementando <tt>WizardDescriptor.ValidatingPanel</tt> em vez de <tt>WizardDescriptor.Panel</tt>:</p>
+
+<pre class=examplecode>
+public class DemoWizardPanel1 implements WizardDescriptor.ValidatingPanel
+</pre>
+
+<li>Na parte superior da classe, altere a declara&ccedil;&atilde;o <tt>JComponent</tt> por uma declara&ccedil;&atilde;o digitada:
+
+<pre class=examplecode>
+private DemoVisualPanel1 component;
+</pre>
+
+<li>Implemente o m&eacute;todo abstrato necess&aacute;rio da seguinte forma:
+
+<pre class=examplecode>
+@Override
+public void validate() throws WizardValidationException {
+
+    String name = component.getNameTextField().getText();
+    if (name.equals(&quot;&quot;)){
+        throw new WizardValidationException(null, &quot;Invalid Name&quot;, null);
+    }
+
+}
+</pre>
+
+<li><p>Execute o m&oacute;dulo. Clique em &quot;Next&quot;, sem introduzir nada no campo &quot;Name&quot; e voc&ecirc; deveria ver o resultado abaixo. Observe tamb&eacute;m que n&atilde;o &eacute; poss&iacute;vel mover para o painel seguinte, como consequ&ecirc;ncia da falha na valida&ccedil;&atilde;o:</p>
+
+<p><img border="1" src="../../images/tutorials/wizard/validation1.png"/></p>
+
+<li>Como op&ccedil;&atilde;o, desabilite o bot&atilde;o &quot;Next&quot; se o campo do nome estiver vazio. Comece declarando um boolean na parte superior da classe:
+
+<pre class=examplecode>
+private boolean isValid = true;
+</pre>
+
+<p>A seguir, substitua <tt>isValid()</tt> da seguinte forma:
+
+<pre class=examplecode>
+@Override
+public boolean isValid() {
+    return isValid;
+}
+</pre>
+
+<p>E quando <tt>validate()</tt> for chamado, o que ocorre quando o bot&atilde;o &quot;Next&quot; &eacute; clicado, retorne falso:
+
+<pre class=examplecode>
+@Override
+public void validate() throws WizardValidationException {
+
+    String name = component.getNameTextField().getText();
+    if (name.equals(&quot;&quot;)) {
+        <b>isValid = false;</b>
+        throw new WizardValidationException(null, &quot;Invalid Name&quot;, null);
+    }
+
+}
+</pre>
+
+<p>Alternativamente, defina o boolean inicialmente como falso. A seguir, implemente <tt>DocumentListener</tt>, adicione um listener no campo e, quando o usu&aacute;rio digitar algo no campo, defina o boolean como verdadeiro e chame <tt>isValid()</tt>.
+         </ol>
+
+<p>Agora voc&ecirc; j&aacute; sabe como validar os dados introduzidos pelo usu&aacute;rio.
+
+  <p class="tips"> Para obter mais informa&ccedil;&otilde;es sobre valida&ccedil;&atilde;o da entrada do usu&aacute;rio, consulte a amostra de Tom Wheeler ao final deste tutorial.
+
+    <br />
+
+ <!-- ===================================================================================== -->
+
+    <h2 class="tutorial"><a name="persist"></a>Persistindo dados nas reinicializa&ccedil;&otilde;es</h2>
+
+    <p>Nesta se&ccedil;&atilde;o, voc&ecirc; aprende como armazenar os dados quando o aplicativo se fecha e como recuper&aacute;-los quando o assistente se abre ap&oacute;s ser iniciado novamente.
+
+         <ol>
+
+    <li><p>Em <tt>DemoWizardPanel1.java</tt>, substitua os m&eacute;todos <tt>readSettings</tt> e <tt>storeSettings</tt> da seguinte forma:</p>
+
+<pre class=examplecode>
+<b>JTextField nameField = ((DemoVisualPanel1) getComponent()).getNameTextField();
+JTextField addressField = ((DemoVisualPanel1) getComponent()).getAddressTextField();</b>
+
+@Override
+public void readSettings(Object settings) {
+    <b>nameField.setText(NbPreferences.forModule(DemoWizardPanel1.class).get(&quot;namePreference&quot;, &quot;&quot;));
+    addressField.setText(NbPreferences.forModule(DemoWizardPanel1.class).get(&quot;addressPreference&quot;, &quot;&quot;));</b>
+}
+
+@Override
+public void storeSettings(Object settings) {
+    ((WizardDescriptor) settings).putProperty(&quot;name&quot;, nameField.getText());
+    ((WizardDescriptor) settings).putProperty(&quot;address&quot;, addressField.getText());
+    <b>NbPreferences.forModule(DemoWizardPanel1.class).put(&quot;namePreference&quot;, nameField.getText());
+    NbPreferences.forModule(DemoWizardPanel1.class).put(&quot;addressPreference&quot;, addressField.getText());</b>
+}
+</pre>
+
+     </li>
+
+    <li><p>Execute o m&oacute;dulo novamente e digite um nome e endere&ccedil;o no primeiro painel do assistente:</p>
+<p><img border="1" src="../../images/tutorials/wizard/nbpref1.png"/></p>
+     </li>
+
+    <li><p>Feche o aplicativo, abra a janela Arquivos e analise o arquivo de propriedades dentro da pasta <tt>build</tt> do aplicativo. Voc&ecirc; deveria encontrar agora as seguintes configura&ccedil;&otilde;es:</p>
+<p><img border="1" src="../../images/tutorials/wizard/nbpref2.png"/></p>
+     </li>
+     
+    <li><p>Execute o aplicativo novamente e, da pr&oacute;xima vez que o assistente for aberto, as configura&ccedil;&otilde;es especificadas acima ser&atilde;o automaticamente utilizadas para definir os valores nos campos do assistente.</p>
+     </li>
+     
+         </ol>
+         
+<p>Agora voc&ecirc; j&aacute; sabe como fazer os dados do assistente persistirem depois das reinicializa&ccedil;&otilde;es.
+
+    <br />
+
+ <!-- ===================================================================================== -->
+
+    <h2 class="tutorial"><a name="brand"></a>Marcando o assistente</h2>
+
+    <p>Nesta se&ccedil;&atilde;o, voc&ecirc; marca a string do bot&atilde;o &quot;Next&quot; (Pr&oacute;ximo), fornecido pela infraestrutura, como &quot;Advance&quot; (Avan&ccedil;ar).
+
+<p class="tips"> O termo &quot;marca&ccedil;&atilde;o&quot; significa personaliza&ccedil;&atilde;o, ou seja, trata-se normalmente de pequenas modifica&ccedil;&otilde;es dentro do mesmo idioma, enquanto que &quot;internacionaliza&ccedil;&atilde;o&quot; ou &quot;localiza&ccedil;&atilde;o&quot; significam a tradu&ccedil;&atilde;o para outro idioma. Para obter mais informa&ccedil;&otilde;es sobre a localiza&ccedil;&atilde;o dos m&oacute;dulos NetBeans, <a href="http://translatedfiles.netbeans.org/index-l10n.html">consulte aqui</a>.
+
+         <ol>
+    <li><p>Na janela Arquivos, expanda a pasta <tt>branding</tt> do aplicativo e crie a estrutura de pasta/arquivo real&ccedil;ada abaixo:</p>
+
+<p><img border="1" src="../../images/tutorials/wizard/branding-1.png"/></p>
+
+     </li>
+    <li>Defina o conte&uacute;do do arquivo da seguinte forma:
+
+<pre class=examplecode>
+CTL_NEXT=&amp;Advance &gt;
+</pre>
+
+<p>Outras strings que poderiam ser marcadas s&atilde;o:
+
+<pre class=examplecode>
+CTL_CANCEL
+CTL_PREVIOUS
+CTL_FINISH
+CTL_ContentName
+</pre>
+
+<p class="tips"> A tecla &quot;CTL_ContentName&quot; est&aacute; definida como &quot;Steps&quot; por padr&atilde;o, que &eacute; utilizada no painel esquerdo do assistente, caso a propriedade &quot;WizardPanel_autoWizardStyle&quot; n&atilde;o tenha sido definida como &quot;FALSE&quot;.
+
+
+    </li>
+    <li><p>Execute o aplicativo e o bot&atilde;o &quot;Next&quot; estar&aacute; marcado como &quot;Advance&quot;:</p>
+
+<p><img border="1" src="../../images/tutorials/wizard/branding-2.png"/></p>
+
+
+
+<p class="tips"> Como op&ccedil;&atilde;o, utilize o arquivo <tt>DemoWizardAction.java</tt>, conforme descrito anteriormente, para remover todo o lado esquerdo do painel do assistente da seguinte forma:
+
+</p><pre class="examplecode"> wizardDescriptor.putProperty(&quot;WizardPanel_autoWizardStyle&quot;, Boolean.FALSE);
+</pre>
+
+<p>As configura&ccedil;&otilde;es acima t&ecirc;m como resultado um assistente com a seguinte apar&ecirc;ncia:</p>
+
+    <p><img border="1" src="../../images/tutorials/wizard/branding-3.png"/></p>
+
+</ol>
+
+<p>Agora voc&ecirc; j&aacute; sabe como marcar as strings definidas na infraestrutura do assistente com suas pr&oacute;prias vers&otilde;es marcadas.
+
+    <br />
+
+ <!-- ===================================================================================== -->
+
+    <h2 class="tutorial"><a name="further"></a>Leituras adicionais</h2>
+
+    <p>V&aacute;rios artigos sobre informa&ccedil;&otilde;es relacionadas est&atilde;o dispon&iacute;veis on-line:
+
+         <ul>
+            <li><p>O site sobre NetBeans de Tom Wheeler (clique na imagem abaixo):</p>
+              <p><a href="http://www.tomwheeler.com/netbeans/"><img border="1" src="../../images/tutorials/wizard/tom.png"/></a></p>
+
+              <p class="tips"> Embora esteja escrito para o NetBeans 5.5, a amostra acima foi testada com &ecirc;xito no NetBeans IDE 6.5.1 em Ubuntu Linux com JDK 1.6.
+
+              <p>A amostra &eacute; especialmente &uacute;til para mostrar como validar os dados do usu&aacute;rio.
+
+            <li>Blog do Geertjan:
+              <ul>
+                  <li><a href="http://blogs.oracle.com/geertjan/entry/how_wizards_work">Como funcionam os assistentes: Parte 1&mdash;Introdu&ccedil;&atilde;o</a>
+                  <li><a href="http://blogs.oracle.com/geertjan/entry/how_wizards_work_part_2">Como funcionam os assistentes: Parte 2&mdash;Tipos diferentes</a>
+                  <li><a href="http://blogs.oracle.com/geertjan/entry/how_wizards_work_part_3">Como funcionam os assistentes: Parte 3&mdash;Seu primeiro assistente</a>
+                  <li><a href="http://blogs.oracle.com/geertjan/entry/how_wizards_work_part_4">Como funcionam os assistentes: Parte 4&mdash;Seu pr&oacute;prio repetidor</a>
+                  <li><a href="http://blogs.oracle.com/geertjan/entry/how_wizards_work_part_5">Como funcionam os assistentes: Parte 5&mdash;Reutilizando e incorporando pain&eacute;is existentes</a>
+                  <li><a href="http://blogs.oracle.com/geertjan/entry/creating_a_better_java_class">Criando um melhor assistente para classe Java</a>
+              </ul>
+
+         </ul>
+
+    <br />
+
+
+
+    <h2><a name="version"></a>Versionamento </h2>
+
+    <p>
+
+    <table width="76%" border="1">
+        <tbody>
+            <tr>
+                <td>
+                    <div align="left"><b>Vers&atilde;o</b></div>
+                </td>
+                <td>
+                    <div align="left"><b>Data</b></div>
+                </td>
+                <td>
+                    <div align="left"><b>Altera&ccedil;&otilde;es</b></div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    1
+                </td>
+                <td>
+                    31 de mar&ccedil;o de 2009
+                </td>
+                <td>
+                    Vers&atilde;o inicial. A fazer:
+
+                    <p><ul>
+                        <li><strike>Adicionar uma se&ccedil;&atilde;o sobre valida&ccedil;&atilde;o da entrada do usu&aacute;rio.</strike>
+                        <li><strike>Adicionar uma se&ccedil;&atilde;o sobre armazenamento/recupera&ccedil;&atilde;o de dados para/do assistente.</strike>
+                        <li>Adicionar uma tabela que lista todas as propriedades do WizardDescriptor.
+                        <li>Adicionar uma tabela que lista e explica todas as classes API do assistente.
+                        <li>Adicionar links ao Javadoc.
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    2
+                </td>
+                <td>
+                    1 de abril de 2009
+                </td>
+                <td>
+                    Adicionada uma se&ccedil;&atilde;o de valida&ccedil;&atilde;o, com o c&oacute;digo para a desabilita&ccedil;&atilde;o do bot&atilde;o &quot;Next&quot; (Pr&oacute;ximo). Adicionada tamb&eacute;m uma se&ccedil;&atilde;o sobre persist&ecirc;ncia.
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    3
+                </td>
+                <td>
+                    10 de abril de 2009
+                </td>
+                <td>
+                    Coment&aacute;rios integrados por Tom Wheeler, reescrevendo a se&ccedil;&atilde;o sobre marca&ccedil;&atilde;o para que seja realmente sobre marca&ccedil;&atilde;o, com uma refer&ecirc;ncia sobre onde as informa&ccedil;&otilde;es sobre localiza&ccedil;&atilde;o podem ser encontradas.
+                </td>
+            </tr>
+
+        </tbody>
+    </table>
+
+    </body>
+
+</html>

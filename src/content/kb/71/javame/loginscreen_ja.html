@@ -1,0 +1,254 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+
+<HTML>
+<HEAD>
+<TITLE>ビジュアルモバイルデザイナのカスタムコンポーネント: ログイン画面の作成 - NetBeans Java ME チュートリアル</TITLE>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+<link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+<meta name="author" content="Karol Harelzak">
+</HEAD>
+<BODY>
+<a name="top"></a>
+<H1>ビジュアルモバイルデザイナのカスタムコンポーネント: ログイン画面の作成</H1>
+<P>ビジュアルモバイルデザイナ (VMD) は NetBeans Mobility に含まれるグラフィカルインタフェースで、コンポーネントのドラッグ＆ドロップを使用することでモバイルアプリケーションをデザインできます。VMD を使用すると、IDE に含まれるコンポーネントまたは独自にデザインしたコンポーネントを使用して、アプリケーションフローを定義し、GUI をデザインできます。VMD には、リスト、警告、フォーム、画像など、アプリケーションの作成に使用できる標準のユーザーインタフェース (UI) コンポーネントが多数含まれます。また、待機画面、スプラッシュ画面、表項目など、より複雑な機能を簡単に作成できるカスタムコンポーネントも含まれます。 </p>
+<p>ログイン画面のカスタムコンポーネントは、ユーザー名フィールド、パスワードフィールド、およびログインボタンなどの標準の要素を持つ便利なユーザーインタフェースを提供します。このカスタムコンポーネントを使用して、GSM による銀行業務などの保護された機能にアクセスするためのログインインタフェースを作成できます。</p>
+
+<p>NetBeans Mobility または J2EE に習熟していない場合、次に進む前に「<A HREF="../../docs/javame/quickstart.html">NetBeans Java ME MIDP 開発のクイックスタートガイド</A>」から始めることをお勧めします。</p>
+<!--<p class="notes"><b>注:</b> NetBeans IDE 6.8 を使用している場合、<a href="../../68/javame/loginscreen.html">「ログイン画面の作成」(NetBeans IDE 6.8)</a> チュートリアルを参照してください。</p>-->
+ 
+ <p><b>目次</b></p>
+ <img  src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" class="stamp" alt="このページの内容は NetBeans IDE 6.9 以降が対象です" title="このページの内容は NetBeans IDE 6.9 以降が対象です" >
+  <ul class="class">
+   <li><a href="#sample-app">サンプルアプリケーションのインストールと実行</a></li>
+   <li><a href="#create-app">「ログイン画面」カスタムコンポーネントを使用したアプリケーションの作成</a>
+<ul>
+	<LI><A HREF="#create">プロジェクトの作成</A> 
+	</LI>
+	<LI><A HREF="#add">プロジェクトへのパッケージとビジュアル MIDlet の追加</A> 
+	</LI>
+	<LI><A HREF="#addcomponent">プロジェクトへのコンポーネントの追加</A> 
+	</LI>
+	<LI><A HREF="#addcommands">ログイン画面コンポーネントへのコマンドの追加</A> 
+	</LI>
+	<LI><A HREF="#connect">コンポーネントを接続してアプリケーションフローを作成する</A> 
+	</LI>
+	<LI><A HREF="#storage">ソースコードの追加</A> 
+	</LI>
+	<LI><A HREF="#run">プロジェクトの実行</A> 
+	</LI>
+</ul></li>
+   <li><a href="#javadoc-loginscreen">ログイン画面コンポーネントの Javadoc</a></li>
+   <li><a href="#see-also">関連項目</a></li>
+  </ul>
+ <p><b>このチュートリアルに従うには、次に示すソフトウェアとリソースが必要です。</b></p>
+
+
+<table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                <th class="tblheader" scope="col">必須バージョン</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE と Java ME</a></td>
+              <td class="tbltd1">version 6.9 以降</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit</a> (JDK)</td>
+                <td class="tbltd1">version 6 または version 7</td>
+            </tr>      
+            <tr>
+                <td class="tbltd1">GlassFish または Tomcat </td>
+                <td class="tbltd1">IDE の「<b>Java EE</b>」および「<b>すべて</b>」のインストールに含まれています</td>
+            </tr>      
+
+        </tbody>
+</table>
+
+<a name="sample-app"></a>
+<H2>サンプルアプリケーションのインストールと実行</H2>
+
+<P>始める前に、チュートリアルの最終結果を確認します。</P>
+<p>この例では、クライアントアプリケーション内で「ログイン画面」カスタムコンポーネントを使用する方法と、認証アクセスを使用してコンポーネントをサーバーリソースに接続する方法を示します。NetBeans Mobility プロジェクトのほかに、NetBeans Web プロジェクトを使用する必要があります。このチュートリアルの手順を実行するには、NetBeans Web プロジェクトの操作方法を理解していて、また GlassFish や Tomcat などの Web アプリケーションサーバーにローカルまたはリモートでアクセスできる必要があります。
+</p>
+
+<P>次の手順で <tt>LoginScreenExample</tt> アプリケーションをインストールします。</P>
+<OL>
+	<LI><A HREF="https://netbeans.org/projects/samples/downloads/download/Samples/Mobile/LoginScreenExample.zip">LoginScreenExample.zip</A> をダウンロードします。このダウンロードには、完成した NetBeans Mobility プロジェクトが含まれます。</LI>
+	<LI><A HREF="https://netbeans.org/projects/samples/downloads/download/Samples/Mobile/LoginScreenServletExample.zip">LoginScreenServletExample.zip</A> をダウンロードします。このダウンロードには、完成した NetBeans Web プロジェクトが含まれます。</LI>
+	<LI>ファイルを展開します。</LI>
+	<LI>IDE で、「<tt>ファイル</tt>」&gt;「<tt>プロジェクトを開く</tt>」を選択し、<tt>LoginScreenExample</tt> プロジェクトの展開したファイルがあるフォルダを参照します。</LI>
+	<li>「プロジェクトを開く」をクリックします。</li>
+	<li>上記の手順 4 と 5 を繰り返して <tt>LoginScreenServletExample</tt> プロジェクトを開きます。</LI>
+	<LI>「プロジェクト」ビューは次のように表示されるはずです。
+	<p class="align-center"> 
+	<IMG SRC="../../../images_www/articles/71/mobility/loginscreen/login-project.png" NAME="graphics1" ALT="ログイン画面とログイン画面サーブレットの例を開いた「プロジェクト」ウィンドウ"  BORDER=1>  </p></li>
+	
+	<LI>「プロジェクト」ウィンドウで <tt>LoginScreenServletExample</tt> プロジェクトのノードを右クリックし、「プロジェクトを実行」を選択します (または F6 キーを押す)。</li>
+	<li><tt>LoginScreenExample</tt> プロジェクトのノードを右クリックし、「プロジェクトを実行」を選択します。アプリケーションが実行されると、エミュレータウィンドウが開き、デフォルトのデバイスエミュレータでアプリケーションが実行されるところが表示されます。	</LI>
+	<LI>「エミュレータ」ウィンドウで「起動」の下のボタンをクリックします。<BR>エミュレータにスプラッシュ画面コンポーネントが表示されてから、次に示すログイン画面が表示されます。 <p class="align-center"><IMG SRC="../../../images_www/articles/71/mobility/loginscreen/login-emulator.png" NAME="graphics3" ALT="サンプルのログイン画面アプリケーションが表示された WTK 2.5 エミュレータ" BORDER=1>  </p></li>
+</OL>
+<UL>
+	<LI>カーソルを上下に移動すると、ログインフィールドとパスワードフィールドの間を移動できます。 
+	</LI>
+	<li>中央のボタンをクリックすると、選択されたテキストフィールドの編集が有効になります。</li>
+	<LI>エミュレータで「Username」フィールドをクリックして「john」と入力し、「OK」ボタンをクリックします。 
+	</LI>
+	<LI>エミュレータで「Password」フィールドをクリックして「peanuts」と入力し、「OK」ボタンをクリックします。 
+	</LI>
+	<LI>終了するには、「Login」の下のボタンをクリックします。 
+	</LI>
+	<LI>アプリケーションがサーバーに接続したら、「Login Successful」というメッセージを示す <code>alert1</code> コンポーネントが画面に表示されます。 
+	</LI>
+</UL>
+ <p class="align-center"><a href="#top">ページの先頭へ</a></p>
+<a name="create-app"></a>
+<H2>「ログイン画面」カスタムコンポーネントを使用したアプリケーションの作成</H2>
+<P>ログイン画面コンポーネントが実際に動作するところを確認できたので、最初に戻ってこのアプリケーションを新規に作成します。このチュートリアルでは、NetBeans Mobility Pack を使用して単に Java ME クライアントを作成します。このアプリケーションのサーバー側の処理については、<code>LoginScreenServletExample</code> プロジェクトのソースを参照してください。Java ME クライアントアプリケーションを作成するには、次の手順を実行します。</P>
+<OL>
+	<LI><A HREF="#create">LoginScreenExample プロジェクトを作成する</A> 
+	</LI>
+	<LI><A HREF="#add">LoginScreenExample プロジェクトにパッケージとビジュアル MIDlet を追加する</A> 
+	</LI>
+	<LI><A HREF="#addcomponent">LoginScreenExample にコンポーネントを追加する</A> 
+	</LI>
+	<LI><A HREF="#addcommands">ログイン画面コンポーネントにコマンドを追加する</A> 
+	</LI>
+	<LI><A HREF="#connect">コンポーネントを接続してアプリケーションフローを作成</A> 
+	</LI>
+	<LI><A HREF="#storage">ソースコードを追加する</A> 
+	</LI>
+	<LI><A HREF="#run">プロジェクトを実行する</A> 
+	</LI>
+</OL>
+<H3><A NAME="create"></A>LoginScreenExample プロジェクトの作成</H3>
+<OL>
+	<LI>「<tt>ファイル</tt>」&gt;「<tt>新規プロジェクト</tt>」(Ctrl-Shift-N) を選択します。「カテゴリ」から「Java ME」を選択します。「プロジェクト」で「モバイルアプリケーション」を選択して、「次へ」をクリックします。 
+	</LI>
+	<LI>「プロジェクト名」フィールドに <CODE>LoginScreenExample</CODE> と入力します。「プロジェクトの場所」をシステム上の任意のディレクトリに変更します。このディレクトリを <code>$PROJECTHOME</code> とします。 
+	</LI>
+	<LI>「Hello MIDlet を作成」チェックボックスの選択を解除します。「次へ」をクリックします。 
+	</LI>
+	<LI>「エミュレータプラットフォーム」は、「Sun Java Wireless Toolkit」を選択したままにしておきます。「次へ」をクリックして、「完了」をクリックします。
+	
+    <p class="notes"><b>注:</b> このプロジェクトフォルダには、ソースおよび、プロジェクトの Ant スクリプトなどのプロジェクトメタデータのすべてが含まれます。アプリケーションはビジュアルモバイルデザイナの「フローデザイン」ウィンドウに表示されます。 </p></LI>
+</OL>
+<H3><A NAME="add"></A>LoginScreenExample プロジェクトへのパッケージとビジュアル MIDlet の追加</H3>
+<OL>
+	<LI>「プロジェクト」ウィンドウで <CODE>LoginScreenExample</CODE> プロジェクトを選択し、「<tt>ファイル</tt>」&gt;「<tt>新規ファイル</tt>」(Ctrl-N) を選択します。「カテゴリ」から「Java」を選択します。「ファイルの種類」として「Java パッケージ」を選択します。「次へ」をクリックします。 
+	</LI>
+	<LI>「パッケージ名」フィールドに <CODE>loginscreenexample</CODE> と入力します。「完了」をクリックします。 
+	</LI>
+	<LI>「プロジェクト」ウィンドウで <CODE>loginscreenexample</CODE> パッケージを選択し、「<tt>ファイル</tt>」&gt;「<tt>新規ファイル</tt>」(Ctrl-N) を選択します。「カテゴリ」にある「MIDP」を選択します。「ファイルの種類」として「ビジュアル MIDIlet」を選択します。「次へ」をクリックします。 
+	</LI>
+	<LI>「MIDlet 名」フィールドと「MIDP クラス名」フィールドに <CODE>LoginScreenExample</CODE> と入力します。「完了」をクリックします。 
+	</LI>
+</OL>
+<H3><A NAME="addcomponent"></A>LoginScreenExample へのコンポーネントの追加</H3>
+<OL>
+	<LI>ビジュアル MIDlet を「フローデザイナ」ウィンドウに切り替えます。次のコンポーネントをコンポーネントパレットからドラッグし、フローデザイナにドロップします。 
+	
+	<UL>
+		<LI>スプラッシュ画面</LI>
+		<LI>待機画面</LI>
+		<LI>ログイン画面</LI>
+		<LI>警告 (x2)</LI>
+	</UL></LI>
+	<LI>splashScreen をクリックし、「プロパティー」ウィンドウで「テキスト」プロパティーの値を「<tt>null</tt>」から「<tt>Login Screen Example</tt>」に変更します。 
+	</LI>
+	<LI>警告コンポーネントを右クリックし、ポップアップメニューから「名前を変更」を選択します。</li>
+	<li>「名前を変更」ダイアログボックスで、「<tt>alertFailure</tt>」と入力して「了解」をクリックします。</li>
+	<li>alert1 コンポーネントについて手順 3 と 4 を繰り返し、名前を「<tt>alertSuccess</tt>」に変更します。</LI>
+	<LI>alertFailure コンポーネントに戻り、「プロパティー」ウィンドウで「文字列」プロパティーの値を「<tt>Error</tt>」に変更します。
+  </LI>
+	<LI>waitScreen コンポーネントをクリックし、「プロパティー」ウィンドウで「テキスト」プロパティーの値を「<tt>Please Wait...</tt>」に変更します。	</LI>
+	<li>waitScreen コンポーネントの「プロパティー」ウィンドウで、「タスク」プロパティーの省略符号ボタン (<img src="../../../images_www/articles/71/mobility/loginscreen/ellipsis-button.png" border=1 alt="省略符号ボタン">) をクリックします。</li>
+	<li>「タスク」ダイアログボックスで「追加」をクリックします。<br>task1 コンポーネントが追加されます。</li>
+	<li>「ソースへ移動」をクリックします。<br>「ソース」ビューには <tt>getTask ()</tt> メソッドのコードが表示されます。</li> 
+	<li>「了解」をクリックして「タスク」ダイアログボックスを閉じます。</li>
+	<li>「ソース」ビューで、<tt>// write task-execution user code here</tt> というセクションを探し、<tt>login();</tt> に置き換えます。  </li>
+	<li>Ctrl+S キーを押して編集を保存します。 </li>
+</OL>
+<H3><A NAME="addcommands"></A>LoginScreenExample へのコマンドの追加</H3>
+<OL>
+	<LI>「フロー」ビューを開きます。</LI> 
+	<LI>コンポーネントパレットの「コマンド」セクションで終了コマンドを選択します。これを「フロー」ビューの <tt>loginScreen</tt> コンポーネントにドラッグ＆ドロップします。	</LI>
+</OL>
+<H3><A NAME="connect"></A>コンポーネントの接続</H3>
+<div>
+	<p>「フロー」ビューで、モバイルデバイスの「<tt>起動</tt>」テキストをクリックし、それを <tt>splashScreen</tt> コンポーネントまでドラッグします。同様に、次の図に示すようにコンポーネントを接続します。</p>
+	<p class="align-center"><IMG SRC="../../../images_www/articles/71/mobility/loginscreen/login-flow.png" NAME="graphics4" ALT="フローデザイナでコンポーネントをコマンドの線で接続したところ" BORDER=1>
+  </p>
+</div>
+
+<H3><A NAME="storage"></A>ソースコードの追加</H3>
+<OL>
+	<LI><tt>LoginScreenExample.java</tt> ソースコードの宣言セクションに <CODE>private boolean login = false;</CODE> というコードを追加します。</LI>
+	<LI>ソースコードの末尾に次のコードをペーストします。	<br>
+	<PRE> private void login() throws IOException {
+   //URL
+   String url = &quot;http://localhost:8084/LoginScreenExample/&quot;
+                + &quot;?username=&quot; + getLoginScreen().getUsername()
+                + &quot;&amp;password=&quot; + getLoginScreen().getPassword();
+   //Clean up alertSuccess 
+   getAlertSuccess().setString(&quot;&quot;);
+   //Connect to the server
+   HttpConnection hc = (HttpConnection) Connector.open(url);
+   //Authentication
+   if (hc.getResponseCode() == HttpConnection.HTTP_OK) {
+        login = true;
+   }
+   //Closing time...
+   hc.close();
+   //Take action based on login value
+   if (login) {
+        getAlertSuccess().setString(&quot;Login Succesfull&quot;);
+   } else {
+        getAlertFailure().setString(&quot;Wrong Username or Password&quot;);
+   }
+   login = false;
+ }</PRE>
+    <P>
+	このコードは、ユーザー名とパスワードに関する情報とともに要求をサーバーに送信し、ログイン処理に成功した場合に回答を受信します。Ctrl+Shift+I を押してソースコードのインポート文を修正できます。</P></LI>
+</OL>
+<H3><A NAME="run"></A>プロジェクトの実行</H3>
+<div>
+<p>クライアントアプリケーションを実行する前に、サーバー側アプリケーションが配備され、実行中であることを確認します。</p>
+
+	<p> モバイルクライアントアプリケーションを実行するには、「<tt>実行</tt>」&gt;「<tt>主プロジェクトを実行</tt>」を選択するか、F6 キーを押して主プロジェクトを実行します。</p>
+</div>
+
+ <p class="align-center"><a href="#top">ページの先頭へ</a></p>
+ <a name="javadoc-loginscreen"></a>
+<H2>ログイン画面コンポーネントの Javadoc</H2>
+<P>NetBeans IDE には、ログイン画面コンポーネントや、VMD で使用できるその他のコンポーネントに関する API Javadoc が用意されています。ログイン画面コンポーネントの Javadoc を表示するには、次の手順を実行します。</P>
+<OL>
+<li>ソースコードの <tt>LoginScreen</tt> コンポーネントにカーソルを合わせ、Ctr-Shift- スペースキーを押します (または「<tt>ソース</tt>」&gt;「<tt>ドキュメントを表示</tt>」を選択します)。<br>
+この要素の Javadoc がポップアップウィンドウに表示されます。 </li>
+<li>ポップアップウィンドウで「外部 Web ブラウザにドキュメントを表示」アイコン (<img src="../../../images_www/articles/71/mobility/loginscreen/show-doc-button.png" alt="「外部 Web ブラウザにドキュメントを表示」">) をクリックすると、<tt>LoginScreen</tt> コンポーネントについての詳細な情報がブラウザに表示されます。</li>
+	
+</OL>
+
+
+ <p class="align-center"><a href="#top">ページの先頭へ</a></p>
+<div class="feedback-box"><a href="/about/contact_form.html?to=6&subject=NetBeans%20Java ME%20Custom%20Component:%20Login%20Screen">ご意見をお寄せください</a><br style="clear:both;" ></div>
+<br style="clear:both;" >  
+
+ <a name="see-also"></a>
+<H2>関連項目</H2>
+<UL>
+ <li><a href="smscomposer.html">ビジュアルモバイルデザイナのカスタムコンポーネント: SMS コンポーザアプリケーション</a></li>
+ <li><a href="filebrowser.html">ビジュアルモバイルデザイナのカスタムコンポーネント: モバイルデバイスのファイルブラウザの作成</a></li>
+ <li><a href="pimbrowser.html">ビジュアルモバイルデザイナのカスタムコンポーネント: PIM (Personal Information Manager) アプリケーションの作成</a></li>
+ <li><a href="splashscreen.html">ビジュアルモバイルデザイナのカスタムコンポーネント: Java ME アプリケーションでのスプラッシュ画面の使用</a></li>
+ <li><a href="waitscreen.html">ビジュアルモバイルデザイナのカスタムコンポーネント: モバイルアプリケーション用の待機画面の作成</a></li>
+ <li><a href="tableitem.html">ビジュアルモバイルデザイナのカスタムコンポーネント: Java ME アプリケーションでの表項目の使用</a></li>
+ <li><a href="http://wiki.netbeans.org/VisualMobileDesignerPalatteReference">参照: ビジュアルモバイルデザイナのパレットのガイド</a></li>
+</UL>
+ <p class="align-center"><a href="#top">ページの先頭へ</a></p>
+</BODY>
+</HTML>

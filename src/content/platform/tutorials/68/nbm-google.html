@@ -1,0 +1,470 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+    <!-- -*- xhtml -*- -->
+    <title>NetBeans Plugin Quick Start for NetBeans Platform 6.8</title>
+    <meta name="AUDIENCE" content="NBUSER">
+    <meta name="TYPE" content="ARTICLE">
+    <meta name="EXPIRES" content="N">
+    <meta name="developer" content="gwielenga@netbeans.org">
+    <meta name="indexed" content="y">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">   
+    <meta name="description"
+          content="A guide describing how to implement a Google Toolbar Module into NetBeans IDE.">
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+</head>
+
+<!-- Copyright (c) 2005 Sun Microsystems, Inc. All rights reserved. -->
+               <!-- Use is subject to license terms. -->
+
+<body>
+<h1><a name="top"></a>NetBeans Plugin Quick Start</h1>
+
+    <p>Welcome to NetBeans plugin development!
+
+  <p>This tutorial provides a very simple and quick introduction to 
+   the NetBeans plugin development workflow by walking you through the creation 
+   of a new toolbar for NetBeans IDE. Once you are done with this tutorial, you 
+   will have a general knowledge of how to create, build, and install 
+   plugins for NetBeans IDE.
+   
+   <p>After you finish this tutorial, you can move on to the 
+   <a href="https://netbeans.org/kb/trails/platform.html">NetBeans Platform learning trail</a>.
+   The learning trail provides comprehensive tutorials 
+   that highlight a wide range of NetBeans APIs for a variety of application types. 
+   If you do not want to do a "Hello World" application, you can skip this 
+   tutorial and jump straight to the learning trail. 
+    
+      <p><strong class="notes">Note: </strong>This is not the latest version of this
+      document. <a href="../nbm-google.html">Click here</a> to
+      see the most up to date version.
+   
+   <p><b>Contents</b></p>
+         
+   <img  src="../images/articles/68/netbeans-stamp-65-67-68.gif" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.5, 6.7, 6.8" title="Content on this page applies to NetBeans IDE 6.5, 6.7, 6.8">
+      <ul class="toc">
+        <li><a href="#creating-module-project">Setting Up the Module Project</a></li>
+        <li><a href="#coding-module">Coding the Module</a>
+        <ul>
+            <li><a href="#creating-action">Creating the Action</a></li>
+            <li><a href="#creating-panel">Creating the JPanel Form</a></li>
+            <li><a href="#resolving-errors">Resolving Errors</a></li>
+            <li><a href="#overriding">Implementing Presenter.Toolbar</a></li>
+        </ul>
+        </li>
+        <li><a href="#compiling">Compiling, Installing and Using the Module</a>
+        <li><a href="#sharing-plugin">Sharing the Module</a></li>
+      </ul>
+         
+<p><b>To follow this tutorial, you need the software and resources listed in the following 
+table.</b></p>
+
+ <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.5 or above</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Version 6 or<br/>version 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+   <p class="tips">Optionally, for troubleshooting purposes, you can <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=13794">download the
+   completed sample</a> and inspect the sources.
+    
+    <p>The toolbar you create in this tutorial will
+    look as follows:</p>
+
+    <img src="../images/tutorials/google/60/googlebar-2.png" border="1"
+            alt="Google toolbar displaying sample search string">
+        
+    <p><p>When the user presses Enter in the toolbar above, the IDE's default
+    browser will open and the text in the toolbar will be sent to a Google search,
+    with the results available in the open browser. To create this toolbar, you
+    will use the <a href="http://bits.netbeans.org/dev/javadoc/">NetBeans APIs</a> to enhance 
+    the IDE's feature set. Specifically, you will create an action that is invoked by
+    a button in the toolbar. You will then create a Swing JPanel containing a <tt>JLabel</tt> 
+    and <tt>JTextField</tt> as GUI components. 
+    Finally, you will implement <a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/util/actions/Presenter.Toolbar.html"><tt>Presenter.Toolbar</tt></a> to
+    return the JPanel so that it displays in the toolbar, instead of the button.
+    
+<!-- ===================================================================================== -->  
+
+<br>
+<h2 class="tutorial"><a name="creating-module-project"></a>Setting up the Module Project</h2>
+
+<p>When developing the module, you have to make sure the structure of your project is set up correctly. 
+    NetBeans IDE provides a Module Project wizard that sets up all of the basic files required for a module.</p>
+    
+<ol>
+    <li>Choose File &gt; New Project (Ctrl+Shift+N). Under Categories, select NetBeans Modules. 
+        Under Projects, select Module. Click Next.</li>
+    <li>In the Name and Location panel, type <tt>GoogleToolbar</tt> in the Project Name field.
+        Change the Project Location to any directory on your computer. Leave the Standalone Module option 
+        and Set as Main Project checkbox selected. Click Next.</li>
+    <li>In the Basic Module Configuration panel, type <tt>org.myorg.googletoolbar</tt>
+     in Code Name Base. 
+    <li>Select "Generate XML Layer". Leave the 
+        locations of both the localizing bundle and the XML layer file
+        so that they will be stored in a package with 
+        the name <tt>org/myorg/googletoolbar</tt>. Click Finish.</li>
+</ol>
+    
+<p>The IDE creates the <tt>GoogleToolbar</tt> project. The project contains all of your sources and project 
+    metadata, such as the project's Ant build script. The project opens in the IDE. You can view its logical 
+    structure in the Projects window (Ctrl+1) and its file structure in the Files window (Ctrl+2).
+
+ <p>If you expand the Important Files node, you can open the Module Manifest, which has
+  this content:
+
+<pre class="examplecode">Manifest-Version: 1.0
+OpenIDE-Module: org.myorg.googletoolbar
+OpenIDE-Module-Layer: org/myorg/googletoolbar/layer.xml
+OpenIDE-Module-Localizing-Bundle: org/myorg/googletoolbar/Bundle.properties
+OpenIDE-Module-Specification-Version: 1.0</pre>
+
+<p>For details on these NetBeans-specific manifest keys, read the <a href="http://bits.netbeans.org/dev/javadoc/org-openide-modules/org/openide/modules/doc-files/api.html">NetBeans Modules API</a> Javadoc description.
+
+    
+<br>
+
+
+<!-- ===================================================================================== -->
+
+<br>
+<h2><a name="coding-module"></a>Coding the Module</h2>
+
+<p>In order to code the module, you need to complete the following steps:</p>
+
+<ul>
+    <li><a href="#creating-action">Creating the Action</a></li>
+    <li><a href="#creating-panel">Creating the JPanel</a></li>
+    <li><a href="#resolving-errors">Resolving Errors</a></li>
+    <li><a href="#overriding">Overriding getToolbarPresenter()</a></li>
+</ul>
+
+<div class="indent">
+    <h3 class="tutorial"><a name="creating-action"></a>Creating the Action</h3>
+    
+    <ol>
+        <li>Right-click the project node and choose New &gt; Action (if Action is not displayed, access it by 
+            choosing Other, then in the New File wizard under Categories, select Module Development). 
+            Click Next.</li>
+        <li>In the Action Type panel keep the default setting, which will let the IDE create an action that 
+            subclasses <tt>ActionListener</tt>, as shown below:
+        
+            <br><br>
+            <img src="../images/tutorials/google/65/action-wiz-1.png" alt="Step 1 of New Action wizard">
+            
+            <br><br>
+            Click Next.
+        
+        <li>In the GUI Registration panel, select File from the Category drop-down list. The Category drop-down 
+            list controls where an action is shown in the Keyboard Shortcuts editor in the IDE. Next, deselect 
+            Global Menu Item and select Global Toolbar Button. In the Toolbar drop-down list, select File, then 
+            in the Position drop-down list, select <i>any position in the drop-down list</i>, such as
+            the one shown below:
+        
+            <br><br>
+            <img src="../images/tutorials/google/65/action-wiz-2.png" />
+            
+            <br><br>       
+            Click Next.
+        
+        <li><p>In the Name and Location panel, type <tt>GoogleAction</tt> as the Class Name and <tt>Google 
+            Action</tt> as the Display Name. Browse to an icon that has a dimension of 16x16 pixels. In fact, 
+            you will not use the icon&#8212;instead, you will display the JPanel Form that you create in the next 
+            section. However, the New Action wizard requires you to specify an icon. Therefore, the icon could 
+        be of any dimension, since you will not be using it. Click Finish.</p> 
+            <p><b class="notes">Note:</b> <tt>GoogleAction.java</tt> 
+            is added to the <tt>org.myorg.googletoolbar</tt> package in the Projects window.
+         
+            </li>
+    </ol>
+    
+    <h3 class="tutorial"><a name="creating-panel"></a>Creating the JPanel</h3>
+    <p>In this section, you will create a JPanel which will be the toolbar that
+     you will display as part of the application's main toolbar.
+    <ol>
+        <li>Right-click the project node and choose New &gt; Other. Under Categories, select Swing GUI Forms. 
+            Under Projects, select JPanel Form. Click Next.</li>
+        <li>In the Name and Location panel, type <tt>GooglePanel</tt> as the Class Name and select the package 
+            from the drop-down list. Click Finish. <tt>GooglePanel.java</tt> is added to the package and is 
+            opened in the Design view in the Source Editor.</li>
+        <li>Place the cursor at the bottom right-hand corner of the JPanel, then select the JPanel and drag the 
+            cursor to resize it, so that its width and length resemble that of a toolbar, as shown below:
+        
+            <br><br>
+            <img src="../images/tutorials/google/60/jpanel-2.png" border="1" alt="resized JPanel"></li>
+        
+        <li>Drag a JTextField item and a JLabel item from the Palette (Ctrl+Shift+8) directly into the JPanel, 
+            then resize the JPanel and the other two items so that they fit snugly together. Finally, click the 
+            JLabel and change its text to <tt>Google:</tt>, then delete the default text in the JTextField. 
+            Your JPanel should now resemble the image shown below:
+        
+            <br><br>
+            <img src="../images/tutorials/google/60/jpanel-3.png" border="1" 
+                alt="JTextField and JLabel included in JPanel"></li>
+        
+        <li>Make sure the Property Inspector is open (Window &gt; Navigating &gt; Inspector), then right-click 
+            the JTextField and choose Events &gt; Key &gt; keyTyped. This generates a <tt>jTextField1KeyTyped()</tt> 
+            method in the <tt>GooglePanel.java</tt> source code, which displays in the Source Editor, as shown below:
+        
+            <br><br>
+            <img src="../images/tutorials/google/60/jpanel-4.png" border="1" 
+                alt="JTextField1KeyTyped() method generated in source code"></li>
+        
+        <li>In the Source Editor, in the Source view of <tt>GooglePanel.java</tt>, fill out the 
+            <tt>jTextField1KeyTyped()</tt> method as follows (inserted text shown in <strong>bold</strong>):
+        
+        <pre class="examplecode">    
+private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {
+    <strong>int i = evt.getKeyChar();
+    if (i==10){//The ENTER KEY
+        // we display the google url.
+        try{
+            URLDisplayer.getDefault().showURL
+                    (new URL(&quot;http://www.google.com/search?hl=en&amp;q=&quot;+jTextField1.getText()+&quot;&amp;btnG=Google+Search&quot;));
+        } catch (Exception eee){
+            return;//nothing much to do
+        }
+    }</strong>
+}</pre>
+        </li>
+    </ol>
+        
+    <p>If you need to, right-click in the Source Editor and choose Format (Alt+Shift+F).</p>
+           
+    <h3 class="tutorial"><a name="resolving-errors"></a>Resolving Errors</h3>
+            
+    <p>Notice that one line of code is underlined in red, indicating errors. This is because 
+        required packages have not been imported yet. Place your cursor over the light bulb icon 
+        displayed in the column to the immediate left of the red line for <tt>URLDisplayer</tt>. A 
+        tooltip displays, indicating the reason for the error:
+        
+        <br><br>
+        <img src="../images/tutorials/google/60/tooltip.png" border="1" 
+            alt="tooltip for URLDisplayer error in Source Editor"></p>
+                        
+    <p>In order to solve this, you need to make the <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/HtmlBrowser.URLDisplayer.html">HtmlBrowser.URLDisplayer</a></tt> class, included in the
+        <a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/package-summary.html">
+        <tt>org.openide.awt</tt></a> package, accessible to your project. To do so, perform the following steps:</p>
+        
+    <ol>
+        <li>Right-click the project node in the Projects window and choose Properties. In the Project Properties 
+            dialog that displays, select Libraries under the Categories heading. Then, under Module Dependencies, 
+            click the Add button. The Add Module Dependency Dialog displays.</li>
+        <li>In the filter text box displayed at the top of the Add Module Dependency Dialog, start typing 
+            <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/HtmlBrowser.URLDisplayer.html">URLDisplayer</a></tt> and notice that the selection of returned modules narrows until the only
+            remaining listing is the <a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/overview-summary.html">UI 
+            Utilities API</a>:
+ 
+            <br><br>
+            <img src="../images/tutorials/google/60/add-module-dependency.png"
+                alt="Add Module Dependency dialog displaying the UI Utilities API">                 
+                
+            <br><br>
+            Click OK, then click OK again to exit the Project Properties dialog.</li>
+        <li>Right-click in the Source Editor and choose Fix Imports (Alt+Shift+F). The Fix All Imports dialog 
+            displays, listing suggested paths for unrecognized classes:
+            
+            <br><br>
+            <img src="../images/tutorials/google/60/fix-all-imports.png"
+                alt="Fix All Imports dialog containing suggested paths for unrecognized classes">                
+            
+            <br><br>
+            Click OK. The IDE creates the following import statements for <tt>GooglePanel.java</tt>:
+            
+            <pre>
+import java.net.URL;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/HtmlBrowser.URLDisplayer.html">org.openide.awt.HtmlBrowser.URLDisplayer</a>;
+            </pre>
+            
+            Also notice that all errors disappear from the Source Editor.</li>
+    </ol>
+        
+    <h3 class="tutorial"><a name="overriding"></a>Implementing Presenter.Toolbar</h3>
+    
+    <p>Because the JPanel you just created is the actual component that will display the Google toolbar, you need 
+        to implement <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/util/actions/Presenter.Toolbar.html">Presenter.Toolbar</a></tt> to display it
+        in the toolbar. In <tt>GoogleAction.java</tt>, do the
+        following:</p>
+        
+    <ol>
+        
+        
+        <li>Open <tt>GoogleAction.java</tt> and notice that it has this content:
+            
+<pre class="examplecode">    
+package org.myorg.googletoolbar;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public final class GoogleAction implements ActionListener {
+
+    public void actionPerformed(ActionEvent e) {
+        // TODO implement action body
+    }
+    
+}</pre>     
+
+<li>Change the signature so that <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/util/actions/Presenter.Toolbar.html">Presenter.Toolbar</a></tt> is implemented too,
+ because you want the action to be presented in the toolbar.
+
+<pre class="examplecode">
+package org.myorg.googletoolbar;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public final class GoogleAction implements Presenter.Toolbar, ActionListener {
+
+    Component comp  = new GooglePanel();
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        // TODO implement action body
+    }
+
+    @Override
+    public Component getToolbarPresenter() {
+        return comp;
+    }
+
+}</pre>
+
+<li>Open the <tt>layer.xml</tt> file and you should see the following:
+
+<pre class="examplecode">    
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.2//EN" "https://netbeans.org/dtds/filesystem-1_2.dtd"&gt;
+&lt;filesystem&gt;
+    &lt;folder name="Actions"&gt;
+        &lt;folder name="File"&gt;
+            &lt;file name="org-myorg-googletoolbar-GoogleAction.instance"&gt;
+                &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.myorg.googletoolbar.Bundle"/&gt;
+                &lt;attr name="delegate" newvalue="org.myorg.googletoolbar.GoogleAction"/&gt;
+                &lt;attr name="displayName" bundlevalue="org.myorg.googletoolbar.Bundle#CTL_GoogleAction"/&gt;
+                &lt;attr name="iconBase" stringvalue="org/myorg/googletoolbar/icon.png"/&gt;
+                &lt;attr name="instanceCreate" methodvalue="org.openide.awt.Actions.alwaysEnabled"/&gt;
+                &lt;attr name="noIconInMenu" stringvalue="false"/&gt;
+            &lt;/file&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+    &lt;folder name="Toolbars"&gt;
+        &lt;folder name="File"&gt;
+            &lt;file name="org-myorg-googletoolbar-GoogleAction.shadow"&gt;
+                &lt;attr name="originalFile" stringvalue="Actions/File/org-myorg-googletoolbar-GoogleAction.instance"/&gt;
+                &lt;attr name="position" intvalue="0"/&gt;
+            &lt;/file&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/filesystem&gt;</pre>
+
+<p><li>The content shown above was created by the New Action wizard.
+Delete the "instanceCreate" attribute because you do not
+want to create an instance of an Action class, in this case. After
+all, here you want a JPanel to appear there instead.
+            
+    </ol>
+    
+    <p>In this section, you have created a JPanel that will display a JTextField
+     and a JLabel. When Enter is pressed in the JTextField, its content
+     will be sent to a Google search. The HTML browser will open and you
+     will see the result of the Google search. The action class is used
+     to integrate the JPanel within the application's toolbar, as registered
+     in the <tt>layer.xml</tt> file.
+    
+</div>
+
+<!-- ======================================================================================= -->
+
+<br>
+<h2><a name="compiling"></a>Compiling, Installing and Using the Module</h2>
+
+<p>NetBeans IDE uses an Ant build script to compile and install your module in the IDE. The build script was 
+    created for you when you created the module project in <a href="#creating-module-project">Setting Up the 
+    Module Project</a> above. Now that the module is ready to be compiled and added to the IDE, you can use 
+    NetBeans IDE's support for Ant to do so:</p>
+    
+<ol>
+    <li>In the Projects window, right-click the <tt>GoogleToolbar</tt> project node and choose Run. 
+    The module is built and installed in a new instance of the IDE (i.e., the target 
+        platform). By default, the default target platform is the version of the IDE you are currently working 
+        in. The target platform opens so that you can try out the new module.</li>
+    <li>When it is successfully installed, the module adds a new button in the IDE's Edit toolbar. 
+    
+    <p><p><b class="notes">Note:</b> The toolbar button does not display an icon. Instead, it displays the JPanel you created in 
+        <a href="#creating-panel">Creating the JPanel</a> above:
+        
+        <br><br>
+        <img src="../images/tutorials/google/60/googlebar.png" border="1"
+            alt="Google toolbar embedded in IDE's Edit toolbar"></li>
+
+    <li>Type a search string in the text field:
+    
+        <br><br>
+        <img src="../images/tutorials/google/60/googlebar-2.png" border="1"
+            alt="Google toolbar displaying sample search string"></li>
+            
+    <li>Press Enter. The IDE's default browser starts up, if you have set one
+     in the Options window. The Google URL and your search string are sent to the
+        browser and a search is performed. When the search results are returned, you can view them in the browser.</li>
+</ol>
+
+<br>
+<h2 class="tutorial"><a name="sharing-plugin"></a>Sharing the Module</h2>
+
+<p>Now that you have built a working module that enhances the IDE, why not share it with other developers?
+    NetBeans IDE offers an easy way to create a binary NetBeans Module file (.nbm) which is a universal means
+    of allowing others to experiment with it in their own versions of the IDE (in fact, this is what you did in 
+    <a href="#compiling">Compiling, Installing and Using the Module</a> above).
+    
+    <p>To create a module binary, do the following:</p>
+    
+In the Projects window, right-click the <tt>GoogleToolbar</tt> project node and choose Create NBM. The  
+        new NBM file is created and you can view it in the Files window (Ctrl+2):
+        
+        <br><br>
+        <img src="../images/tutorials/google/60/create-nbm.png" border="1" alt="new NBM file displayed in the Files window">
+
+
+<br>
+<div class="feedback-box"><a name="feedback"></a>
+    <a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Google%20Toolbar%20Module%20Tutorial">
+        Send Us Your Feedback</a></div>
+   <br style="clear:both;" />
+    <!-- ======================================================================================== -->
+    
+    <h2><a name="nextsteps"></a>See Also</h2>
+    
+    <p>This concludes the NetBeans Plugin Quick Start. This document has described
+    how to create a plugin that adds a Google Search toolbar to the IDE. 
+    For more information about creating and developing plugins, see the following resources: 
+    <ul>
+        <li><a href="https://netbeans.org/kb/trails/platform.html">NetBeans Platform Learning Trail</a></li>
+        <li><a href="http://bits.netbeans.org/dev/javadoc/">NetBeans API Javadoc</a></li>
+        <li>NetBeans API classes used in this tutorial:
+        <ul>
+            <li><tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/HtmlBrowser.URLDisplayer.html">HtmlBrowser.URLDisplayer</a></tt>
+            <li><tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/util/actions/Presenter.Toolbar.html">Presenter.Toolbar</a></tt>
+        </ul>
+        </li>
+    </ul>
+    
+    <hr>
+    <!-- ======================================================================================== -->
+    
+    
+</body>
+</html>

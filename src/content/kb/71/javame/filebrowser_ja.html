@@ -1,0 +1,235 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+
+<HTML>
+<HEAD>
+<TITLE>ビジュアルモバイルデザイナのカスタムコンポーネント: モバイルデバイスのファイルブラウザの作成 - NetBeans Java ME チュートリアル</TITLE>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+<link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+<meta name="author" content="Karol Harelzak">
+</HEAD>
+
+<BODY>
+<a name="top"></a>
+<H1>ビジュアルモバイルデザイナのカスタムコンポーネント: モバイルデバイスのファイルブラウザの作成</H1>
+<p>ビジュアルモバイルデザイナ (VMD) は NetBeans Mobility に含まれるグラフィカルインタフェースで、コンポーネントのドラッグ＆ドロップを使用することでモバイルアプリケーションをデザインできます。VMD を使用すると、IDE に含まれるコンポーネントまたは独自にデザインしたコンポーネントを使用して、アプリケーションフローを定義し、GUI をデザインできます。VMD には、リスト、警告、フォーム、画像など、アプリケーションの作成に使用できる標準のユーザーインタフェース (UI) コンポーネントが多数含まれます。また、待機画面、スプラッシュ画面、表項目など、より複雑な機能を簡単に作成できるカスタムコンポーネントも含まれます。</p>
+<p>ファイルブラウザは、デバイスのファイルシステムを操作するためのユーザーインタフェースを備えたカスタムコンポーネントです。デバイスの記憶領域の内容を表示するための基本的な機能を備えています。このコンポーネントでは、<a href="http://jcp.org/en/jsr/detail?id=75">JSR-75 (PDA Optional Packages for the Java ME Platform) 仕様</a>の一部である FileConnection API が使用されます。JSR-75 は MIDP 2.0 仕様の一部ではないので、このカスタムコンポーネントは JSR-75 対応のデバイスだけに使用できます。</p>
+<P>このチュートリアルでは、JSR-75 対応デバイス用モバイルアプリケーションでファイルブラウザコンポーネントを使用する方法を示します。各コンポーネントの基本機能、デバイスの記憶領域の内容を参照する方法、および選択されたテキストファイルの内容を表示する方法を学びます。「ファイルブラウザ」カスタムコンポーネントのほかに、スプラッシュ画面とテキストボックスの 2 つの MIDP コンポーネントを使用します。 
+</P>
+<!--<p class="notes"><b>注:</b> NetBeans IDE 6.8 を使用している場合、<a href="../../68/javame/filebrowser.html">「モバイルデバイスのファイルブラウザの作成」(NetBeans IDE 6.8)</a> チュートリアルを参照してください。</p>-->
+
+<p><b>目次</b></p>
+ <img  src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" class="stamp" alt="このページの内容は NetBeans IDE 6.9 以降が対象です" title="このページの内容は NetBeans IDE 6.9 以降が対象です" >
+  <ul class="class">
+   <li><a href="#sample-app">サンプルアプリケーションのインストールと実行</a></li>
+   <li><a href="#create-app">「ファイルブラウザ」カスタムコンポーネントを使用したアプリケーションの作成</a><div>
+<ul>
+	<LI><A HREF="#create">FileBrowserExample プロジェクトの作成</A> 
+	</LI>
+	<LI><A HREF="#add">FileBrowserExample プロジェクトへのパッケージとビジュアル MIDlet の追加</A> 
+	</LI>
+	<LI><A HREF="#addcomponent">FileBrowserExample へのコンポーネントの追加</A> 
+	</LI>
+	<LI><A HREF="#addcommands">FileBrowserExample へのコマンドの追加</A> 
+	</LI>
+	<LI><A HREF="#connect">コンポーネントを接続してアプリケーションフローを作成する</A> 
+	</LI>
+	<LI><A HREF="#insert">ソースコードへのアクション前コードの挿入</A> 
+	</LI>
+	<LI><A HREF="#run">プロジェクトの実行</A> 
+	</LI>
+</ul></div></li>
+   <li><a href="#javadoc-filebrowser">ファイルブラウザコンポーネントの Javadoc</a></li>
+   <li><a href="#see-also">関連項目</a></li>
+  </ul>
+<p><b>このチュートリアルに従うには、次に示すソフトウェアとリソースが必要です。</b></p>
+
+<table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                <th class="tblheader" scope="col">必須バージョン</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE と Java ME</a></td>
+                <td class="tbltd1">version 6.9 以降</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit</a> (JDK)</td>
+                <td class="tbltd1">version 6 または version 7</td>
+            </tr>      
+        </tbody>
+</table>
+
+<a name="sample-app"></a>
+<H2>サンプルアプリケーションのインストールと実行</H2>
+<P>始める前に、チュートリアルの最終結果を確認します。 
+</P>
+<P>次の手順で FileBrowserExample アプリケーションをインストールします。</P>
+<OL>
+	<LI><A HREF="https://netbeans.org/projects/samples/downloads/download/Samples/Mobile/filebrowserexample.zip">filebrowserexample.zip</A> をダウンロードします。
+	</LI>
+	<LI>ファイルを展開します。 
+	</LI>
+	<LI>IDE で、「<tt>ファイル</tt>」&gt;「<tt>プロジェクトを開く</tt>」を選択し、<tt>FileBrowserExample</tt> プロジェクトの展開したファイルがあるフォルダを参照します。</LI>
+	<li>「プロジェクトを開く」をクリックします。<br>	
+	「プロジェクト」ウィンドウは次のようになります。 
+	<p class="align-center"><IMG SRC="../../../images_www/articles/71/mobility/filebrowser/projects.png" NAME="graphics1" ALT="FileBrowserExample を開いた「プロジェクト」ウィンドウ" BORDER=1>
+  </p></li>
+	<LI>「プロジェクト」ウィンドウで、プロジェクトノードを右クリックし、「<tt>プロジェクトを実行</tt>」を選択します (または F6 キーを押す)。アプリケーションが実行されると、エミュレータウィンドウが開き、デフォルトのデバイスエミュレータでアプリケーションが実行されるところが表示されます。 
+	</LI>
+	<LI>「エミュレータ」ウィンドウで「起動」の下のボタンをクリックします。<BR>エミュレータにスプラッシュ画面コンポーネントが表示されてから、次に示すファイルブラウザが表示されます。 
+	<p class="align-center"><IMG SRC="../../../images_www/articles/71/mobility/filebrowser/file-browser_wtk.png" NAME="graphics2" ALT="WTK 2.5 エミュレータにサンプルのファイルブラウザアプリケーションが表示されたところ" BORDER=1>
+  </p></li>
+</OL>
+<UL>
+	<LI>使用可能なファイルやフォルダ間を移動するにはカーソルを上下に移動します。 
+	</LI>
+	<LI>フォルダまたはファイルを開くには、「Select」の下のボタンをクリックします。 
+	</LI>
+	<LI>アプリケーションを終了するには、「Exit」の下のボタンをクリックします。 
+	</LI>
+</UL>
+<p class="align-center"><a href="#top">ページの先頭へ</a></p>
+<a name="create-app"></a>
+<H2>「ファイルブラウザ」カスタムコンポーネントを使用したアプリケーションの作成 
+</H2>
+<P>ファイルブラウザコンポーネントが実際に動作するところを確認できたので、最初に戻ってこのアプリケーションを作成します。アプリケーションを作成するには、次の手順を実行します。 
+</P>
+<OL>
+	<LI><A HREF="#create">FileBrowserExample プロジェクトを作成する</A> 
+	</LI>
+	<LI><A HREF="#add">FileBrowserExample プロジェクトにパッケージとビジュアル MIDlet を追加する</A> 
+	</LI>
+	<LI><A HREF="#addcomponent">FileBrowserExample にコンポーネントを追加する</A> 
+	</LI>
+	<LI><A HREF="#addcommands">テキストボックスとファイルブラウザの各コンポーネントにコマンドを追加する</A> 
+	</LI>
+	<LI><A HREF="#connect">コンポーネントを接続してアプリケーションフローを作成</A> 
+	</LI>
+	<LI><A HREF="#insert">メソッド loadTextFile をソースコードに挿入する</A> 
+	</LI>
+	<LI><A HREF="#run">プロジェクトを実行する</A> 
+	</LI>
+</OL>
+<H3><A NAME="create"></A>FileBrowserExample プロジェクトの作成</H3>
+<OL>
+	<LI>「<tt>ファイル</tt>」&gt;「<tt>新規プロジェクト</tt>」(Ctrl-Shift-N) を選択します。「カテゴリ」で「JavaME」を選択します。「プロジェクト」で「モバイルアプリケーション」を選択して、「次へ」をクリックします。 
+	</LI>
+	<LI>「プロジェクト名」フィールドに <CODE>FileBrowserExample</CODE> と入力します。「プロジェクトの場所」をシステム上の任意のディレクトリに変更します。以降、このディレクトリを <tt>$PROJECTHOME</tt> とします。 
+	</LI>
+	<LI>「Hello MIDlet を作成」チェックボックスの選択を解除します。「次へ」をクリックします。 
+	</LI>
+	<LI>「エミュレータプラットフォーム」は、「Sun Java Wireless Toolkit」を選択したままにしておきます。「次へ」をクリックします。 
+	</LI>
+	<LI>「完了」をクリックします。 
+	<p class="notes"><b>注:</b> このプロジェクトフォルダには、ソースおよび、プロジェクトの Ant スクリプトなどのプロジェクトメタデータのすべてが含まれます。アプリケーション自体はビジュアルモバイルデザイナの「フローデザイン」ウィンドウに表示されます。 </p></LI>
+	
+</OL>
+<H3><A NAME="add"></A>FileBrowserExample プロジェクトへのパッケージとビジュアル MIDlet の追加</H3>
+<OL>
+	<LI>「プロジェクト」ウィンドウで <CODE>FileBrowserExample</CODE> プロジェクトを選択し、「<tt>ファイル</tt>」&gt;「<tt>新規ファイル</tt>」(Ctrl-N) を選択します。「カテゴリ」から「Java クラス」を選択します。「ファイルの種類」として「Java パッケージ」を選択します。「次へ」をクリックします。 
+	</LI>
+	<LI>「パッケージ名」フィールドに <CODE>filebrowserexample</CODE> と入力します。「完了」をクリックします。 
+	</LI>
+	<LI>「プロジェクト」ウィンドウで <CODE>filebrowserexample</CODE> パッケージを選択し、「<tt>ファイル</tt>」&gt;「<tt>新規ファイル</tt>」(Ctrl-N) を選択します。「カテゴリ」にある「MIDP」を選択します。「ファイルの種類」として「ビジュアル MIDIlet」を選択します。「次へ」をクリックします。 
+	</LI>
+	<LI>「MIDlet 名」フィールドと「MIDP クラス名」フィールドに <CODE>FileBrowserExample</CODE> と入力します。「完了」をクリックします。 
+	</LI>
+
+
+</OL>
+<H3><A NAME="addcomponent"></A>FileBrowserExample へのコンポーネントの追加</H3>
+<OL>
+	<LI>ビジュアル MIDlet を「フローデザイナ」ウィンドウに切り替えます。次のコンポーネントをコンポーネントパレットからドラッグし、フローデザイナにドロップします。 
+	
+	<UL>
+		<LI>スプラッシュ画面</LI>
+		<LI>テキストボックス</LI>
+		<LI>ファイルブラウザ</LI>
+	</UL></LI>
+	<LI>splashScreen をクリックし、「プロパティー」ウィンドウで「テキスト」プロパティーの値を「<tt>null</tt>」から「<tt>File Browser Example</tt>」に変更します。 
+	</LI>
+</OL>
+<H3><A NAME="addcommands"></A>FileBrowserExample へのコマンドの追加</H3>
+<OL>
+	<LI>「フローデザイナ」ウィンドウを開きます。 
+	</LI>
+	<LI>コンポーネントパレットの「コマンド」セクションで終了コマンドを選択します。このコマンドをドラッグし、「フローデザイナ」ウィンドウ (fileBrowser コンポーネント) にドロップします。 
+	</LI>
+	<LI>コンポーネントパレットの「コマンド」セクションで戻るコマンドを選択し、textBox コンポーネントにドラッグ＆ドロップします。 
+	</LI>
+</OL>
+<H3><A NAME="connect"></A>コンポーネントを接続してアプリケーションフローを作成する</H3>
+<div>
+	<p>「フロー」デザインウィンドウで、モバイルデバイスの「起動」をクリックし、splashScreen コンポーネントまでドラッグします。同様に、次の図に示すようにコンポーネントを接続します。</p>
+	<p class="align-center"><IMG SRC="../../../images_www/articles/71/mobility/filebrowser/file-flow.png" NAME="graphics3" ALT="フローデザイナでコンポーネントをコマンドの線で接続したところ"  BORDER=1>
+  </p>
+</div>
+<H3><A NAME="insert"></A>ソースコードへのアクション前コードの挿入</H3>
+<OL>
+	<LI>「ソース」ウィンドウに切り替えます。 
+	</LI>
+	<LI>
+	  ソースコードの末尾に次のコードを挿入します。このメソッドは、選択されたファイルを読み取ります。 
+	<br>
+	<PRE>    /** 
+    * Read file
+    */ 
+    private void readFile() {
+        try {
+            FileConnection textFile = fileBrowser.getSelectedFile();
+            getTextBox().setString(&quot;&quot;);
+            InputStream fis = textFile.openInputStream();
+            byte[] b = new byte[1024];
+            int length = fis.read(b, 0, 1024);
+            fis.close();
+            if (length &gt; 0) {
+                textBox.setString(new String(b, 0, length));
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+    </PRE></LI>
+	<LI><P>ソースコード内で <tt>commandAction</tt> メソッドを探します。<BR>
+	<CODE>readFile();</CODE> を、<CODE>FileBrowser.SELECT_FILE_COMMAND</CODE> のアクション前セクション (<CODE>if (command == FileBrowser.SELECT_FILE_COMMAND)</CODE> の直後の <CODE>//write pre-action code here</CODE> とある箇所) に挿入します。 </p>
+	</LI>
+</OL>
+<H3><A NAME="run"></A>プロジェクトの実行</H3>
+<div>
+	<p>
+	  F6 キーを押して主プロジェクトを実行するか、「<tt>実行</tt>」&gt;「<tt>主プロジェクトを実行</tt>」を選択します。
+	</p>
+</div>
+<p class="align-center"><a href="#top">ページの先頭へ</a></p>
+<a name="javadoc-filebrowser"></a>
+<H2>ファイルブラウザコンポーネントの Javadoc</H2>
+
+<P>NetBeans IDE には、ファイルブラウザコンポーネントや、VMD で使用できるその他のコンポーネントに関する API Javadoc が用意されています。ファイルブラウザコンポーネントの Javadoc を表示するには、次の手順を実行します。</P>
+<OL>
+<li>ソースコードの <tt>FileBrowser</tt> コンポーネントにカーソルを合わせ、Ctr-Shift- スペースキーを押します (または「<tt>ソース</tt>」&gt;「<tt>ドキュメントを表示</tt>」を選択します)。<br>
+この要素の Javadoc がポップアップウィンドウに表示されます。 </li>
+<li>ポップアップウィンドウで「外部 Web ブラウザにドキュメントを表示」アイコン (<img src="../../../images_www/articles/71/mobility/filebrowser/show-doc-button.png" alt="「外部 Web ブラウザにドキュメントを表示」">) をクリックすると、<tt>FileBrowser</tt> コンポーネントについての詳細な情報がブラウザに表示されます。</li>
+
+	
+</OL>
+<p class="align-center"><a href="#top">ページの先頭へ</a></p>
+
+<div class="feedback-box"><a href="/about/contact_form.html?to=6&subject=NetBeans%20Java%20ME%20Custom%20Component:%20File%20Browser">ご意見をお寄せください</a></div><br style="clear:both;" >
+<a name="see-also"></a>
+<h2>関連項目</h2>
+<UL>
+ <li><a href="smscomposer.html">ビジュアルモバイルデザイナのカスタムコンポーネント: SMS コンポーザアプリケーション</a></li>
+ <li><a href="loginscreen.html">ビジュアルモバイルデザイナのカスタムコンポーネント: モバイルログイン画面の作成</a></li>
+ <li><a href="pimbrowser.html">ビジュアルモバイルデザイナのカスタムコンポーネント: PIM (Personal Information Manager) アプリケーションの作成</a></li>
+ <li><a href="splashscreen.html">ビジュアルモバイルデザイナのカスタムコンポーネント: Java ME アプリケーションでのスプラッシュ画面の使用</a></li>
+ <li><a href="waitscreen.html">ビジュアルモバイルデザイナのカスタムコンポーネント: モバイルアプリケーション用の待機画面の作成</a></li>
+<li><a href="tableitem.html">ビジュアルモバイルデザイナのカスタムコンポーネント: Java ME アプリケーションでの表項目の使用</a></li> <li><a href="http://wiki.netbeans.org/VisualMobileDesignerPalatteReference">参照: ビジュアルモバイルデザイナのパレットのガイド</a></li>
+</UL>
+<p class="align-center"><a href="#top">ページの先頭へ</a></p>
+</BODY>
+</HTML>

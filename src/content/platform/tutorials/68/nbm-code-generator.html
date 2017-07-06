@@ -1,0 +1,460 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>Code Generator Integration Tutorial for NetBeans Platform 6.0, 6.1, 6.5</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+  <meta name="AUDIENCE" content="NBUSER"/>
+  <meta name="TYPE" content="ARTICLE"/>
+  <meta name="EXPIRES" content="N"/>
+  <meta name="developer" content="gwielenga@netbeans.org"/>
+  <meta name="indexed" content="y"/>
+  <meta name="description"
+ content="A short guide to using the Code Generator API."/>
+<!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+	<h1>Code Generator Integration Tutorial</h1>
+
+<p>This tutorial shows you how to write a module that integrates
+ new items into the NetBeans code generation feature, which appears
+ when you click Alt-Insert in an editor.</p>
+
+   <p><b>Contents</b></p>
+   
+   <p><img  src="../images/articles/68/netbeans-stamp-65-67-68.gif" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.5, 6.7, 6.8" title="Content on this page applies to NetBeans IDE 6.5, 6.7, 6.8"/> </p>
+      <ul class="toc">
+  <li><a href="#intro">Introduction to Code Generator Integration</a></li>
+  <li><a href="#creating">Creating the Module Project</a></li>
+  <li><a href="#use">Using the Code Generator Provider Wizard</a></li>
+  <li><a href="#code">Coding the Code Generator Integration</a></li>
+  <li><a href="#install">Installing and Trying Out the Functionality</a></li>
+  <li><a href="#share">Creating a Shareable Binary</a></li>
+       </ul>
+         
+<p><b>To follow this tutorial, you need the software and resources listed in the following 
+table.</b></p>
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr> 
+           <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.5 or above</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Version 6 or<br/>version 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+ <p class="tips">Optionally, for troubleshooting purposes, you can <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=11179">download the
+         completed sample</a> and inspect the sources.</p>
+    
+
+
+<h2 class="tutorial"><a name="intro"></a>Introduction to Code Generator Integration</h2>
+
+<p>The Code Generator feature, introduced in NetBeans IDE 6.5, consists of
+ a list of items that appears when you press Alt-Insert.
+ Each item generates code into the editor.</p>
+
+<p><img src="../images/tutorials/code-generator/code-generator-5.png" alt="Deployed result"/></p>
+
+
+<!-- ===================================================================================== -->
+
+<h2 class="tutorial"><a name="creating"></a>Creating the Module Project</h2>
+      
+<p>In this section, we use a wizard to create the source structure that every NetBeans module requires. The
+source structure consists of certain folders in specific places and a set of files that are
+always needed. For example, every NetBeans module requires a <tt>nbproject</tt> folder, which holds
+the project's metadata, and a <tt>layer.xml</tt> file, for declarative registration of items
+such as toolbar buttons and windows.</p>
+
+<ol>
+          
+	      <li>Choose File &gt; New Project (Ctrl-Shift-N). Under Categories, select NetBeans Modules. Under Projects, 
+ select Module and click Next.</li>
+	<li>In the Name and Location panel, type <tt>DemoCodeGenerator</tt> in Project Name.
+ Change the
+Project Location to any directory on your computer, such as <tt>c:\mymodules</tt>. Leave the Standalone Module radiobutton
+selected. The panel should now look as follows:
+
+<p><img src="../images/tutorials/code-generator/code-generator-1.png" alt="Step 1 of New Project wizard."/></p>
+<p>Click Next.</p></li>
+
+<li>In the Basic Module Configuration panel, type <tt>org.netbeans.modules.demo</tt>
+ as the Code Name Base. 
+ Select the "Generate XML Layer" checkbox and
+ leave the location of the localizing bundle and XML layer as they are,
+ so that they will be stored in a
+ package with the name <tt>org/netbeans/modules/demo</tt>. The panel should now look as follows:
+
+ <p><img src="../images/tutorials/code-generator/code-generator-2.png" alt="Step 2 of New Project wizard."/></p></li>
+
+<li>Click Finish.</li></ol>
+
+<p> The IDE creates the <tt>DemoCodeGenerator</tt>
+project. The project contains all of your sources and
+project metadata, such as the project's Ant build script. The project
+opens in the IDE. You can view its logical structure in the Projects window (Ctrl-1) and its
+file structure in the Files window (Ctrl-2). </p>
+
+
+
+<!-- ===================================================================================== -->
+<h2><a name="use"></a>Using the Code Generator Provider Wizard</h2>
+
+<p>In this section, we use a wizard to create the stub class and
+ layer entries necessary for beginning our integration with the
+ Code Generator feature.</p>
+
+  
+ <ol>
+	
+	 <li>Right-click the project node and 
+	      choose New &gt; Other. In the New File dialog,
+              choose Module Development &gt; Code Generator,
+              as shown below:
+              <p><img src="../images/tutorials/code-generator/code-generator-3.png" alt="Code generator wizard."/></p>
+              </li>
+	      <li>In the New Code Generator panel, set the following:
+        <ul>
+            <li><b>Class Name.</b> Specifies the class 
+            name of the stub that the wizard will generate. Type 
+            "DemoCodeGenerator"
+            in this field.</li>
+            <li><b>Package.</b> Specifies the package where the stub class 
+                will be generated. Select "org.netbeans.modules.demo" from the drop-down.</li>
+            <li><b>MimeType.</b> Specifies 
+            the MIME type to which the code generator
+            integration will be applied. Type "x-java"
+            in this field.</li>
+            <li><b>Generate CodeGeneratorContextProvider.</b> 
+            Adds additional objects to the code generator's
+            lookup. Leave this checkbox unselected.</li>
+          </ul>
+                  <p>You should now see the following:</p>
+                  <p><img src="../images/tutorials/code-generator/code-generator-4.png" alt="Quick search template"/></p>
+              </li>
+<li>Click Finish.
+
+    <p>The Projects window should now look as follows:</p>
+
+<p><img src="../images/tutorials/code-generator/code-generator-6.png" alt="Final Projects window."/></p></li></ol>
+
+<p>In the <tt>layer.xml</tt> file, you should see the following:</p>
+      
+<pre>&lt;filesystem&gt;
+    &lt;folder name="Editors"&gt;
+        &lt;folder name="text"&gt;
+            &lt;folder name="x-java"&gt;
+                &lt;folder name="CodeGenerators"&gt;
+                    &lt;file name="org-netbeans-modules-demo-DemoCodeGenerator$Factory.instance"/&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/filesystem&gt;</pre>      
+
+<p>The generated class should look like this:</p>
+
+<pre>public class DemoCodeGenerator implements CodeGenerator {
+
+    JTextComponent textComp;
+
+    /**
+     * 
+     * @param context containing JTextComponent and possibly other items 
+     * registered by {@link CodeGeneratorContextProvider}
+     */
+    private DemoCodeGenerator(Lookup context) { 
+    // Good practice is not to save Lookup outside ctor
+        textComp = context.lookup(JTextComponent.class);
+    }
+
+    public static class Factory implements CodeGenerator.Factory {
+
+        public List<? extends CodeGenerator> create(Lookup context) {
+            return Collections.singletonList(new DemoCodeGenerator(context));
+        }
+    }
+
+    /**
+     * The name which will be inserted inside Insert Code dialog
+     */
+    public String getDisplayName() {
+        return "Sample Generator";
+    }
+
+    /**
+     * This will be invoked when user chooses this Generator from Insert Code
+     * dialog
+     */
+    public void invoke() {
+    }
+    
+}</pre>
+
+    <!-- ======================================================================================= -->
+      
+      <h2><a name="code"></a>Coding the Code Generator Integration</h2>
+<p>Next, we will implement the API. The API's classes are as follows:</p>
+
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Class</th>
+                <th class="tblheader" scope="col">Description</th>
+            </tr>
+            <tr>
+                <td class="tbltd1">JavaSource</td>
+                <td class="tbltd1">To be done...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">CancellableTask</td>
+                <td class="tbltd1">To be done...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">WorkingCopy</td>
+                <td class="tbltd1">To be done...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">CompilationUnitTree</td>
+                <td class="tbltd1">To be done...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">TreeMaker</td>
+                <td class="tbltd1">To be done...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">ClassTree</td>
+                <td class="tbltd1">To be done...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">ModifiersTree</td>
+                <td class="tbltd1">To be done...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">VariableTree</td>
+                <td class="tbltd1">To be done...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">TypeElement</td>
+                <td class="tbltd1">To be done...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">ExpressionTree</td>
+                <td class="tbltd1">To be done...</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">MethodTree</td>
+                <td class="tbltd1">To be done...</td>
+            </tr>
+            
+        </tbody>
+    </table>
+    
+<p>Below, we set dependencies on the required modules and then implement them in
+    our own module.</p>
+
+<div class="indent">
+    
+    <ol>
+        
+        <li>Right-click the project, choose Properties, and
+        set the following 4 dependencies in the Libraries panel:
+        
+        <p><img src="../images/tutorials/code-generator/code-generator-7.png" alt="Set dependencies."/></p>
+        
+        <p><b>Note:</b> You will notice that "Editor Library 2" and "Utilities API"
+        have already been set automatically by the
+        Code Generator wizard. The other two dependencies,
+        "Javac API Wrapper" and "Java Source", you will need to
+        be able to generate new Java code snippets via your new
+        Code Generator integration.</p></li>
+        
+        <li>Open the generated class and modify the <tt>invoke()</tt> method as follows:
+    
+<pre>public void invoke() {
+    try {
+        Document doc = textComp.getDocument();
+        JavaSource javaSource = JavaSource.forDocument(doc);
+        CancellableTask task = new CancellableTask&lt;WorkingCopy&gt;() {
+            public void run(WorkingCopy workingCopy) throws IOException {
+                workingCopy.toPhase(Phase.RESOLVED);
+                CompilationUnitTree cut = workingCopy.getCompilationUnit();
+                TreeMaker make = workingCopy.getTreeMaker();
+                for (Tree typeDecl : cut.getTypeDecls()) {
+                    if (Tree.Kind.CLASS == typeDecl.getKind()) {
+                        ClassTree clazz = (ClassTree) typeDecl;
+                        ModifiersTree methodModifiers = 
+                                make.Modifiers(Collections.&lt;Modifier&gt;singleton(Modifier.PUBLIC), 
+                                Collections.&lt;AnnotationTree&gt;emptyList());
+                        VariableTree parameter = 
+                                make.Variable(make.Modifiers(Collections.&lt;Modifier&gt;singleton(Modifier.FINAL), 
+                                Collections.&lt;AnnotationTree&gt;emptyList()), 
+                                "arg0", 
+                                make.Identifier("Object"), 
+                                null);
+                        TypeElement element = workingCopy.getElements().getTypeElement("java.io.IOException");
+                        ExpressionTree throwsClause = make.QualIdent(element);
+                        MethodTree newMethod = 
+                                make.Method(methodModifiers, 
+                                "writeExternal", 
+                                make.PrimitiveType(TypeKind.VOID), 
+                                Collections.&lt;TypeParameterTree&gt;emptyList(), 
+                                Collections.singletonList(parameter), 
+                                Collections.&lt;ExpressionTree&gt;singletonList(throwsClause), 
+                                "{ throw new UnsupportedOperationException(\"Not supported yet.\") }", 
+                                null);
+                        ClassTree modifiedClazz = make.addClassMember(clazz, newMethod);
+                        workingCopy.rewrite(clazz, modifiedClazz);
+                    }
+                }
+            }
+            public void cancel() {
+            }
+        };
+        ModificationResult result = javaSource.runModificationTask(task);
+        result.commit();
+    } catch (Exception ex) {
+        Exceptions.printStackTrace(ex);
+    }
+}</pre></li>
+ 
+ <li>Make sure the following import statements are declared:
+ 
+<pre>import com.sun.source.tree.AnnotationTree;
+import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.ModifiersTree;
+import com.sun.source.tree.Tree;
+import com.sun.source.tree.TypeParameterTree;
+import com.sun.source.tree.VariableTree;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeKind;
+import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
+import org.netbeans.api.java.source.CancellableTask;
+import org.netbeans.api.java.source.JavaSource;
+import org.netbeans.api.java.source.JavaSource.Phase;
+import org.netbeans.api.java.source.ModificationResult;
+import org.netbeans.api.java.source.TreeMaker;
+import org.netbeans.api.java.source.WorkingCopy;
+import org.netbeans.spi.editor.codegen.CodeGenerator;
+import org.netbeans.spi.editor.codegen.CodeGeneratorContextProvider;
+import org.openide.util.Exceptions;
+import org.openide.util.Lookup;</pre> </li>
+ 
+ </ol>
+    </div>
+
+      
+    <!-- ======================================================================================= -->
+
+<h2><a name="install"></a>Installing and Trying Out the Functionality</h2>
+<p>Let's now install the module and then use the code generator feature
+ integration.
+  The IDE uses an Ant build script to build and install your module. The build 
+  script is created for you
+when you create the project.</p>
+<div class="indent">
+
+
+      <ol>
+	      <li>In the Projects window, right-click the project and choose Run.
+	      <p>A new instance of the IDE starts up
+                  and installs the Code Generator integration module. </p></li>
+               <li>Press Alt-Insert and you will see your new item included:
+                   <p><img src="../images/tutorials/code-generator/code-generator-5.png" alt="Deployed result"/></p></li>
+                   <li>Click an item and the code will be inserted.</li>
+       </ol>          
+   </div>
+    
+<!-- ======================================================================================= -->
+
+<h2><a name="share"></a>Creating a Shareable Module Binary</h2>
+
+<p>Now that the module is complete, you can let others use it. To do so, you
+    need to create a binary "NBM" (NetBeans module) file and distribute it. </p>
+
+<div class="indent">
+  
+      <ol>
+	      <li>In the Projects window, right-click the project and choose Create NBM.
+
+                  <p>The NBM file is created and you can view it in the Files window (Ctrl-2).</p></li>
+	      <li>Make it available to others via, for example, the
+              <a href="http://plugins.netbeans.org/PluginPortal/">NetBeans Plugin Portal</a>.
+              The recipient should
+	      use the Plugin Manager (Tools &gt; Plugins) to install it.</li>
+       </ol>
+ 
+    </div>
+
+
+<!-- ======================================================================================== -->
+
+
+<p><br/></p>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Quick%20Search%20Integration%20Tutorial">Send Us Your Feedback</a></div>
+<p><br style="clear:both;" /></p>
+  
+  
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Next Steps</h2>
+
+<p>For more information about creating and developing NetBeans modules, see the following resources: </p>
+  <ul>
+	  <li><a href="https://platform.netbeans.org/index.html">NetBeans Platform Homepage</a></li>
+	  <li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API List (Current Development Version)</a></li>
+  <li><a href="https://netbeans.org/kb/trails/platform.html">Other Related Tutorials</a></li></ul>
+  
+<!-- ======================================================================================== -->
+<!-- 
+<h2><a name="version"></a>Versioning </h2>
+<p>
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+         19 July 2008
+      </td>
+      <td>
+      Initial version.
+      </td>
+  </tr>
+ </tbody>
+</table>
+-->
+</body>
+</html>

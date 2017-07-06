@@ -1,0 +1,270 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>In&iacute;cio r&aacute;pido da plataforma NetBeans com o OSGi</title>
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+        <meta name="AUDIENCE" content="NBUSER"/>
+        <meta name="TYPE" content="ARTICLE"/>
+        <meta name="EXPIRES" content="N"/>
+        <meta name="indexed" content="y"/>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="description"
+              content="A short guide to getting started with the NetBeans Platform."/>
+      <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+    <body>
+
+        <h1>In&iacute;cio r&aacute;pido da plataforma NetBeans utilizando o OSGi</h1>
+
+        <p>Este documento &eacute; uma demonstra&ccedil;&atilde;o r&aacute;pida de como integrar os pacotes OSGi com um aplicativo da plataforma NetBeans.
+        </p>
+
+        <p>
+            O foco neste tutorial &eacute; um cen&aacute;rio &quot;hello world&quot; com base no <a href="http://www.aqute.biz/Code/Download#sudoku">Jogo Sudoku por Peter Kriens</a>. Os pacotes OSGi que constituem o Jogo Sudoku s&atilde;o importados, junto com os pacotes relacionados e necess&aacute;rios do Equinox. Quando o aplicativo &eacute; implementado, o seguinte aplicativo estar&aacute; dispon&iacute;vel no navegador da Web:
+        </p>
+
+        <p><img width="400" height="300" src="http://netbeans.dzone.com/sites/all/files/sudokugame-4.png"/></p>
+
+        <p>Ap&oacute;s passar por este cen&aacute;rio simples, cen&aacute;rios mais &uacute;teis est&atilde;o listados na se&ccedil;&atilde;o Leitura adicional no fim deste tutorial.</p>
+
+        <p><b>Conte&uacute;do</b></p>
+        <p><img src="../../images/articles/69/netbeans-stamp69.png" class="stamp" width="114" height="114" alt="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.5, 6.7, 6.8" title="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.5, 6.7, 6.8" /></p>
+        <ul class="toc">
+            <li><a href="#setup">Configurando o ambiente</a></li>
+            <li><a href="#create">Criando o aplicativo</a></li>
+            <li><a href="#import">Importando os pacotes OSGi</a></li>
+            <li><a href="#run">Executando a aplica&ccedil;&atilde;o</a></li>
+            <li><a href="#further">Leituras adicionais</a></li>
+        </ul>
+
+        <p><b>Para seguir este tutorial, os softwares e recursos listados na tabela seguinte s&atilde;o necess&aacute;rios.</b></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Software ou recurso</th>
+                    <th class="tblheader" scope="col">Vers&atilde;o necess&aacute;ria</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                    <td class="tbltd1">vers&atilde;o 6.9</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                    <td class="tbltd1">Vers&atilde;o 6 ou</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://download.eclipse.org/equinox">Equinox</a></td>
+                    <td class="tbltd1"></td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.aqute.biz/Code/Download#sudoku">Jogo Sudoku</a></td>
+                    <td class="tbltd1"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong class="notes">Nota:</strong> n&atilde;o &eacute; preciso efetuar o download de uma vers&atilde;o separada da plataforma NetBeans para desenvolver aplicativos para a plataforma NetBeans. Normalmente, voc&ecirc; desenvolver&aacute; os aplicativos e m&oacute;dulos no NetBeans IDE, e a seguir somente gerar&aacute; incluir os m&oacute;dulos necess&aacute;rios para executar a plataforma NetBeans e seu aplicativo.
+        </p>
+
+
+
+        <!-- ===================================================================================== -->
+
+        <h2><a name="setup"></a>Configurando o ambiente</h2>
+        <p>Ao lado de baixar o software acima listado, &eacute; preciso executar algumas etapas para preparar seu ambiente, como abaixo descrito.</p>
+
+        <ol>
+
+            <li>Crie uma nova pasta em seu sistema de arquivos no disco.</li>
+            <li>A partir da distribui&ccedil;&atilde;o Equinox, coloque o seguinte na pasta:
+                <ul><li>javax.servlet_xxx.jar</li>
+                    <li>org.eclipse.equinox.ds_xxx.jar</li>
+                    <li>org.eclipse.equinox.http_xxx.jar</li>
+                    <li>org.eclipse.equinox.util_xxx.jar</li>
+                    <li>org.eclipse.osgi.services_xxx.jar</li>
+                    <li>org.eclipse.osgi_xxx.jar</li></ul>
+
+            </li>
+            <li>Coloque os dois JARs do Sudoku na pasta onde os JARs acima s&atilde;o encontrados:
+                <ul><li>aQute.sudoku.jar</li>
+                    <li>aQute.webrpc.jar</li></ul>
+            </li>
+        </ol>
+
+        <p>Agora voc&ecirc; possui os pacotes OSGi que gerar&aacute; importar dispon&iacute;veis em uma localiza&ccedil;&atilde;o centralizada, de onde gerar&aacute; integr&aacute;-los com seu aplicativo.</p>
+
+        <h2><a name="create"></a>Criando a aplica&ccedil;&atilde;o</h2>
+        <p>Ap&oacute;s possuir todos os pacotes OSGi necess&aacute;rios dispon&iacute;veis, crie seu novo aplicativo da plataforma NetBeans, como abaixo descrito.</p>
+
+        <ol>
+            <li><p>Escolha Arquivo | Novo projeto e escolha criar um aplicativo da plataforma NetBeans sobre o Equinox, atrav&eacute;s do modelo Equinox:</p>
+
+                <p><img src="http://netbeans.dzone.com/sites/all/files/sudokugame-5.png"/></p>
+                <p>Clique em Pr&oacute;ximo.</p>
+            </li>
+
+            <li><p>Especifique um nome para o aplicativo, como abaixo mostrado.</p>
+
+                <p><img src="http://netbeans.dzone.com/sites/all/files/sudokugame-3.png"/></p>
+
+                <p>Clique em Terminar.</p></li>
+
+            <li>&Eacute; poss&iacute;vel executar o aplicativo resultante do modelo acima, e ver um aplicativo contendo uma janela, exibindo todos os m&oacute;dulos NetBeans e os pacotes OSGi que comp&otilde;em seu aplicativo.</li>
+
+        </ol>
+
+        <h2><a name="import"></a>Importando os pacotes OSGi</h2>
+        <p>Ao lado de baixar o software acima listado, &eacute; preciso executar algumas etapas para preparar seu ambiente, como abaixo descrito.</p>
+
+
+        <ol>
+            <li><p>Clique com o bot&atilde;o direito do mouse no aplicativo janela Projetos, escolha Propriedades, siga para aba Bibliotecas, clique em &quot;Adicionar cluster&quot;, e, em seguida navegue para a pasta onde s&atilde;o encontrados os JARS acima. O assistente que permite converter os JARs para um 'cluster' &eacute; aberto, ou seja um conjunto de m&oacute;dulos/pacotes relacionados que ser&atilde;o incorporados em seu aplicativo:</p>
+
+                <p><img src="http://netbeans.dzone.com/sites/all/files/sudokugame-1.png"/></p></li>
+
+            <li>Como mostrado acima, defina todos os pacotes OSGi importados como &quot;Habilitados&quot;, para que sejam carregados e estejam dispon&iacute;veis no momento de inicializa&ccedil;&atilde;o do aplicativo.</li>
+
+            <li>Quando voc&ecirc; clica em terminar, o arquivo de configura&ccedil;&atilde;o das &quot;propriedades da plataforma&quot; ter&aacute; sido atualizado. Deveria se parecer com algo assim:
+
+                <pre class="examplecode">cluster.path.extra=netbinox:\../../path/to/my/nbsudokugame/folder
+disabled.modules.extra=org.netbeans.libs.felix
+cluster.path=\
+    ${nbplatform.active.dir}/harness:\
+    ${nbplatform.active.dir}/platform:\
+    ${cluster.path.extra}
+disabled.modules=\
+    org.jdesktop.layout,\
+    org.netbeans.api.visual,\
+    org.netbeans.core.execution,\
+    org.netbeans.core.multiview,\
+    org.netbeans.insane,\
+    org.netbeans.libs.felix,\
+    org.netbeans.libs.jsr223,\
+    org.netbeans.modules.apisupport.harness,\
+    org.netbeans.modules.apisupport.tc.cobertura,\
+    org.netbeans.modules.autoupdate.services,\
+    org.netbeans.modules.autoupdate.ui,\
+    org.netbeans.modules.core.kit,\
+    org.netbeans.modules.favorites,\
+    org.netbeans.modules.jellytools.platform,\
+    org.netbeans.modules.jemmy,\
+    org.openide.compat,\
+    org.openide.execution,\
+    org.openide.options,\
+    org.openide.util.enumerations
+nbplatform.active=default</pre>
+
+
+                <p><b>Nota:</b> a primeira linha aponta para a pasta anteriormente criada.</p></li>
+
+            <li>Ent&atilde;o adicione esta linha no arquivo de configura&ccedil;&atilde;o &quot;project.properties&quot; do aplicativo, que especifica que a tela inicial n&atilde;o ser&aacute; mostrada e qual &eacute; a porta para a implementa&ccedil;&atilde;o do aplicativo:
+
+                <pre class="examplecode">run.args.extra=--nosplash -J-Dorg.osgi.service.http.port=8080</pre></li>
+        </ol>
+
+        <h2><a name="run"></a>Executando o aplicativo</h2>
+
+        <p>O aplicativo agora est&aacute; pronto para ser implementado, como abaixo descrito.</p>
+
+        <ol>
+
+            <li><p>Execute o aplicativo! Todos os pacotes OSGi e os m&oacute;dulos NetBeans em seu aplicativo ser&atilde;o implementados. O aplicativo para visualizar os pacotes OSGi e os m&oacute;dulos NetBeans implementados s&atilde;o tamb&eacute;m implementados, fornecendo-lhe um aplicativo de &aacute;rea de trabalho para monitorar o que est&aacute; no momento implementado, o que &eacute; bem &uacute;til:</p>
+
+                <p><img src="http://netbeans.dzone.com/sites/all/files/sudokugame-6_0.png"/></p>
+
+            <p>Alternativamente, exclua todo o m&oacute;dulo que fornece a janela acima. A seguir, remova todos os m&oacute;dulos que sejam necess&aacute;rios para a janela acima, ou seja, remova o sistema de janelas, sistema de a&ccedil;&otilde;es, e tudo mais... exceto para os poucos JARs necess&aacute;rios pela integra&ccedil;&atilde;o OSGi: bootstrap, inicializa&ccedil;&atilde;o, sistemas de arquivos, sistema de m&oacute;dulos, utilit&aacute;rios e pesquisa.
+            </p>
+
+            <pre class="examplecode">cluster.path.extra=netbinox:\../../path/to/my/nbsudokugame/folder
+disabled.modules.extra=org.netbeans.libs.felix
+cluster.path=\
+    ${nbplatform.active.dir}/harness:\
+    ${nbplatform.active.dir}/platform:\
+    ${cluster.path.extra}
+disabled.modules=\
+    org.jdesktop.layout,\
+    org.netbeans.api.annotations.common,\
+    org.netbeans.api.progress,\
+    org.netbeans.api.visual,\
+    org.netbeans.core,\
+    org.netbeans.core.execution,\
+    org.netbeans.core.io.ui,\
+    org.netbeans.core.multiview,\
+    org.netbeans.core.nativeaccess,\
+    org.netbeans.core.output2,\
+    org.netbeans.core.ui,\
+    org.netbeans.core.windows,\
+    org.netbeans.insane,\
+    org.netbeans.libs.felix,\
+    org.netbeans.libs.jna,\
+    org.netbeans.libs.jsr223,\
+    org.netbeans.libs.junit4,\
+    org.netbeans.modules.apisupport.harness,\
+    org.netbeans.modules.apisupport.tc.cobertura,\
+    org.netbeans.modules.applemenu,\
+    org.netbeans.modules.autoupdate.services,\
+    org.netbeans.modules.autoupdate.ui,\
+    org.netbeans.modules.core.kit,\
+    org.netbeans.modules.editor.mimelookup,\
+    org.netbeans.modules.editor.mimelookup.impl,\
+    org.netbeans.modules.favorites,\
+    org.netbeans.modules.javahelp,\
+    org.netbeans.modules.jellytools.platform,\
+    org.netbeans.modules.jemmy,\
+    org.netbeans.modules.keyring,\
+    org.netbeans.modules.masterfs,\
+    org.netbeans.modules.nbjunit,\
+    org.netbeans.modules.options.api,\
+    org.netbeans.modules.options.keymap,\
+    org.netbeans.modules.print,\
+    org.netbeans.modules.progress.ui,\
+    org.netbeans.modules.queries,\
+    org.netbeans.modules.sendopts,\
+    org.netbeans.modules.settings,\
+    org.netbeans.modules.spi.actions,\
+    org.netbeans.spi.quicksearch,\
+    org.netbeans.swing.outline,\
+    org.netbeans.swing.plaf,\
+    org.netbeans.swing.tabcontrol,\
+    org.openide.actions,\
+    org.openide.awt,\
+    org.openide.compat,\
+    org.openide.dialogs,\
+    org.openide.execution,\
+    org.openide.explorer,\
+    org.openide.io,\
+    org.openide.loaders,\
+    org.openide.nodes,\
+    org.openide.options,\
+    org.openide.text,\
+    org.openide.util.enumerations,\
+    org.openide.windows
+nbplatform.active=default</pre>
+
+            <p>Ent&atilde;o voc&ecirc; ter&aacute; uma aplicativo n&atilde;o-GUI, ou seja, um aplicativo de supervisor, bem adequado para o desenvolvimento Web modular.</p></li>
+
+            <li>Agora, coloque este URL no navegador (opcionalmente, utilize URLDisplayer.getDefault() da API de Utilit&aacute;rio UI do NetBeans para abrir o navegador na localiza&ccedil;&atilde;o programaticamente necess&aacute;ria) e o &quot;index.html&quot; definido dentro do Jogo Sudoku que &eacute; implementado, exibido no navegador, e ser&aacute; ent&atilde;o poss&iacute;vel iniciar jogar o Jogo Sudoku:
+
+                <pre class="examplecode">http://localhost:8080/rpc/sudoku/index.html</pre></li>
+
+        </ol>
+
+        <p>Parab&eacute;ns, voc&ecirc; agora integrou seus primeiros pacotes OSGi com um aplicativo da plataforma NetBeans.</p>
+
+        <h2><a name="further"></a>Leituras adicionais</h2>
+
+        <p>Agora que voc&ecirc; completou o tutorial e compreende as etapas necess&aacute;rias para reutilizar um pacote OSGi em seu aplicativo da plataforma NetBeans, examine estes documentos relacionados e cen&aacute;rios mais avan&ccedil;ados:</p>
+
+        <ul>
+            <li><a href="http://www.osgi.org/blog/2006_09_01_archive.html">Peter Kriens e o Jogo Sudoku</a></li>
+            <li><a href="http://wiki.apidesign.org/wiki/NetbinoxTutorial">Jaroslav Tulach e o Netbinox</a></li>
+            <li>Por Toni Epple, OSGi/NetBeans <a href="http://eppleton.sharedhost.de/blog/?p=662">entrada do blog</a> e <a href="http://eppleton.sharedhost.de/blog/?s=Frankenstein%27s+IDE">apresenta&ccedil;&atilde;o</a></li>
+            <li>(<a href="http://eclipse.dzone.com/emf-on-netbeans-rcp">parte 1</a>, <a href="http://eclipse.dzone.com/emf-on-netbeans-rcp-2">parte 2</a>) da integra&ccedil;&atilde;o NetBeans-EMF por Gunnar Reinseth</li>
+            <li>Leia tamb&eacute;m <a href="http://java.dzone.com/news/new-cool-tools-osgi-developers">Novas ferramentas interessantes para desenvolvedores do OSGi</a></li>
+        </ul>
+
+    </body>
+
+</html>

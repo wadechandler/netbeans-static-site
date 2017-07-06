@@ -1,0 +1,235 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!--Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="description" content="How to integrate PHPUnit and Selenium with NetBeans IDE for writing automated tests. Includes demonstration of Code Coverage and the IDE's test result UI.">
+<meta name="keywords" content="NetBeans, IDE, integrated development environment, tutorial, guide, user, documentation, open source, PHP, testing, automated testing, PHPUnit, Selenium, Code Coverage">
+<link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+<title>Тестирование с помощью PHPUnit и Selenium -- учебный курс по среде IDE NetBeans</title></head>
+<body>
+<h1>Тестирование с помощью PHPUnit и Selenium</h1>
+<p>В среде IDE NetBeans для PHP поддерживаются средства автоматического тестирования <a target="_blank" href="http://www.phpunit.de">PHPUnit</a>. Благодаря PHPUnit среда IDE NetBeans обеспечивает покрытие кода для PHP, совпадающее с покрытием кода, обеспечиваемым средой IDE для Python. Вывод теста отображается в том же окне вывода, имеющем множество функций, которое используется средствами запуска тестов JUnit и Python среды IDE. </p>
+<p>Среда IDE NetBeans также поддерживает переносимую платформу тестирования Selenium в сочетании с PHPUnit. Подключаемый модуль Selenium доступен из центра обновления. При установке этот подключаемый модуль добавляет сервер Selenium к зарегистрированным серверам среды IDE, а также добавляет параметры тестирования Selenium к меню PHP.</p>
+<p><b>Содержание</b></p>
+ <img  src="../../../images_www/articles/71/netbeans-stamp.png" class="stamp" width="114" height="114" alt="Содержимое этой страницы относится к среде IDE NetBeans 7.1" title="Содержимое этой страницы относится к среде IDE NetBeans 7.1"> 
+<ul class="toc">
+
+  <li><a href="#installing-phpunit">Установка PHPUnit</a></li>
+  <li><a href="#create-test">Создание и выполнение тестов PHPUnit</a></li>
+  <li><a href="#test-groups">Использование групп тестирования</a></li>
+  <li><a href="#result-windows">Результаты тесты и вывод среды IDE</a></li>
+  <li><a href="#code-coverage">Покрытие кода</a></li>
+  <li><a href="#project-specific-configurations">Использование вариантов настройки для отдельных проектов</a></li>
+  <li><a href="#selenium">Запуск тестов на платформе Selenium</a></li>
+</ul>
+<p><b>Для работы с этим учебным курсом требуется программное обеспечение и материалы, перечисленные ниже.</b></p>
+<table>
+  <tbody>
+    <tr>
+      <th class="tblheader" scope="col">Программное обеспечение или материал</th>
+      <th class="tblheader" scope="col">Требуемая версия</th>
+    </tr>
+    <tr>
+      <td class="tbltd1"><a target="_blank" href="http://download.netbeans.org/netbeans/6.7/rc/">Среда IDE NetBeans</a></td>
+      <td class="tbltd1">
+        Пакет загрузки PHP</td>
+    </tr>
+    <tr>
+      <td class="tbltd1">Система PHP, включая PEAR</td>
+      <td class="tbltd1">Версия 5. </tr>
+    <tr>
+      <td class="tbltd1">Веб-сервер</td>
+      <td>Рекомендуется использовать сервер HTTP Apache 2.2.<br></td>
+    </tr>
+
+    
+<tr>
+        <td class="tbltd1"><a target="_blank" href="http://www.phpunit.de">PHPUnit</a></td>
+        <td>Версия 3.3.0 или выше.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="installing-phpunit">Установка PHPUnit</h2>
+<p>Установите PHPUnit с помощью PEAR согласно указаниям в <a target="_blank" href="http://www.phpunit.de/manual/current/en/installation.html">документации по PHPUnit</a>. Следует установить версию PHPUnit 3.3.0 или выше. Специальная настройка не требуется. После установки PHPUnit среда NetBeans сможет распознать это средство тестирования. Обратите внимание на то, что вместе с механизмом PHP должен быть установлен PEAR. Также следует учитывать, что согласно документации по PHPUnit это средство тестирования обычно устанавливается в локальный каталог PEAR. В документации указывается путь <tt>/usr/lib/php/PHPUnit</tt>, однако в XAMPP для Windows используется путь <tt>XAMPP_HOME\php\PEAR\PHPUnit</tt>. </p>
+<p>Чтобы проверить, распознает ли среда IDE NetBeans установочный комплект PHPUnit, откройте &quot;Сервис&quot; &gt; &quot;Параметры&quot; (в ОС Mac откройте &quot;Параметры NetBeans&quot;) и просмотрите окно &quot;PHP&quot;. Откройте вкладку &quot;Модульное тестирование&quot;. Путь к сценарию PHPUnit должен отобразиться в поле &quot;Сценарий PHPUnit&quot;. Если сценарий не найден, выполните переход к нему вручную.</p>
+<img src="../../../images_www/articles/71/php/phpunit/php-options.png" height="431" width="519" alt="На странице &quot;Параметры&quot; отображается путь к сценарию PHPUnit" class="margin-around">
+<h2 id="create-test">Создание и выполнение тестов PHPUnit</h2>
+<p>Среда IDE NetBeans может создавать и выполнять тесты PHPUnit во всех классах PHP файла. Для обеспечения работы генератора тестов дайте файлу PHP имя, идентичное имени первого класса файла. </p>
+<p><strong>Создание и выполнение тестов PHPUnit для класса:</strong></p>
+<ol>
+  <li>Создайте проект PHP с именем &quot;Calculator&quot;. В этом проекте создайте файл с именем <tt>calculator.php</tt>. Введите или вставьте в этот файл класс Calculator из раздела <a target="_blank" href="http://www.phpunit.de/manual/current/en/skeleton-generator.html">&quot;Skeleton Generator&quot; документации PHPUnit</a>.
+  <pre class="examplecode">&lt;?php
+class Calculator
+{
+    public function add($a, $b)
+    {
+        return $a + $b;
+    }
+}
+?&gt;</pre></li>
+<li>Добавьте блок комментариев с <a target="_blank" href="http://sebastian-bergmann.de/archives/628-Improved-Skeleton-Generator-in-PHPUnit-3.html">аннотацией @assert</a>, а также пример входных и выходных данных. Обратите внимание &ndash; в этот пример включено одно неверное подтверждение.
+<pre class="examplecode">&lt;?php
+class Calculator
+{
+    /**
+     * @assert (0, 0) == 0
+     * @assert (0, 1) == 1
+     * @assert (1, 0) == 1
+     * @assert (1, 1) == 2
+     * @assert (1, 2) == 4
+     */
+    public function add($a, $b)
+    {
+        return $a + $b;
+    }
+}
+?&gt;</pre></li>
+<li>В окне &quot;Проекты&quot; правой кнопкой мыши щелкните узел Calculator.php и выберите команду &quot;Сервис&quot; &gt; &quot;Создать тесты PHPUnit&quot;. Обратите внимание на то, что тесты для всех файлов в проекте можно создавать в контекстном меню для узла &quot;Исходные файлы&quot;.<br>
+<img src="../../../images_www/articles/71/php/phpunit/create-tests.png" height="647" width="453" alt="Контекстное меню для узла &quot;Исходные файлы&quot; проекта PHP, отображающее команду &quot;Создать тесты PHPUnit&quot;" class="margin-around"></li>
+<li>При первом создании тестов в диалоговом окне выводится вопрос о каталоге, в котором следует сохранить файлы тестов. В этом примере функция &quot;Обзор&quot; используется для создания папки <tt>tests</tt>.
+<br><img src="../../../images_www/articles/71/php/phpunit/test-directory.png" height="177" width="364" alt="Диалоговое окно каталога файлов теста" class="margin-around"></li>
+<li>В среде IDE в файле с именем CalculatorTest.php создается базовый класс, который отображается в окне &quot;Проекты&quot; и открывается в редакторе.
+<br><img src="../../../images_www/articles/71/php/phpunit/test-class-in-project.png" alt="Окно &quot;Проекты&quot; с новым тестовым классом" height="245" width="204" class="margin-around">
+<p>Обратите внимание на то, что тест создается для каждой аннотации <tt>@assert</tt>.</p>
+<pre class="examplecode">    /**
+     * Создано из @assert (1, 1) == 2.
+     */
+    public function testAdd4()
+    {
+        $this-&gt;assertEquals(
+          2,
+          $this-&gt;object-&gt;add(1, 1)
+        );
+    }</pre></li>
+    <li>Можно выполнить тестирование отдельного файла или целого проекта. Для тестирования проекта щелкните правой кнопкой мыши родительский узел проекта и выберите команду &quot;Тестировать&quot; или нажмите сочетание клавиш ALT+F6. Чтобы выполнить тестирование файла Calculator.php, правой кнопкой мыши щелкните узел файла и выберите &quot;Тестировать&quot; либо нажмите Ctrl-F6/⌘-F6. В этом примере существует только один класс в одном файле, так что результаты являются идентичными. Среда IDE выполняет тесты и отображает результаты в окне &quot;Результаты теста&quot;.
+    <br><img src="../../../images_www/articles/71/php/phpunit/test-results-narrow.png" alt="Окно &quot;Результаты теста&quot;" height="254" width="600" class="margin-around"> <p>Более подробная текстовая версия результатов отображается в окне &quot;Вывод&quot;.</p>
+    <img src="../../../images_www/articles/71/php/phpunit/test-result-output.png" alt="Окно &quot;Вывод&quot; с результатами теста" height="269" width="535" class="margin-around"></li>
+</ol>
+<h2><a name="test-groups"></a>Использование групп тестирования</h2>
+<p>Начиная со среды IDE NetBeans версии 7.1 можно использовать группы тестирования PHPUnit. Можно выбрать, какие группы тестирования будут выполняться при запуске набора тестов. Например, некоторые тесты могут выполняться только в производственной среде, а другие &mdash; как в производственной среде, так и в среде разработки. Тесты первого вида вы поместите в группу <tt>production</tt>, а второго &mdash; в группы <tt>production</tt> и <tt>development</tt>. При запуске набора тестов в среде разработки вы выбираете для выполнения только группу тестирования <tt>development</tt>.</p>
+<p>Необходимо активировать группы тестирования для проекта PHP до использования этих групп на каком-либо из файлов данного проекта. </p>
+<p>Чтобы отметить тест в качестве части группы тестирования, добавьте к методу теста аннотацию <tt>@group [group name]</tt>.</p>
+<p><strong>Создание и выполнение групп тестирования.</strong></p>
+<ol>
+  <li>В окне &quot;Проекты&quot; правой кнопкой мыши щелкните узел &quot;Калькулятор&quot; и выберите &quot;Свойства&quot;. Откроется раздел &quot;Свойства проекта&quot;.</li>
+  <li>В разделе &quot;Свойства проекта&quot; выберите категорию PhpUnit. Выберите &quot;Запрос групп тестирования перед выполнением тестов&quot;. Нажмите кнопку &quot;ОК&quot;.<br><img src="../../../images_www/articles/71/php/phpunit/test-group-properties.png" alt="Свойства проекта, категория PhpUnit, отображение активированных групп тестирования" width="600" height="424" class="margin-around"></li>
+  <li>Откройте файл <tt>CalculatorTest.php</tt> в редакторе.</li>
+  <li>Для методов <tt>testAdd</tt>, <tt>testAdd3</tt> и <tt>testAdd5</tt> добавьте аннотацию <tt>@group production</tt>.<br><img src="../../../images_www/articles/71/php/phpunit/production-group-annotation.png" alt="Код, демонстрирующий аннотацию группы тестирования" width="391" height="155" class="margin-around b-all"></li>
+  <li>Для методов <tt>testAdd2</tt> и <tt>testAdd4</tt> добавьте аннотации <tt>@group production</tt> и <tt>@group development</tt>. <img src="../../../images_www/articles/71/php/phpunit/production-development-group-code.png" alt="Код, демонстрирующий аннотации групп тестирования" width="388" height="172" class="margin-around b-all"></li>
+  <li>Правой кнопкой мыши щелкните узел <tt>Calculator.php</tt> и выберите &quot;Тестировать&quot;. Откроется диалоговое окно выбора групп тестирования для выполнения. Выберите &quot;разработка&quot; и нажмите клавишу &quot;ОК&quot;. Среда IDE выполняет только те тесты, которые имеют аннотацию <tt>@group development</tt>.<br><img src="../../../images_www/articles/71/php/phpunit/select-test-group.png" alt="Выберите диалоговое окно групп тестирования" width="374" height="260" class="margin-around"></li>
+</ol>
+<p>Для получения дополнительных сведений о группах тестирования PhpUnit в среде IDE NetBeans, см. публикацию <a target="_blank" href="http://blogs.oracle.com/netbeansphp/entry/using_phpunit_test_groups">Использование групп тестирования PHP Unit</a> в блоге &quot;Среда IDE NetBeans для PHP&quot;.</p>
+<h2 id="result-windows">Результаты теста и вывод среды IDE</h2>
+<p>Результаты тестов PHPUnit отображаются в двух окнах среды IDE &ndash; &quot;Результаты теста&quot; и &quot;Вывод&quot;. Окно &quot;Результаты теста&quot; имеет графическую панель и краткую текстовую панель. Окно &quot;Вывод&quot; предоставляет более подробную текстовую версию выходных данных. В это разделе окна &quot;Результаты теста&quot; и &quot;Вывод&quot; рассматриваются более подробно.</p>
+<p>В окне &quot;Результаты теста&quot; отображаются сведения о тестах со сбоями из следующих местоположений:</p>
+<ul>
+  <li>Сообщения на панели пользовательского интерфейса, связанные с записью дерева для теста со сбоем</li>
+  <li>Текст правой панели со ссылками на строки кода теста со сбоем</li>
+  <li>Текст всплывающей подсказки, отображающийся при наведении курсора на тест со сбоем в панели пользовательского интерфейса</li>
+</ul>
+<img src="../../../images_www/articles/71/php/phpunit/test-results-tooltip.png" class="margin-around" height="267" width="596" alt="Окно &quot;Результаты теста&quot;, в котором отображается всплывающая подсказка">
+<p>На левой стороне окна &quot;Результаты теста&quot; расположены следующие кнопки:</p>
+<ul>
+    <li> Повторный запуск теста <img src="../../../images_www/articles/71/php/phpunit/rerun-button.png" alt="кнопка повторного запуска"></li>
+  <li>Показать тесты, завершившиеся сбоем <img src="../../../images_www/articles/71/php/phpunit/show-failed.png" alt="кнопка &quot;Показать тесты, завершившиеся сбоем&quot;"></li>
+  <li>Показать успешно выполненные тесты <img src="../../../images_www/articles/71/php/phpunit/show-passed.png" alt="кнопка &quot;Показать успешно выполненные тесты&quot;"></li>
+  <li>Показать тесты, выполненные с ошибками <img src="../../../images_www/articles/71/php/phpunit/show-error.png" alt="кнопка &quot;Показать тесты, выполненные с ошибками&quot;"></li>
+  <li>Переход между отображением следующего результата теста<img src="../../../images_www/articles/71/php/phpunit/next-test-button.png" alt="кнопка следующего результата"> и предыдущим результатом теста <img src="../../../images_www/articles/71/php/phpunit/previous-test-button.png" alt="кнопка предыдущего результата"></li>
+</ul>
+<p>В окне &quot;Вывод&quot; отображаются все выходные данные сценария PHPUnit. Использование этой функции целесообразно, если причину ошибки невозможно установить с помощью информации в окне &quot;Результаты теста&quot;. Как и окно &quot;Результаты теста&quot;, окно &quot;Вывод&quot; содержит ссылки на строку класса теста с ошибкой. На его левой стороне также расположены кнопки для повторного выполнения теста и открытия окна &quot;Параметры PHP&quot;. <img src="../../../images_www/articles/71/php/phpunit/options-link-button.png" alt="Кнопка в окне &quot;Вывод&quot; со ссылкой на окно &quot;Параметры&quot;"></p>
+<img src="../../../images_www/articles/71/php/phpunit/test-result-output.png" alt="Окно &quot;Вывод&quot; с полными результатами теста PHPUnit" height="269" width="535" class="margin-around">
+<h2 id="code-coverage">Покрытие кода</h2>
+<p>Среда IDE NetBeans для PHP предоставляет функцию покрытия поддержкой PHPUnit. (Среда IDE также предлагает покрытие кода для Python). Функция покрытия кода проверяет, все ли используемые методы покрываются тестами PHPUnit. В этом разделе мы увидим, как работает покрытие кода для существующего класса Calculator.</p>
+<p><strong>Использование функции покрытия кода:</strong></p>
+<ol>
+  <li>Откройте Calculator.php и добавьте дубликат функции <tt>add</tt> с именем <tt>add2</tt>. При этом класс <tt>Calculator</tt> должен выглядеть примерно таким образом:
+  <pre class="examplecode">&lt;?php
+class Calculator {
+    /**
+     * @assert (0, 0) == 0
+     * @assert (0, 1) == 1
+     * @assert (1, 0) == 1
+     * @assert (1, 1) == 2
+     * @assert (1, 2) == 4
+     */
+    public function add($a, $b) {
+        return $a + $b;
+    }
+
+    public function add2($a, $b) {
+        return $a + $b;
+    }
+
+} 
+?&gt;
+</pre></li>
+<li>Щелкните узел проекта правой кнопкой мыши. В контекстном меню выберите команду &quot;Охват кода&quot; &gt; &quot;Сбор и отображения охвата кода&quot;. По умолчанию панель &quot;Отобразить панель редактора&quot; также выбрана.
+<br><img src="../../../images_www/articles/71/php/phpunit/turn-on-code-coverage.png" alt="Включение покрытия кода из контекстного меню узла проекта" height="251" width="503" class="margin-around" border="1"></li>
+<li>Панель покрытия кода теперь отображается в нижней части редактора. Поскольку тестирование покрытия кода еще не выполнялось, на панели редактора отображается значение покрытия, равное 0%. (Это значение также отображается при нажатии на кнопку &quot;Очистить&quot; для очистки результатов теста). 
+<br><img src="../../../images_www/articles/71/php/phpunit/editor-bar-before.png" alt="Панель покрытия кода в редакторе перед выполнением тестов" height="428" width="592" class="margin-around"></li>
+<li>Выберите команду &quot;Тестировать&quot; для тестирования открытого файла или &quot;Все тесты&quot; для запуска всех тестов по проекту. Отобразится окно &quot;Результаты теста&quot;. Кроме того, на панели &quot;Покрытие кода&quot; отобразится процент задействованных в тестах операторов исполняемого кода. Задействованный код в окне редактора выделяется зеленым цветом, а незадействованный код &ndash; красным цветом.
+    <p class="alert"><b>Внимание!</b>При повторном создании файлов теста ПОСЛЕ добавления функции add2 тесты PHPUnit выполняться не будут. Причиной этого является то, что PHPUnit создает две конфликтующие функции testAdd2. Не разграничивайте функции добавляемыми в конце номерами, если планируете использовать PHPUnit для нескольких подобных функций. См. <a href="http://www.phpunit.de/ticket/701" target="_blank">документацию по PHPUnit</a>. </p>   
+<img src="../../../images_www/articles/71/php/phpunit/editor-bar-after.png" alt="Панель редактора для покрытия кода после выполнения тестов"  class="margin-around"></li>
+<li>На панели редактора щелкните элемент &quot;Отчет...&quot;. Отобразится отчет &quot;Покрытие кода&quot;, в котором будут показаны результаты всех тестов, выполненных для проекта. Кнопки в отчете позволяют очищать результаты, повторно выполнять тесты или отключать покрытие кода (нажмите кнопку &quot;Готово&quot;).
+<br><img src="../../../images_www/articles/71/php/phpunit/code-coverage-report.png" alt="Отчет о покрытии кода" height="185" width="405" class="margin-around"></li>
+<li>Разработчик может добавить другой класс в проект, удалить и заново создать файлы теста, а также еще раз изучить отчет о покрытии кода. Будет показан новый класс. В следующем отчете класс <tt>Calculator</tt> снова содержит функцию, не включенную в тесты.
+<br><img src="../../../images_www/articles/71/php/phpunit/code-coverage-report2.png" alt="Отчет о покрытии кода со вторым классом" height="226" width="451" class="margin-around"></li>
+</ol>
+<h2 id="project-specific-configurations">Использование вариантов настройки для отдельных проектов</h2>
+<p>В среде IDE для проекта можно выбрать следующие особые варианты настройки:</p>
+<ul>
+  <li>файл начальной загрузки;</li>
+  <li>файл настройки в формате XML;</li>
+  <li>набор тестов.</li>
+</ul>
+<p>Для выбора варианта настройки для отдельного проекта щелкните правой кнопкой мыши узел проекта или узел &quot;Файлы тестов&quot;, а затем выберите пункт меню &quot;Свойства&quot;. В результате откроется диалоговое окно &quot;Свойства&quot;. Выберите в нем категорию &quot;PHPUnit&quot;. Откроется диалоговое окно, в котором можно выбрать особый файл начальной загрузки, файл XML настройки или файл набора тестов. При отсутствии знаний о структуре этих файлов можно создать их скелеты средствами среды IDE NetBeans.</p>
+<img src="../../../images_www/articles/71/php/phpunit/phpunit-project-properties.png" class="margin-around" alt="Выбор особых параметров PHPUnit в диалоговом окне свойств проекта" border="1">
+<p><em>Вариант начальной загрузки</em> требуется для проектов, в которых используется собственный загрузчик классов, например, посредством реализации магической функции <tt>__autoload()</tt>. Вариант начальной загрузки используется также при необходимости включения файла, содержащего, например, глобальные константы, которые используются несколькими классами в проекте, в будущем.</p>
+<p><em>Файл XML настройки</em> позволяет определить параметры, используемые в вызове из командной строки. Полный комплект вводной информации содержится в <a target="_blank" href="http://www.phpunit.de/manual/3.3/en/appendixes.configuration.html" title="Руководство по PHPUnit ">Руководстве по PHPUnit</a>. С помощью файла XML настройки также можно определить параметры <tt>php.ini</tt> и глобальные переменные для тестов. Параметр начальной загрузки может быть указан и в файле XML настройки.</p>
+<p>Если установлен <em>особый набор тестов</em>, он запускается при каждом выборе пункта меню &quot;Выполнить &gt; Тестирование проекта&quot;. Это особенно удобно, если требуется запустить только подмножество всех тестов, либо если требуется использовать недавно реализованные функции PHPUnit, которые необходимо добавлять вручную, например источники данных. </p>
+<p>Следует отметить, что существует возможность создавать любое количество наборов тестов и запускать их по отдельности; для этого нужно щелкнуть файл в проводнике проектов и выбрать пункт меню &quot;Выполнить&quot;.</p>
+<p>Во избежание недоразумений при использовании особого набора тестов выдается предупреждение. Это предупреждение выводится в окне &quot;Результаты теста&quot; и в окне вывода.</p>
+<h2 id="selenium">Запуск тестов на платформе Selenium</h2>
+<p>Selenium &ndash; это переносимая платформа тестирования программного обеспечения для веб-приложений. Тесты могут быть созданы в виде таблиц HTML или написаны с помощью различных популярных языков программирования. Тесты запускаются напрямую в большинстве современных обозревателей. Selenium может развертываться в системах Windows, Linux и Macintosh. Дополнительные сведения приведены на <a target="_blank" href="http://www.openqa.org/selenium/">веб-сайте Selenium</a>. </p>
+<p>Среда IDE NetBeans имеет подключаемый модуль, включающий в себя сервер Selenium. Этот подключаемый модуль позволяет выполнять тесты Selenium в PHP, веб-приложениях или проектах Maven. Чтобы запустить тесты Selenium в PHP, следует установить пакет Testing Selenium в системе PHP.</p>
+<p><strong>Запуск тестов Selenium в PHP:</strong></p>
+<ol>
+  <li>Откройте командную строку и запустите команду <tt>pear install Testing_Selenium-beta</tt>. <tt> PHP_HOME/php/PEAR</tt> должен быть добавлен к пути. Если команда выполнена успешно, то командная строка отобразит текст <tt>install ok: channel://pear.php.net/Testing_Selenium-0.4.3</tt>.</li>
+  <li>В среде IDE откройте меню &quot;Сервис&quot; &gt; &quot;Подключаемые модули&quot; и установите модуль Selenium для PHP.</li>
+  <li>В окне &quot;Проекты&quot; правой кнопкой мыши щелкните узел проекта для проекта Calculator. Выберите команду &quot;Создать&quot; &gt; &quot;Прочие&quot;. Откроется мастер &quot;Создать файл&quot;. Выберите параметр &quot;Selenium&quot; и нажмите кнопку &quot;Далее&quot;.
+  <br><img src="../../../images_www/articles/71/php/phpunit/new-selenium.png" height="413" width="543" alt="Мастер &quot;Создать файл&quot; с выбранным файлом Selenium" class="margin-around"></li>
+  <li>При первом создании теста Selenium будет открыто диалоговое окно, позволяющее установить каталог для файлов теста Selenium. Этот каталог должен отличаться от каталога файлов теста PHPUnit. В противном случае тесты Selenium будут запускаться при каждом запуске модульных тестов. Запуск функциональных тестов вида Selenium обычно занимает больше времени, чем запуск модульных тестов, поэтому их совместный запуск с модульными тестами скорее всего нежелателен.</li>
+  <li>Примите параметры по умолчанию на странице &quot;Имя и местоположение&quot; и нажмите кнопку &quot;Готово&quot;. Новый файл теста Selenium откроется в редакторе и появится в окне &quot;Проекты&quot;.
+  <br><img src="../../../images_www/articles/71/php/phpunit/selenium-test-in-project.png" alt="Окно &quot;Проекты&quot; с новым тестом Selenium" height="187" width="279" class="margin-around"></li>
+  <li>Элемент &quot;Выполнить тесты Selenium&quot; добавлен в контекстное меню проекта. Щелкните этот элемент, и результаты теста Selenium отобразятся в окне &quot;Результаты теста&quot;, как и для тестов PHPUnit.</li>
+</ol>
+<h2 id="more-exercises">Дополнительные упражнения</h2>
+    <p>Ниже приведены дополнительные материалы для исследования:</p>
+    <ul>
+      <li>Добавьте второй класс в файл Calculator.php, например класс <tt>Calculator2</tt>, который умножает $a и $b. Удалите тесты и повторно создайте их.</li>
+      <li>При работе с <a href="../../docs/php/wish-list-tutorial-main-page.html">учебным курсом по созданию приложения CRUD</a>, состоящего из нескольких частей, создайте тест Selenium для итогового проекта. </li>
+    </ul>
+<div class="feedback-box">
+  <a href="/about/contact_form.html?to=3&amp;subject=Feedback:PHPUnit and Selenium on NB 6.7">Мы ждем ваших отзывов</a>
+</div>
+<br style="clear:both;" >
+<p>Оставить комментарии и предложения, обратиться за поддержкой и получить сведения о последних достижениях в области разработки для PHP с помощью среды IDE NetBeans можно в <a href="../../../community/lists/top.html">списке рассылки users@php.netbeans.org</a>. Этот список также находится в <a target="_blank" href="http://forums.netbeans.org/">форумах среды IDE NetBeans</a>.</p>
+<a name="seeAlso"></a>
+        <h2>Дополнительные материалы</h2>
+
+        <p>Дополнительные сведения о тестировании PHP в среде IDE NetBeans<a target="_blank" href="https://netbeans.org/"></a> приведены в следующих материалах:</p>
+        <ul>
+            <li><a target="_blank" href="http://blogs.sun.com/netbeansphp/entry/phpunit_support_added">Блог среды NetBeans для PHP: добавлена поддержка PHPUnit</a></li>
+            <li><a target="_blank" href="http://blogs.sun.com/netbeansphp/entry/ui_for_phpunit_support">Блог среды NetBeans для PHP: поддержка пользовательского интерфейса для PHPUnit</a></li>
+            <li><a target="_blank" href="http://blogs.sun.com/netbeansphp/entry/code_coverage_for_php_why">Блог среды NetBeans для PHP: покрытие кода для PHP &ndash; почему нет?</a></li>
+            <li><a target="_blank" href="http://blogs.sun.com/netbeansphp/entry/recent_improvements_in_phpunit_support">Блог NetBeans для PHP: последние усовершенствования поддержки PHPUnit</a></li>
+            <li><a target="_blank" href="http://wiki.netbeans.org/SeleniumPluginPHP">Вики-страница среды IDE NetBeans: подключаемый модуль Selenium для PHP</a></li>
+            <li><a href="../../docs/php/debugging.html">Отладка исходного кода PHP в среде IDE NetBeans</a></li>
+            
+        </ul>
+<p><a href="../../trails/php.html">Возврат к учебной карте по PHP</a> </p>
+  
+</body>

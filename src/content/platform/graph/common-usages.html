@@ -1,0 +1,242 @@
+<HTML>
+<HEAD>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<LINK REL="Stylesheet" HREF="https://netbeans.org/netbeans.css" TYPE="text/css">
+<TITLE>netbeans.org : NetBeans Visual Library 2.0</TITLE>
+<style><!--
+pre {
+    border: 1px solid black;
+    padding: 10px;
+    background-color: #FFFFDD;
+}
+--></style>
+</HEAD>
+
+<BODY>
+
+<h1>Visual Library API - Common Usages</h1>
+
+<h2>Abstract</h2>
+<p>This document describes common usages of the Visual API. Visual module is a proposed implementation of the project Meteora. The module is in the proof-of-concept stage and does not have all features implemented.
+
+<h2>Installation</h2>
+<p>See <a href="setup.html">setup</a> document first. The source code of Visual Library API is located at <font class="titlec">graph/lib</font> directory. For running examples execute <font class="titlec">ant run</font> in <font class="titlec">graph/examples</font> directory.
+<ul>
+<li><b>test.general.GraphSceneTest</b> - general purpose test.
+<li><b>test.huge.HugeTest</b> - test with 1113 nodes and 1110 edges. Zoom out for more.
+<li><b>test.lod.LevelOfDetailsTest</b> - test of level-of-details widget. Zoom in for more.
+<li><b>test.vmd.VMDTest</b> - prototype of new Visual Mobility Designer look. Click on minimize button (blue square at the left-top corner of a node) for collapse feature.
+</ul>
+
+<h2>First Step</h2>
+<p>First you have to create an instance that holds visual data of a scene.
+
+<pre>
+Scene scene = new Scene ();
+</pre>
+
+<h2>etting it to the Screen</h2>
+<p>Now you have to take this data and show them on the screen. Following code creates a view JComponent of the scene, it embeds it into a dialog with scrollable view over the scene:
+
+<pre>
+JComponent sceneView = scene.createView ();
+JScrollPane panel = new JScrollPane (sceneView);
+
+JDialog dia = new JDialog (new JDialog (), true);
+dia.add (panel, BorderLayout.CENTER);
+dia.setSize (800, 600);
+dia.setVisible (true);
+dia.dispose ();
+</pre>
+
+<h2>Modeling the Scene</h2>
+
+<p>The scene is a widget and is based on elementary Widget class. Widgets could be organized into a tree hierarchy where the scene is the root of the tree. The tree could be built up using Widget.addChild and Widget.removeChild methods. Following code create a scene with an image and a label under it.
+
+<pre>
+scene.setLayout (SerialLayout.getVerticalLayout ());
+ImageWidget image = new ImageWidget (scene);
+image.setImage (Utilities.loadImage ("/path/to/image.png"));
+scene.addChild (image):
+LabelWidget label = new LabelWidget (scene);
+label.setText ("My Image Text");
+scene.addChild (label);
+</pre>
+
+<h2>Using Widget</h2>
+<p>The Widget class allows you to use a few properties: background, foreground, opaque, font, layout, border, preferredLocation, preferredBounds. Also each custom widget has its own properties e.g. ImageWidget has image, LabelWidget has text.
+
+<h2>Layout</h2>
+<p>Each widget has a Layout assigned. The layout resolve locations and bounds of each child-widget in the widget. SerialLayout class layouts widget one after another in vertical or horizontal line. AbsoluteLayout resolves it using Widget.getPreferredLocation and Widget.getPreferredBounds methods of a child-widget.
+
+<h2>Setting User Actions</h2>
+<p>Each widget can have assigned an action. The action allows to react on an user input (mouse/keyboard). There are predefined actions like: MoveAction, EditAction, PopupMenuAction, SelectAction and MouseHoverAction. For example following code makes the widget able to move on a scene and whole scene could be panned and zoomed:
+
+<pre>
+widget.getActions ().addAction (new MoveAction ());
+scene.getActions ().addAction (new ZoomAction ());
+scene.getActions ().addAction (new PanAction ());
+</pre>
+
+<h2>Connection Widget</h2>
+<p>The Connection widget allows you create a connection between two widgets. The source and target of the connection is not resolved directly from the source-widget and target-widget locations. The connection has source and target Anchor. That anchor resolve the location in global-coordination system. CenterAnchor resolves the location as a center of a specified widget. RectangleEdgeAnchor resolves the location as a point on a boundary of a widget that is the closest to a opposite widget. For example following code creates a connection between two widget:
+
+<pre>
+ConnectionWidget connection = new ConnectionWidget (scene);
+connection.setSourceAnchor (new RectangleEdgeAnchor (sourceWidget));
+connection.setTargetAnchor (new RectangleEdgeAnchor (targetWidget));
+</pre>
+
+<h3>Dependencies</h3>
+<p>ConnectionWidget depends on results from Anchor classes and those classes depends on the source widgets. Therefore the source widgets has to be resolved first and then the connection widget.
+<p>The solution for this is to use two layers (that are implemented as a default widget class). All the source widgets are placed into the first layer and all the connections are placed into the second layer. When the scene is revalidating, all source widgets are revalidated before any connection widget and therefore the locations of source widgets are updated before an anchor is going to resolve its location. See GraphScene class for implementation.
+
+<h2>Router</h2>
+<p>The Connection widget has control-points. The widget just draws straight lines between two control points. The control points could be set directly on the connection widget but easier is to reuse an implementation of Router interface. The Router resolves the control points points automatically. By default DirectRouter is used. It creates a direct path between two points.
+
+<h2> Graph Support</h2>
+<p>The support consists of an extension of a Scene class. The GraphScene class is used for graphs with nodes and edges. These classes are abstract and its methods has to be implemented to supply the UI of a scene. Then the derived class allows you to manipulate with widgets using add and remove operations on nodes, edges and pins using their controllers/IDs and you do not have to care about the UI because the whole UI should be defined inside the derived class.
+
+<h3>IDs and Controllers</h3>
+<p>Each node and each edge on the scene has to have its own ID. The ID could be any class (usually String).
+<p>The graph support is using object controllers for linking between object (node/edge) IDs and the widgets on the scene. There are three basic object controllers: NodeController, EdgeController, PinController.
+<p>Of course, you can extend these controller and provide your control methods e.g. setDisplayName, setIcon, ...
+
+<h3>Setting UI</h3>
+<p>GraphScene class does not contain any UI definition. It just contains a set of methods that allows a developer to work with graph-oriented structures. Also it is based on the Scene class and therefore a full visualization tree is available too.
+<p>First, what a developer has to do, is to create an UI. This is done by extending the GraphScene. Following example code shown you how to create an UI:
+
+<pre>
+public class StringGraphScene extends GraphScene&lt;String, String, NodeController.StringNode, EdgeController.StringEdge&gt; {
+
+    private Widget mainLayer;
+    private Widget connectionLayer;
+
+    private MoveAction moveAction = new MoveAction ();
+
+    public StringGraphScene () {
+        mainLayer = new Widget (this);
+        connectionLayer = new Widget (this);
+        addChild (mainLayer);
+        addChild (connectionLayer);
+    }
+
+    protected NodeController.StringNode attachNodeController (String node) {
+        UMLClassWidget widget = new UMLClassWidget (this);
+        widget.setClassName ("Class" + node);
+        widget.getActions ().addAction (moveAction);
+        mainLayer.addChild (widget);
+
+        return new NodeController.StringNode (node, widget);
+    }
+
+    protected EdgeController.StringEdge attachEdgeController (String edge) {
+        ConnectionWidget connectionWidget = new ConnectionWidget (this);
+        connectionLayer.addChild (connectionWidget);
+
+        return new EdgeController.StringEdge (edge, connectionWidget);
+    }
+
+    protected void attachEdgeSource (EdgeController.StringEdge edgeController, NodeController.StringNode sourceNodeController) {
+        ((ConnectionWidget) edgeController.getMainWidget ()).setSourceAnchor (new RectangleEdgeAnchor (sourceNodeController.getMainWidget ()));
+    }
+
+    protected void attachEdgeTarget (EdgeController.StringEdge edgeController, NodeController.StringNode targetNodeController) {
+        ((ConnectionWidget) edgeController.getMainWidget ()).setTargetAnchor (new RectangleEdgeAnchor (targetNodeController.getMainWidget ()));
+    }
+
+}
+</pre>
+
+<p>The example above is using a String class for the nodeID/edgeID. Therefore NodeController.String and EdgeController.String classes are used for object controllers. The example creates an UI, where:
+<ul>
+<li>The scene contains two layers - first (mainLayer) is used for nodes and second (connectionLayer) is used for connections only.
+<li>A node is presented with a UMLClassWidget and is controlled by the NodeController.String which main widget is the UMLClassWidget.
+<li>An edge is presented as a ConnectionWidget and is controlled by the EdgeController.String which main widget is the ConnectionWidget.
+<li>The edge source and target is resolved using the RectangleEdgeAnchor class.
+</ul>
+
+<h3>Using Graph Operation</h3>
+<p>GraphScene class allows following graph-oriented operations:
+<ul>
+<li> addNode, removeNode, getNodes
+<li> addEdge, removeEdge, getEdges
+<li> getEdgeSource, setEdgeSource
+<li> getEdgeTarget, setEdgeTarget
+<li> findNodeEdges
+<li> findEdgeBetween
+</ul>
+
+<h3>ObjectController to Widget Mapping</h3>
+<p>Each ObjectController can have assigned more that one widgets. The controller holds a set of these widgets. One of these widgets is the main widget. The main widget is usually used for connections to attached to, ...
+<p>TBD - Not implemented yet. GraphScene should provide method for resolving the ObjectController based on a widget that is passed as an argument.
+
+<h3>Selection Model</h3>
+<p>TBD - Not implemented yet. A specific SelectAction will be provided by GraphScene class, also a rectangular/multi selection will be supported.
+
+<h3>Graph with Pin Support</h3>
+<p>The GraphPinScene class is used for graphs with node, edge and pin primitives. Also there is a PinController class to controlling pins. you can use it similar way as the GraphScene except edges can be connection to pins only (not nodes).
+
+<h3>Dynamic UI Changes</h3>
+<p>Sometimes you would like to control the scene as a graph-oriented model but the UI has to be changing (filter some parts of the model).
+<p>For example you can implement features like:
+<ul>
+<li>You have a node with two states: minimalistic and full-size. In minimalistic state it should show just the node. In full-size state it should show the node with all ports.
+<li>When a ports in hidden and an edge is attached to it, then the edge is automatically connected to the node instead of the invisible port.
+<li>No matter in which state a node is, the GraphPinScene still provides all graph-oriented model data.
+</ul>
+<p>TBD - For details, see VMDNodeWidget, VMDMinimizeWidget, ProxyAnchor classes.
+
+<h2>Zoom</h2>
+<p>Use following code to change zoom factor:
+
+<pre>
+scene.setZoomFactor (2.0);
+</pre>
+
+<h2>Coordination System</h2>
+<p>Widgets are organized in a tree of widgets. The root widget is called Scene. A widget has a location and bounds. The location of a scene widget is defining a scene coordination system. The location of each widget defines relative location against its parent widget - the location of each widget defines a local coordination system of each widget. The widget bounds are defined in the local coordination system of the widget.
+<p>The scene is rendered on a JComponent. A view coordination system is related to the JComponent - it is translated scene coordination system scaled by zoom factor of the scene widget. The sceen coordination system is the system of your desktop/monitor.
+<p>For converting locations and bounds you can use following code:
+
+<pre>
+Point localLocation = ...; // use "new Point ()" for the origin of the local coordination system
+Point sceneLocation = widget.convertLocalToScene (localLocation);
+Point viewLocation = scene.convertSceneToView (sceneLocation);
+Point screenLocation = SwingUtilities.convertPointToScreen (viewLocation, scene.getComponent ());
+</pre>
+
+<pre>
+Rectangle localRectangle = ...; // use "widget.getBounds ()" for the widget bounds in the local coordination system
+Rectangle sceneRectangle = widget.convertLocalToScene (localRectangle);
+Rectangle viewRectangle = scene.convertSceneToView (sceneRectangle);
+</pre>
+
+<pre>
+Point viewLocation = ...;
+Point sceneLocation = scene.convertViewToScene (viewLocation);
+Point localLocation = widget.convertSceneToLocal (sceneLocation);
+</pre>
+
+<h2>Level of Details</h2>
+<p>The LevelOfDetailsWidget allows level-of-details feature based on 4 following parameters: hardMinimalZoom, softMinimalZoom, softMaximalZoom, hardMaximalZoom.
+<p>Following table describes whether children widgets of the LODWidget are visible or not - based on the zoom factor of a scene:
+
+<table border=1 cellspacing=0 cellpadding=5>
+<tr><td> <b>zoom factor</b> </td><td> hardMinimalZoom or less </td><td> between </td><td> softMinimalZoom to softMaximalZoom </td><td> between </td><td> hardMaximalZoom or more</td></tr>
+<tr><td> <b>children are</b> </td><td> <i>invisible</i> </td><td> partly visible </td><td> <b>visible</b> </td><td> partly visible </td><td> <i>invisible</i></td></tr>
+</table>
+
+<p>The partial visibility is done by alpha blending.
+
+<h2>In-place Editor</h2>
+<p>TBD - Not implemented yet. It will be implemented as InplaceEditorAction class with a set of predefined editor.
+
+<h2>Custom Widget Development</h2>
+<p>TBD
+
+<h2>Custom Action Development</h2>
+<p>TBD
+
+</BODY>
+</HTML>

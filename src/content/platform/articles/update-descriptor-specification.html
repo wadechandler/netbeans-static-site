@@ -1,0 +1,430 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>Understanding AutoUpdate Descriptors</title>
+  <link rel="stylesheet" type="text/css"
+ href="https://netbeans.org/netbeans.css">
+  <meta name="topic" content="autoupdate">
+  <meta name="type" content="article">
+  <meta name="audience" content="nbdeveloper">
+  <meta name="description" content="Update Descriptor Specification">
+  <meta name="author" content="jrechtacek@netbeans.org">
+  <meta name="indexed" content="y">
+  <style type="text/css">
+q {quotes: "\201C" "\201D" "\2018" "\2019"}
+  </style>
+</head>
+<body>
+<h1 id="section-UpdateDescriptorSpecification-UpdateDescriptorSpecification">Understanding AutoUpdate Descriptors</h1>
+<div class="toc">
+<h4>Table of Contents</h4>
+<ul>
+  <li> <a
+ href="#section-UpdateDescriptorSpecification-UpdateDescriptorSpecification">Update
+Descriptor Specification</a>
+    <ul>
+      <li> <a
+ href="#section-UpdateDescriptorSpecification-Introduction">Introduction</a>
+      </li>
+      <li> <a
+ href="#section-UpdateDescriptorSpecification-StructureOfTheCatalog">Structure
+of the catalog</a> </li>
+      <li> <a
+ href="#section-UpdateDescriptorSpecification-DescriptionOfEachOneAttribute">Description
+of each one attribute</a>
+        <ul>
+          <li> <a
+ href="#section-UpdateDescriptorSpecification-Module_updates">module_updates</a>
+          </li>
+          <li> <a
+ href="#section-UpdateDescriptorSpecification-Notification">notification</a>
+          </li>
+          <li> <a
+ href="#section-UpdateDescriptorSpecification-Module_group">module_group</a>
+          </li>
+          <li> <a href="#section-UpdateDescriptorSpecification-Module">module</a>
+          </li>
+          <li> <a
+ href="#section-UpdateDescriptorSpecification-Description">description</a>
+          </li>
+          <li> <a
+ href="#section-UpdateDescriptorSpecification-Module_notification">module_notification</a>
+          </li>
+          <li> <a
+ href="#section-UpdateDescriptorSpecification-Manifest">manifest</a> </li>
+          <li> <a href="#section-UpdateDescriptorSpecification-L10n">l10n</a>
+          </li>
+          <li> <a href="#section-UpdateDescriptorSpecification-License">license</a>
+          </li>
+          <li> <a href="#section-UpdateDescriptorSpecification-Errors">errors</a>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+</div>
+<h3 id="section-UpdateDescriptorSpecification-Introduction">
+Introduction</h3>
+<p>The NetBeans platform supplies the AutoUpdate functionality. This
+feature makes possible to
+distribute new features and keep the product up-to-date. The AutoUpdate
+consists of <b>Update Center</b> and
+a <b>client</b> in NetBeans.
+Update Center (commonly on some web server) offers an set of updates
+and the AutoUpdate client
+connects this Update Center and allow an user select, download and
+install some of them.
+</p>
+<p><b>Update Center</b> is described by XML file (call a <b>catalog</b>
+or <b>Update Center Descriptor</b>). I would like to show to you the
+structure of catalog, meaning of its elements and attributes, optional
+use-cases of attributes.
+</p>
+<h3 id="section-UpdateDescriptorSpecification-StructureOfTheCatalog">
+Structure of the catalog</h3>
+<p>The catalog contains from modules which can be organized into groups
+of modules, licenses
+and some others elements which are not currently used.
+</p>
+<p>The basic element of the catalog is <tt>module</tt>. More modules
+can but may not be a module group.
+Modules can be publish with a license thus license are also part of
+catalog.
+</p>
+<p>The important for <tt>module</tt> description is a link to place
+where the module can be downloaded from
+and a manifest which identifies the module in NetBeans module system (<tt>module</tt>
+can be also
+a localization of some module but about this later).
+</p>
+<p>I hope this caught the relevant components of Update Center
+Descriptor aka catalog.
+</p>
+<p>See as the real-world looks like at <a class="external"
+ href="https://netbeans.org/updates/dev_1.18_.xml">http://www.netbeans.org/updates/dev_1.18_.xml</a>
+</p>
+<h3
+ id="section-UpdateDescriptorSpecification-DescriptionOfEachOneAttribute">
+Description of each one attribute</h3>
+<p>Let's look on the DTD schema of catalog.xml at <a class="external"
+ href="https://netbeans.org/unbranded-source/browse/*checkout*/autoupdate/libsrc/org/netbeans/updater/resources/autoupdate-info-2_4.dtd?rev=1.1">autoupdate-catalog-2_4.dtd</a>
+</p>
+<h4 id="section-UpdateDescriptorSpecification-Module_updates">
+module_updates</h4>
+<p>The root element is <tt>module_updates</tt>:
+</p>
+<pre>&lt;!ELEMENT module_updates ((notification?, (module_group|module)*, license*)|error)&gt;<br>&lt;!ATTLIST module_updates timestamp CDATA #REQUIRED&gt;<br></pre>
+The important (and only one) attribute is <tt>timestamp</tt>. The
+AutoUpdate client checks periodically
+the subscribed Update Center and compares the timestamp of the last
+check and Update Center's timestamp
+thus the attribute decide if the content of the Update Center will be
+read or not.
+<p>As I said above, <tt>module_updates</tt> covers elements:
+</p>
+<ul>
+  <li> <tt>notification</tt> - only one per catalog, </li>
+  <li> several <tt>module_group</tt> or <tt>module</tt> </li>
+  <li> corresponding <tt>license</tt> </li>
+  <li> <tt>error</tt> which is not currently used. </li>
+</ul>
+<h4 id="section-UpdateDescriptorSpecification-Notification">
+notification</h4>
+<pre>&lt;!ELEMENT notification (#PCDATA)&gt;<br>&lt;!ATTLIST notification url CDATA #IMPLIED&gt;<br></pre>
+<p>Why the <tt>Notification</tt> would be needed for? Not much, it's
+more like a workaround
+how to promote users about a special content of the catalog. Or
+additional information
+how to handle the updates. How it works? AutoUpdate client reads the <tt>notification</tt>
+element and immediately displays the Notification dialog with text from
+this element.
+The Show URL button in Notification dialog invokes the URL given by <tt>url</tt>
+attribute.
+As I said before, it's a workaround, not pretty well UI designed. It
+better avoid this way if possible.
+</p>
+<h4 id="section-UpdateDescriptorSpecification-Module_group">
+module_group</h4>
+<p>The modules can be organized in groups, one module group can contain
+an another module group.
+Module groups can create a tree structure.
+</p>
+<pre>&lt;!ELEMENT module_group ((module_group|module)*)&gt;<br>&lt;!ATTLIST module_group name CDATA #REQUIRED&gt;<br></pre>
+<p>The <tt>name</tt> is name of the group, displayed in Update Center
+Wizard.
+</p>
+<h4 id="section-UpdateDescriptorSpecification-Module"> module</h4>
+<p>The module is basic element of Update Center Descriptor. This
+element can represent either module update
+or module's localization. Module update is described by <tt>manifest</tt>
+element, a module localization is described
+by special <tt>l10n</tt> element. Other additional <tt>module</tt>
+sub-element are:
+</p>
+<ul>
+  <li> <tt>description</tt> - only one attribute commonly in use -
+describes the module in Update Center Wizard, </li>
+  <li> <tt>module_notification</tt> - an special module's
+notification, something such as &lt;notification&gt; element but on
+module's level, </li>
+  <li> <tt>external_package</tt> - AFAIK not currently used.
+Undocumented and unsupported. </li>
+</ul>
+<pre>&lt;!ELEMENT module (description?, module_notification?, external_package*, (manifest | l10n) )&gt;
+        <br>&lt;!ATTLIST   module codenamebase CDATA #REQUIRED
+            homepage     CDATA #IMPLIED
+            distribution CDATA #REQUIRED
+            license      CDATA #IMPLIED
+            downloadsize CDATA #REQUIRED
+            needsrestart CDATA #IMPLIED
+            moduleauthor CDATA #IMPLIED
+            releasedate  CDATA #IMPLIED
+            global       CDATA #IMPLIED
+            targetcluster CDATA #IMPLIED&gt;<br></pre>
+<ul>
+  <li> <tt>codenamebase</tt> - the code name of the module, required
+to identification of updates within AutoUpdate framework. </li>
+  <li> <tt>homepage</tt> - URL to module's homepage. When an user
+invokes <tt><b>More</b></tt> button in <tt>Update Center Wizard -
+Select Modules to Install</tt> then this URL is opened in Web browser.
+Not mandatory, if is empty then <tt>More</tt> buttom is disabled. </li>
+  <li> <tt>distribution</tt> - URL to an place where the update (its <b>NBM
+file</b>) is stored. AutoUpdate client will download the update from
+this place. It's mandatory attribute. The URL can link to any server
+w/o restrictions. </li>
+  <li> <tt>license</tt> - name of a license file. The license is
+displayed in the separate window and user has to agree with to continue
+with corresponding update. If more module are under same license (ie.
+have the same license file name) then an user should agree with only
+once within currently running <tt>Update Center Wizard</tt>.
+    <ul>
+      <li> Pay attention to have as same license file name for
+identical licenses. </li>
+      <li> The text of license is search through the current catalog
+(by <tt>lincence</tt> attribute). External links is not supported for
+license files. </li>
+    </ul>
+  </li>
+  <li> <tt>downloadsize</tt> - the declared size of {NBM file} in
+Bytes, shown in the wizard and used by progress bar while downloading. </li>
+  <li> <tt>needsrestart</tt> - boolean attribute which can control if
+the IDE has to be restarted or not after download this update.
+    <ul>
+      <li> the attribute is <b>not required</b>. If it is not present
+then the AutoUpdate client doesn't restart IDE after download updates
+except as follows:
+        <ul>
+          <li> update of some of the <b>already installed</b> module, </li>
+          <li> install into the <b>installation</b> directory (not
+into default user dir) </li>
+        </ul>
+      </li>
+      <li> <tt>true</tt> value forces restart the IDE regardless if
+needed or not </li>
+      <li> <tt>false</tt> is the default and behaves as same as not
+present </li>
+    </ul>
+  </li>
+  <li> <tt>moduleauthor - free name of author of module, shown in the
+*description area* of Update Center Wizard - Select Modules to Install
+if the attribute <tt>moduleauthor</tt> present and not null. <i>Default:
+empty</i> </tt></li>
+  <li><tt> <tt>releasedate</tt> - generated date of module/update
+release. Shown in as same area as <tt>moduleauthor</tt> above. </tt></li>
+  <li><tt> <tt>global</tt> - boolean attribute which can control if
+the module/update will be installed into the installation directory or
+into user's dir </tt>
+<p style="margin-left: 40px;" title="Global versus local installation">
+<tt> <i><img src="tip.gif" alt="Note">Note: the NetBeans installation layout consists from
+several <tt>clusters</tt> (ie. subdirectories of the <tt>NetBeans</tt>
+top level <b>installation</b> home - also called as <b>shared dirs</b>)
+and a special <tt>cluster</tt> for user's settings - called <b>userdir</b>.
+Each module is installed to one of them. The <b>global</b> attribute
+controls where install: userdir or shared dir</i> </tt>
+</p>
+    <ul>
+      <li><tt> the attribute is <b>not required</b>. If it is not
+present then the AutoUpdate client installs all modules or updates into <tt>userdir</tt>
+except as follows: </tt>
+        <ul>
+          <li><tt> the module/update will write into special
+directories <tt>lib</tt> or <tt>core</tt> - it forces installation
+into the shared <tt>platform</tt> cluster ie. global installation </tt></li>
+          <li><tt> an user can choose in <tt>Update Center Wizard</tt>
+if install global or not </tt></li>
+        </ul>
+      </li>
+      <li><tt> <tt>true</tt> value forces global installation, an user
+cannot change it </tt></li>
+      <li><tt> <tt>false</tt> value forces local installation in the
+user dir, an user cannot change it too </tt></li>
+      <li><tt><a href="#what-is-target-cluster">What Is
+Target Cluster?</a></tt></li>
+<br>
+    </ul>
+  </li>
+  <!-- description of attribute: targetcluster See issue 64873. -->
+  <li><tt>targetcluster (<i><img src="warning.gif" alt="Since">Since NB6.0)</i></tt> - name of <b>cluster</b> where new module/update
+will be installed if installation into <b>shared dir</b> is chosen</tt>
+    <ul>
+      <li>the attribute is ignored if local installation (i.e. into <tt>userdir</tt>) chosen</li>
+      <li>the attribute is <b>not required</b>. If it is not
+    present then the AutoUpdate client installs all modules or updates into the first cluster in list of <code>netbeans.dirs</code>
+      </li>
+    </ul>
+  </li>
+<p id="what-is-target-cluster" style="margin-left: 40px;" title="What is target cluster">
+<tt> <i><img src="tip.gif" alt="Note">Note: Clusters in NetBeans installation structure are defined in
+the launcher, the list of cluster can be extended with </i><code>netbeans_extraclusters</code><i> property
+in </i><code>netbeans.conf</code><i>.<br>New Module or Update can declare a target
+cluster where should be installed. Determination which cluster is determine by these rules:
+    <ul><ul>
+        <li>module/update are installed in <code>userdir</code> as default
+        (exceptions are described above), in this case the <code>target cluster</code> is ignored</li>
+        <br>The rest rules are valid only for global installation (needs to speficy by <code><b>global</b></code> attribute):
+        <li>a update of already installed module will be install in as same cluster as original module</li>
+        <li>new module will installed in the <code>target cluster</code></li>
+        <ul>
+            <li>if <code>target cluster</code> is <b>one of defined clusters</b>,
+            if the cluster is defined but doesn't exist then the cluster will be created</li>
+            <li>if <code>target cluster</code> is <b>not defined</b> cluster then
+            it's <b>ignored</b> and the module will be installed into first defined cluster</li>
+        </ul>
+    </ul></ul></i>
+</tt>
+</p>
+</ul>
+<h4 id="section-UpdateDescriptorSpecification-Description"><tt>
+description</tt></h4>
+<pre><tt>&lt;!ELEMENT description (#PCDATA)&gt;<br></tt></pre>
+<p><tt>Text of description showing in Description area in the wizard.
+It this element is missing or it's empty, not worry the long
+description from the <tt>manifest</tt> element is used.
+</tt></p>
+<h4 id="section-UpdateDescriptorSpecification-Module_notification"><tt>
+module_notification</tt></h4>
+<pre><tt>&lt;!ELEMENT module_notification (#PCDATA)&gt;<br></tt></pre>
+<tt>Contains text which is shown in a separate window when this module
+is added between module to install. Can be used to promote any extra
+module's functionality or alert possible problems with module or such
+information. Not wide used in NetBeans Update Center.
+</tt>
+<br>
+<h4 id="section-UpdateDescriptorSpecification-Manifest"><tt> manifest</tt></h4>
+<tt>The key part of each module/update specification. It determines if
+a module will available in the wizard, if can or cannot be installed
+separately, module's dependencies and so on.
+</tt>
+<p><tt>The first important update property is <b>specification version</b>,
+is determining for updates, new module needn't handle it much. The
+update is available if (and only if) have a bigger specification
+version then its module.
+</tt></p>
+<p><tt>If a module have any <b>dependencies</b> then this dependent
+modules are automatically selected together with the module. This
+feature is useful if we want install more modules in a pack e.g. a
+master module and its libraries.
+If any of declared dependencies cannot satisfied by currently installed
+module nor by another modules from <tt>catalog</tt> then the
+AutoUpdate Wizard show a warning about this problem, the wizard allows
+to install this module but it cannot be loaded and enable till missing
+module is available.
+</tt></p>
+<p><tt>The <tt>manifest</tt> element is based on NetBeans Module
+System, the attributes corresponds to identical with attributes in
+NetBeans Modules API, see <a class="external"
+ href="https://netbeans.org/download/dev/javadoc/org-openide-modules/org/openide/modules/doc-files/api.html#how-manifest">how-manifest</a>
+</tt></p>
+<pre><tt>&lt;!ELEMENT manifest EMPTY&gt;<br>&lt;!ATTLIST manifest OpenIDE-Module CDATA #REQUIRED<br>                   OpenIDE-Module-Name CDATA #REQUIRED<br>                   OpenIDE-Module-Specification-Version CDATA #REQUIRED<br>                   OpenIDE-Module-Implementation-Version CDATA #IMPLIED<br>                   OpenIDE-Module-Module-Dependencies CDATA #IMPLIED|<br>                   OpenIDE-Module-Package-Dependencies CDATA #IMPLIED<br>                   OpenIDE-Module-Java-Dependencies CDATA #IMPLIED<br>                   OpenIDE-Module-IDE-Dependencies CDATA #IMPLIED<br>                   OpenIDE-Module-Short-Description CDATA #IMPLIED<br>                   OpenIDE-Module-Long-Description CDATA #IMPLIED<br>                   OpenIDE-Module-Display-Category CDATA #IMPLIED<br>                   OpenIDE-Module-Provides CDATA #IMPLIED<br>                   OpenIDE-Module-Requires CDATA #IMPLIED&gt;<br></tt></pre>
+<p><tt><i>Notes:</i>
+</tt></p>
+<ul>
+  <li><tt> The <tt>manifest</tt> element is nearly a duplicate of the
+really manifest in module's jar file (from the corresponing <tt>NBM</tt>
+file), but this <tt>manifest</tt> element is used by AutoUpdate client
+and <tt>manifest</tt> from the jar file is used by NetBeans Module
+System. <i>It is not forced to be fully identical, if I want to do a
+little hacking the catalog then I just change some attribute to get
+what I want.</i> </tt></li>
+  <li><tt> <tt>OpenIDE-Module-Requires</tt> - it's useful if want to
+distribute a OS specific modules (i.e. operating system specific). If I
+have a module which is aplicable only of Mac platform, just write <tt>org.openide.modules.os.MacOSX</tt>
+in this element. AutoUpdate client reads this and shows a module if
+this requirement is satisfied. For more info see <a class="external"
+ href="https://netbeans.org/download/dev/javadoc/org-openide-modules/org/openide/modules/doc-files/api.html#how-os-specific">how-os-specific</a>.
+    </tt></li>
+  <li><tt> Long-descrption - it's show in the Description area in the
+wizard if <tt>description</tt> element is empty. <i>If do you want to
+add a <tt>HTML</tt> tag into description then add it but remember to
+escape the <span style="font-family: monospace;">&lt;, &gt;, "</span>
+etc.</i> </tt></li>
+</ul>
+<h4 id="section-UpdateDescriptorSpecification-L10n"><tt> l10n</tt></h4>
+<tt>Support for module localization, about this later. See <a
+ href="how-to-do-localization.html">How to Localize</a>.
+</tt>
+<h4 id="section-UpdateDescriptorSpecification-License"><tt> license</tt></h4>
+<p><tt>The license associated to module or update. An user has to agree
+with this license when install it.
+</tt></p>
+<pre><tt>&lt;!ELEMENT license (#PCDATA)&gt;<br>&lt;!ATTLIST license name CDATA #REQUIRED&gt;<br><br></tt></pre>
+<ul>
+  <li><tt> <tt>name</tt> - name of license, used to mapping to <tt>module|license</tt>
+attribute. </tt></li>
+</ul>
+<h4 id="section-UpdateDescriptorSpecification-Errors"><tt> errors</tt></h4>
+<p><tt>Undocumented, unsupported, not used.
+</tt></p>
+<pre><tt>&lt;!ELEMENT error (auth_error|other_error)&gt;<br><br>&lt;!ELEMENT auth_error EMPTY&gt;<br><br>&lt;!ELEMENT other_error EMPTY&gt;<br>&lt;!ATTLIST other_error message CDATA #REQUIRED&gt;<br></tt></pre>
+<tt> <br clear="all">
+</tt>
+<hr><tt><br>
+</tt>
+<br>
+
+<!-- ======================================================================================== -->
+
+<h2><a name="version"></a>Versioning </h2>
+<div class="indent">
+<p>
+
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+   <tr>
+      <td>
+	 1
+      </td>
+      <td>
+         3 March 2006
+      </td>
+      <td>Initial version
+      </td>
+  </tr>
+   <tr>
+      <td>
+	 2
+      </td>
+      <td>
+         4 April 2006
+      </td>
+      <td>New Attribute <code>target cluster</code> - since NB6.0
+      </td>
+  </tr>
+
+  </tbody>
+  </table>
+
+</body>
+</html>

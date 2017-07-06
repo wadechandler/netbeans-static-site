@@ -1,0 +1,321 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <!-- -*- xhtml -*- -->
+        <title>NetBeans Hyperlink Navigation Tutorial</title>
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+        <meta name="AUDIENCE" content="NBUSER"/>
+        <meta name="TYPE" content="ARTICLE"/>
+        <meta name="EXPIRES" content="N"/>
+        <meta name="developer" content="tboudreau@netbeans.org"/>
+        <meta name="indexed" content="y"/>
+        <meta name="description"
+              content="A hyperlink in/to HTML files."/>
+        <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+    <body>
+        <h1>NetBeans Hyperlink Navigation Tutorial</h1>
+
+        <p>In this tutorial, you learn how to programmatically define hyperlinks in HTML files. You will
+            do this by implementing the NetBeans API <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/lib/editor/hyperlink/spi/HyperlinkProvider.html">HyperlinkProvider</a> class.
+            The hyperlink will be visible when the user holds down the Ctrl key and then uses
+            the mouse to move over a predefined identifier in an HTML document, as shown here:</p>
+
+        <p><img alt="" src="../../images/tutorials/hyperlink/hyperlink-69-1.png"/></p>
+
+        <p>When the hyperlink is clicked, something happens relevant to the identifier,
+            for example, a related file can open or a message can be displayed.</p>
+
+        <p>Though the focus of this tutorial is on hyperlinking in an HTML file,
+            the principles shown here could equally be applied to other types of files,
+            such as to Java source files, XML files, JSP files, Properties files, or Manifest files.</p>
+
+        <!-- ===================================================================================== -->
+
+        <p><b class="notes">Note:</b> This document is applicable to NetBeans IDE 7.1 and
+            NetBeans Platform 7.1. If you
+            are using an earlier version, see <a href="../70/nbm-hyperlink.html">the previous version
+                of this document</a>.</p>
+
+        <p><b>Contents</b></p>
+
+        <p><img src="../../images/articles/71/netbeans-stamp.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 7.1" title="Content on this page applies to NetBeans IDE 7.1"/></p>
+        <ul class="toc">
+            <li><a href="#getting">Getting Started</a></li>
+            <li><a href="#implementing">Implementing the HyperlinkProvider Class</a></li>
+            <li><a href="#registering">Registering the HyperlinkProvider Implementation Class</a></li>
+        </ul>
+
+        <p><b>To follow this tutorial, you need the software and resources listed in the following
+                table.</b></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Software or Resource</th>
+                    <th class="tblheader" scope="col">Version Required</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                    <td class="tbltd1">version 7.1 or above</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                    <td class="tbltd1">version 6 or above</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p></p>
+        <h2><a name="getting"></a>Getting Started</h2>
+
+        <p>In this section, we use a wizard to create a module project.
+            We declare dependencies on modules that provide the NetBeans API classes
+            needed by our hyperlink module.</p>
+
+        <ol>
+
+            <li>Choose File &gt; New Project. In the New Project wizard,
+                choose NetBeans Modules under Categories and Module
+                under Projects. Click Next. </li>
+            <li>Type <tt>MySpecialHyperlink</tt> in Project Name
+                and set Project Location to an appropriate folder on your disk. If they
+                are not selected, select
+                Standalone Module and Set as Main Project. Click Next.</li>
+
+            <li>Type <tt>org.netbeans.modules.myspecialhyperlink</tt> in Code Name Base.
+                Click Finish.</li>
+
+            <li>Right-click the MySpecialHyperlink project in the Projects window,
+                choose Properties, click Libraries 
+                in the Project Properties dialog box and add dependencies on the following APIs:
+                <p></p>
+                <ul>
+                    <li>Dialogs API</li>
+                    <li>Editor Library</li>
+                    <li>Editor Library 2</li>
+                    <li>HTML Lexer</li>
+                    <li>Lexer</li>
+                    <li>MIME Lookup API</li>
+                </ul>
+
+            </li>
+
+        </ol>
+
+        <!-- ===================================================================================== -->
+        <h2><a name="implementing"></a>Implementing the HyperlinkProvider Class</h2>
+
+        <p>The <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/lib/editor/hyperlink/spi/HyperlinkProvider.html">HyperlinkProvider</a> class
+            implements three methods, each of which is discussed in detail below, accompanied by a
+            practical example in the context of our module. First we set up the class and then
+            we implement each of the three methods in turn.</p>
+
+        <div class="indent">
+
+            <h3 class="tutorial"><a name="method1"></a>Setting Up the HyperlinkProvider Class</h3>
+
+            <p>Setting up our class means implementing <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/lib/editor/hyperlink/spi/HyperlinkProvider.html">HyperlinkProvider</a>
+                and initializing the values we will need in our implementation.</p>
+
+            <ol>
+
+                <li>Create a Java class in <tt>org.netbeans.modules.myspecialhyperlink</tt>,
+                    and name it <tt>MySpecialHyperlinkProvider</tt>.</li>
+
+                <li>Change the class signature so that <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/lib/editor/hyperlink/spi/HyperlinkProvider.html">org.netbeans.lib.editor.hyperlink.spi.HyperlinkProvider</a></tt> is implemented.</li>
+
+                <li>Note that the following import statements will be needed in this tutorial:
+
+                    <pre class="examplecode">import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.swing.text.Document;
+import org.netbeans.api.editor.mimelookup.MimeRegistration;
+import org.netbeans.api.html.lexer.HTMLTokenId;
+import org.netbeans.api.lexer.Token;
+import org.netbeans.api.lexer.TokenHierarchy;
+import org.netbeans.api.lexer.TokenSequence;
+import org.netbeans.lib.editor.hyperlink.spi.HyperlinkProvider;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;</pre>
+                </li>
+                <li>Add the following initial values at the top of the class:
+
+                    <pre class="examplecode">public static final Pattern MY_SPECIAL_PATTERN =
+    Pattern.compile(".*\\[myspecial:(.*?):myspecial\\].*");
+
+private String target;
+private int targetStart;
+private int targetEnd;</pre></li>
+
+            </ol>
+
+
+        </div>
+
+        <div class="indent">
+
+            <h3 class="tutorial"><a name="method1"></a>isHyperlinkPoint(Document doc, int offset)</h3>
+
+            <p><tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/lib/editor/hyperlink/spi/HyperlinkProvider.html#isHyperlinkPoint(javax.swing.text.Document,%20int)">isHyperlinkPoint(Document doc, int offset)</a></tt>
+                determines whether there should be a hyperlink at the given offset within the given document.</p>
+
+            <pre class="examplecode">@Override
+public boolean isHyperlinkPoint(Document doc, int offset) {
+    return verifyState(doc, offset);
+}
+
+public boolean verifyState(Document doc, int offset) {
+    TokenHierarchy hi = TokenHierarchy.get(doc);
+    TokenSequence&lt;HTMLTokenId&gt; ts = hi.tokenSequence(HTMLTokenId.language());
+    if (ts != null) {
+        ts.move(offset);
+        ts.moveNext();
+        Token&lt;HTMLTokenId&gt; tok = ts.token();
+        int newOffset = ts.offset();
+        String matcherText = tok.text().toString();
+        Matcher m = MY_SPECIAL_PATTERN.matcher(matcherText);
+        if (m.matches()) {
+            target = m.group(1);
+            int idx = matcherText.indexOf(target);
+            targetStart = newOffset + idx;
+            targetEnd = targetStart + target.length();
+            return true;
+        }
+    }
+    return false;
+}</pre>
+
+        </div>
+
+        <div class="indent">
+
+            <h3 class="tutorial"><a name="method2"></a>getHyperlinkSpan(Document doc, int offset)</h3>
+
+            <p><tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/lib/editor/hyperlink/spi/HyperlinkProvider.html#getHyperlinkSpan(javax.swing.text.Document,%20int)">getHyperlinkSpan(Document doc, int offset)</a></tt> determines the length of the hyperlink.</p>
+
+            <pre class="examplecode">@Override
+public int[] getHyperlinkSpan(Document document, int offset) {
+    if (verifyState(document, offset)) {
+        return new int[]{targetStart, targetEnd};
+    } else {
+        return null;
+    }
+}</pre>
+
+        </div>
+
+
+        <div class="indent">
+            <h3 class="tutorial"><a name="method3"></a>performClickAction(Document doc, int offset)</h3>
+
+
+            <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/lib/editor/hyperlink/spi/HyperlinkProvider.html#performClickAction(javax.swing.text.Document,%20int)">performClickAction(Document doc, int offset)</a>
+            determines what happens when the hyperlink is clicked. In general, a document
+            should open, the cursor should move to a certain place in a document, or both.
+            Here a simple message is displayed with the identified special content:
+
+            <pre class="examplecode">@Override
+public void performClickAction(Document document, int offset) {
+    if (verifyState(document, offset)) {
+        NotifyDescriptor.Message msg = new NotifyDescriptor.Message(target);
+        DialogDisplayer.getDefault().notify(msg);
+    }
+}</pre>
+
+
+        </div>
+
+
+        <!-- ===================================================================================== -->
+
+        <h2><a name="registering"></a>Registering the HyperlinkProvider Implementation Class</h2>
+
+        <p>Finally, you need to register the hyperlink provider implementation class. 
+            Do this via the class-level annotation shown in the highlighted line
+            in the completed Java source
+            below:</p>
+
+        <pre class="examplecode">package org.netbeans.modules.myspecialhyperlink;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.swing.text.Document;
+import org.netbeans.api.editor.mimelookup.MimeRegistration;
+import org.netbeans.api.html.lexer.HTMLTokenId;
+import org.netbeans.api.lexer.Token;
+import org.netbeans.api.lexer.TokenHierarchy;
+import org.netbeans.api.lexer.TokenSequence;
+import org.netbeans.lib.editor.hyperlink.spi.HyperlinkProvider;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
+
+<b>@MimeRegistration(mimeType = "text/html", service = HyperlinkProvider.class)</b>
+public class MySpecialHyperlinkProvider implements HyperlinkProvider {
+
+    public static final Pattern MY_SPECIAL_PATTERN =
+            Pattern.compile(".*\\[myspecial:(.*?):myspecial\\].*");
+    private String target;
+    private int targetStart;
+    private int targetEnd;
+
+    @Override
+    public boolean isHyperlinkPoint(Document doc, int offset) {
+        return verifyState(doc, offset);
+    }
+
+    public boolean verifyState(Document doc, int offset) {
+        TokenHierarchy hi = TokenHierarchy.get(doc);
+        TokenSequence&lt;HTMLTokenId&gt; ts = hi.tokenSequence(HTMLTokenId.language());
+        if (ts != null) {
+            ts.move(offset);
+            ts.moveNext();
+            Token&lt;HTMLTokenId&gt; tok = ts.token();
+            int newOffset = ts.offset();
+            String matcherText = tok.text().toString();
+            Matcher m = MY_SPECIAL_PATTERN.matcher(matcherText);
+            if (m.matches()) {
+                target = m.group(1);
+                int idx = matcherText.indexOf(target);
+                targetStart = newOffset + idx;
+                targetEnd = targetStart + target.length();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public int[] getHyperlinkSpan(Document document, int offset) {
+        if (verifyState(document, offset)) {
+            return new int[]{targetStart, targetEnd};
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public void performClickAction(Document document, int offset) {
+        if (verifyState(document, offset)) {
+            NotifyDescriptor.Message msg = new NotifyDescriptor.Message(target);
+            DialogDisplayer.getDefault().notify(msg);
+        }
+    }
+    
+}</pre>
+
+                    <p>If you create a hyperlink for a different MIME type, you need to change the
+                        <tt>text/html</tt> folder in the annotation above to the 
+                        appropriate MIME type. Read <a href="http://blogs.oracle.com/geertjan/entry/hyperlink_in_a_plain_text">Hyperlink in a Plain Text File</a>
+                        to learn about a different implementation of the above class.</p>
+
+                    <p>Now that the HyperlinkProvider is registered, you can run the module and
+                        try out your new hyperlinks. </p>
+
+                    <div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Hyperlink%207.1%20Module%20Tutorial">Send Us Your Feedback</a></div>
+
+                    <!-- ===================================================================================== -->
+
+                    </body>
+                    </html>

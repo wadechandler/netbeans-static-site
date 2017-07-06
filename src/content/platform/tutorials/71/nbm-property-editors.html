@@ -1,0 +1,476 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <!-- -*- xhtml -*- -->
+        <title>NetBeans Property Editor API Tutorial for NetBeans Platform 7.1</title>
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+        <meta name="AUDIENCE" content="NBUSER"/>
+        <meta name="TYPE" content="ARTICLE"/>
+        <meta name="EXPIRES" content="N"/>
+        <meta name="developer" content="tboudreau@netbeans.org"/>
+        <meta name="indexed" content="y"/>
+        <meta name="description"
+              content="Techniques for using property editors in NetBeans."/>
+        <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+    <body>
+        <h1>NetBeans Property Editor Tutorial</h1>
+
+        <p>This tutorial shows techniques for using property editors in 
+            NetBeans, including providing custom editors and custom inplace editors. Specifically,
+            the following will be covered:</p>
+
+        <ul>
+            <li>Providing your own property editor for an individual Node</li>
+            <li>Creating a custom editor</li>
+            <li>Creating a custom inplace editor</li>
+            <li>Registering a custom property editor globally</li>
+        </ul>
+
+        <p><strong class="notes">Note: </strong>This document uses NetBeans Platform 7.1 and
+            NetBeans IDE 7.1. If you
+            are using an earlier version, see <a href="../70/nbm-nodesapi2.html">the previous version
+                of this document</a>.</p>
+
+        <p><b>Contents</b></p>
+        <p><img src="../../images/articles/71/netbeans-stamp.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 7.1" title="Content on this page applies to NetBeans IDE 7.1"/></p>
+        <ul class="toc">
+            <li><a href="#custom-editors">Introduction to Custom Property Editors</a></li>
+            <li><a href="#creating-custom-editor">Creating a Property Editor</a></li>
+            <li><a href="#customEditor">Creating a Custom Editor</a></li>
+            <li><a href="#inplace-editor">Creating a Custom Inplace Editor</a></li>
+            <li><a href="#registering">Registering DatePropertyEditor Globally</a></li>
+            <li><a href="#propertypanel">Using PropertyPanel</a></li>
+        </ul>
+
+        <p><b>To follow this tutorial, you need the software and resources listed in the following 
+                table.</b></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Software or Resource</th>
+                    <th class="tblheader" scope="col">Version Required</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                    <td class="tbltd1">version 7.1 or above</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                    <td class="tbltd1">version 6 or above</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>Related community tutorials:</p>
+        <ul>
+            <li><a href="http://netbeans.dzone.com/nb-custom-float-propertyeditor">Custom Float Property Editor (1)</a></li>
+            <li><a href="http://netbeans.dzone.com/nb-custom-float-propertyeditor-2">Custom Float Property Editor (2)</a></li>
+        </ul>
+
+        <!-- ===================================================================================== -->
+        <h2><a name="custom-editors"></a>Introduction to Custom Property Editors</h2>
+        <p>Often you may have a property for which either the standard property editor is not
+            sufficient, or the property type is a class for which there is no standard 
+            property editor.  NetBeans IDE contains classes for many common Java 
+            types, but every possible need cannot be covered by a set of generic property
+            editors.</p>
+
+
+        <p>This tutorial is intended as a follow-on to these preceding tutorials, and its
+            code is based on the code from them:</p>
+        <ul>
+            <li><a href="nbm-selection-1.html">Selection Management Tutorial I&#8212;Using a TopComponent's Lookup</a></li>
+            <li><a href="nbm-selection-2.html">NetBeans Selection Management Tutorial II&#8212;Using Nodes</a></li>
+            <li><a href="nbm-nodesapi2.html">Using the Nodes API</a></li>
+        </ul>
+
+        <p>
+            You'll pick up where you left off in the previous tutorial, with the class <code>EventNode</code>,
+            which wraps an <code>Event</code> object, and offers a read-only property for 
+            its <code>index</code> property and a read/write one for its <code>date</code>
+            property.</p>
+
+        <h2><a name="creating-custom-editor"></a>Creating a Property Editor</h2>
+
+        <p>The basics of creating a property editor are pretty simple.  The JavaBeans API
+            offers a base class, <code>PropertyEditorSupport</code>, which covers most of 
+            the basics, and can be used to create a simple property editor with little work.</p>
+
+        <p>Property editors serve two purposes&#8212;converting values to and from strings
+            for display in the property sheet, and validating new values when they are set.
+            To start out, you will create a property editor which simply provides and accepts a differently
+            formatted date.</p>
+
+        <ol>
+            <li>Right click the <code>org.myorg.myeditor</code> package, and choose 
+                New &gt; Java Class.  In the wizard, name the class <code>DatePropertyEditor</code>.</li>
+            <li>In the code editor, change the class signature to extend 
+                <code>PropertyEditorSupport</code>:
+                <pre class="examplecode">public class DatePropertyEditor extends PropertyEditorSupport {</pre>
+            </li>
+            <li>Implement <code>setAsText()</code> and <code>getAsText()</code> as follows:
+                <pre class="examplecode">@Override
+public String getAsText() {
+    Date d = (Date) getValue();
+    if (d == null) {
+        return "No Date Set";
+    }
+    return new SimpleDateFormat("MM/dd/yy HH:mm:ss").format(d);
+}
+
+@Override
+public void setAsText(String s) {
+    try {
+        setValue (new SimpleDateFormat("MM/dd/yy HH:mm:ss").parse(s));
+    } catch (ParseException pe) {
+        IllegalArgumentException iae = new IllegalArgumentException ("Could not parse date");
+        throw iae;
+    }
+}</pre>
+            </li>
+            <li>Open <code>EventNode</code> in the code editor.  Change the line that
+                declares <code>dateProperty</code> so that the variable is declared as
+                <code>PropertySupport.Reflection</code> rather than <code>Property</code>.
+                You will be calling a method specific to <code>PropertySupport.Reflection</code>:
+                <pre class="examplecode">PropertySupport.Reflection dateProp = new PropertySupport.Reflection(obj, Date.class, "date");</pre>
+            </li>
+            <li>Insert a new line after that line:
+                <pre class="examplecode">dateProp.setPropertyEditorClass(DatePropertyEditor.class);</pre>
+            </li>
+            <li><p>Run the Event Manager, use Window &gt; Open Editor to open your editor
+                    component, and note the new format of the Date property, as shown here:</p>
+                <img alt="" src="../../images/tutorials/custom-editors/71/changed-date-71.png"/>
+
+            </li>
+        </ol>
+
+        <h2><a name="customEditor"></a>Creating a Custom Editor</h2>
+        <p>Another basic feature of standard <code>java.beans.PropertyEditor</code>s is 
+            the ability to have a &quot;custom editor&quot;, which usually appears in a 
+            dialog when you click a &quot;...&quot; button beside the property in the 
+            property sheet.</p>
+
+        <p>Going into the details of implementing such an editor is out of scope for
+            this tutorial, but here are the basics:</p>
+
+        <ol>
+            <li>Implement the following two methods on <code>DatePropertyEditor</code>:
+                <pre class="examplecode">@Override
+public Component getCustomEditor() {
+    return new JLabel ("I want to be a custom editor");
+}
+
+@Override
+public boolean supportsCustomEditor() {
+    return true;
+}
+                </pre> 
+            </li>
+            <li><p>Run the Event Manager, and now you have a &quot;...&quot; button beside the
+                    property in the property sheet, as shown below:</p>
+                <p><img alt="" src="../../images/tutorials/custom-editors/71/custom-editor-71-1.png"/></p>
+                <p>Click it, and your JLabel appears:</p>
+                <p><img alt="" src="../../images/tutorials/custom-editors/71/custom-editor-71-2.png"/></p>
+
+                <p>If you were doing this for real, you would create a JPanel, and embed some
+                    sort of calendar and/or clock component to make it easy to set the 
+                    properties;  the code necessary to do it right would be a distraction here.</p></li>
+
+            <li>Remove the above two methods before continuing.</li>
+
+        </ol>
+
+        <h2><a name="inplace-editor"></a>Creating a Custom Inplace Editor</h2>
+        <p>What would be really useful is to have a better date editor embedded in the
+            property sheet itself.  NetBeans has an API that makes this possible.  It 
+            involves a bit of code, but the result is worth it.</p>
+        <p>
+            Since the SwingX project includes a nice date picker component, you will simply reuse that.
+            So the first thing you need to do is to get SwingX into the Event Manager. Since NetBeans
+            IDE bundles SwingX, we will get the swingx.jar by browsing into the NetBeans IDE installation
+            directory and creating a new module from the swingx.jar that we will find there.</p>
+
+        <ol>
+            <li><p>Expand the Event Manager, right-click the Modules node, and choose Add New Library,
+                    as shown here:</p>
+                <p>
+                    <img alt="" src="../../images/tutorials/custom-editors/71/library-wrapper-71.png"/></p>
+            </li>
+            <li>Browse for <code>swingx-0.9.5.jar</code> (or whatever version of the JAR is available)
+                in "ide/modules/ext" in
+                the NetBeans IDE installation directory. Click Next.</li>
+            <li>Click Next again, set the code name base to <tt>org.jdesktop.swingx</tt>,
+                and then click Finish.</li>
+            <li>Right click the My Editor project node in the Projects tab in the 
+                main window, and choose Properties.</li>
+            <li>In the Libraries page, click the Add Dependency button, and add a dependency
+                on your new "swingx" module.</li>
+        </ol>
+
+        <p>Now you are ready to make use of the date picker.  This will involve implementing
+            a couple of NetBeans-specific interfaces:</p>
+        <ul>
+            <li>ExPropertyEditor&#8212;a property editor interface through which the 
+                property sheet can pass an &quot;environment&quot; (<code>PropertyEnv</code>)
+                object that gives the editor access to the <code>Property</code> object it
+                is editing and more.</li>
+            <li>InplaceEditor.Factory&#8212;an interface for objects that own an 
+                <code>InplaceEditor</code></li>
+            <li>InplaceEditor&#8212;an interface that allows a custom component to be
+                provided for display in the property sheet.</li>
+        </ul>
+
+        <p>You will implement <code>InplaceEditor.Factory</code> and <code>ExPropertyEditor</code>
+            directly on <code>DatePropertyEditor</code>, and then create an <code>InplaceEditor</code>
+            nested class:</p>
+
+        <ol>
+            <li>Change the signature of <code>DatePropertyEditor</code> as follows:
+<pre class="examplecode">public class DatePropertyEditor extends PropertyEditorSupport implements ExPropertyEditor, InplaceEditor.Factory {</pre>
+            </li>
+            <li><p>As in earlier examples, press Ctrl-Shift-I to Fix Imports and then
+                    use the &quot;Implement All Abstract Methods&quot; to cause the missing methods to
+                    be added.</p></li>
+            <li>Add the following methods to <code>DatePropertyEditor</code>:
+                <pre class="examplecode">@Override
+public void attachEnv(PropertyEnv env) {
+    env.registerInplaceEditorFactory(this);
+}
+
+private InplaceEditor ed = null;
+
+@Override
+public InplaceEditor getInplaceEditor() {
+    if (ed == null) {
+        ed = new Inplace();
+    }
+    return ed;
+}</pre>
+            </li>
+            <li>Now you need to implement the <code>InplaceEditor</code> itself.  This will be 
+                an object that owns a swingx <code>JXDatePicker</code> component, and some
+                plumbing methods to set up its value, and dispose of resources when it is no 
+                longer in use.
+                It requires a bit of code, but it's all quite straightforward.  Just 
+                create <code>Inplace</code> as
+                a static nested class inside <code>DatePropertyEditor</code>:
+<pre class="examplecode">private static class Inplace implements InplaceEditor {
+
+    private final JXDatePicker picker = new JXDatePicker();
+    private PropertyEditor editor = null;
+
+    @Override
+    public void connect(PropertyEditor propertyEditor, PropertyEnv env) {
+        editor = propertyEditor;
+        reset();
+    }
+
+    @Override
+    public JComponent getComponent() {
+        return picker;
+    }
+
+    @Override
+    public void clear() {
+        //avoid memory leaks:
+        editor = null;
+        model = null;
+    }
+
+    @Override
+    public Object getValue() {
+        return picker.getDate();
+    }
+
+    @Override
+    public void setValue(Object object) {
+        picker.setDate((Date) object);
+    }
+
+    @Override
+    public boolean supportsTextEntry() {
+        return true;
+    }
+
+    @Override
+    public void reset() {
+        Date d = (Date) editor.getValue();
+        if (d != null) {
+            picker.setDate(d);
+        }
+    }
+
+    @Override
+    public KeyStroke[] getKeyStrokes() {
+        return new KeyStroke[0];
+    }
+
+    @Override
+    public PropertyEditor getPropertyEditor() {
+        return editor;
+    }
+
+    @Override
+    public PropertyModel getPropertyModel() {
+        return model;
+    }
+
+    private PropertyModel model;
+
+    @Override
+    public void setPropertyModel(PropertyModel propertyModel) {
+        this.model = propertyModel;
+    }
+
+    @Override
+    public boolean isKnownComponent(Component component) {
+        return component == picker || picker.isAncestorOf(component);
+    }
+
+    @Override
+    public void addActionListener(ActionListener actionListener) {
+        //do nothing - not needed for this component
+    }
+
+    @Override
+    public void removeActionListener(ActionListener actionListener) {
+        //do nothing - not needed for this component
+    }
+
+}</pre>
+            </li>
+            <li><p>If you haven't already, press Ctrl-Shift-I to Fix Imports.</p></li>
+            <li><p>Run the Event Manager again, use Window &gt; Open Editor to open your
+                    editor (really it's not much of an editor anymore), select an instance
+                    of <code>EventNode</code> and click the value of the date property in
+                    the property sheet.  Notice that the date picker popup appears, and
+                    behaves exactly as it should, as shown below:</p>
+
+                <p>
+                    <img alt="" src="../../images/tutorials/custom-editors/71/custom-editor-71-3.png"/></p>
+            </li>
+        </ol>
+
+
+        <h2><a name="registering"></a>Registering DatePropertyEditor Globally</h2>
+        <p>Often it is useful to register a property editor to be used for all properties
+            of a given type.  Indeed, your <code>DatePropertyEditor</code> is generally
+            useful for any property of the type <code>java.util.Date</code>.  While usefulness
+            is not the primary determinant of whether such a property editor should be 
+            registered, if your application or module will regularly deal with Date properties,
+            it might be useful to do so.</p>
+        <p>Here is how to register <code>DatePropertyEditor</code>
+            so that any property of the type <code>java.util.Date</code> will use <code>DatePropertyEditor</code>
+            in the property sheet:</p>
+
+        <ol>
+            <li>Right click the <code>org.myorg.myeditor</code> package in the My Editor
+                project and choose New &gt; Other.  Under the NetBeans Module Development
+                category, select Module Installer. Click Finish.  A
+                subclass of <code>org.openide.modules.ModuleInstall</code> will be created for
+                you&#8212;this class contains code that will run during startup.
+            </li>
+            <li>Implement the <code>restored()</code> method, which is run during startup,
+                as follows:
+                <pre class="examplecode">public void restored() {
+    PropertyEditorManager.registerEditor(Date.class, DatePropertyEditor.class);
+}</pre>
+                This code will register your custom <code>DatePropertyEditor</code> as the default editor
+                for all properties of the type <code>java.util.Date</code> throughout the system.
+            </li>
+            <li>Press Ctrl-Shift-I to Fix Imports.</li>
+        </ol>    
+
+        <p>Remember, you should only do this if you really need to&#8212;<code>ModuleInstall</code>
+            classes slow down application startup, because they mean more code has to run
+            during startup.  So where possible they should be avoided.  If you do need to 
+            register a lot of property editors, though, it may make sense to aggregate them
+            in a single module that registers them during startup.</p>  
+        <p>If the type you want to provide a property editor for is in your module, it may
+            be preferable to place the registration code in a static block that will be 
+            invoked when that class is loaded, e.g.</p>
+        <pre class="examplecode">public class Foo {
+
+    static {
+         PropertyEditorManager.registerEditor(Foo.class, FooEditor.class);
+    }
+    //...</pre>
+        <blockquote>
+            <p><font color="red"><b>Caveat:</b> If you are not sure your property editor
+                    will be used during a typical session, a better technique may be to use 
+                    <code>PropertyEditorManager.setEditorSearchPath()</code>, adding your package
+                    to the array of packages returned by 
+                    <code>PropertyEditorManager.getEditorSearchPath()</code>.  The above code will
+                    cause <code>FooEditor.class</code> to be loaded into memory&#8212;this is paying
+                    a price of about 1K of memory for something that will not be used.  For one
+                    or two property editors, this is probably acceptable;  for more, it is preferable
+                    to aggregate all of your property editors into one package, name the classes
+                    appropriately and register that package is being on the search path.  For 
+                    more information on registering property editors, see the javadoc for 
+                    <code><a href="http://java.sun.com/j2se/1.4.2/docs/api/java/beans/PropertyEditorManager.html">PropertyEditorManager</a></code>.
+
+                </font></p>
+        </blockquote>
+
+        <h2><a name="propertypanel"></a>Using PropertyPanel</h2>
+
+        <p>While you won't cover it in great detail, it is worth mentioning that the property
+            sheet is not the only place that <code>Node.Property</code> objects are useful;
+            there is also a convenient UI class in the <code>org.openide.explorer.PropertySheet</code>
+            class called <code>PropertyPanel</code>.  It's function is to display one property,
+            much as it is displayed in the property sheet, providing an editor field and a
+            custom editor button, or you have called 
+            <code>somePropertyPanel.setPreferences(PropertyPanel.PREF_CUSTOM_EDITOR)</code>,
+            it will display the custom editor for a <code>Property</code>.  It is useful as
+            a convenient way to get an appropriate UI component for editing any getter/setter
+            pair for which there is a property editor.</p>
+
+        <!--
+        <h2><a name="propertypanel"></a>Using PropertyPanel</h2>
+        The property sheet is not the only place <code>Node.Property</code>s are 
+        useful:  There is also a convenient UI class in the <code>org.openide.explorer.PropertySheet</code>
+        class called <code>PropertyPanel</code>.  It's function is to display one property,
+        much as it is displayed in the property sheet, providing an editor field and a
+        custom editor button.  So for the final exercise, you will modify the <code>MyViewer</code>
+        component (which is now nearly superfluous, since the property sheet now does
+        everything it did) to use <code>PropertyPanel</code> to show one property of
+        the currently selected <code>EventNode</code>.
+        
+        <ol>
+            <li>Right-click the My Viewer project and choose Properties from the popup
+            menu</li>
+            <li>On the Libraries page, click the Add button.  In the resulting dialog,
+            type PropertyPanel.  The dialog should auto-select &quot;Explorer and Property Sheet API&quot;.
+            When it does, press Enter or click OK to add the dependency.  The My Viewer
+            module can now refer to classes in the property sheet API.
+            </li>
+            <li>Click the Add button once more, and type &quot;AbstractNode&quot; and
+            add a dependency on the Nodes API from My Viewer&#8212;you will be needing 
+            that momentarily</li>
+            <li>Open <code>MyViewerTopComponent</code> in Matisse, the form editor.</li>
+            <li>Select all of the components in <code>MyViewerTopComponent</code> and 
+            delete them</li>
+            <li>In the Component Inspector, right-click the node labeled &quot;TopComponent&quot;
+            and choose Set Layout &gt; FlowLayout from the popup menu.</li>
+            <li>Press the Code button in the editor toolbar to switch to the code editor</li>
+            <li>Add the following line to the head of the class definition, so it appears thusly:
+            <pre class=examplecode>
+        public final class MyViewerTopComponent extends TopComponent implements LookupListener {
+            private final PropertyPanel pnl;
+            </pre>
+            </li>
+            <li>Add the following line at the end of the constructor:
+            <pre class=examplecode>
+                add (pnl = new PropertyPanel());
+            </pre>
+            </li>
+        -->
+        <!--</ol>-->
+
+        <div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Property%20Editor%207.1%20Tutorial">Send Us Your Feedback</a></div>
+
+    </body>
+</html>

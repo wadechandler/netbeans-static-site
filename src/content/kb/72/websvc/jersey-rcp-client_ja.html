@@ -1,0 +1,201 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head><link rel="stylesheet" href="../../../print.css" type="text/css" media="print">
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+    <title>NetBeansモジュールでのRESTfulサービス・クライアントの作成 - NetBeans IDEチュートリアル</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="KEYWORDS" content="NETBEANS, TUTORIAL, GUIDE, USER, DOCUMENTATION, WEB SERVICE, WEB SERVICES, REST, RESTFUL">
+    <meta name="description"
+          content="Use NetBeans IDE's built-in Jersey RESTful webservice support to create a RESTful 
+          service client inside a NetBeans module or Java application.">
+<link rel="stylesheet" href="../../../netbeans.css"></head>
+<body>
+    <h1>NetBeansモジュールでのRESTfulサービス・クライアントの作成</h1>
+    
+    <p>NetBeans IDE 6.9より、NetBeansモジュール・プロジェクトでRESTがネイティブ・サポートされます。そのため、NetBeansモジュールでRESTfulクライアント・コードを直接生成できるようになります。また、Jersey RESTfulクライアント・コードをJavaまたはアプリケーションに挿入できます。 </p>
+<p>このチュートリアルでは、TwitterのWhat Are You Doingサービスを使用するNetBeansプラットフォーム・アプリケーションを作成し、Twitterの友達のステータス・メッセージ一覧を表示します。最初に、プラットフォーム・アプリケーションを作成します。このアプリケーションで必要となるライブラリを選択します。次に、NetBeansモジュールを作成します。最後に、RESTfulクライアントといくつかの基本的な表示要素をモジュールに追加します。クライアントは、OAuth認証を使用します。</p>
+<p><b>目次</b></p>
+    <img alt="このページの内容は、NetBeans IDE 6.9から7.1に適用されます" class="stamp" src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" title="このページの内容は、NetBeans IDE 6.9から7.1に適用されます">
+    <ul>
+        <!--    <li><a href="#Exercise_0">Exercise 0: Install and configure the tutorial environment</a></li>-->
+        <li><a href="#create-platform-app">プラットフォーム・アプリケーションの作成</a></li>
+        <li><a href="#create-module">クライアント・モジュールの作成</a></li>
+        <li><a href="#design-window">ウィンドウのデザイン</a></li>
+        <li><a href="#more-exercises">その他の課題</a></li>
+        <li><a href="#seealso">関連項目</a></li>
+    </ul>
+    
+    
+    
+<p><b>このチュートリアルに従うには、次のソフトウェアとリソースが必要です。</b></p>
+    
+    <table>
+  <tbody>
+            <tr>
+                <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                <th class="tblheader" scope="col">必須バージョン</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html" target="_blank">NetBeans IDE</a></td>
+                <td class="tbltd1">Java EEダウンロード・バンドル</td>
+          </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html" target="_blank">Java Development Kit (JDK)</a></td>
+                <td class="tbltd1">バージョン6またはバージョン7</td>
+          </tr>               
+            
+            
+      </tbody>
+    </table>
+<h2><a name="create-platform-app"></a>プラットフォーム・アプリケーションの作成</h2>
+    <p>NetBeansプラットフォーム・アプリケーションにはNetBeans IDEライブラリを追加できます。この項では、プラットフォーム・アプリケーションを作成し、必要なライブラリを追加します。</p>
+    <p>&nbsp;</p>
+    <p><strong>モジュール・スイートを作成するには:</strong></p>
+    <ol>
+      <li>「ファイル」>「新規プロジェクト」(LinuxおよびWindowsでは[Ctrl]-[Shift]-[N]、MacOSでは[⌘]-[Shift]-[N])をクリックします。新規プロジェクト・ウィザードが開きます。</li>
+      <li>「NetBeansモジュール」カテゴリを選択します。次に、「NetBeansプラットフォーム・アプリケーション・プロジェクト」を選択します。「次」をクリックします。</li>
+      <li>プロジェクトに「RestfulClientPlatformApp」という名前を付けます。プロジェクトの場所を選択します。その他のデフォルト設定を受け入れ、「終了」をクリックします。「プロジェクト」ウィンドウにRestfulClientPlatformAppプロジェクトが表示されます。</li>
+      <li>「プロジェクト」ウィンドウで「RestfulClientPlatformApp」プロジェクト・ノードを右クリックし、「プロパティ」を選択します。「プロパティ」ダイアログが開きます。</li>
+      <li>「プロジェクト・プロパティ」ダイアログで「ライブラリ」を選択します。プラットフォームのライブラリのみが表示されることに注意してください。</li>
+      <li>「enterprise」ライブラリを展開します。「RESTful Webサービス・ライブラリ」の「含む」ボックスを選択します。<br><img alt="「RESTful Webサービス・ライブラリ」を含むように選択した状態を示すスイートのプロパティ" class="margin-around" src="../../../images_www/articles/73/websvc/jersey-rcp-client/suite-rest-libraries.png"></li>
+      <li>「解決」ボタンが赤色で強調表示されます。これは、RESTful Webサービス・ライブラリが、このスイートに含まれていない他のライブラリに依存しているためです。「解決」ボタンをクリックして、それらのライブラリを含めます。</li>
+      <li>「OK」をクリックします。プラットフォーム・アプリケーションで、クライアント・モジュールを作成する準備ができました。</li>
+</ol>
+    <h2><a name="create-module"></a>クライアント・モジュールの作成</h2>
+<p>TwitterのWhat Are You Doingサービスを使用するためのクライアントとして機能するモジュールは、わずかな手順で作成できます。Twitterサービスは、追加設定なしの状態でNetBeans IDE Webサービス・マネージャに登録されています。別の機能を追加できます。</p>
+<p><strong>モジュールを作成してクライアント機能を追加するには:</strong></p>
+<ol>
+  <li>「プロジェクト」ウィンドウで、「RestfulClientPlatformApp」の「モジュール」サブノードを右クリックして「新規を追加...」を選択します。新規モジュール・プロジェクト・ウィザードが開きます。</li>
+  <li>モジュールにTwitterClientModuleという名前を付けます。その他のフィールドはデフォルトの設定を受け入れ、「次」をクリックします。「基本モジュール構成」パネルが開きます。</li>
+  <li>「コード名ベース」に、「<tt>org.my.twitter.friends</tt>」など任意の名前を入力します。その他のフィールドはデフォルトの設定を受け入れ、「終了」をクリックします。「プロジェクト」ウィンドウで、TwitterClientModuleがプラットフォーム・アプリケーションの「モジュール」ノードに表示されます。</li>
+  <li>「TwitterClientModule」ノードを右クリックし、「プロジェクトを開く」を選択します。「TwitterClientModule」ノードが、「プロジェクト」ウィンドウのルート・レベルに表示されるようになります。<br><img alt="「TwitterClientModule」ルート・ノードが表示された「プロジェクト」ウィンドウ" class="margin-around" src="../../../images_www/articles/73/websvc/jersey-rcp-client/module-root-node.png"></li>
+  <li>新しいルート・レベルの「TwitterClientModule」ノードを選択します。新規ファイル・ウィザードを起動します([Ctrl]-[N]/[⌘]-[N]、「新規ファイル」アイコン、またはノードのコンテキスト・メニュー)。 </li>
+  <li>新規ファイル・ウィザードで、「Webサービス」カテゴリおよび「RESTful Javaクライアント」ファイル・タイプを選択します。「次」をクリックします。「新規RESTful Javaクライアント」パネルが開きます。</li>
+  <li>クラスにTwitterClientという名前を付け、パッケージに任意の名前を付けるか、以前に作成したコード名ベースを選択します。<br><img alt="クラスとパッケージ名を示す新規RESTfulクライアント・ウィザード" class="margin-around" src="../../../images_www/articles/73/websvc/jersey-rcp-client/new-rest-client-wiz-noresource.png"></li>
+  <li>「RESTリソースを選択」で、「IDE登録済み」を選択します。「参照」をクリックし、「Twitter」>「Twitter OAuth」>「[statuses]」>「[friends_timeline.{format}]」を表示します。このリソースを選択し、「OK」をクリックします。<br><img alt="「使用可能なRESTリソース」ダイアログで選択されたfriends_timelineのRESTリソース" class="margin-around" src="../../../images_www/articles/73/websvc/jersey-rcp-client/browse-rest-resources.png">
+  <p class="notes"><strong>注意:</strong> 追加のWebサービスをIDEに登録できます。「サービス」ウィンドウに移動し、「Webサービス」ノードを右クリックし、「Webサービスを追加」を選択します。ローカル・ファイルまたはRESTful URLを追加できます。<br><img alt="「サービス」ウィンドウでのWebサービス・マネージャの「Webサービスの追加」オプション" class="margin-around b-right b-bottom" src="../../../images_www/articles/73/websvc/jersey-rcp-client/register-ws.png"></p></li>
+  <li>認証タイプとして「OAuth」が自動的に選択されます。デフォルトをすべて受け入れ、「終了」をクリックします。<br><img alt="完了した新規RESTfulクライアント・ウィザード" class="margin-around" src="../../../images_www/articles/73/websvc/jersey-rcp-client/new-rest-client-wiz-complete.png"></li>
+  <li>警告ダイアログが表示されます。このダイアログで、WADLファイルのXMLスキーマ参照からJavaアーティファクトを生成するかどうかを質問されます。「はい」をクリックします。</li>
+  <li>さらに、クラスパスにモジュールを追加することを求める警告が表示されることがあります。「OK」をクリックします。<br><img alt="依存性の不足に関する「警告」ダイアログ" class="margin-around" src="../../../images_www/articles/73/websvc/jersey-rcp-client/dependencies-warning.png"></li>
+  <li>クラスパスにモジュールを追加する必要がある場合は、「TwitterClientModule」ノードを右クリックして「プロジェクト・プロパティ」を開きます。「ライブラリ」セクションに移動し、「依存性の追加」ボタンでモジュールを追加します。このボタンを押すと、モジュールの依存性を参照できる一覧が開きます。<br><img alt="TwitterClientModuleのプロパティ・ウィンドウの「ライブラリ」セクション" class="margin-around" src="../../../images_www/articles/73/websvc/jersey-rcp-client/add-dependencies.png"></li>
+</ol>
+<p>TwitterClientクラスが生成され、エディタで開きます。TwitterClientクラスは複雑で、次のフィールド、メソッドおよび内部クラスを含んでいます。</p>
+<ul>
+  <li><tt>CONSUMER_KEY</tt>: Consumer Key文字列</li>
+  <li><tt>CONSUMER_SECRET</tt>: Consumer Secret文字列</li>
+  <li><tt>initOAuth()</tt>: OAuh初期化のメソッド</li>
+  <li><tt>getFriendsTimeline()</tt>: HTTPメソッドに対応するメソッド: getFriendsTimeline (RESTリソースから) </li>
+  <li><tt>makeOAuthRequestUnique()</tt>: 1つのセッションでの複数のAPIコールに有用</li>
+  <li><tt>login</tt>: Twitterアプリケーションへのログインに使用(認証を強制)。このメソッドは、もう2つの生成されたメソッド(<tt>getOAuthAccessToken</tt>および<tt>getOAuthRequestToken</tt>)をコールします。</li>
+</ul>
+<p> 次に、TwitterからOAuthキーを取得してTwitterClientに追加します。</p>
+<h2>TwitterからのOAuthキーの取得</h2>
+<p>NetBeansプラットフォーム・アプリケーションがTwitterのデータにアクセスできるようにするには、確認文字列に加えてCUSTOMERおよびCUSTOMER_SECRETキーをTwitterから取得する必要があります。Twitterは、これらのキーを必要とするOAuth認証を使用しています。しかし、OAuthはサーバー上のWebアプリケーションによってコールされる前提で設定されています。認証キーを取得するために、「仮の」Webアプリケーションを登録します。</p>
+
+  <p><b>TwitterからOAuthキーを取得するには:</b></p>
+  <ol>
+  <li>ブラウザを開きます。<a href="http://twitter.com/apps" target="_blank">「Twitter」>「アプリケーション」</a>ページに移動し、「<a href="http://twitter.com/apps/new" target="_blank">新しいアプリケーションを追加</a>」をクリックします。Twitterアカウントにログインしている必要があります。複数のアカウントがある場合は、正しいアカウントにログインしていることを確認してください。</li>
+  
+  <li>「<strong>アプリケーション名</strong>」テキスト・フィールドに「<tt>NB Platform Friends Application</tt>」と入力します。</li>
+  
+  <li>「<strong>アプリケーションの説明</strong>」フィールドに説明を入力します。これは必須です。「friends_timeline操作をコールするNetBeansプラットフォーム・アプリケーション」などのように入力できます。</li>
+  <li>「<strong>アプリケーションのウェブ・サイトURL</strong>」フィールドに任意のURLを入力します。</li>
+  <li>「<strong>アプリケーションの種類</strong>」オプションで「クライアント・アプリケーション」ラジオ・ボタンを選択します。</li>
+
+  <li>「<strong>標準のアクセス・タイプ</strong>」オプションで、「読取りおよび書込み」のラジオ・ボタンを選択します。 </li>
+  <li>他のオプションをデフォルトのままにして「保存する」を押します。登録したアプリケーションの詳細が記載されたブラウザ・ページが開きます。重要な詳細情報は<strong>Consumer key</strong>および<strong>Consumer secret</strong>です。</li>
+  <li>ブラウザからConsumer keyをコピーします。IDEで、<tt>CONSUMER_KEY</tt>が設定されている行を見つけます。引用符の間にConsumer keyの値を貼り付けます。<br><img alt="CONSUMER_KEYおよびCONSUMER_SECRETの場所を示すTwitterClient" class="margin-around" src="../../../images_www/articles/73/websvc/jersey-rcp-client/keys-in-twitter-client.png"></li>
+  <li>Consumer secret keyをブラウザからTwitterClientにコピーして貼り付けます。変更を保存します。</li>
+</ol>
+  
+<h2><a name="design-window"></a>ウィンドウのデザイン</h2>
+<p>プロジェクトを完成させるために、ウィンドウを追加します。このウィンドウにUIコンポーネントを実装し、ボタンをクリックすると友達のステータス一覧が表示されるなどのアクションを追加します。</p>
+<p><strong>ウィンドウをデザインするには:</strong></p>
+<ol>
+  <li>「プロジェクト」ウィンドウで、モジュールのノードを右クリックし、「新規」>「ウィンドウ」を選択します。新規ウィンドウ・ウィザードが開き、「基本設定」パネルが表示されます。</li>
+  <li>「基本設定」パネルの「ウィンドウの位置」で「<tt>editor</tt>」を選択し、「アプリケーションの起動時に開く」を選択して、「次」をクリックします。「名前、アイコン、および場所」パネルが開きます。</li>
+  <li>「クラス名の接頭辞」フィールドに「<tt>twitterFriendsStatus</tt>」と入力します。「<tt>org.my.twitter.friends</tt>」パッケージを選択します。「終了」をクリックします。<br><img alt="クラス名の接頭辞とパッケージ名が表示された新規ウィンドウ・ウィザードの「名前、アイコン、および場所」パネル" class="margin-around" src="../../../images_www/articles/73/websvc/jersey-rcp-client/new-window-wiz.png"></li>
+  <li><tt>twitterFriendsStatusTopComponent</tt>ファイルが「デザイン」ビューに開きます。右側にSwingのUIコンポーネントのパレットが表示されます。<br><img alt="新しいウィンドウの「デザイン」ビューとSwingコンポーネントのパレットで、コンポーネントがまだ追加されていない状態" class="margin-around" src="../../../images_www/articles/73/websvc/jersey-rcp-client/empty-window.png"></li>
+  <li>次のGUI要素をデザイン領域にドラッグします。
+  
+    <table width="527" border="1">
+    <tbody>
+      <tr>
+        <th width="79" class="tblheader" scope="col">コンポーネント</th>
+        <th width="135" class="tblheader" scope="col">表示テキスト</th>
+        <th width="291" class="tblheader" scope="col">設定</th>
+      </tr>
+      <tr>
+        <td>ボタン</td>
+        <td>Get Friends' Statuses</td>
+        <td><p>変数名をgetStatusesButtonに変更します。</p>
+          <p>「enabled」プロパティを選択解除します。 </p>
+          <p><img alt="選択解除された「enabled」プロパティ" src="../../../images_www/articles/73/websvc/jersey-rcp-client/unselected-enabled-prop.png">          </p>
+          </td>
+      </tr>
+      <tr>
+        <td>ボタン</td>
+        <td>Log in</td>
+        <td>変数名をloginButtonに変更します</td>
+      </tr>
+      <tr>
+        <td>スクロール・ペイン</td>
+        <td>--</td>
+        <td>&nbsp;</td>
+      </tr>
+      <tr>
+        <td>テキスト領域</td>
+        <td>--</td>
+        <td>スクロール・ペインにドラッグします</td>
+      </tr>
+      </tbody>
+    </table>
+    <p>必要に応じて、テキスト領域とスクロール・ペインのサイズを変更し、ボタンの位置を調整します。<br><img alt="完了したウィンドウが表示された新しいウィンドウの「デザイン」ビュー" class="margin-around" src="../../../images_www/articles/73/websvc/jersey-rcp-client/designed-window.png"></li>
+  <li>ログイン・ボタンをダブルクリックします。IDEによってボタンのアクション・メソッドが生成され、エディタが「ソース」ビューに切り替わってそのアクション・メソッドにフォーカスされます。 </li>
+  <li>ログイン・ボタンのアクション・メソッドの本体に、次のコードを入力するかコピーします。このコードは、アプリケーションをTwitterにログインさせるメソッドを起動し、getStatusesボタンを有効にして、ログイン・ボタンを無効にします。アプリケーションがログインする必要があるのは一度のみです。TwitterClientは、そのloginメソッドをコールするためにインスタンス化する必要はないことに注意してください。 
+    <pre class="examplecode">private void loginButtonActionPerformed(java.awt.event.ActionEvent evt) {                                   
+   TwitterClient.login();
+   getStatusesButton.setEnabled(true);
+   loginButton.setEnabled(false);
+} </pre></li>
+  <li>getStatusesボタンをダブルクリックします。IDEによってボタンのアクション・メソッドが生成され、エディタが「ソース」ビューに切り替わってそのアクション・メソッドにフォーカスされます。<br>
+  </li>
+  <li>getStatusesボタンのアクション・メソッドの本体に、次の処理コードを貼り付けるか入力します。このコードは、<tt>login</tt>メソッドによって作成されたトークンを使用して、TwitterClientのインスタンス化およびOAuthの初期化を行います。その後コードは<tt>getFriendsTimeline</tt>をコールし、ステータスの一覧を取得して、各ステータスのユーザー名およびテキストを含む行をStringに追加した後、Stringをテキスト領域に渡します。
+    <pre class="examplecode">private void getStatusesButtonActionPerformed(java.awt.event.ActionEvent evt) {                                         <br>    TwitterClient client = new TwitterClient(&quot;xml&quot;);<br>    client.initOAuth();<br>    Statuses response = client.getFriendsTimeline(Statuses.class, null, null, null, &quot;10&quot;);<br>    response.getStatus().size();<br>    String text = &quot;&quot;;<br>    for (StatusType st : response.getStatus()) {<br>        text += st.getUser().getName() + &quot;:  &quot; + st.getText() + &quot;\n&quot;;<br>    }<br>    jTextArea1.setText(text);<br>}     </pre>
+  </li>
+  <li>クラスが見つからないことを示す警告アイコンがコードに表示されます。[Ctrl]-[Shift]-[I] (MacOSの場合は[⌘]-[Shift]-[I])を押します。「すべてのインポートを修正」ダイアログが開きます。<tt>twitter.twitteroauth.twitterresponse</tt>クラスを選択します。「OK」をクリックします。<br><img alt="インポートする正しいクラスが表示された「すべてのインポートを修正」ダイアログ" class="margin-around" src="../../../images_www/articles/73/websvc/jersey-rcp-client/fix-imports.png"></li>
+</ol>
+<p>これでアプリケーションは完成しました。RestfulClientPlatformAppを実行すると、NetBeansプラットフォームが開き、デザインしたウィンドウが「出力」セクションに表示されます。「Log In」をクリックするとダイアログが開き、アプリケーションによるデータ・アクセスを認証するためのリンクが表示されます。</p>
+<p><img alt="アプリケーションにデータを渡すためのOAuthを認証するためのダイアログ" class="margin-around" src="../../../images_www/articles/73/websvc/jersey-rcp-client/oauth-auth-dialog.png"></p>
+<p>リンクをクリックするとブラウザ・ページが開き、アプリケーションによるTwitterデータへのアクセスを許可するかどうかがTwitterによって質問されます。「許可する」をクリックすると、ページが更新されてPINがリフレッシュされます。PINをコピーし、認証ダイアログのベリファイア文字列フィールドに貼り付けます。「OK」をクリックします。</p>
+<p>「Log In」ボタンが無効になり、「Get Friends' Statuses」ボタンが有効になります。「Get Friends' Statuses」をクリックすると、Twitterの友達の最新のステータス・メッセージ一覧が表示されます。</p>
+<img alt="ステータス・メッセージが表示された実行中のアプリケーション" class="margin-around" src="../../../images_www/articles/73/websvc/jersey-rcp-client/running-app.png">
+
+
+<h2><a name="more-exercises"></a>その他の課題</h2>
+<p>有益なアイデアをいくつか紹介します。</p>
+<ul>
+  <li>friends_timeline APIの他のメソッドを使用して、もう1つのウィンドウをモジュールに追加します。</li>
+  <li>別のTwitterリソースを使用して、もう1つのモジュールをプロジェクトに追加します。</li>
+  <li>「新規プロジェクト」>「サンプル」>「NetBeansモジュール」で「Facebookモジュールのサンプル」を開いて学習します。<br style="clear:both;"><br>
+  <div class="feedback-box" ><a href="/about/contact_form.html?to=3&amp;subject=Feedback:%20RESTful%20Service%20Clients%20in%20NetBeans%20Modules">ご意見をお寄せください</a></div>
+
+    <!-- ======================================================================================= -->
+  </li>
+</ul>
+<h2><a name="seealso"></a>関連項目</h2>
+    
+    <p>NetBeans IDEを使用したJava EEアプリケーションの開発方法の詳細は、次のリソースを参照してください。    </p>
+    
+    <ul>
+        <li><a href="http://netbeans.dzone.com/oauth-support-netbeans" target="_blank">DZone: NetBeans IDE 6.9でのOAuthのサポート</a></li>
+        <li><a href="../../docs/websvc/rest.html">RESTful Webサービスについて</a></li>
+        <li><a href="http://platform.netbeans.org/tutorials/nbm-quick-start.html" target="_blank">NetBeansプラットフォームのクイック・スタート</a></li>
+        <li><a href="../../trails/web.html">Webサービスの学習</a></li>
+        <li><a href="https://netbeans.org/kb/trails/platform.html" target="_blank">NetBeansプラットフォームの学習</a></li>
+    </ul>
+<p><a href="../../../community/lists/top.html">nbj2ee@netbeans.orgメーリング・リスト</a>に登録することによって、NetBeans IDE Java EE開発機能に関するご意見やご提案を送信したり、サポートを受けたり、最新の開発情報を入手したりできます。</p>
+    <p><a href="../../../community/lists/top.html">dev@platform.netbeans.orgメーリング・リストに登録</a>することによって、NetBeansプラットフォームでのRCPアプリケーション開発に関して、ご意見やご提案を送信したり、サポートを受けたり、情報を入手したりできます。</p>
+</body>

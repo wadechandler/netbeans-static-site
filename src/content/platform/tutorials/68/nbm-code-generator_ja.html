@@ -1,0 +1,417 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>NetBeans プラットフォーム 6.0、6.1、6.5: コードジェネレータの統合のチュートリアル</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="gwielenga@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="description"
+ content="A short guide to using the Nodes API.">
+<!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+	<h1>コードジェネレータの統合のチュートリアル</h1>
+
+<p>このチュートリアルでは、新しい項目を NetBeans コード生成機能に統合するモジュールの記述方法について説明します。これは、エディタで Alt-Insert キーを押すと表示されます。 
+
+   <p><b>目次</b></p>
+   
+   <img  src="../images/articles/68/netbeans-stamp-65-67-68.gif" class="stamp" width="114" height="114" alt="このページの内容は NetBeans IDE 6.5、6.7、および 6.8 が対象です" title="このページの内容は NetBeans IDE 6.5、6.7、および 6.8 が対象です"> </p>
+      <ul class="toc">
+  <li><a href="#intro">コードジェネレータの統合入門</a></li>
+  <li><a href="#creating">モジュールプロジェクトの作成</a></li>
+  <li><a href="#use">「コードジェネレータ」ウィザードの使用</a></li>
+  <li><a href="#code">コードジェネレータの統合のコーディング</a></li>
+  <li><a href="#install">インストールおよび機能の動作確認</a></li>
+  <li><a href="#share">共有可能バイナリの作成</a></li>
+       </ul>
+         
+<p><b>このチュートリアルを行うには、次の表に示すソフトウェアおよびリソースが必要です。</b></p>
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                <th class="tblheader" scope="col">必須バージョン</th>
+            </tr> 
+           <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.5 以上</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">version 6 または<br/>version 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+ <p class="tips">トラブルシューティングのために、<a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=11179">完了したサンプルをダウンロード</a>してソースを調べることもできます (任意)。
+    
+
+
+<h2 class="tutorial"><a name="intro"></a>コードジェネレータの統合入門</h2>
+
+<p>NetBeans IDE 6.5 で導入されたコードジェネレータ機能は、Alt-Insert キーを押すと表示される項目のリストで構成されます。各項目は、エディタ内にコードを生成します。
+
+<p><p align="left"><img border="1" src="../images/tutorials/code-generator/code-generator-5.png" alt="配備結果">
+
+
+<!-- ===================================================================================== -->
+
+<h2 class="tutorial"><a name="creating"></a> モジュールプロジェクトの作成</h2>
+      
+<p>この節では、ウィザードを使用して、各 NetBeans モジュールが必要とするソースの構造を作成します。ソースの構造は、特定の場所にある特定のフォルダと、常に必要なファイルのセットで構成されます。たとえば、すべての NetBeans モジュールには、プロジェクトのメタデータを保存する <tt>nbproject</tt> フォルダと、ツールバーボタンやウィンドウなどの項目を宣言登録するための <tt>layer.xml</tt> ファイルが必要です。
+
+<ol>
+          
+	      <li>「ファイル」&gt;「新規プロジェクト」(Ctrl-Shift-N) を選択します。「カテゴリ」で「NetBeans モジュール」を選択します。「プロジェクト」で「モジュール」を選択し、「次へ」をクリックします。</li>
+	<li>「名前と場所」パネルで、「プロジェクト名」に「<tt>DemoCodeGenerator</tt>」と入力します。「プロジェクトの場所」を、<tt>c:\mymodules</tt> などのコンピュータ上の任意のディレクトリに変更します。「スタンドアロンモジュール」ラジオボタンは選択したままにしておきます。パネルは次のようになります。
+
+<p><p align="left"><img border="1" src="../images/tutorials/code-generator/code-generator-1.png" alt="新規プロジェクトウィザードの手順 1。">
+ <p>「次へ」をクリックします。
+
+<li>「基本モジュール構成」パネルで、コード名ベースに「<tt>org.netbeans.modules.demo</tt>」と入力します。「XML レイヤーを生成」チェックボックスを選択し、「ローカライズ版バンドル」と「XML レイヤー」の場所はそのままにしておきます。これらは <tt>org/netbeans/modules/demo</tt> という名前のパッケージに格納されます。パネルは次のようになります。
+
+<p><p align="left"><img border="1" src="../images/tutorials/code-generator/code-generator-2.png" alt="新規プロジェクトウィザードの手順 2。">
+
+<li>「完了」をクリックします。</ol>
+
+<p> IDE によって <tt>DemoCodeGenerator</tt> プロジェクトが作成されます。このプロジェクトには、ソースや、プロジェクトの Ant 構築スクリプトなどのプロジェクトメタデータがすべて含まれます。IDE でプロジェクトが開きます。「プロジェクト」ウィンドウ (Ctrl-1) で、プロジェクトの論理構造を表示できます。また、「ファイル」ウィンドウ (Ctrl-2) で、プロジェクトのファイル構造を表示できます。 
+
+
+      <br />
+
+<!-- ===================================================================================== -->
+<h2><a name="use"></a>「コードジェネレータ」ウィザードの使用</h2>
+
+<p>この節では、ウィザードを使用して、コードジェネレータ機能との統合を開始するために必要となるスタブクラスとレイヤーのエントリを作成します。
+
+  
+ <ol>
+	
+	 <li>プロジェクトノードを右クリックし、「新規」&gt;「その他」を選択します。次に示すように、「新規ファイル」ダイアログで、「モジュールの開発」&gt;「コードジェネレータ」を選択します。
+<p><p align="left"><img border="1" src="../images/tutorials/code-generator/code-generator-3.png" alt="「コードジェネレータ」ウィザード">
+              </li>
+	      <li>「新規コードジェネレータ」パネルで、次のとおりに設定します。
+        <p><ul>
+            <li><b>クラス名。</b>ウィザードで生成するスタブのクラス名を指定します。このフィールドには、「DemoCodeGenerator」と入力します。
+            <li><b>パッケージ。</b>スタブクラスが生成されるパッケージを指定します。ドロップダウンから「org.netbeans.modules.demo」を選択します。
+            <li><b>MIME タイプ。</b>コードジェネレータの統合が適用される MIME タイプを指定します。このフィールドには、「x-java」と入力します。
+            <li><b>CodeGeneratorContextProvider を生成。</b>コードジェネレータのルックアップにほかのオブジェクトを追加します。このチェックボックスは、選択解除したままにします。
+          </ul>
+          <p>画面は次のようになります。
+<p><p align="left"><img border="1" src="../images/tutorials/code-generator/code-generator-4.png" alt="高速検索テンプレート">
+          
+<li>「完了」をクリックします。
+
+<p><p>「プロジェクト」ウィンドウは次のようになります。
+
+<p><p align="left"><img border="1" src="../images/tutorials/code-generator/code-generator-6.png" alt="プロジェクトの最終ウィンドウ。"></ol>
+
+      <p><tt>layer.xml</tt> ファイルは、次のように表示されます。
+      
+<pre>&lt;filesystem&gt;
+    &lt;folder name=&quot;Editors&quot;&gt;
+        &lt;folder name=&quot;text&quot;&gt;
+            &lt;folder name=&quot;x-java&quot;&gt;
+                &lt;folder name=&quot;CodeGenerators&quot;&gt;
+                    &lt;file name=&quot;org-netbeans-modules-demo-DemoCodeGenerator$Factory.instance&quot;/&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/filesystem&gt;</pre>      
+
+<p>生成されたクラスは、次のようになります。
+
+<pre>public class DemoCodeGenerator implements CodeGenerator {
+
+    JTextComponent textComp;
+
+    /**
+     * 
+     * @param context containing JTextComponent and possibly other items 
+     * registered by {@link CodeGeneratorContextProvider}
+     */
+    private DemoCodeGenerator(Lookup context) { 
+    // Good practice is not to save Lookup outside ctor
+        textComp = context.lookup(JTextComponent.class);
+    }
+
+    public static class Factory implements CodeGenerator.Factory {
+
+        public List<? extends CodeGenerator> create(Lookup context) {
+            return Collections.singletonList(new DemoCodeGenerator(context));
+        }
+    }
+
+    /**
+     * The name which will be inserted inside Insert Code dialog
+     */
+    public String getDisplayName() {
+        return &quot;Sample Generator&quot;;
+    }
+
+    /**
+     * This will be invoked when user chooses this Generator from Insert Code
+     * dialog
+     */
+    public void invoke() {
+    }
+    
+}</pre>
+
+
+      <br />
+    
+    <!-- ======================================================================================= -->
+      
+      <h2><a name="code"></a>コードジェネレータの統合のコーディング</h2>
+<p>次に、API を実装します。API のクラスは、次のとおりです。</p>
+
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">クラス</th>
+                <th class="tblheader" scope="col">説明</th>
+            </tr>
+            <tr>
+                <td class="tbltd1">JavaSource</td>
+                <td class="tbltd1">後日記載</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">CancellableTask</td>
+                <td class="tbltd1">後日記載</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">WorkingCopy</td>
+                <td class="tbltd1">後日記載</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">CompilationUnitTree</td>
+                <td class="tbltd1">後日記載</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">TreeMaker</td>
+                <td class="tbltd1">後日記載</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">ClassTree</td>
+                <td class="tbltd1">後日記載</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">ModifiersTree</td>
+                <td class="tbltd1">後日記載</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">VariableTree</td>
+                <td class="tbltd1">後日記載</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">TypeElement</td>
+                <td class="tbltd1">後日記載</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">ExpressionTree</td>
+                <td class="tbltd1">後日記載</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">MethodTree</td>
+                <td class="tbltd1">後日記載</td>
+            </tr>
+            
+        </tbody>
+    </table>
+    
+<p><p>次では、必要なモジュールとの依存関係を設定し、その依存関係を独自のモジュールに実装します。
+
+<div class="indent">
+    
+    <ol>
+        
+        <li>プロジェクトを右クリックし、「プロパティー」を選択して「ライブラリ」パネルに次の 4 つの依存関係を設定します。
+        
+     <p><p align="left"><img border="1" src="../images/tutorials/code-generator/code-generator-7.png" alt="依存関係の設定" />
+        
+        <p><b>注:</b> 「コードジェネレータ」ウィザードによって、「エディタライブラリ 2」と「ユーティリティー API」がすでに自動的に設定されていることがわかります。ほかの 2 つの依存関係は、「Javac API ラッパー」と「Java ソース」です。新しいコードジェネレータの統合を使用して、新しい Java コードスニペットを生成できる必要があります。
+        
+        <li>生成されたクラスを開きます。
+        
+        <li><tt>invoke()</tt> メソッドを次のように変更します。
+    
+<pre>public void invoke() {
+    try {
+        Document doc = textComp.getDocument();
+        JavaSource javaSource = JavaSource.forDocument(doc);
+        CancellableTask task = new CancellableTask&lt;WorkingCopy&gt;() {
+            public void run(WorkingCopy workingCopy) throws IOException {
+                workingCopy.toPhase(Phase.RESOLVED);
+                CompilationUnitTree cut = workingCopy.getCompilationUnit();
+                TreeMaker make = workingCopy.getTreeMaker();
+                for (Tree typeDecl : cut.getTypeDecls()) {
+                    if (Tree.Kind.CLASS == typeDecl.getKind()) {
+                        ClassTree clazz = (ClassTree) typeDecl;
+                        ModifiersTree methodModifiers = 
+                                make.Modifiers(Collections.&lt;Modifier&gt;singleton(Modifier.PUBLIC), 
+                                Collections.&lt;AnnotationTree&gt;emptyList());
+                        VariableTree parameter = 
+                                make.Variable(make.Modifiers(Collections.&lt;Modifier&gt;singleton(Modifier.FINAL), 
+                                Collections.&lt;AnnotationTree&gt;emptyList()), 
+                                &quot;arg0&quot;, 
+                                make.Identifier(&quot;Object&quot;), 
+                                null);
+                        TypeElement element = workingCopy.getElements().getTypeElement(&quot;java.io.IOException&quot;);
+                        ExpressionTree throwsClause = make.QualIdent(element);
+                        MethodTree newMethod = 
+                                make.Method(methodModifiers, 
+                                &quot;writeExternal&quot;, 
+                                make.PrimitiveType(TypeKind.VOID), 
+                                Collections.&lt;TypeParameterTree&gt;emptyList(), 
+                                Collections.singletonList(parameter), 
+                                Collections.&lt;ExpressionTree&gt;singletonList(throwsClause), 
+                                &quot;{ throw new UnsupportedOperationException(\&quot;Not supported yet.\&quot;) }&quot;, 
+                                null);
+                        ClassTree modifiedClazz = make.addClassMember(clazz, newMethod);
+                        workingCopy.rewrite(clazz, modifiedClazz);
+                    }
+                }
+            }
+            public void cancel() {
+            }
+        };
+        ModificationResult result = javaSource.runModificationTask(task);
+        result.commit();
+    } catch (Exception ex) {
+        Exceptions.printStackTrace(ex);
+    }
+}</pre>
+ 
+ <li>次のインポート文が宣言されていることを確認します。
+ 
+<pre>import com.sun.source.tree.AnnotationTree;
+import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.ModifiersTree;
+import com.sun.source.tree.Tree;
+import com.sun.source.tree.TypeParameterTree;
+import com.sun.source.tree.VariableTree;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeKind;
+import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
+import org.netbeans.api.java.source.CancellableTask;
+import org.netbeans.api.java.source.JavaSource;
+import org.netbeans.api.java.source.JavaSource.Phase;
+import org.netbeans.api.java.source.ModificationResult;
+import org.netbeans.api.java.source.TreeMaker;
+import org.netbeans.api.java.source.WorkingCopy;
+import org.netbeans.spi.editor.codegen.CodeGenerator;
+import org.netbeans.spi.editor.codegen.CodeGeneratorContextProvider;
+import org.openide.util.Exceptions;
+import org.openide.util.Lookup;</pre> 
+ 
+ </ol>
+    </div>
+
+      
+    <!-- ======================================================================================= -->
+
+<h2><a name="install"></a>インストールおよび機能の動作確認</h2>
+<p>次に、モジュールをインストールし、コードジェネレータ機能の統合を使用します。IDE は、Ant 構築スクリプトを使用してモジュールを構築およびインストールします。構築スクリプトは、プロジェクトを作成するときに作成されます。</p>
+<div class="indent">
+
+
+      <ol>
+	      <li>「プロジェクト」ウィンドウでプロジェクトを右クリックし、「実行」を選択します。
+	      <p><p>IDE の新しいインスタンスが開始され、コードジェネレータの統合モジュールがインストールされます。 
+               <li>Alt-Insert キーを押すと、新しい項目が含まれていることがわかります。
+<p><p align="left"><img border="1" src="../images/tutorials/code-generator/code-generator-5.png" alt="配備結果">
+		 <li>項目をクリックすると、コードが挿入されます。
+       </ol>          
+   </div>
+      <br />
+    
+<!-- ======================================================================================= -->
+
+<h2><a name="share"></a>共有可能なモジュールバイナリの作成</h2>
+
+<p>モジュールが完了したので、ほかの人にそのモジュールを使用させることができます。そのためには、バイナリの「NBM」 (NetBeans モジュール) ファイルを作成し、それを配布する必要があります。 
+
+<div class="indent">
+  
+      <ol>
+	      <li>「プロジェクト」ウィンドウでプロジェクトを右クリックし、「NBM を作成」を選択します。
+
+	      <p><p>NBM ファイルが作成されます。これは「ファイル」ウィンドウ (Ctrl-2) で確認できます。
+	      <li>たとえば、<a href="http://plugins.netbeans.org/PluginPortal/">NetBeans プラグインポータル</a>を通じて、ほかの人がそのファイルを使用できるようにします。受信者は「プラグインマネージャー」(「ツール」&gt;「プラグイン」) を使用して、それをインストールします。
+       </ol>
+ 
+    </div>
+
+
+<!-- ======================================================================================== -->
+
+
+  <br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Quick%20Search%20Integration%20Tutorial">ご意見をお寄せください</a></div>
+<br style="clear:both;" />
+  
+  
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>次の手順</h2>
+
+<p>NetBeans モジュールの作成と開発の詳細については、次のリソースを参照してください。 
+  <ul>
+	  <li><a href="https://platform.netbeans.org/index.html">NetBeans プラットフォームのホームページ</a></li>
+	  <li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API の一覧 (現行の開発バージョン)</a></li>
+  <li><a href="https://netbeans.org/kb/trails/platform_ja.html">その他の関連チュートリアル</a></li></ul>
+  </p>
+  
+  <hr><p><p>
+<!-- ======================================================================================== -->
+<!-- 
+<h2><a name="version"></a>Versioning </h2>
+<p>
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+         19 July 2008
+      </td>
+      <td>
+      Initial version.
+      </td>
+  </tr>
+ </tbody>
+</table>
+-->
+</body>
+</html>

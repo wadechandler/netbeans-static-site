@@ -1,0 +1,266 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <!-- -*- xhtml -*- -->
+        <title>Meet a NetBeans Module Writer: Alex Lam</title>
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+        <meta name="AUDIENCE" content="NBUSER">
+        <meta name="TYPE" content="ARTICLE">
+        <meta name="EXPIRES" content="N">
+        <meta name="AUTHOR" content="Geertjan Wielenga">
+        <meta name="developer" content="gwielenga@netbeans.org">
+        <meta name="indexed" content="y">
+        <meta name="description"
+        content="">
+        <!--      Copyright (c) 2005 Sun Microsystems, Inc. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+    <body>
+    <h1>Meet a NetBeans Module Writer: Alex Lam</h1>
+    <p><small><a href="mailto:nbdocs_feedback@usersguide.netbeans.org?subject=Feedback:%20Meet%20A%20NetBeans%20Module%20Writer:%20Alex">Feedback</a></small></p>
+
+    <table width="190" border="1" cellspacing="0" cellpadding="5" align="right" class="ltblue">
+        <tbody>
+            <tr>
+                <td align="center"><img align="center" src="nbm_interviews/me3.JPG" alt="Alex's picture">
+
+                <br><b>Alex Lam</b></td>
+            </tr>
+  
+            <tr>
+                <td>
+                <p>Alex's hot links:
+                <ul><li><a href="http://napkinlaf.sourceforge.net/">Napkin Look & Feel Homepage</a>
+                    <li><a href="http://napkinlaf.sourceforge.net/netbeans/updates.xml">Napkin's NetBeans Update Center</a>
+                    <li><a href="http://napkinlaf.sourceforge.net/#Snapshots">Napkin Snapshots</a>
+                </ul>
+	 
+
+			
+            </tr>
+        </tbody>
+    </table>
+
+    <p>NetBeans Staff met with Alex Lam, to grill him about a great new module he's working on:
+    integrating the <a href="http://napkinlaf.sourceforge.net/">Napkin Look & Feel</a> (L&F) with NetBeans IDE (and any other application built on the
+    NetBeans Platform).
+
+    <p><h3>Alex where in the world are you and what do you do there?</h3>
+
+    <p>I am from Hong Kong, currently studying Physics as a 3rd year
+    undergraduate in Cambridge, UK. 
+
+    <p><h3>Are you active in the Java community?</h3>
+
+    <p>Unfortunately not&#8212;I have yet to discover whether they have a Java
+    community here in Cambridge! 
+
+    <p><h3>You've been very busy creating a Napkin L&F module for
+    NetBeans IDE. Tell us about it! </h3>
+
+    <p>Napkin, as its name implies, is a L&F which gives users the
+    impression that an application's user interface is scribbled on a crumpled piece of
+    napkin. The primary aim is to "give provisional work a provisional
+    look", i.e., to present unfinished work in a user interface which appears yet to be
+    finalised.
+
+    <p>I spotted Napkin while looking through the results of the NetBeans L&F
+    competition, and I have to say I'm really impressed about how it
+    looks. I can see myself moving the ideas I scribbled during lunch time
+    directly onto the screen&#8212;after all, an IDE is where we programmers
+    cook up ideas and implementations, right?
+
+    <p>Although Napkin had quite a few visual bugs and other issues back
+    then, most of them were fixed when 1.0 was released; however, NetBeans
+    resisted all general attempts to look "native" with the Napkin L&F. I didn't
+    think too much about writing a module back then because I thought a
+    L&F should be general to all applications without specific details,
+    i.e., the code should serve a wider community. Then I thought of the NetBeans
+    Platform&#8212;even if the IDE community is not wide enough, implementing
+    a NetBeans module would actually benefit all applications built on top of
+    the platform! So I made up my mind and started working on this, which
+    is what you can now download and use from Napkin's Update Center. 
+
+    <p><h3>So, the point of the Napkin L&F is to create a "draft" look for an
+    application? What's the point of that? </h3>
+
+    <p>When you present your
+    first user interface draft to your manager in a meeting, it is inevitable that
+    your manager could get the wrong impression about the progress of your
+    project&#8212;after all, the user interface, which is what the manager can see, is
+    completed and looks perfect, even though all the core underlying logic
+    that really contributes to the application is still missing. The
+    mismatch between reality and this impression is hard to tackle, and is
+    where Napkin comes into play&#8212;it gives the user interface an unfinished,
+    provisional look to match what it really is, an unfinished project 
+    application. For example, this is what NetBeans IDE looks like with this
+    look and feel:
+     
+    <p><img align="center" src="nbm_interviews/alex/NBN3.PNG" alt="IDE in Napkin">
+        
+    <p>Further examples can be found <a href="http://napkinlaf.sourceforge.net/#Snapshots">here</a>
+    on the Napkin website</p>
+
+    
+    <p><h3>Can you give a short technical description of how you get the look and feel to work?</h3>
+    
+    <p>Sure. I started off wrapping the original Napkin library using the IDE's Library
+    Wrapper Module project template, which you can do with only a few clicks.
+
+    <p>Then I created a module suite, which contains the wrapper module and a
+    new module project which I use to put the real code in. The module project looks like
+    this in the Projects window:
+
+    <p><img align="center" border="1" src="nbm_interviews/alex/project_window.PNG" alt="Project window">
+ 
+    <p>So, in the module project, I've put an 
+    Installer which
+    initialises Napkin during IDE startup with this code:
+
+    <p><pre class="examplecode">    UIManager.setLookAndFeel(new NapkinLookAndFeel());
+    JFrame.setDefaultLookAndFeelDecorated(true);
+    JDialog.setDefaultLookAndFeelDecorated(true);
+
+    // set main IDE window to be decorated, too
+    JFrame frame = (JFrame) WindowManager.getDefault().getMainWindow();
+    
+    // work out the state of the window so as to restore it later on
+    boolean needToDispose = frame.isDisplayable();
+    boolean isVisible = frame.isVisible();
+    
+    // detach from display device if necessary
+    if (needToDispose) {
+    frame.dispose();
+    }
+    
+    // set to use Napkin's decoration
+    frame.setUndecorated(true);
+    frame.getRootPane().setWindowDecorationStyle(JRootPane.FRAME);
+    frame.getRootPane().updateUI();
+    
+    // restore the window back to its previous state
+    if (needToDispose) {
+    frame.pack();
+    frame.setVisible(isVisible);
+    }</pre>
+    
+    <p>In <tt>NapkinLFCustoms.java</tt>, which extends the NetBeans API <tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-swing-plaf/org/netbeans/swing/plaf/LFCustoms.html">LFCustoms</a></tt> class, I have overriden
+    <tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-swing-plaf/org/netbeans/swing/plaf/LFCustoms.html#createApplicationSpecificKeysAndValues()">createApplicationSpecificKeysAndValues()</a></tt> to return a list of
+    UIDefaults entries that are Napkin-specific.
+    
+    <tt>NapkinEditorTabDisplayerUI.java</tt> implements the visuals of the tabs
+    above the editor window, as shown below:
+    
+    <p><img align="center" border="1" src="nbm_interviews/alex/NapkinTabDisplayer.PNG" alt="NapkinTabDisplayer">
+
+    <p>And that's my first working NetBeans module for Napkin! After that, people suggested
+    that I should put in an option to toggle Napkin on/off in the IDE, so
+    I put in a new System Option class, and registered it in the
+    <tt>layer.xml</tt>, to have it persist and load into the system before my
+    module starts. However, I've been told that the System Option class will be replaced
+    in NetBeans 6.0, so I won't go into any detail about how I implemented it here.
+    
+    <p><h3>From where can we get the module that provides this L&F?</h3>
+
+    <p>You can get it from Napkin's Update Center:
+    <p><a href="http://napkinlaf.sourceforge.net/netbeans/updates.xml">http://napkinlaf.sourceforge.net/netbeans/updates.xml</a>
+    <p>You can also get it from nbextras.org:
+    <p><a href="http://www.nbextras.org/2006/04/25/1146000991633.html">http://www.nbextras.org/2006/04/25/1146000991633.html</a>
+    <p><h3>Have you worked on other NetBeans modules? </h3>
+    <p>Not yet&#8212;I am considering working on a generalised Look & Feel
+    switcher in the near future, though.</p>
+    
+    
+    <p><h3>What are some of the problems you have encountered?</h3>
+
+    <p>To be honest, the <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-swing-plaf/overview-summary.html">L&F customisation parts of the NetBeans Platform</a> is rather
+    unintuitive and severely under-documented, in my opinion. In fact, the
+    functionalities aren't complete as well&#8212;I have yet to wait for some
+    enhancements to HTMLRenderer in order to be able to customise it.
+
+    <p>Other than that, I have slight issues with building the modules and
+    the update script, but I'd blame myself for mixing NB6 daily builds
+    and NB5 platform. ;-) 
+
+    <p><h3>How did you solve them?</h3>
+
+    <p>By downloading and
+    staring at the <a href="http://www.netbeans.info/downloads/download.php">NetBeans sources</a> and producing workarounds most of the time. I
+    have to admit that googling and tutorials couldn't provide much help
+    here. 
+
+    <div style="float: right;"><img src="nbm_interviews/quot1-alex.png" alt="Alex quote"></div>
+
+    <p><h3>What did you enjoy most about creating your NetBeans modules?</h3>
+
+    <p>Regardless of the issues above, I'd say I like the experience since
+    the majority of other things work seamlessly without much tedious
+    typing, etc. 
+    
+    <p><h3>Have you thought about creating an application on the NetBeans Platform as well?</h3>
+
+    <p>I do have an idea of creating an application in which we can share
+    computing resources and code snippets, initially restricted to
+    mathematical problem solving. The NetBeans Platform seems to provide a
+    good infrastructure for the idea to build upon. :-) 
+
+    
+    
+    <p><h3>What are your favorite features of NetBeans?</h3>
+
+    <p>I'd say I like it in general because it works out of the box.
+    I mean, you get things working without having to think about "download A, install B,
+    go to C, and move around D, then type E... then press Z". OK, as a
+    programmer we should be able to follow more complex procedures, but I
+    can't see why I should be doing these tedious tasks if a better
+    alternative exists&#8212;and NetBeans IDE is the alternative.
+
+    <p>And when you bump into a problem, people on the <a href="https://netbeans.org/community/lists/">mailing lists</a> and the
+    <a href="https://netbeans.org/community/issues.html">issue tracker</a> are usually very responsive and helpful.
+
+    <p>I have yet to explore NetBeans Platform in general, since I have yet
+    to build an application on top of it. 
+
+    <p><h3>If you could change one thing in module development features in NetBeans, what would it be?</h3>
+
+    <p>Can't think of one off the top of my head, since most parts with general
+    module development are quite painless, at least when compared to
+    getting the L&F customisation to work. 
+
+  
+    <p><h3>Any final thoughts?</h3>
+
+    <p>I'd like to thank the NetBeans team for developing such a nice product&#8212;the fact that 
+    it contains so many features and yet is simple to
+    utilise, and also the fact that it is still evolving rapidly! 
+
+    
+
+    <p><h3>Thanks, Alex and good luck with your Napkin module and further work in the L&F area
+    for NetBeans IDE. As well as, of course, any work you do in creating an application on top of the
+    NetBeans Platform!</h3>
+    
+
+    <p>
+
+
+
+    <!-- ======================================================================================== -->
+
+    <h2><a name="nextsteps"></a>Further reading</h2>
+
+    <p>For information about creating and developing plug-in modules and rich-client applications, see the following resources: 
+    <ul>
+	
+    <p><li><a href="https://platform.netbeans.org/tutorials/quickstart-nbm.html">Introduction to NetBeans Module Development</a></li>
+    <p><li><a href="https://platform.netbeans.org/tutorials/nbm-paintapp.html">Introduction to Rich-Client Application Development</a></li>
+    <p><li><a href="https://platform.netbeans.org/tutorials/index.html">NetBeans Modules and Rich-Client Applications Learning Trail</a></li>
+    <p><li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API Javadoc (Current Development Version)</a></li>
+    <p><li><a href="http://www.planetnetbeans.org">Blogs by NetBeans Engineers and NetBeans Users</a></li></ul>
+    </p>
+  
+    <hr>
+
+
+    </body>
+</html>

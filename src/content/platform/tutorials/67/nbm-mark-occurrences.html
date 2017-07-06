@@ -1,0 +1,452 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>NetBeans Mark Occurrences Module Tutorial for NetBeans Platform 6.5</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="gwielenga@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta name="description" content="A short guide to using Highlighting SPI.">
+</head>
+<body>
+<h1>NetBeans Mark Occurrences Module Tutorial</h1>
+
+<p>This tutorial demonstrates how to create a NetBeans module that highlights
+ all instances of a selected word in an HTML file.
+ 
+   <p><b>Contents</b></p>
+   
+       <img  src="../images/articles/65/netbeans-stamp65.gif" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.5" title="Content on this page applies to NetBeans IDE 6.5"> </p>
+      <ul class="toc">
+<li><a href="#intro">Introduction to Highlight Layers</a>
+<ul>
+<li><a href="#installing-sample">Getting to Know the Sample</a></li>
+</ul>
+</li>
+
+<li><a href="#creatingthemoduleproject">Setting Up the Module Project</a>
+
+<li><a href="#coding-module">Creating the Highlight Layer and Factory</a>
+<ul>
+<li><a href="#creating-highlight">Creating the Highlight Layer</a>
+<li><a href="#creating-factory">Creating the Highlight Layer Factory</a>
+</ul>
+
+<li><a href="#registering-highlight">Registering the Highlight Layer</a>
+
+<li><a href="#building">Building and Installing the Module</a>
+<ul>
+<li><a href="#install-plugin">Installing and Using the Module</a>
+<li><a href="#share-plugin">Creating a Shareable Module Binary</a>
+</ul>
+</ul>
+
+<p><b>To follow this tutorial, you need the software and resources listed in the following 
+table.</b></p>
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.5</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Version 6 or<br/>version 5</td>
+            </tr>
+        </tbody>
+    </table>
+
+  <p class="tips">Optionally, for troubleshooting purposes, you
+  can <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=2761">download the completed sample</a>.
+
+ 
+<h2 class="tutorial"><a name="intro"></a>Introduction to Highlight Layers</h2>
+
+ <p>In this tutorial, you implement several classes provided by the
+ <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/package-summary.html">NetBeans Highlighting SPI</a>.
+ The two principle classes in this context are as follows:
+
+ <ul>
+     <li><b><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/HighlightsLayer.html">Highlight Layer</a></b>.
+  Defines a set of highlights used for rendering a document.
+     <li><b><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/HighlightsLayerFactory.html">Highlight Layer Factory</a></b>.
+  Defines a MIME-specific factory for creating highlight layers.
+ </ul>
+
+ <p>The above two classes need to be registered in the module's <tt>layer.xml</tt> file,
+  within the editor folder of the relevant MIME-type.
+
+
+<div class="indent">
+  <h3 class="tutorial"><a name="installing-sample"></a>Getting to Know the Sample</h3>
+<p>Take the following steps to install the sample:
+<ol><li><a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=14144">Download the completed sample</a>
+ from the Plugin Portal and install it in the IDE.
+    <p><li>In the New Project wizard, you will find the sample here:</p>
+<p><img src="../images/tutorials/mark-occs/65-new-project-wizard.png" alt="New Project dialog">
+    <p><li>Complete the wizard and your project source structure will be as follows:</p>
+<p><img src="../images/tutorials/mark-occs/65-proj-wiz-final.png" alt="Projects window initially">
+<p><li>Right-click the project node and choose Run. A new instance of the IDE opens and the module is installed.
+ <p><li>Verify that the module is correctly installed by opening an HTML source file. Select
+  a word and notice that all instances of the word are highlighted:</p>
+<p><img src="../images/tutorials/mark-occs/65-result.png" border="1" alt="Open HTML source file">
+</ol>
+<p>Now that you know what the end result looks like, you will create the module from scratch and learn about each part
+ while creating it.
+  </div>
+      <br />
+
+<!-- ===================================================================================== -->
+
+<h2 class="tutorial"><a name="creatingthemoduleproject"></a>Setting up the Module Project</h2>
+<p>Before you start writing the module, you have to make sure you
+  that your project is set up correctly. The IDE provides a wizard that sets up all the basic files
+ needed for a module.</p>
+
+<ol>
+    <li>Choose File &gt; New Project (Ctrl+Shift+N). Under Categories, select NetBeans Modules.
+        Under Projects, select Module. Click Next.</li>
+    <li>In the Name and Location panel, type <tt>MarkHTMLOccurrences</tt> in the Project Name field.
+        Change the Project Location to any directory on your computer. Leave the Standalone Module option
+        and Set as Main Project checkbox selected. Click Next.</li>
+    <li>In the Basic Module Configuration panel, type <tt>org.netbeans.modules.markhtmloccurrences</tt>
+     in Code Name Base.
+    <li>Select "Generate XML Layer". Leave the
+        locations of both the localizing bundle and the XML layer file
+        so that they will be stored in a package with
+        the name <tt>org/netbeans/modules/markhtmloccurrences</tt>. Click Finish.</li>
+</ol>
+
+<p> The IDE creates the <tt>MarkHTMLOccurrences</tt>
+project. The project contains all of your sources and
+project metadata, such as the project's Ant build script. The project
+opens in the IDE. You can view its logical structure in the Projects window (Ctrl-1) and its
+file structure in the Files window (Ctrl-2).</p>
+ 
+      <br />
+
+<!-- ===================================================================================== -->
+<h2><a name="coding-module"></a>Creating the Highlight Layer and Factory</h2>
+
+<p>Next, we will implement the Highlighting SPI. The SPI's classes are as follows:</p>
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Class</th>
+                <th class="tblheader" scope="col">Description</th>
+            </tr>
+            <tr>
+              <td class="tbltd1"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/HighlightsLayerFactory.html">HighlightsLayerFactory</a></td>
+                <td class="tbltd1">Defines the factory for creating highlight layers.</td>
+            </tr>
+            <tr>
+              <td class="tbltd1"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/HighlightsLayerFactory.Context.html">HighlightsLayerFactory.Context</a></td>
+                <td class="tbltd1">Defines the context passed to the factory when the
+                 factory is asked to create highlight layers.</td>
+            </tr>
+            <tr>
+              <td class="tbltd1"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/HighlightsContainer.html">HighlightsContainer</a></td>
+                <td class="tbltd1">Defines the container of highlighted
+                 areas and related attributes.</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/HighlightsLayer.html">HighlightsLayer</a></td>
+                <td class="tbltd1">Defines the highlight layer, consisting
+                 of attributes.</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/ZOrder.html">ZOrder</a></td>
+                <td class="tbltd1">Defines position of highlight layer
+                 in relation to other highlight layers.</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/support/OffsetsBag.html">OffsetsBag</a></td>
+                <td class="tbltd1">Defines a set of highlighted areas
+                 specified by their offsets in the document.</td>
+            </tr>
+        </tbody>
+    </table>
+
+ <br />
+
+<div class="indent">
+
+<h3 class="tutorial"><a name="specifying"></a>Specifying the Module's Dependencies</h3>
+
+<p>You will need to subclass several classes that belong to <a href="http://bits.netbeans.org/dev/javadoc/index.html">NetBeans APIs</a>.
+ Each has to be declared as a Module dependency. Use the Project Properties dialog box for this purpose.
+  <ol>
+	  <li>In the Projects window, right-click the <tt>MarkHTMLOccurrences</tt> project node and choose Properties.
+ In the Project Properties dialog box, click Libraries.</li>
+	
+ <p><li>For each of the following APIs, click "Add...", 
+ select the name from the Module list, and then click OK to confirm it:</p>
+
+<p><img src="../images/tutorials/mark-occs/65-proj-props-1.png" alt="Setting dependencies">
+<p><li>Click OK to exit the Project Properties dialog box.
+<p><li>In the Projects window, expand the Important Files node, double-click the Project Metadata node, and note the
+ long list of APIs that you selected have been
+ declared as module dependencies.</li>
+
+  </ol>
+
+<h3 class="tutorial"><a name="creating-factory"></a>Creating the Highlight Layer Factory</h3>
+
+<p>Highlight layer factories are defined
+ by the <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/package-summary.html">Highlighting SPI</a>.
+
+<p>To use the Highlighting SPI to create the palette in this tutorial, take the following steps:
+
+<ol>
+	
+	<li>Right-click the <tt>MarkHTMLOccurrences</tt> project node and
+	      choose New &gt; Java Class. Create a Java file called <tt>MarkHTMLOccurrencesHighlightsLayerFactory</tt>.
+
+ <p><li>Replace the default content of the <tt>MarkHTMLOccurrencesHighlightsLayerFactory.java</tt> file with the following:
+
+<p><pre class="examplecode">import javax.swing.text.Document;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/HighlightsLayer.html">org.netbeans.spi.editor.highlighting.HighlightsLayer</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/HighlightsLayerFactory.html">org.netbeans.spi.editor.highlighting.HighlightsLayerFactory</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/ZOrder.html">org.netbeans.spi.editor.highlighting.ZOrder</a>;
+
+public class MarkHTMLOccurrencesHighlightsLayerFactory implements <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/HighlightsLayerFactory.html">HighlightsLayerFactory</a> {
+
+    public static MarkHTMLOccurrencesHighlighter getMarkOccurrencesHighlighter(Document doc) {
+        MarkHTMLOccurrencesHighlighter highlighter =
+               (MarkHTMLOccurrencesHighlighter) doc.getProperty(MarkHTMLOccurrencesHighlighter.class);
+        if (highlighter == null) {
+            doc.putProperty(MarkHTMLOccurrencesHighlighter.class,
+               highlighter = new MarkHTMLOccurrencesHighlighter(doc));
+        }
+        return highlighter;
+    }
+
+    @Override
+    public HighlightsLayer[] <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/HighlightsLayerFactory.html#createLayers(org.netbeans.spi.editor.highlighting.HighlightsLayerFactory.Context)">createLayers</a>(<a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/HighlightsLayerFactory.Context.html">Context</a> context) {
+        return new HighlightsLayer[]{
+                    <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/HighlightsLayer.html#create(java.lang.String,%20org.netbeans.spi.editor.highlighting.ZOrder,%20boolean,%20org.netbeans.spi.editor.highlighting.HighlightsContainer)">HighlightsLayer.create</a>(
+                    MarkHTMLOccurrencesHighlighter.class.getName(),
+                    <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/ZOrder.html">ZOrder.CARET_RACK.forPosition(2000)</a>,
+                    true,
+                    <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/HighlightsContainer.html">getMarkOccurrencesHighlighter(context.getDocument()).getHighlightsBag()</a>)
+                };
+    }
+
+}</pre>
+
+</ol>
+
+<h3 class="tutorial"><a name="creating-highlight"></a>Creating the Highlight Layer</h3>
+
+<p>In this...
+
+<pre class="examplecode">import java.awt.Color;
+import java.lang.ref.WeakReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.swing.JEditorPane;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.StyleConstants;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-settings/org/netbeans/api/editor/settings/AttributesUtilities.html">org.netbeans.api.editor.settings.AttributesUtilities</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor/org/netbeans/modules/editor/NbEditorUtilities.html">org.netbeans.modules.editor.NbEditorUtilities</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-lib2/org/netbeans/spi/editor/highlighting/support/OffsetsBag.html">org.netbeans.spi.editor.highlighting.support.OffsetsBag</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-openide-text/org/openide/cookies/EditorCookie.html">org.openide.cookies.EditorCookie</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/DataObject.html">org.openide.loaders.DataObject</a>;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/util/RequestProcessor.html">org.openide.util.RequestProcessor</a>;
+
+public class MarkHTMLOccurrencesHighlighter implements CaretListener {
+
+    private static final AttributeSet defaultColors =
+            AttributesUtilities.createImmutable(StyleConstants.Background,
+            new Color(236, 235, 163));
+    private final OffsetsBag bag;
+    private JTextComponent comp;
+    private final WeakReference&lt;Document&gt; weakDoc;
+
+    private RequestProcessor.Task task = null;
+    private final static int DELAY = 100;
+
+    public MarkHTMLOccurrencesHighlighter(Document doc) {
+        bag = new OffsetsBag(doc);
+        weakDoc = new WeakReference&lt;Document&gt;((Document) doc);
+        DataObject dobj = NbEditorUtilities.getDataObject(weakDoc.get());
+        EditorCookie pane = dobj.getCookie(EditorCookie.class);
+        JEditorPane[] panes = pane.getOpenedPanes();
+        if (panes != null && panes.length > 0) {
+            comp = panes[0];
+            comp.addCaretListener(this);
+        }
+    }
+
+    @Override
+    public void caretUpdate(CaretEvent e) {
+        bag.clear();
+        scheduleUpdate();
+    }
+
+    public void scheduleUpdate() {
+        if (task == null) {
+            task = RequestProcessor.getDefault().create(new Runnable() {
+                @Override
+                public void run() {
+                    String selection = comp.getSelectedText();
+                    if (selection != null) {
+                        Pattern p = Pattern.compile(selection);
+                        Matcher m = p.matcher(comp.getText());
+                        while (m.find() == true) {
+                            int startOffset = m.start();
+                            int endOffset = m.end();
+                            bag.addHighlight(startOffset, endOffset, defaultColors);
+                        }
+                    }
+                }
+            }, true);
+            task.setPriority(Thread.MIN_PRIORITY);
+        }
+        task.cancel();
+        task.schedule(DELAY);
+    }
+
+    public OffsetsBag getHighlightsBag() {
+        return bag;
+    }
+
+}</pre>
+
+ </div>
+      <br />
+
+<h2><a name="registering-highlight"></a>Registering the Highlight Layer</h2>
+
+<p>In this section, we register the menu item
+and code snippets in the <tt>layer.xml</tt> file.</p>
+    
+<p>Add the following tags to the <tt>layer.xml</tt> file, between the &lt;filesystem&gt; tags:</p>
+
+<pre class="examplecode">&lt;folder name="Editors"&gt;
+    &lt;folder name="text"&gt;
+        &lt;folder name="html"&gt;
+            &lt;file name="org-netbeans-modules-markhtmloccurrences-MarkHTMLOccurrencesHighlightsLayerFactory.instance"/&gt;
+        &lt;/folder&gt;
+        &lt;folder name="xml"&gt;
+            &lt;file name="org-netbeans-modules-markhtmloccurrences-MarkHTMLOccurrencesHighlightsLayerFactory.instance"/&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+
+<p>The above tags will result in HTML files, as well as XML files, to have the functionality
+ provided by the above two registered classes&#8212;the highlight layer and its factory.
+    
+      <br />
+      
+<!-- ======================================================================================= -->
+
+<h2><a name="building"></a>Building and Installing the Module</h2>
+<p>The IDE uses an Ant build script to build and install your module. The build script is created for you
+when you create the module project.</p>
+<div class="indent">
+
+	<h3 class="tutorial"><a name="install-plugin"></a>Installing and Using the Module</h3>
+
+      <ol>
+	      <li><p>In the Projects window, right-click the <tt>MarkHTMLOccurrences</tt> project and choose Run.</p>
+	      <p>The module is built and installed in the target platform. The target platform opens so that you
+	      can try out your new module. The default target platform is the 
+	      installation used by the current instance of the development IDE. 
+                      <p><li>Verify that the module is correctly installed by using it as
+                      shown in <a href="#installing-sample">Installing the Sample</a>.
+                  </ol>
+                  
+                  <h3 class="tutorial"><a name="share-plugin"></a>Creating a Shareable Module Binary</h3>
+                  
+                  <ol>
+              <li><p>In the Projects window, right-click the the project node and choose Create NBM.</p>
+
+	      <p>The NBM file is created and you can view it in the Files window (Ctrl-2).
+	      <li><p>Make the module available to others by uploading it to the <a href="http://plugins.netbeans.org">Plugin Portal</a>.</p
+	      <p><li>The recipient can install the module by using the Plugin Manager. Choose Tools &gt; Plugins
+	       from the main menu.
+       </ol>
+</div>
+      <br />
+<br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Mark%20Occurrences%20Module%20Tutorial">Send Us Your Feedback</a></div>
+<br style="clear:both;" />
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Next Steps</h2>
+
+<p>For more information about creating and developing NetBeans modules, see the following resources: 
+  <ul>
+	  <p><li><a href="https://netbeans.org/kb/trails/platform.html">Other Related Tutorials</a></li>
+	  <p><li><a href="http://bits.netbeans.org/dev/javadoc/index.html">NetBeans API Javadoc</a></li>
+  </ul>
+  
+  <hr>
+<!-- ======================================================================================== -->
+
+<h2><a name="version"></a>Versioning </h2>
+  
+<p>
+
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+</td>
+<td>
+	<div align="left"><b>Open Issues</b></div>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+	      5 November 2008
+      </td>
+      <td>
+         Initial version
+ </td>
+<td>
+    ...
+      </td>
+  </tr>
+  <tr>
+      <td>
+         2
+      </td>
+      <td>
+	      16 November 2008
+      </td>
+      <td>
+         Added more details, including more links to Javadoc.
+ </td>
+<td>
+    Need to add inline comments for the two classes.
+      </td>
+  </tr>
+  </tbody>
+</table>
+
+</body>
+</html>

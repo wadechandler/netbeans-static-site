@@ -1,0 +1,467 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+<title>NetBeans Java Language Infrastructure Tutorial (Part 2) for NetBeans Platform 6.0</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"> 
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="geertjan.wielenga@sun.com">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A walk-through of the Retouche approach.">
+<!--      Copyright (c) 2007 Sun Microsystems, Inc. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>NetBeans Java Language Infrastructure Tutorial (Part 2)</h1>
+
+<p>In the <a href="nbm-copyfqn.html">previous tutorial</a>, you created a button in the toolbar which,
+ when clicked, explicitly invoked the underlying Java language
+ infrastructure. In this tutorial, you will make implicit calls
+ to the same infrastructure, by registering factory classes
+ in the META-INF/services folder. At the end of this tutorial,
+ the Projects window will look as follows:
+ 
+      <p align="left"><img border="1" src="../../images/tutorials/whichelement/projects-window-final.png" alt="Projects window">
+
+      <p>After installation of the module, information about
+          the <tt>Element</tt> under the caret is displayed
+          in a read-only textfield in the IDE's status bar. For example,
+          if a package is identified under the caret, the
+      textfield shows the following information (look in the status bar
+      at the bottom of the screenshot below):</p>
+
+  <p align="left"><img border="1" src="../../images/tutorials/whichelement/package-found.png" alt="Package found">
+    
+        <p>However, if a field is under the caret, the textfield shows
+        different content:</p>
+        
+        <p align="left"><img border="1" src="../../images/tutorials/whichelement/variable-found.png" alt="Variable found">
+  
+        <p>Similarly, if the caret is placed on a
+        class declaration or a method, the underlying Java language infrastructure
+        is called implicitly, i.e., without the user needing to do anything explicit,
+        and the status bar displays information relevant to the current
+        <tt>Element</tt>.
+      
+        <h3>Contents</h3>
+     <table border="0" cellpadding="0" cellspacing="0" width="100%">
+       <tbody><tr>
+         <td align="left" valign="top">
+<ul>
+            <li><a href="#installing-the-software">Installing the Software</a></li>
+            <li><a href="#setting-up-the-module">Setting Up the Module</a></li>
+            <li><a href="#creating-a-caret-aware-java-source-task-factory">Creating a Caret-Aware Java Source Task Factory</a></li>
+            <li><a href="#identifying-java-source-files">Identifying Java Source Files</a></li>
+            <li><a href="#determining-open-state">Determining Open State</a></li>
+            <li><a href="#detecting-the-element-under-the-caret">Detecting the Element Under the Cursor</a></li>
+            <li><a href="#doing-something-useful">Doing Something Useful</a></li>
+        </ul></td>
+         <td width="20"> </td>
+
+           <td align="right" valign="top"> 
+      <img src="../../images/articles/60/netbeans-stamp60-61.gif" 
+alt="Content on this page applies to NetBeans IDE 6.0" title="Content on this page applies to the NetBeans 
+IDE 6.0" border="0">
+   </td>
+       </tr>
+     </tbody></table>
+        
+        <p>The following resources have been provided specifically to help you get acquainted with the Retouche APIs:
+        
+        <ul>
+            <li><a href="http://wiki.netbeans.org/wiki/view/Java_DevelopersGuide">Java Infrastructure Developer's Guide</a>
+            <li><a href="http://wiki.netbeans.org/wiki/view/RetoucheDeveloperFAQ">Retouche Developer FAQ</a>
+        </ul>
+        
+
+        
+        <p>For more information on creating NetBeans modules, see the <a href="https://platform.netbeans.org/index.html">
+            NetBeans Development Project home</a> on the NetBeans website. If you have questions, visit the 
+            <a href="http://wiki.netbeans.org/wiki/view/NetBeansDeveloperFAQ">NetBeans Developer FAQ</a> or use the feedback link
+        at the bottom of this page.</p>
+        
+        <br />
+        
+  
+
+<!-- ===================================================================================== -->
+
+<h2 class="tutorial"><a name="installing-the-software"></a>Installing the Software</h2>
+   
+    
+      <p>Before you begin, you need to install the following software on your 
+        computer:</p>
+<ul>
+    <li>The J2SE(TM) Development Kit (JDK), version 5.0 or compatible 
+    (<a href="http://java.sun.com/javase/downloads/index.jsp">download the 
+    most recent JDK</a>).</li>
+        <li>NetBeans IDE 6.0 (<a href="http://download.netbeans.org/netbeans/6.0/final/">download</a>).
+    </ul>
+ 
+
+<p><h2><a name="setting-up-the-module"></a>Setting Up the Module</h2>
+
+     <p>In this section, we use wizards to create a module project and
+         to set dependencies on relevant NetBeans modules. 
+         
+         <ol>
+         
+         <li>Choose File &gt; New Project. In the New Project wizard,
+         choose NetBeans Modules under Categories and Module
+     under Projects. Click Next. 
+     
+     <li>Type <tt>WhichElement</tt> in Project Name
+     and set Project Location to an appropriate folder on your disk. If they
+     are not selected, select
+     Standalone Module and Set as Main Project. Click Next.
+     
+     <li>Type <tt>org.netbeans.modules.whichelement</tt> in Code Name Base
+     and <tt>WhichElement</tt> in Module Display Name. Click Finish.
+     
+     <li>Right-click the project, choose Properties, click Libraries 
+     in the Project Properties dialog box and declare a dependency on the following APIs:
+     
+     <p><ul>
+         <li>File System API
+         <li>Javac API Wrapper
+         <li>Java Source
+         <li>UI Utilities API
+         <li>Utilities API
+     </ul>
+     
+     
+     <p>Click OK.
+     
+ </ol>
+ 
+ <p><h2><a name="creating-a-caret-aware-java-source-task-factory"></a>Creating a Caret-Aware Java Source Task Factory</h2>
+
+      <p>In this section, we create a task factory
+          for Java source files that is caret-aware. We then
+          register it in the META-INF/services folder.
+          
+          <ol>
+          <li>Right-click the module project, choose
+          New &gt; Java Class. Click Next.
+          
+          <li>Type <tt>WhichElementJavaSourceTaskFactory</tt> in 
+          Class Name. Click Finish.
+          
+          <li>Change the default code to the following:
+          
+          <pre class="examplecode">public class WhichElementJavaSourceTaskFactory extends CaretAwareJavaSourceTaskFactory {
+    
+    public WhichElementJavaSourceTaskFactory() {
+        super(Phase.RESOLVED, Priority.LOW);
+    }
+
+    public CancellableTask&lt;CompilationInfo&gt; createTask(FileObject fileObject) {
+        return new WhichElementTask(this, fileObject);
+    }
+    
+}</pre>     
+    
+
+<li>Create a skeleton implementation of CancellableTask, 
+ which we will fill out later:
+
+<pre class="examplecode">public class WhichElementTask implements CancellableTask&lt;CompilationInfo&gt; {
+
+    private WhichElementJavaSourceTaskFactory whichElementJavaSourceTaskFactory;
+    private FileObject fileObject;
+
+    WhichElementTask(WhichElementJavaSourceTaskFactory whichElementJavaSourceTaskFactory, FileObject fileObject) {
+        this.whichElementJavaSourceTaskFactory = whichElementJavaSourceTaskFactory;
+        this.fileObject = fileObject;
+    }
+
+    public void cancel() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public void run(CompilationInfo compilationInfo) {
+        String fileName = compilationInfo.getFileObject().getName();
+        StatusDisplayer.getDefault().setStatusText("File name: " + fileName);
+    }
+    
+}</pre>
+          
+      <li>Register the factory in the META-INF/services folder. To
+  do so, first find the "all services" node, in the Important Files
+ node, shown below:</p>
+
+      <p align="left"><img border="1" src="../../images/tutorials/whichelement/caretaware-metainf2.png" alt="caretaware-metainf2">
+ 
+      <p>Expand it and look for the <tt>org.netbeans.api.java.source.JavaSourceTaskFactory</tt>. Then right-click it,
+      as shown here:</p>
+
+      <p align="left"><img border="1" src="../../images/tutorials/whichelement/caretaware-metainf1.png" alt="caretaware-metainf1">
+         
+      <p>Now you can browse to your factory class...
+      
+      <p align="left"><img border="1" src="../../images/tutorials/whichelement/caretaware-metainf3.png" alt="caretaware-metainf3">
+         
+      <p>...and once you click OK, new nodes are added to your project:
+      
+      <p align="left"><img border="1" src="../../images/tutorials/whichelement/caretaware-metainf4.png" alt="caretaware-metainf4">
+         
+         
+     <li>Right-click the module and choose Install.</p>
+     
+     <p>Once the module is installed, open a Java file
+      and notice that, automatically, the file name
+      appears in the status bar, as shown below:</p>
+    
+      <p align="left"><img border="1" src="../../images/tutorials/whichelement/first-open.png" alt="first open">
+      
+ </ol>
+  
+  
+ <p><h2><a name="identifying-java-source-files"></a>Creating a Status Element Provider</h2>
+
+ <p>In this section...
+     
+     <ol>
+     
+     <li>Create a Java class called <tt>WhichElementStatusElementProvider</tt>,
+     and fill it out as follows:
+     
+     <pre class="examplecode">public class WhichElementStatusElementProvider implements StatusLineElementProvider {
+    
+    private WhichElementPanel whichElementPanel;
+    public WhichElementStatusElementProvider() {
+        whichElementPanel = new WhichElementPanel();
+    }
+    
+    public Component getStatusLineElement() {
+        return whichElementPanel;
+    }
+    
+    static class WhichElementPanel extends JPanel {
+        private JLabel iconLabel;
+        
+        private JTextField whichElementTextField;
+        
+        WhichElementPanel() {
+            super(new FlowLayout(FlowLayout.LEADING, 0,0));
+            
+            iconLabel = new JLabel(){
+                Point tooltipLocation;
+                
+                <b>// Consider the font's size to compute the location of the
+                // tooltip:</b>
+                public void addNotify() {
+                    super.addNotify();
+                    tooltipLocation = new Point(0, -2 * getFont().getSize());
+                }
+                
+                public Point getToolTipLocation(MouseEvent event) {
+                    return tooltipLocation;
+                }
+            };
+            
+            add(iconLabel, BorderLayout.WEST);
+            
+            <b>// Create the text field:</b>
+            whichElementTextField = new JTextField(40) {
+                Point tooltipLocation;
+                
+                <b>// Consider the font's size to compute the location of the
+                // tooltip:</b>
+                public void addNotify() {
+                    super.addNotify();
+                    tooltipLocation = new Point(0, -2 * getFont().getSize());
+                }
+                
+                public Point getToolTipLocation(MouseEvent event) {
+                    return tooltipLocation;
+                }
+            };
+            
+            <b>// Set the text field to read-only:</b>
+            whichElementTextField.setEditable(false);
+            
+            add(whichElementTextField, BorderLayout.CENTER);
+        }
+        
+        void setIcon(Icon icon) {
+            iconLabel.setIcon(icon);
+        }
+        
+        void setIconToolTip(String text) {
+            iconLabel.setToolTipText(text);
+        }
+        
+        void setText(String text) {
+            whichElementTextField.setText(text);
+        }
+        
+        public void setToolTipText(String text) {
+            whichElementTextField.setToolTipText(text);
+        }
+    }
+}</pre>
+     
+     <li>Check that your import statements are as follows:
+     
+     <pre class="examplecode">import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.FlowLayout;
+import java.awt.Point;
+import java.awt.event.MouseEvent;
+import javax.swing.Icon;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import org.openide.awt.StatusLineElementProvider;</pre>
+     
+     
+     <li>As in the previous section, register your new class
+     in the META-INF/services folder, this time in <tt>org.openide.awt.StatusDisplayer</tt>,
+ as shown below:</p>
+ 
+  <p align="left"><img border="1" src="../../images/tutorials/whichelement/caretaware-metainf5.png" alt="metainf">
+
+  
+  <li>Finally...
+  
+<pre class="examplecode">public class WhichElementTask implements CancellableTask&lt;CompilationInfo&gt; {
+    
+    private WhichElementJavaSourceTaskFactory whichElementJavaSourceTaskFactory;
+    private FileObject fileObject;
+    private boolean canceled;
+    WhichElementStatusElementProvider.WhichElementPanel whichElementPanel;
+    
+    WhichElementTask(WhichElementJavaSourceTaskFactory whichElementJavaSourceTaskFactory,FileObject fileObject) {
+        this.whichElementJavaSourceTaskFactory = whichElementJavaSourceTaskFactory;
+        this.fileObject = fileObject;
+    }
+    
+    private static final Collection<Modifier> NO_MODIFIERS = Collections.<Modifier>emptySet();
+    
+    public void run(CompilationInfo compilationInfo) {
+        <b>// Find the TreePath for the caret position:</b>
+        TreePath tp =
+                compilationInfo.getTreeUtilities().pathFor(whichElementJavaSourceTaskFactory.getLastPosition(fileObject));
+        
+        <b>// if cancelled, return:</b>
+        if (isCancelled()) {
+            return;
+        }
+        
+        <b>// Get Element:</b>
+        Element element = compilationInfo.getTrees().getElement(tp);
+        
+        <b>// if cancelled, return:</b>
+        if (isCancelled()) {
+            return;
+        }
+        
+        String status = "";
+        String iconToolTip = "";
+        Icon icon = UiUtils.getElementIcon(ElementKind.PARAMETER, NO_MODIFIERS);
+        
+        if (element != null) {
+            String modifiers = element.getModifiers().toString();
+            if (modifiers.startsWith("[") && modifiers.endsWith("]")) {
+                modifiers = modifiers.substring(1, modifiers.length() -1).replaceAll(",", "").trim();
+            }
+            iconToolTip =  modifiers + (modifiers.length() > 0 ? " " : "");            
+            icon = UiUtils.getElementIcon(element.getKind(), element.getModifiers());
+            
+            if (element instanceof PackageElement) {
+                PackageElement packageElement = (PackageElement) element;
+                status = packageElement.toString();
+                iconToolTip += element.getKind().name().toLowerCase();
+            } else if (element instanceof TypeElement) {
+                TypeElement typeElement = (TypeElement) element;
+                status = typeElement.getQualifiedName().toString();
+                iconToolTip += element.getKind().name().toLowerCase();
+            } else if (element instanceof VariableElement) {
+                VariableElement variableElement = (VariableElement) element;
+                status = variableElement.toString() + ":" + variableElement.asType().toString();
+                iconToolTip += element.getKind().name().toLowerCase();
+            } else if (element instanceof ExecutableElement) {
+                ExecutableElement executableElement = (ExecutableElement) element;
+                // Method
+                if (element.getKind() == ElementKind.METHOD) {
+                    status = executableElement.getEnclosingElement().toString()
+                            + "."
+                            + executableElement.toString()
+                            + ":"
+                            + executableElement.getReturnType().toString();
+                    iconToolTip += element.getKind().name().toLowerCase();
+                } else if (element.getKind() == ElementKind.CONSTRUCTOR) { // CTOR - use enclosing class name
+                    status = executableElement.getEnclosingElement().toString()
+                            + "."
+                            + executableElement.toString();
+                    iconToolTip += element.getKind().name().toLowerCase();
+                }
+            }
+        }
+        
+        WhichElementStatusElementProvider.WhichElementPanel localWhichElementPanel = getWhichElementPanel();
+        
+        <b>// Set the info:</b>
+        if (localWhichElementPanel != null) {
+            localWhichElementPanel.setIcon(icon);
+            localWhichElementPanel.setIconToolTip(iconToolTip);
+            localWhichElementPanel.setText(status);
+            localWhichElementPanel.setToolTipText(status);
+        }
+    }
+    
+    private WhichElementStatusElementProvider.WhichElementPanel getWhichElementPanel() {
+        if (whichElementPanel == null) {
+            StatusLineElementProvider statusLineElementProvider = (StatusLineElementProvider) Lookup.getDefault().lookup(WhichElementStatusElementProvider.class);
+            if (statusLineElementProvider != null) {
+                whichElementPanel = (WhichElementStatusElementProvider.WhichElementPanel) statusLineElementProvider.getStatusLineElement();
+            }
+        }
+        return whichElementPanel;
+    }
+    
+    <b>/**
+     * After this method is called the task if running should exit the run
+     * method immediately.
+     */</b>
+    public final synchronized void cancel() {
+        canceled = true;
+    }
+    
+    protected final synchronized boolean isCancelled() {
+        return canceled;
+    }
+}</pre>  
+  
+  
+     <li>Install the module again.
+     
+
+ </ol>
+
+ 
+<br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Java%20Language%20Infrastructure%20Tutorial%20Part%202">Send Us Your Feedback</a></div>
+<br style="clear:both;" />
+
+    
+ <!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Next Steps</h2>
+
+<p>For more information about creating and developing NetBeans Module, see the following resources: 
+  <ul>
+	  <li><a href="https://netbeans.org/kb/trails/platform.html">Other Related Tutorials</a></li>
+	  <li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API Javadoc</a></li>
+  </ul>
+  
+  <hr>
+    
+    <!-- ======================================================================================== -->
+
+    </body>
+</html>

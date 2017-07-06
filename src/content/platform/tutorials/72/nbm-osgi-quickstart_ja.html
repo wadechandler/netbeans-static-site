@@ -1,0 +1,270 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>OSGi を使用した NetBeans プラットフォームクイックスタート</title>
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+        <meta name="AUDIENCE" content="NBUSER"/>
+        <meta name="TYPE" content="ARTICLE"/>
+        <meta name="EXPIRES" content="N"/>
+        <meta name="indexed" content="y"/>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="description"
+              content="A short guide to getting started with the NetBeans Platform."/>
+      <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+    <body>
+
+        <h1>OSGi を使用した NetBeans プラットフォームクイックスタート</h1>
+
+        <p>このドキュメントは、NetBeans プラットフォームアプリケーションで OSGi バンドルを統合する方法についての簡単なデモンストレーションです。
+        </p>
+
+        <p>
+            このチュートリアルの中心は、「<a href="http://www.aqute.biz/Code/Download#sudoku">Peter Kriens 氏による Sudoku ゲーム</a>」に基づいた「hello world」シナリオです。Sudoku ゲームを構成する OSGi バンドルを、関連する必須の Equinox バンドルと一緒にインポートします。アプリケーションを配備すると、Web ブラウザで次のアプリケーションが使用できます。
+        </p>
+
+        <p><img width="400" height="300" src="http://netbeans.dzone.com/sites/all/files/sudokugame-4.png"/></p>
+
+        <p>この簡単なシナリオを終えたら、このチュートリアルの最後にある「参考情報」の節に一覧されている、さらに役立つシナリオも参照してください。</p>
+
+        <p><b>目次</b></p>
+        <p><img src="../../images/articles/69/netbeans-stamp69.png" class="stamp" width="114" height="114" alt="このページの内容は NetBeans IDE 6.5、6.7、および 6.8 が対象です" title="このページの内容は NetBeans IDE 6.5、6.7、および 6.8 が対象です" /></p>
+        <ul class="toc">
+            <li><a href="#setup">環境の設定</a></li>
+            <li><a href="#create">アプリケーションの作成</a></li>
+            <li><a href="#import">OSGi バンドルのインポート</a></li>
+            <li><a href="#run">アプリケーションの実行</a></li>
+            <li><a href="#further">参考情報</a></li>
+        </ul>
+
+        <p><b>このチュートリアルを行うには、次の表に示すソフトウェアおよびリソースが必要です。</b></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                    <th class="tblheader" scope="col">必須バージョン</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                    <td class="tbltd1">version 6.9</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                    <td class="tbltd1">version 6 または</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://download.eclipse.org/equinox">Equinox</a></td>
+                    <td class="tbltd1"></td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.aqute.biz/Code/Download#sudoku">Sudoku ゲーム</a></td>
+                    <td class="tbltd1"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong class="notes">注:</strong> NetBeans プラットフォーム用のアプリケーション開発のために、別々のバージョンの NetBeans プラットフォームをダウンロードする必要はありません。通常、NetBeans IDE でアプリケーションおよびモジュールを開発し、NetBeans プラットフォームおよびアプリケーションを実行するのに必要なモジュールのみを追加します。
+        </p>
+
+
+
+        <!-- ===================================================================================== -->
+
+        <h2><a name="setup"></a>環境の設定</h2>
+        <p>上記に一覧されているソフトウェアのダウンロードのほかに、次に示す手順を実行して環境を整える必要があります。</p>
+
+        <ol>
+
+            <li>ディスク上のファイルシステムに新しいフォルダを作成します。</li>
+            <li>Equinox ディストリビューションから、次のものをこのフォルダに入れます。
+                <ul><li>javax.servlet_xxx.jar</li>
+                    <li>org.eclipse.equinox.ds_xxx.jar</li>
+                    <li>org.eclipse.equinox.http_xxx.jar</li>
+                    <li>org.eclipse.equinox.util_xxx.jar</li>
+                    <li>org.eclipse.osgi.services_xxx.jar</li>
+                    <li>org.eclipse.osgi_xxx.jar</li></ul>
+
+            </li>
+            <li>次の 2 つの Sudoku JAR を、上記の JAR があるフォルダへ入れます。
+                <ul><li>aQute.sudoku.jar</li>
+                    <li>aQute.webrpc.jar</li></ul>
+            </li>
+        </ol>
+
+        <p>これで、インポートする OSGi バンドルが、集中管理された場所で使用可能になりました。この場所から、バンドルをアプリケーションに統合できます。</p>
+
+        <h2><a name="create"></a>アプリケーションの作成</h2>
+        <p>すべての必須 OSGi バンドルが使用可能になったら、次のようにして新しい NetBeans プラットフォームアプリケーションを作成します。</p>
+
+        <ol>
+            <li><p>「ファイル」&gt;「新規プロジェクト」を選択して、次のように、Equinox テンプレートを使用して Equinox 上に NetBeans プラットフォームアプリケーションを作成するオプションを選択します。</p>
+
+                <p><img src="http://netbeans.dzone.com/sites/all/files/sudokugame-5.png"/></p>
+                <p>「次へ」をクリックします。</p>
+            </li>
+
+            <li><p>次に示すように、アプリケーションの名前を指定します。</p>
+
+                <p><img src="http://netbeans.dzone.com/sites/all/files/sudokugame-3.png"/></p>
+
+                <p>「完了」をクリックします。</p></li>
+
+            <li>上記のテンプレートから作成されたアプリケーションを実行すると、アプリケーションのウィンドウに、アプリケーションを構成するすべての NetBeans モジュールおよび OSGi バンドルが表示されるのが確認できます。</li>
+
+        </ol>
+
+        <h2><a name="import"></a>OSGi バンドルのインポート</h2>
+        <p>上記に一覧されているソフトウェアのダウンロードのほかに、次に示す手順を実行して環境を整える必要があります。</p>
+
+
+        <ol>
+            <li><p>「プロジェクト」ウィンドウでアプリケーションを右クリックして「プロパティー」を選択し、「ライブラリ」タブを表示します。「クラスタを追加」をクリックして、上記の JAR があるフォルダに移動します。そのあと、JAR を「クラスタ」(アプリケーションに組み込まれる関連モジュールおよびバンドルの集まり) に変換する次のようなウィザードが開きます。</p>
+
+                <p><img src="http://netbeans.dzone.com/sites/all/files/sudokugame-1.png"/></p></li>
+
+            <li>上記のように、インポートするすべての OSGi バンドルを「有効」に設定して、アプリケーションの起動時にロードされて使用可能になるようにします。</li>
+
+            <li>「完了」をクリックすると、「platform.properties」構成ファイルが更新されています。次のようになっているはずです。
+
+                <pre class="examplecode">cluster.path.extra=netbinox:\../../path/to/my/nbsudokugame/folder
+disabled.modules.extra=org.netbeans.libs.felix
+cluster.path=\
+    ${nbplatform.active.dir}/harness:\
+    ${nbplatform.active.dir}/platform:\
+    ${cluster.path.extra}
+disabled.modules=\
+    org.jdesktop.layout,\
+    org.netbeans.api.visual,\
+    org.netbeans.core.execution,\
+    org.netbeans.core.multiview,\
+    org.netbeans.insane,\
+    org.netbeans.libs.felix,\
+    org.netbeans.libs.jsr223,\
+    org.netbeans.modules.apisupport.harness,\
+    org.netbeans.modules.apisupport.tc.cobertura,\
+    org.netbeans.modules.autoupdate.services,\
+    org.netbeans.modules.autoupdate.ui,\
+    org.netbeans.modules.core.kit,\
+    org.netbeans.modules.favorites,\
+    org.netbeans.modules.jellytools.platform,\
+    org.netbeans.modules.jemmy,\
+    org.openide.compat,\
+    org.openide.execution,\
+    org.openide.options,\
+    org.openide.util.enumerations
+nbplatform.active=default</pre>
+
+
+                <p><b>注:</b> 上記の最初の行は、前に作成したフォルダの場所を示しています。</p></li>
+
+            <li>そのあと、スプラッシュ画面を表示しないことと、アプリケーションを配備するポートを指定するために、アプリケーションの「project.properties」構成ファイルに次の行を追加します。
+
+                <pre class="examplecode">run.args.extra=--nosplash -J-Dorg.osgi.service.http.port=8080</pre></li>
+        </ol>
+
+        <h2><a name="run"></a>アプリケーションの実行</h2>
+
+        <p>これで、次に示す手順でアプリケーションを配備する準備が整いました。</p>
+
+        <ol>
+
+            <li><p>アプリケーションを実行します。アプリケーションのすべての OSGi バンドルおよび NetBeans モジュールが配備されます。配備済みの OSGi バンドルおよび NetBeans モジュールを表示するアプリケーションも配備されます。このアプリケーションは、現在何が配備済みかを監視できるので、非常に便利です。</p>
+
+                <p><img src="http://netbeans.dzone.com/sites/all/files/sudokugame-6_0.png"/></p>
+
+            <p>または、上記のウィンドウを提供するモジュール全体を削除します。そのあと、OSGi の統合に必要な、いくつかの JAR (ブートストラップ、起動、ファイルシステム、モジュールシステム、ユーティリティー、およびルックアップ) を除いて、上記のウィンドウに必要なすべてのモジュール (ウィンドウシステム、アクションシステム、およびその他すべて) を削除します。
+            </p>
+
+            <pre class="examplecode">cluster.path.extra=netbinox:\../../path/to/my/nbsudokugame/folder
+disabled.modules.extra=org.netbeans.libs.felix
+cluster.path=\
+    ${nbplatform.active.dir}/harness:\
+    ${nbplatform.active.dir}/platform:\
+    ${cluster.path.extra}
+disabled.modules=\
+    org.jdesktop.layout,\
+    org.netbeans.api.annotations.common,\
+    org.netbeans.api.progress,\
+    org.netbeans.api.visual,\
+    org.netbeans.core,\
+    org.netbeans.core.execution,\
+    org.netbeans.core.io.ui,\
+    org.netbeans.core.multiview,\
+    org.netbeans.core.nativeaccess,\
+    org.netbeans.core.output2,\
+    org.netbeans.core.ui,\
+    org.netbeans.core.windows,\
+    org.netbeans.insane,\
+    org.netbeans.libs.felix,\
+    org.netbeans.libs.jna,\
+    org.netbeans.libs.jsr223,\
+    org.netbeans.libs.junit4,\
+    org.netbeans.modules.apisupport.harness,\
+    org.netbeans.modules.apisupport.tc.cobertura,\
+    org.netbeans.modules.applemenu,\
+    org.netbeans.modules.autoupdate.services,\
+    org.netbeans.modules.autoupdate.ui,\
+    org.netbeans.modules.core.kit,\
+    org.netbeans.modules.editor.mimelookup,\
+    org.netbeans.modules.editor.mimelookup.impl,\
+    org.netbeans.modules.favorites,\
+    org.netbeans.modules.javahelp,\
+    org.netbeans.modules.jellytools.platform,\
+    org.netbeans.modules.jemmy,\
+    org.netbeans.modules.keyring,\
+    org.netbeans.modules.masterfs,\
+    org.netbeans.modules.nbjunit,\
+    org.netbeans.modules.options.api,\
+    org.netbeans.modules.options.keymap,\
+    org.netbeans.modules.print,\
+    org.netbeans.modules.progress.ui,\
+    org.netbeans.modules.queries,\
+    org.netbeans.modules.sendopts,\
+    org.netbeans.modules.settings,\
+    org.netbeans.modules.spi.actions,\
+    org.netbeans.spi.quicksearch,\
+    org.netbeans.swing.outline,\
+    org.netbeans.swing.plaf,\
+    org.netbeans.swing.tabcontrol,\
+    org.openide.actions,\
+    org.openide.awt,\
+    org.openide.compat,\
+    org.openide.dialogs,\
+    org.openide.execution,\
+    org.openide.explorer,\
+    org.openide.io,\
+    org.openide.loaders,\
+    org.openide.nodes,\
+    org.openide.options,\
+    org.openide.text,\
+    org.openide.util.enumerations,\
+    org.openide.windows
+nbplatform.active=default</pre>
+
+            <p>このようにすると、モジュール式の Web 開発に適した非 GUI アプリケーション (サーバーアプリケーション) を使用できるようになります。</p></li>
+
+            <li>これで、次の URL をブラウザに入力すると (または、プログラムで NetBeans UI ユーティリティー API の URLDisplayer.getDefault() を使用して必要な場所でブラウザを開くと)、Sudoku ゲームの配備で定義されている「index.html」がブラウザで表示され、Sudoku ゲームを始めることができます。
+
+                <pre class="examplecode">http://localhost:8080/rpc/sudoku/index.html</pre></li>
+
+        </ol>
+
+        <p>お疲れさまでした。これで最初の OSGi バンドルが NetBeans プラットフォームアプリケーションに統合されました。</p>
+
+        <h2><a name="further"></a>参考情報</h2>
+
+        <p>これでチュートリアルが終了しました。NetBeans プラットフォームアプリケーションで OSGi バンドルを再利用するための手順を理解したら、次に、関連ドキュメントや、より高度なシナリオを参照してください。</p>
+
+        <ul>
+            <li><a href="http://www.osgi.org/blog/2006_09_01_archive.html">Peter Kriens 氏と Sudoku ゲーム</a></li>
+            <li><a href="http://wiki.apidesign.org/wiki/NetbinoxTutorial">Jaroslav Tulach 氏と Netbinox</a></li>
+            <li>Toni Epple 氏の OSGi/NetBeans <a href="http://eppleton.sharedhost.de/blog/?p=662">ブログエントリ</a>および<a href="http://eppleton.sharedhost.de/blog/?s=Frankenstein%27s+IDE">プレゼンテーション</a></li>
+            <li>Gunnar Reinseth 氏の NetBeans-EMF 統合 (<a href="http://eclipse.dzone.com/emf-on-netbeans-rcp">パート 1</a>、<a href="http://eclipse.dzone.com/emf-on-netbeans-rcp-2">パート 2</a>)</li>
+            <li>「<a href="http://java.dzone.com/news/new-cool-tools-osgi-developers">OSGi 開発者のための新しい便利ツール</a>」も参照してください</li>
+        </ul>
+
+    </body>
+
+</html>

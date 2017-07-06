@@ -1,0 +1,428 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
+  <title>Graph Library - The Architecture</title>
+  <meta content="David.Kaspar@sun.com" name="author">
+</head>
+<body>
+<h1>Graph Library - The Architecture</h1>
+<span style="font-weight: bold;">Version:</span> 1.0<br>
+<span style="font-weight: bold;">Date:</span> September 22th, 2005<span
+ style="font-weight: bold;"><br>
+Author:</span> David Kaspar<br>
+<hr style="width: 100%; height: 2px;">
+<h2>Abstract</h2>
+The main purpose of the Library is to visualize a graph data model on a
+screen (using Swing's JComponent) and allow Drag&amp;Drop style of
+work. It
+should be very easy to integrate it with
+existing models and it should support different Look&amp;Feels.<br>
+<br>
+This document describes the architecture of the Graph Library.<br>
+<h2>Overall Description</h2>
+The Library consists of 3 parts:<br>
+<ul>
+  <li>model - the part describing and holding graph data.<br>
+  </li>
+  <li>view - the part visualizing the data.<br>
+  </li>
+  <li>control - the part controlling the model data and view
+look&amp;feel.<br>
+  </li>
+</ul>
+<h3>The Model</h3>
+The graph library works with following model:<br>
+<ul>
+  <li>There is a document.</li>
+  <li>The document contains a set of nodes and links.</li>
+  <li>A node contains a set of ports. One of these ports could be a
+default port that is substituting a node when there are operations with
+ports only.</li>
+  <li>A link could have assigned a source port and a target port.</li>
+  <li>A component is a node, a link, or a port.<br>
+  </li>
+</ul>
+<h3>The View</h3>
+The view is a Swing JComponent which could be used as any other
+components. It is fully controlled by controls and suplies them an
+instance of Graphics2D for rendering the data. This allows an
+integration with any technology which works with Graphics2D - for
+example: Java2D, ...<br>
+<h3>The Control</h3>
+The view it self is just a Swing JComponent and does not do anything
+(neither reacting on user actions nor painting itself). There are
+following interfaces, each is providing specific operations that doing
+the work:<br>
+<ul>
+  <li>Document Renderer - takes care about all renderings related to a
+document (for example: background, selection), add creating following
+renderers, router, and layouter.<br>
+  </li>
+  <li>Node Renderer - takes care about all renderings related to a node.<br>
+  </li>
+  <li>Port Renderer - takes care about all renderings related to a port.<br>
+  </li>
+  <li>Link Renderer - takes care about all renderings related to a link
+based on control points of a link.<br>
+  </li>
+  <li>Link Router - takes care about resolving control points (a route)
+of a link.<br>
+  </li>
+  <li>Nodes Layouter - takes care about resolving a locations of a
+nodes.<br>
+  </li>
+  <li>View Controller - takes care about an interrraction between the
+UI and an user.<br>
+  </li>
+</ul>
+These controls allows developer to customize anything on the view.<br>
+<h2>The Interaction Between the Control, the View, and the Model<br>
+</h2>
+The Graph Library itself holds internally additional data to the ones
+from the model - mainly: location, active areas, bounds for nodes,
+links, ports (except a location for a link). A location is a center of
+a component on the screen. Bounds is the smallest rectangle that
+contains whole component (for nodes it includes its ports too). Bounds
+are used for repainting of components. Active areas are rectangle on
+the screen which defines places where a component is (means: something
+is usually painted there and when a control asks for a component on
+that place, then the component is returned).<br>
+<br>
+These 3 parts of the Library are not connected directly to each other
+but through the presenters and helper:<br>
+<ul>
+  <li>Graph Helper - allows the control to access and modify data from
+the model and the internal data related to the model data.</li>
+  <li>View Presenter - allows the view controller to access the view,
+cooperate with it and to access the graph helper.</li>
+</ul>
+<h3>Model Components vs. Proxy Components</h3>
+All 3 parts are working with interfaces representing components (a
+port, a link, or a node) in the model. They are used even for the
+accessing internal data.<br>
+When some internal data has to be accessed, a peer for each component
+need to be found in the internal data. Then it is possible to work with
+the data related to the component. The problem is that the search for a
+component peer is slow (non-constant time). Therefore there are two
+components: <span style="font-weight: bold;">Model components</span>
+and <span style="font-weight: bold;">Proxy components</span>.<br>
+<br>
+Model components are components implementing IGraphNode, IGraphLink, or
+IGraphPort inteface (interfaces defining the model). They are
+implemented by a developer using the Library. Proxy components also
+implement IGraphPort, IGraphNode, IGraphLink interfaces and forward all
+the interface method calls to the model components but they are not the
+same instance as the model components. The proxy components are used to
+faster cooperation with internal structures of the graph library
+because they contain additional data needed for the access.<br>
+Therefore it is better to use these proxy components when you are
+working with the Graph Helper, the Presenters from the Control side
+althrough it is possible to use model components.<br>
+<h3>Recalculation<br>
+</h3>
+A location, active areas, and bounds are often needed to recalculate.
+For example it is invoked when a new node is added to the document, a
+node is moved on the screen, a link changes its control point, ...<br>
+<br>
+The recalculation process is described by the following algorithm:<br>
+<table style="width: 100%; text-align: left;" border="1" cellpadding="0"
+ cellspacing="0">
+  <tbody>
+    <tr>
+      <td style="vertical-align: top;">
+      <pre>
+for (node : nodes) {
+    for (port : node.ports) {
+        // renderer must resolve relative-bounds,
+        // relative-active-areas of the port and
+        // optionally its relative location
+
+        GraphHelper.getPortRenderer (port).layoutPort ()
+    }
+
+    // driver must resolve relative-bounds
+    // (including relative-bounds, relative-location of all ports) and
+    // relative-active-areas of the node and
+    // optionally relative-locations of all its ports
+
+    GraphHelper.getNodeRenderer (node).layoutNode ()
+}
+
+// layouter should resolve location of all nodes
+GraphHelper.getDocumentRenderer ().getNodesLayouter ().layoutNodesLocations ()
+
+for (node : nodes) {
+    // absolute location, active areas, and bounds of the node and
+    // all its ports are automatically computer by the Library
+
+    recalculate-absolute-location (node)
+}
+
+for (link : links) {
+    // resolves control points (a route) of the link
+    GraphHelper.getLinkRouter (link).routeLink ()
+
+    // resolves absolute bounds of a link
+    GraphHelper.getLinkRenderer (link).layoutLink ()
+}
+</pre>
+      </td>
+    </tr>
+  </tbody>
+</table>
+Node location is resolved by a nodes layouter.<br>
+Node active-areas on a screen is defined by: node.location +
+node.relativeActiveAreas.<br>
+Node bounds on a screen is defined by: node.location +
+node.relativeBounds.<br>
+Port active-areas on a screen is defined by: node.location +
+port.relativeLocation + port.relativeActiveAreas.<br>
+Port bounds on a screen is defined by: node.location +
+port.relativeLocation + port.relativeBounds.<br>
+Bounds of links are resolved by its a link render directly.<br>
+<h2>An Existing Model Integration</h2>
+The Library itself has its own built-in implementation of the model
+interfaces that allows a developer to work with the model using
+bean-patterns, ...<br>
+Usually a developer already has an existing model and all he/she need
+to integrate with the Library and implement or reuse the look&amp;feel
+of a view.<br>
+<br>
+The interraction between the Model and the Library is decribed by
+following diagram:
+<br>
+<div style="text-align: center">
+<a href="ModelLibraryInterraction.png"><img alt="Model - Library Interraction"
+ src="ModelLibraryInterraction.png" style="width: 443px; height: 98px;"></a>
+</div>
+<br>
+The extenal model has to implement the model interfaces. An user action
+events are forwarded to an event handler which it also implemented by a
+developer of the model. The event handler has to process the event.
+Based on the event it could change the model according the event. When
+an model changes, it has to fire an event to the Library about the
+change. Then the event is processed (components recalculated) and
+renderer on the screen.<br>
+<h2>Abilities</h2>
+The Library is designed to be easy extensible. The model interfaces
+contain all getters for data that are necessary to describe the
+structure of a graph.<br>
+Usually a developer would like to contain more data - for example: a
+display name, a tooltip, ...<br>
+For this purpose there are <span style="font-weight: bold;">Abilities</span>.
+Abilities are represented by an interface or a class which
+implementation is stored in the lookup for a document, a node, a port,
+or a link.<br>
+When a renderer have to render a component, it could look into lookup
+of an ability (that a render could recognize and use) and if an
+instance is returned, it could work with it.<br>
+Currently there are following abilities defined in the Library:<br>
+<ul>
+  <li><span style="font-weight: bold;">Displayable</span> - allows to
+get a display name, an icon, and a tooltip text<br>
+  </li>
+  <li><span style="font-weight: bold;">Directionable</span> - allows to
+get a direction<br>
+  </li>
+  <li><span style="font-weight: bold;">NameEditable</span> - allows to
+check if a name edit is approved, a initial name, and callback for
+changing the name<br>
+  </li>
+</ul>
+<h2>In-Place Editors</h2>
+The Library also allows to define and use in-place editors. The editor
+could be obtained from renderers or a view control could open it
+itself. Currently the Library contains <span style="font-weight: bold;">Text
+Field Editor<span style="font-weight: bold;"></span></span> (uses
+JTextField for a single line text editing). Usually a renderer
+recognizes NameEditable ability and offers related editor.<br>
+<h2>Packages Description</h2>
+This package hierarchy is located at <span style="font-weight: bold;">org.netbeans</span>
+package.<br>
+<br>
+The Graph Library - <span style="font-weight: bold;">API</span>
+packages:<br>
+<ul>
+  <li><span style="font-weight: bold;">graph.api</span><br>
+    <ul>
+      <li> <span style="font-weight: bold;">GraphFactory</span> - a
+factory class for creating a view for a model</li>
+      <li><span style="font-weight: bold;">IGraphEventHandler</span> -
+an event handler for user action called by the Library</li>
+    </ul>
+  </li>
+</ul>
+The Graph Library - <span style="font-weight: bold;">Model API</span>
+packages:<br>
+<ul>
+  <li><span style="font-weight: bold;">graph.api.model</span> -
+contains model interfaces.<br>
+    <ul>
+      <li><span style="font-weight: bold;">GraphEvent</span> - an event
+used by document listener.</li>
+      <li><span style="font-weight: bold;">IGraphDocument</span> - an
+interface defining a document.</li>
+      <li><span style="font-weight: bold;">IGraphLink</span> - an
+interface defining a link.</li>
+      <li><span style="font-weight: bold;">IGraphNode</span> - an
+interface defining a node.</li>
+      <li><span style="font-weight: bold;">IGraphPort</span> - an
+interface defining a port.<br>
+      </li>
+    </ul>
+  </li>
+  <li><span style="font-weight: bold;">graph.api.model.ability</span> -
+contains interfaces defining abilities<br>
+    <ul>
+      <li><span style="font-weight: bold;">IDirectionable</span><br>
+      </li>
+      <li style="font-weight: bold;">IDisplayable</li>
+      <li><span style="font-weight: bold;">INameEditable</span></li>
+    </ul>
+  </li>
+  <li><span style="font-weight: bold;">graph.api.model.builtin</span> -
+contains built-in implementation of a model interfaces.<br>
+    <ul>
+      <li style="font-weight: bold;">GraphDocument</li>
+      <li style="font-weight: bold;">GraphLink</li>
+      <li style="font-weight: bold;">GraphNode</li>
+      <li style="font-weight: bold;">GraphPort</li>
+    </ul>
+  </li>
+</ul>
+The Graph Library - <span style="font-weight: bold;">Control API</span>
+packages:<br>
+<ul>
+  <li><span style="font-weight: bold;">graph.api.control</span> -
+contains cotrol interfaces.<br>
+    <ul>
+      <li><span style="font-weight: bold;">GraphHelper</span> - graph
+helper class.<br>
+      </li>
+      <li><span style="font-weight: bold;">IGraphDocumentRenderer</span>
+- a document renderer interface.</li>
+      <li><span style="font-weight: bold;">IGraphLinkRenderer</span> -
+a link renderer interface.</li>
+      <li><span style="font-weight: bold;">IGraphLinkRouter</span> - a
+link router interface.<br>
+      </li>
+      <li><span style="font-weight: bold;">IGraphNodeRenderer</span> -
+a node renderer interface.</li>
+      <li><span style="font-weight: bold;">IGraphNodesLayouter</span> -
+a nodes layouter interface.</li>
+      <li><span style="font-weight: bold;">IGraphPortRenderer</span> -
+a port renderer interface.</li>
+      <li><span style="font-weight: bold;">IGraphViewController</span>
+- a view controller interface.</li>
+    </ul>
+  </li>
+  <li><span style="font-weight: bold;">graph.api.control.buildin</span>
+- contains built-in controls.<br>
+    <ul>
+      <li><span style="font-weight: bold;">AnimatedNodesLayouter</span>
+- animated nodes layout support class.</li>
+      <li><span style="font-weight: bold;">BreadthFirstNodesLayouter</span>
+- breadth-first nodes layout class.</li>
+      <li><span style="font-weight: bold;">DefaultViewController</span>
+- a default view controller with drag&amp;drop style of work
+implementation.<br>
+      </li>
+    </ul>
+  </li>
+  <li><span style="font-weight: bold;">graph.api.control.editor</span>
+- contains in-place editors.<br>
+    <ul>
+      <li><span style="font-weight: bold;">IGraphEditor</span> - an
+in-place editor descriptor interface.</li>
+      <li><span style="font-weight: bold;">TextFieldEditor</span> -
+text field in-place editor implementation.<br>
+      </li>
+    </ul>
+  </li>
+</ul>
+Additional The Graph Library packages:<br>
+<ul>
+  <li><span style="font-weight: bold;">graph</span> - the rest of the
+code of the library which is not an API.<br>
+  </li>
+  <li><span style="font-weight: bold;">graph.examples</span> - examples
+for
+the Graph Library.<br>
+  </li>
+  <li><span style="font-weight: bold;">graph.examples.resources</span>
+-
+resources for the examples.</li>
+  <li><span style="font-weight: bold;">graph.examples.control</span> -
+controls
+for the examples.</li>
+  <li><span style="font-weight: bold;">graph.examples.control.resources</span>
+-
+resource for the controls.</li>
+  <li><span style="font-weight: bold;">graph.examples.dnd</span> -
+dnd example.</li>
+  <li><span style="font-weight: bold;">graph.examples.dnd.resources</span>
+-
+resource for the dnd example.<br>
+  </li>
+</ul>
+<h2>Dependencies</h2>
+The Graph Library is currently dependent on standard <span
+ style="font-weight: bold;">JDK 1.4</span> classes and NetBeans <span
+ style="font-weight: bold;">org-openide-util.jar</span> library. From
+the jar it uses:<br>
+<ul>
+  <li>NbBundle class - used for localized messages</li>
+  <li>Utilities class - for images loading</li>
+  <li>Lookup package - for the Abilities</li>
+</ul>
+If you do not
+want to have a dependency on org-openide-util.jar, you have to
+reimplement these
+classes.<br>
+<h2>Distribution<br>
+</h2>
+The Graph Library is a single jar package - <span
+ style="font-weight: bold;">org-openide-graphlib.jar</span>. For a
+proper work it
+requires an org-openide-util.jar on a classpath and JDK 1.4.<br>
+<h2>Requirements for the Library<br>
+</h2>
+<ol>
+  <li>Visualize a graph model defined by following rules:<br>
+    <ul>
+      <li>A node could have a set of ports.</li>
+      <li>A port has a single node assigned.</li>
+      <li>A link could have a source and a target port assigned.<br>
+      </li>
+    </ul>
+  </li>
+  <li>There must be separated Model, View, and Control parts.</li>
+  <li>Easy integration of existing external models - a model must fire
+an
+event for any change in the model and all user actions should be passed
+to an event handler and it has to decide how to change the model.<br>
+  </li>
+  <li>Support for custom look&amp;feels.<br>
+  </li>
+  <li>Drag&amp;Drop style of work - possibility to move which nodes on
+the screen, creating new links, relinking of source or target ports,
+rectangular selections, ...</li>
+  <li>Drag&amp;Drop support.<br>
+  </li>
+  <li>In-place editing support.</li>
+  <li>Multi-view support - support for cloning views or to create
+different view of the same model.<br>
+  </li>
+  <li>Multi-layer rendering support - allows to components in the
+layers - for example: a link could be renderer below nodes but when a
+link is selected it could be renderer over nodes, ...<br>
+  </li>
+  <li>Undo-Redo support - all node location changes are put to UndoRedo</li>
+  <li>Zoom in/out, snap-to-grid support.<br>
+  </li>
+</ol>
+<hr style="width: 100%; height: 2px;">If you have any questions or
+comments, send an email to <a href="mailto:dkaspar@netbeans.org">dkaspar@netbeans.org</a>.<br>
+</body>
+</html>

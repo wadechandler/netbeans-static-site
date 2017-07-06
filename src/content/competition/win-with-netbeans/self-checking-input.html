@@ -1,0 +1,474 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+<head>
+	<title>Self-checking html input boxes - Tutorial for NetBeans Contest</title>
+<link rel="stylesheet" type="text/css" href="../../netbeans.css">
+<META NAME="AUDIENCE" CONTENT="NBUSER">
+<META NAME="TYPE" CONTENT="ARTICLE">
+<META NAME="TOPIC" CONTENT="ADVANCED">
+<META NAME="description" CONTENT="Building extended HTML input elements with self-checking.">
+</head>
+
+<body >
+<h1>Self-checking html input boxes</h1>
+<div class="articledate" style="margin-left:0px;">Contributed by Zsolt Kiss as part of the <a href="../../competition/win-with-netbeans.html">Win With NetBeans</a> comptetition</div></p>
+<p><a href="https://netbeans.org/files/documents/4/303/selfcheckinginputs.zip">Download Files & Sources</a></p>
+
+<p>
+In this tutorial we will build some extended html <pre class="examplecode">&lt;input type="text"&gt;</pre> elements. 
+These elements will have a self-checking property, that means they are predefined what user inputs they could only accept.
+
+</p>
+<p>
+We can do this using Java Server Pages technology's custom tag libraries.
+</p>
+<p>
+Custom tag libraries extends the basic html tags with programmer defined elements and adds new functions to html this way. 
+From that point a java developer invented a new tag this tag can be used byn any web disigners and html coders without 
+any (or merely some basic)
+programming knowledge. So web programmers who not familiar with java also can enjoy the advantages of these technologies.
+</p>
+<p>
+We will use NetBeans IDE 4.0 to develop our new html tags. This amazing environment provides everything we will need to develop
+JSP custom tag libraries rapidly and very simple way.
+</p>
+		
+
+<h2>Developing our custom tag library and java tag handlers with NetBeans 4.0</h2>
+<p>The following main steps I will walk you through:</p>
+<ul>
+  <li><a href="#setup">Setting up a new web application with NetBeans IDE 4.0</a></li>
+
+  <li><a href="#createtld">Creating a tag library descriptor for our new html elements</a></li>
+  <li><a href="#taghandlers">Creating java tag handlers</a></li>
+  <li><a href="#useyourtags">Using your new tags in a jsp page</a></li>
+  <li><a href="#javascript">Putting some javascript code into your jsp</a></li>
+  <li><a href="#buildandrun">Build and run the project</a></li>
+ </ul>
+
+ 
+<p>
+<h3 class='tutorial'><a name="setup"></a>Setting up a new web application with NetBeans IDE 4.0</h3>
+
+<ol>
+	<li>
+<p>
+Start  your NetBeans and in the main menu
+choose File > New Project. Under categories select Web and project let be a Web Application. Click Next.
+On next page type SelfcheckingTags as the project name and brows into a pleasing folder where
+you want the IDE to create your project folder. Click finish.
+</p> 
+	</li>
+<li>
+<p>
+You can check your project folder and its contents in the IDE: press Ctrl+1 to view the Project window and Ctrl+2
+to for File window. The IDE created a default index.jsp file and the always needed WEB-INF folder for you.
+</p> 
+	</li>	
+
+</ol>
+ 
+<h3 class='tutorial'><a name="createtld"></a>Creating a tag library descriptor for our new html elements</h3>
+
+
+<ol>
+	<li>
+<p>
+First we have ti create a tag library descriptor. This is a file with xml syntax that contains information about the tag 
+we are developing. Describes its name, atributes, the datatypes for these values etc. that is it defines the tag.
+Right click on your project's name in the Project window of the IDE, select New > File/Folder then Web 
+and Tag Library Descriptor as file type. Click Next and on the upcoming screen type selfcheckers as file name 
+and sfchk as prefix below.
+Leave any other inputs as they are.
+
+</p> 
+	</li>
+<li>
+<p>
+Then IDE creates for you a descriptor file named selfcheckers.tld in the WEB_INF/tlds folder. You can see below, how our descriptor file
+will look like.
+<br><span style="color:red;font-weight:bold;">Don't type in this code now, we will create the content of the descriptor 
+file with later with a user-friendly mechanism of NetBeans IDE.</span>
+
+<pre class="examplecode">
+&lt;tag&gt;
+    &lt;name&gt;xinput&lt;/name&gt;
+    &lt;tag-class&gt;com.zsoltkiss.web.customtags.selfcheckers.XInput&lt;/tag-class&gt;
+    &lt;body-content&gt;empty&lt;/body-content&gt;
+
+    &lt;attribute&gt;
+      &lt;name&gt;id&lt;/name&gt;
+      &lt;required&gt;true&lt;/required&gt;
+      &lt;type&gt;java.lang.String&lt;/type&gt;
+
+    &lt;/attribute&gt;
+    &lt;attribute&gt;
+      &lt;name&gt;pattern&lt;/name&gt;
+      &lt;required&gt;true&lt;/required&gt;
+      &lt;rtexprvalue&gt;true&lt;/rtexprvalue&gt;
+
+      &lt;type&gt;java.lang.String&lt;/type&gt;
+    &lt;/attribute&gt;
+    &lt;attribute&gt;
+      &lt;name&gt;allowedEmpty&lt;/name&gt;
+      &lt;rtexprvalue&gt;true&lt;/rtexprvalue&gt;
+
+      &lt;type&gt;boolean&lt;/type&gt;
+    &lt;/attribute&gt;
+    &lt;attribute&gt;
+      &lt;name&gt;message&lt;/name&gt;
+      &lt;rtexprvalue&gt;true&lt;/rtexprvalue&gt;
+
+      &lt;type&gt;java.lang.String&lt;/type&gt;
+    &lt;/attribute&gt;
+  &lt;/tag&gt;
+  &lt;tag&gt;
+    &lt;name&gt;xiudv&lt;/name&gt;
+
+    &lt;tag-class&gt;com.zsoltkiss.web.customtags.selfcheckers.XInputUDV&lt;/tag-class&gt;
+    &lt;body-content&gt;empty&lt;/body-content&gt;
+    &lt;attribute&gt;
+      &lt;name&gt;id&lt;/name&gt;
+
+      &lt;required&gt;true&lt;/required&gt;
+      &lt;type&gt;java.lang.String&lt;/type&gt;
+    &lt;/attribute&gt;
+    &lt;attribute&gt;
+      &lt;name&gt;maxlength&lt;/name&gt;
+
+      &lt;rtexprvalue&gt;true&lt;/rtexprvalue&gt;
+      &lt;type&gt;int&lt;/type&gt;
+    &lt;/attribute&gt;
+    &lt;attribute&gt;
+      &lt;name&gt;method&lt;/name&gt;
+
+      &lt;required&gt;true&lt;/required&gt;
+      &lt;rtexprvalue&gt;true&lt;/rtexprvalue&gt;
+      &lt;type&gt;java.lang.String&lt;/type&gt;
+    &lt;/attribute&gt;
+
+  &lt;/tag&gt;
+
+</pre>
+Let's study a little the tag descriptors. These entries defines two tags, that web developer can use as the following:
+<pre class="examplecode">
+&lt;sfchk:xinput id="" pattern="" allowedEmpty="" message="" /&gt;
+&lt;sfchk:xiudv id="" maxlength="15" validator="" /&gt;
+</pre>
+And the explanation is: <i>sfchk</i> is a prefix that identifies our tag library. If we might create later another tags not related to these
+it's practical to separate them into another folder with an own prefix.<br>The <b><i>id</i></b> is the normally used html element id. <br>
+
+In the <b><i>pattern</i></b> attribute web developer can specify a regular expression that describes what inputs the input element must accept
+and what musn't. For example if you specify <pre>pattern="/^[0-9]{1,}$/"</pre> this rule means that only positive integers and zero 
+value can be put in the input box. (If you are not familiar with regular expressions, consult a JDK's javadoc or some Java or JavaScript books.)<br>
+The <b><i>allowedEmpty</i></b> attribute is a little bit tricky. If set to false, user can not continue editing while he doesn't type a
+valid value in the input box. The cursor will be put back again and again into the box.<br>With <b><i>message</i></b> attribute developer 
+can specify a message to be popped up to the user if he/she entered not valid value.<br>The <b><i>method</i></b> attribute 
+can only be used in
+
+<i>&lt;sfchk:xiudv /&gt;</i> element, that allows the developer to define an own javascript checker method for validating the xinput field's content.
+(By the way, xiudv stands for <b>e</b>xtended <b>i</b>nput <b>u</b>ser <b>d</b>efined <b>v</b>alidation.)
+</p> 
+	</li>	
+</ol>
+
+<h3 class='tutorial'><a name="taghandlers"></a>Creating java tag handlers</h3>
+
+
+<ol>
+	<li>
+<p>
+Now we have our tag ibrary descripors and it's time to write some real java code. Let's continue with tag handler classes.<br>
+Tag handler classes' task is interpreting for web containers what to do when they encounter a non-standard html tag during
+the parsing process of the page's source code. We have to create one tag handler for our each unique tags. To do this, right click on the 
+project's nam, choose New > File/Folder, then select Web and Tag Handler as file type. Then click Next.
+</p> 
+	</li>
+	<li>
+<p>
+On the upcoming page type XInput as class name, com.zsoltkiss.web.customtags.selfcheckers as package name
+(or use your own package structure) and leave the SimpleTagSupport radio button checked. Click Next. On next page leve checked 
+the <i>Add Corresponding Tag To Tag Library Descriptor</i> and with Browse show your tld file to the IDE. Modify the tagname 
+to xinput with full small letters (no any capitals), set Body Content as empty add tag attributes with New as follows:
+	<ul>
+
+		<li>name: id, type: String, required:t rue, request time eval.: true </li>
+		<li>name: pattern, type: String, required: true, request time eval.: true </li>
+		<li>name: allowedEmpty, type: boolean, required: false, request time eval.: true </li>
+		<li>name: message, type: String, required: false, request time eval.: true </li>
+	</ul>
+Click finish. This was when the IDE created the content of your .tld file and not episodically the XInput.java skeleton source file..	
+</p> 
+	</li>	
+		<li>
+
+<p>
+Based on the previous step create your second tag handler class named XInputUDV, for a tag named xiudv with the following attributes:
+<ul>
+	<li>name: id, type: String, required: true, request time eval.: true</li>
+	<li>name: maxlength, type: int, required: false, request time eval.: true</li>
+	<li>name: method, type: String, required: true, request time eval.: true</li>
+</ul>
+Now your have two skeleton java tag handler files and your tag library descriptor is complete. Let's se how java files looks like.
+</p> 
+	</li>
+	<li>
+
+<p>
+Search XInput.java's doTag() method and the line that says: <pre class="examplecode">if(f != null) f.invoke(out);</pre><br>Directy after 
+this line type the following code:
+<pre class="examplecode">
+out.print("&lt;input type=\"text\" name=\"" + id + "\" id=\"" + id + "\" onblur=\"validate(this," + pattern +",");
+if(allowedEmpty) {
+	out.print("true,");
+}else {
+    out.print("false,");
+}
+            
+if(message != null) {
+	out.print("'" + message + "'");
+}else {
+    out.print("''");
+}
+            
+out.print(");\"&gt;\n");
+</pre>
+Similarly add this code fragement to your XInputUDV.java file starting at same point as preceeding:
+<pre class="examplecode">
+out.print("&lt;input type=\"password\" name=\"" + id + "\" id=\"" + id + "\" ");
+if(maxlength > 0) {
+	out.print("maxlength=\"" + maxlength + "\" ");
+}
+            
+out.print("onblur=\"" + method + "(this);\"&gt;\n");
+</pre>
+These code fragments do simple outputting into the html source on those places, where the parser encounters an
+sfchk:xinput or sfchk:xiudv tags. As a matter of fact these tag handlers relieves developer of work:
+he or she doesn't have to type the same user input checking methods and tricks again and again.
+</p>	
+	</li>
+
+</ol>	
+
+<h3 class='tutorial'><a name="useyourtags"></a>Using your new tags in a jsp page</h3>
+
+<ol>
+	<li>
+<p>
+At this point your java is finished. Waht has left is modify the index.jsp. Let's try to make our new tags work.
+Put the following code fragement into your index.jsp betwen the <i>&lt;bodx&gt;&lt;/bodye&gt;</i>:
+<pre class="examplecode">
+&lt;table border="1" cellpadding="3"&gt;
+        &lt;form name="form1" onsubmit="return CheckForm()"&gt;
+
+	&lt;th colspan="2" bgcolor="#f5f5dc" style="font-family:Courier;letter-spacing:2px;"&gt;Selfchecking inputs&lt;/th&gt;
+        &lt;tr bgcolor="#ffdab9"&gt;
+            &lt;td style="font-family:Courier;color:navy;font-weight:bold;"&gt;Positive integer and zero&lt;/td&gt;
+            &lt;td align=right&gt;
+                &lt;sfchk:xinput id="numOnly" pattern="/^[0-9]{1,}$/" allowedEmpty="false" message="You are allowed only positive integer and and zero." /&gt;
+
+            &lt;/td&gt;
+        &lt;/tr&gt;
+        
+        &lt;tr bgcolor="#ffff00"&gt;
+            &lt;td style="font-family:Courier;color:navy;font-weight:bold;"&gt;Signed integer with two digit accurence (the plus or minus sign must be typed)&lt;/td&gt;
+            &lt;td td align=right&gt;
+
+            	&lt;sfchk:xinput id="digits" pattern="/^(\+|\-)\d{1,}\.\d{2,2}$/" allowedEmpty="true" message="Only signed float with two digit followed the decimal point allowed." /&gt;
+            &lt;/td&gt;
+		&lt;/tr&gt;
+	
+		&lt;tr bgcolor="#ffdab9"&gt;
+            &lt;td style="font-family:Courier;color:navy;font-weight:bold;"&gt;Valid ZIP Code in Budapest, Hungary: has to start with 1, second digit can be 0, 1, or 2, third and fourth digit can be any number&lt;/td&gt;
+
+            &lt;td td align=right&gt;
+		&lt;sfchk:xinput id="zipOnly" pattern="/^1(0|1|2)\d\d$/" allowedEmpty="true" message="Enter only valid ZIP code in Budapest, Hungary" /&gt;
+            &lt;/td&gt;
+		&lt;/tr&gt;
+	
+		&lt;tr bgcolor="#ffff00"&gt;
+            &lt;td td style="font-family:Courier;color:navy;font-weight:bold;"&gt;E-mail address form&lt;/td&gt;
+
+            &lt;td&gt;
+		&lt;sfchk:xinput id="mailOnly" pattern="/.{1,}@.{1,}\.\D{2,3}$/" allowedEmpty="true" message="Enter only e-mail address form." /&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+        
+        &lt;tr bgcolor="#ffdab9"&gt;
+            &lt;td style="font-family:Courier;color:navy;font-weight:bold;"&gt;Username (arbitrary here but used in password checking below )&lt;/td&gt;
+
+            &lt;td td align=right&gt;
+                &lt;input type="text" readonly id="username" value="zsolt"&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+        
+        &lt;tr bgcolor="#ffff00"&gt;
+            &lt;td style="font-family:Courier;color:navy;font-weight:bold;"&gt;
+
+                Secure password that matches a policy&lt;br&gt;
+                (min 8, max 15 characters, at least two numbers, mixed small and capital letters, mustn't contain username)
+                    
+            &lt;/td&gt;
+            &lt;td td align=right&gt;
+                &lt;sfchk:xiudv id="securePW" maxlength="15" method="isSecure" /&gt;
+            &lt;/td&gt;
+
+        &lt;/tr&gt;
+				
+    &lt;/table&gt;&lt;br&gt;
+	&lt;span style="font-family:Courier;color:navy;font-weight:bold;"&gt;
+			These form inputs are extends the basic html text inputs providing a "self checking method" when user types
+			te input. Permitted inputs are ruled by a JSP tag library where programmer can define his/her own often used
+			inputs and the rules (javascript checker methods) that do checking. The page must include these javascript 
+			checker methods as an outer .js file.
+	&lt;/span&gt;
+</pre>
+These lines build up an simple html form using with our new tags. If you study the syntax used at xinput and xiudv elements you
+can see examples, how to parameterize them.<br>
+
+First xinput element accepts only positive intgers, second accepts signed integer with two digit after decimal point, the third one
+allows user type in only a given ZIP code format, the fouth does e-mail address checking. Fifth input element is a standard 
+html input
+and used only to help checking the fifth input that is an xiudv element. The fifth one is interesting also because its 
+method attribute gives developer the chance to specify what javascript method should run to validate. <br>
+</p> 
+	</li>
+	<li>
+There is one more important thing related the jsp part of the code, namely put a <b>&lt;%@taglib %&gt;</b> directive
+in the top of code directy after the the &lt;%@page %&gt; directives... This line identifies the tag library so it says to
+the jsp how to resolve the tag names and prefixes. The line to be put is:
+<pre class="examplecode">
+&lt%@taglib prefix="sfchk" uri="/WEB-INF/tlds/selfcheckers"%&gt;
+</pre>
+
+	</li>
+</ol>	
+
+<h3 class='tutorial'><a name="javascript"></a>Putting some javascript code into your jsp</h3>
+
+<ol>
+	<li>
+<p>
+Our last thing to do before run the application to add javascript checker methods. Without this our new tags won't revive. 
+You might ask what was teh  meaning of the whole stuff so far it's needed us to write javascript too? Don't forget, this javascript
+you have to write only once. Create a bunch of javascript checker methods, put them into an outer .js file and use them with
+the now develpoed extended input elements anytime! This is the meaning. So, let's see the javascript:
+<pre class="examplecode" >
+&lt;script type="text/javascript"&gt;
+function validate(obj,pattern,empty,message) {
+	var input = obj.value;
+	if(input.search(pattern) == -1) {
+		alert(obj.name + ":\n" + message);
+		if(!empty) {
+			obj.select();
+			obj.focus();
+		}else {
+			obj.value = "";
+		}
+		return false;
+	}
+	return true;
+}
+
+function isSecure(obj) {
+    var pwOK = true;
+    var errorMessage = obj.name + ": ERROR!\n----------------------";
+
+    var input = new String(obj.value);
+    //alert(input.length);
+    var minlength = 8;
+        
+                                                    //must not contain user name
+    var startnum = /^\d/;                           //must not start with number
+    var endnum = /.{1,}\d$/;                        //must not end with number
+    var specialChars=/(@|-|_|,|\.)/;                //these special chars are not allowed (the chars must be OR-ed for the code work!)('\.' means the dot)
+    var space=/\s/;                                 //must not contain spaces
+    var numbers=/\d/g;                              //must contain at least two numbers
+    var letters=/[a-z]/;                            //must contain small letters (not capital)
+    var capitalLetters=/[A-Z]/;                     //must contain capital lettes
+    
+    if(input.length &lt; minlength) {
+        pwOK = false;
+        errorMessage += "\nMin. length must be at least " + minlength + " character.";
+    }
+    
+    if(input.indexOf(document.getElementById("username").value) != -1) {
+        pwOK = false;
+        errorMessage += "\nThe password must NOT contain the username.";
+    }
+    
+    if(input.search(startnum) != -1) {
+        pwOK = false;
+        errorMessage += "\nPassword must NOT start with a number.";
+    }
+    
+    if(input.search(endnum) != -1) {
+        pwOK = false;
+        errorMessage += "\nPassword must NOT end with a number.";
+    }
+    
+    if(input.search(specialChars) != -1) {
+        pwOK = false;
+        errorMessage += "\nPassword must NOT contain special chars.";
+    }
+    
+    if(input.search(space) != -1) {
+        pwOK = false;
+        errorMessage += "\nPassword must NOT contain spaces.";
+    }
+    
+    if(input.search(letters) == -1) {
+        pwOK = false;
+        errorMessage += "\nPassword must contain small and capital letters mixed.";
+    }
+    
+    if(input.search(capitalLetters) == -1) {
+        pwOK = false;
+        errorMessage += "\nPassword must contain small and capital letters mixed.";
+    }
+    
+    var numHits = input.match(numbers);
+    if(numHits == null || numHits.length == null || numHits.length &lt; 2) {
+        pwOK = false;
+        errorMessage += "\nPassword must contain at least two numbers.";
+    }
+    
+    if(!pwOK) {
+        alert(errorMessage);
+    }
+    
+    return pwOK;
+}//end function
+
+&lt;/script&gt;
+</pre>
+Put this srcipting block into your index.jsp between the &lt;head&gt;&lt;/head&gt; elements... I think we are ready to try  
+whether it works properly.
+</p> 
+	</li>
+</ol>	
+
+<h3 class='tutorial'><a name="buildandrun"></a>Build and run the project</h3>
+<ol>
+	<li>
+
+<p>
+To build and run in the IDE	first press Ctlr+F11 to Clean and Build. If it succeds the you can run your project with F6.
+These functions can be triggered from menu certainly. If your project runs the IDE built-in Tomcat rendering the index.jsp
+and you can see somethig like this:<br><br>
+<img src="../../images_www/articles/win-with-netbeans/webgui.gif"><br><br>
+If you type text in input boxes, the xinput tags immediatly do checking and let you know whether your input is correct. If you
+re-parameterize tags' <i>emptyAllowed</i> attributes setting to true, you can get rid of bothering 
+<i>"back-to-cursor and type until its OK"</i> side effect.<br>In the picture below you can see an javascript checker alert
+that I received when tried to type a password not matching the security policy.<br><br>
+<img src="../../images_www/articles/win-with-netbeans/alert.gif">
+</p><br><br>
+
+</body>
+</html>
+
+
+
+
+

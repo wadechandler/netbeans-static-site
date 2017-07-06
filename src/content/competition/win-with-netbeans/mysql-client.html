@@ -1,0 +1,468 @@
+<html>
+<head>
+<title>A simple MySQL client in NB</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<META NAME="AUDIENCE" CONTENT="NBUSER">
+<META NAME="TYPE" CONTENT="ARTICLE">
+<META NAME="TOPIC" CONTENT="ADVANCED">
+<META NAME="description" CONTENT="Making a simple MySQL client in NetBeans">
+<link rel="stylesheet" type="text/css" href="../../netbeans.css">
+
+</head>
+
+<body >
+<h1>Making a simple MySQL client in NetBeans</h1>
+<div class="articledate" style="margin-left:0px;">Contributed by Miki Shimizu as part of the <a href="../../competition/win-with-netbeans.html">Win With NetBeans</a> comptetition</div></p>
+<p></p>
+<p>NetBeans has a nice interface to connect DB, but many SQL commands are to be 
+  input as a whole sentence I made Swing application for inserting and viewing 
+  data to a table of MySQL database. The sample is very simple, available for 
+  one specific table and without deleting or updating operation, It would be extended 
+  but the document would be longer and more complicated, I'm afraid.</p>
+
+<h2>INDEX</h2>
+<ul>
+  <li><a href="#db01">Connecting to MySQL database</a></li>
+
+  <li><a href="#db02">Creating a sample table</a></li>
+  <li><a href="#db03">Insert the first data </a></li>
+  <li><a href="#db04">Creating a new Java Project</a></li>
+  <li><a href="#db05">Creating a utility class for connecting database</a></li>
+  <li><a href="#db06">Creating the Table Model</a></li>
+  <li><a href="#db07">Creating the JFrame Form class-the Form design</a></li>
+
+  <li><a href="#db08">Customizing JTable</a></li>
+  <li><a href="#db09">First running of InsertTable</a></li>
+  <li><a href="#db10">Taking a little care...</a></li>
+  <li><a href="#db11">Inserting data to MySQL</a></li>
+</ul>
+
+<h2><a name="db01"></a>Connecting to MySQL database</h2>
+<p>I expect that the readers already have a suitable environment of MySQL database 
+  server working, having a database with an enough grant to a given user. In this 
+  sample,</p>
+
+<p><b>database name: nonidb<br>
+  user: noniko<br>
+  password: (blank) </b>&lt;- because it's a merely a sample at all. If you have 
+  some important data, please set a proper password!</p>
+<p>Also, you would get a JDBC driver file for MySQL. I prepared <b>mysql-connector-java-3.1.6-bin.jar</b> 
+  file through <a href="http://dev.mysql.com">MySQL developer's web site</a>.</p>
+<p>Now, let's go to NetBeans. Click the &quot;Runtime&quot; tab to switch the 
+  window you may usually see &quot;Projects&quot; or &quot;Files&quot; window.</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/adddriver.png" width="357" height="205"></p>
+<p><b>Select &quot;Add Driver&quot; in Runtime Window</b></p>
+<p>You will find &quot;Databases&quot; node here. open this node to get &quot;Drivers&quot; 
+  node under it. If you open more to show the content of &quot;Drivers&quot;, 
+  you will find only &quot;JDBC-ODBC&quot;. The first thing to do is add MySQL 
+  driver. Right-click the &quot;Drivers&quot; node to show context menu and select 
+  &quot;Add Driver&quot;. </p>
+
+<p>Then the setting window appears.</p>
+<p><img src="../../images_www/articles/win-with-netbeans/selectdriver.png" width="560" height="343"></p>
+<p><b>Find the location of JDBC driver file.</b></p>
+<p>By clicking &quot;Add&quot; button you can search the driver file graphically. 
+  As the case above, I prepared D:\nonidata\nb4worksnew folder for contain project 
+  folders and lib subfolder to contain library files.</p>
+<p>If you select the driver file's location , Driver Class and Name are set automatically. 
+  In the case of MySQL JDBC driver, the old class name is set first. but click 
+  &quot;Find&quot; button, then the progress bar below became active and finally 
+  &quot;Searching for driver classes finished&quot; is shown.</p>
+
+<p>Then open the combo of &quot;Driver Class&quot; setting. you can select the 
+  current class name of the JDBC Driver.</p>
+<p><img src="../../images_www/articles/win-with-netbeans/newdrivername.png" width="355" height="109"></p>
+<p><b>Change class name to that of current version.</b></p>
+<p>Click &quot;OK&quot;, then the new driver node is added under &quot;Driver&quot; 
+  node. Right-click it to select &quot;Connect Using..&quot; from context menu.</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/connectusing.png" width="302" height="71"> </p>
+<p><b>Select &quot;Connect Using...&quot; from context menu</b></p>
+<p>The setting window appears. Here Database URL, User Name and Password are needed 
+  ( In this case Password is blank).Click OK then you could see &quot;Connection 
+  established&quot; message in the progress bar below. The page might be switched 
+  to &quot;Advanced&quot;, but in this case there is no advanced setting needed.</p>
+<p><img src="../../images_www/articles/win-with-netbeans/conestablished.png" width="419" height="266"></p>
+<p>After the connection established, a node for this connection is appeared. Let's 
+  proceed to next step .</p>
+
+
+<h2><a name="db01"></a>Creating a sample table</h2>
+Right-Click the node for the connection established above, Select &quot;Create 
+Table...&quot;. 
+<p><img src="../../images_www/articles/win-with-netbeans/createtable.png" width="335" height="132"></p>
+<p><b>Select &quot;Create Table&quot; from context menu</b></p>
+<p>Then a window appears for setting the table to create. To display the required 
+  setting this window might have to be expanded manually. The important settings 
+  are Key, Column name, Data type and Size, depending on the Data type.</p>
+<p><img src="../../images_www/articles/win-with-netbeans/cartable.png" width="740" height="281"></p>
+<p><b>Creating a table in NetBeans</b></p>
+
+<p>In this case I made a sample table &quot;<b>cars</b>&quot; having <b>carid</b>, 
+  <b>name</b>, <b>vendor</b> and <b>type</b> as fields. the field carid is the 
+  primary key. All the fields have data type of VARCHAR. Only carid has 10 for 
+  size and all others have 20.</p>
+<p>Once the table created, you can see its node under the connection node. The 
+  structure of the table &quot;cars&quot; are displayed.</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/cartablestruct.png" width="353" height="236"></p>
+<p><b>The node tree of the table created</b></p>
+
+<h2><a name="db03"></a>Insert the first data </h2>
+<p>Now let's insert the first row by sending SQL command. Right-Click any node 
+  under the connection node to display &quot;Execute Commands...&quot;menu item.</p>
+<p><img src="../../images_www/articles/win-with-netbeans/execommand.png" width="309" height="116"></p>
+<p>Then the large window of operating command appears at the same place of source 
+  editor. Too large, so I will not show the screenshot of the whole appearance. 
+  The important spots are, first of all, the text area for inputting command.</p>
+<p><img src="../../images_www/articles/win-with-netbeans/firstcmd.png" width="463" height="67"></p>
+<p><b>Input a whole command sentence.</b></p>
+<p>Click &quot;Execute&quot; button and, if the command is valid, you can see 
+  the &quot;Command successfully excuted&quot; message below. More to make sure, 
+  right-click the &quot;cars&quot; node and select &quot;View data&quot;.</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/viewdata.png" width="264" height="153"></p>
+<p><b>Right-Click the &quot;cars&quot; node to view data.</b></p>
+<p><img src="../../images_www/articles/win-with-netbeans/firstviewdata.png" width="308" height="78"></p>
+<p><b>First data inserted</b></p>
+<p>Yeah! The first data were successfully inserted. But you might think the whole 
+  sentence &quot;insert into...&quot; bothering. I did. So I made up mind to build 
+  an application to insert data by more graphical operation.</p>
+
+<h2><a name="db04"></a>Creating a new Java Project</h2>
+
+<p>Let's create a new Java Project for the application. Select from Menu bar &quot;File&quot;-&gt;&quot;New 
+  Project&quot;. In the new project wizard, select &quot;General&quot;-&gt;&quot;Java 
+  Application&quot; as the project type. In my case the project name was &quot;mysqloperation&quot; 
+  and the location was &quot;d:\nonidata\nb4worksnew\mysqloperation&quot;. Check 
+  off &quot;create main project&quot;.</p>
+
+<p>After creating the project, create new package. In my case, &quot;mysqlop&quot;.</p>
+
+<h2><a name="db05"></a>Creating a utility class for connecting database</h2>
+<p>Operation of database in Java is very complicated, requiring connection, statement, 
+  resultset and many try&amp;catch. So I used a utility class dealing with such 
+  operation.</p>
+<p>The whole code is shown here, <a href="https://netbeans.org/files/documents/4/297/MyDBConnection.java" target="_blank">MyDBConnection.java.</a></p>
+<p><b>init()</b> method is for connecting MySQL database.</p>
+
+<p><b>getConnection()</b> method is to be called after init()method, to give to 
+  the other class the established connection.</p>
+<p>two <b>close() </b>methods and <b>destroy()</b> methods are for settling the 
+  end of operation. Closing connection, statement or resultset requires try&amp;catch 
+  so they have been extracted here.</p>
+<p>To use this file, classpath to the JDBC driver must be set for this project. 
+  Right-click the &quot;<b>mysqloperation</b>&quot; project and select &quot;Properties...&quot; 
+  from the context menu. In the &quot;Project Properties&quot; window, select 
+  &quot;Build&quot;-&gt;&quot;Compiling Sources&quot;.Click &quot;Add JAR/Folder...&quot; 
+  button near the &quot;Classpath for Compiling Source&quot; setting , so you 
+  can search the location of the JDBC jar file.</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/addlibrary.png" width="745" height="249"></p>
+<p><b>Adding JDBC jar file to classpath</b></p>
+
+<h2><a name="db06"></a>Creating the Table Model</h2>
+<p>Then I prepared a cusomized Table Model for the JTable to use in this app.</p>
+<p>The whole code is shown here, <a href="https://netbeans.org/files/documents/4/298/CarTableModel.java" target="_blank">CarTableModel.java</a>.</p>
+<p>To write this code I used some nice tools of NetBeans. <br>
+  First, create a new Java Class file named CarTableModel.java. It has a very 
+  plain and empty template, just with package and class declaration. </p>
+
+<p><br>
+  Edit manually the class declaration to extend &quot;AbstractTableModel&quot; 
+  class. The editor soon show the red and waved underline to show errors. One 
+  cause of this is lack of importing &quot;javax.swing.table.AbstractTableModel&quot; 
+  class. This error is fixed by right-clicking somewhere of the code and select 
+  &quot;Fix Imports&quot;.</p>
+<p><img src="../../images_www/articles/win-with-netbeans/fiximports.png" width="483" height="139"></p>
+<p><b>Use &quot;Fix imports&quot; tool</b></p>
+
+<p>You can check the declaration</p>
+<p><b>import javax.swing.table.AbstractTableModel;</b></p>
+<p>has been inserted near the top of the source code.</p>
+<p>But still the red underline remains. The remaining cause of this is lack of 
+  implementation of proper abstract methods.<br>
+  This is fixed by &quot;overriding method&quot; tool invoked this way...</p>
+<p><img src="../../images_www/articles/win-with-netbeans/toolovmethods.png" width="455" height="267"></p>
+<p><b>Use &quot;Overrice Methods&quot; tool</b></p>
+
+<p>The required implementations are extracted checking &quot;Show Abstract Methods 
+  Only&quot;. </p>
+<p><img src="../../images_www/articles/win-with-netbeans/overridelist.png" width="484" height="197"></p>
+<p><b>Required implementations are listed</b></p>
+<p>Select all of the three methods by clicking the node and &quot;OK&quot;.</p>
+<p><img src="../../images_www/articles/win-with-netbeans/methodimplemented.png" width="436" height="421"></p>
+<p><b>Required implementations are inserted automatically</b></p>
+<p>Now the red line is gone! </p>
+<p>In fact, we also need to override <b>getColumnName</b>(int param) method, otherwise 
+  we couldn't get customized headders of the table.</p>
+
+<p>Let's fill the contents.<br>
+  The code is specified to access the specific table &quot;cars&quot;, so the 
+  number of column is fixed to 4. <br>
+  Each column's name is also known and can be set directly.</p>
+<p>This time I used Generics, a new feature of JDK5.0, for the first time. It 
+  worked successfully in NB (Clap hands!)<br>
+</p>
+
+<h2><a name="db07"></a>Creating the JFrame Form class-the Form design</h2>
+<p>Now let's create the JFrame Form Application, The main class of this project! 
+  &quot;JFrame Form&quot; can be selected in the new wizard. The name is &quot;InsertTable&quot; 
+  in my case, which created a source file &quot;InsertTable.java&quot;.</p>
+
+<p>First, design the form. It should be take a vertically long window, so I fixed 
+  the form size instead of use &quot;packing&quot;.<br>
+  Select &quot;JFrame&quot; node in the Inspector window to show its properties. 
+  Change &quot;Form Size Policy&quot; from default &quot;Generate pack()&quot; 
+  to &quot;Generate Resize Code&quot;.</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/resizeform.png" width="275" height="282"></p>
+<p><b>To fix the Form size.</b></p>
+<p>Then &quot;Form Size&quot; property becomes editable. Edit it as:</p>
+<p><img src="../../images_www/articles/win-with-netbeans/resized.png" width="182" height="19"></p>
+<p><b>The Form size edited.</b></p>
+<p>This form will be separated vertically into three parts:</p>
+<p>(1)JTextfields orJComboBox to input the new data.<br>
+  (2)JButton to send data and show message.<br>
+
+  (3)The JTable.</p>
+<p>The first two should be located on eachJPanel, and the JTable on a JScrollPane. 
+  This is the basic parts.</p>
+<p><img src="../../images_www/articles/win-with-netbeans/panelspanes.png" width="276" height="193"></p>
+<p><b>JPanels and JScrollPane to locate the components.</b></p>
+<p>Notice the vertical positions of the nodes don't mean their actual locations. 
+  I mean, dataPanel, sendPanel and tablePane are located to North, Center and 
+  South of BorderLayout, respectively.</p>
+<p>On dataPanel, 3JTextFields and one JComboBox to input data and 4JLabels for 
+  explanations should be located. I decided GridLayout is the best to set these 
+  locations. The default layout onJPanel is FlowLayout in NetBeans. It must be 
+  changed:</p>
+<p><img src="../../images_www/articles/win-with-netbeans/setlayout.png" width="343" height="262"> </p>
+<p><b>Change to GridLayout</b></p>
+<p>Then properties of this GridLayout is displayed. Set colunm number to 2, row 
+  number to 4.</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/griddata.png" width="190" height="112"></p>
+<p>Then locate the components. they could be moved by drag and drop on the form, 
+  If you are not satisfied with the location.</p>
+<p><img src="../../images_www/articles/win-with-netbeans/griddragdrop.png" width="412" height="97"></p>
+<p><b>Moving the JComboBox within the GridLayout.</b></p>
+<p>The component might escape to a very wrong position, as a different panel. 
+  Don't worry, you can move its location by drag and drop within the Inspector 
+  window, too.</p>
+<p><img src="../../images_www/articles/win-with-netbeans/inspectordragdrop.png" width="276" height="226"></p>
+<p><b>Moving the JComboBox within the Inspector window</b>.</p>
+<p>After all components are set, customize their name to show their roles.<br>
+  Also customize text property of each JLabel, and eraze that of each JTextField. 
+  Here is an example of editing &quot;text&quot; property of JLabel:</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/labeltxt.png" width="277" height="130"></p>
+<p><b>Customizing &quot;text&quot; property to show &quot;ID:&quot;as JLabel</b></p>
+<p>Then sendPanel to locate JButton and and JLabel. Also GridLayout is set for 
+  this JPanel, with 1 column and two rows. The name and &quot;text&quot; property 
+  are customized.</p>
+<p><img src="../../images_www/articles/win-with-netbeans/sendpnlcmpns.png" width="203" height="76"></p>
+<p>In this way the components, other than JTable, arearranged as below:</p>
+<p><img src="../../images_www/articles/win-with-netbeans/firstguisetting.png" width="402" height="271"></p>
+
+<p><b>Components without JTable has been customized</b>.</p>
+
+<h2><a name="db08"></a>Customizing JTable</h2>
+<p>As shown above, at this point the JTable has 4x4 structure and empty data. 
+  Let's customize it to show the content of the table &quot;cars&quot; of MySQL 
+  database.</p>
+<p>Select the JTable now is named &quot;carTable&quot; in the Inspector window 
+  to show its properties. Find the &quot;model&quot; property and click the &quot;...&quot; 
+  button at the right edge .</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/tablemodelprop.png" width="275" height="213"></p>
+<p><b>carTable and its &quot;model&quot; property</b></p>
+<p>Then the editor window appears. The default 4x4 structure is set in this window. 
+  Let's change &quot;<b>Select Mode</b>&quot; from &quot;TableModelEditor&quot; 
+  to &quot;<b>FormConnection</b>&quot;.</p>
+<p><img src="../../images_www/articles/win-with-netbeans/selectformcon.png" width="640" height="260"></p>
+
+<p><b>Switching from default Table Model Editor to Form Connection mode</b>.</p>
+<p>In the Form Connection mode, Click the radio of &quot;User Code&quot; in the 
+  option window. </p>
+<p><img src="../../images_www/articles/win-with-netbeans/usercodezero.png" width="639" height="273"></p>
+<p><b>Form Connection mode</b></p>
+<p>Then look at the bottom of this window. The &quot;Advanced&quot; button is 
+  there. Click it!</p>
+<p><img src="../../images_www/articles/win-with-netbeans/advancedbtn.png" width="115" height="36"></p>
+
+<p><b>&quot;Advanced&quot; button at the bottom of the window</b></p>
+<p>A window appears to edit before and after the code of setting the TableModel 
+  for the JTable. This time check both to edit .</p>
+<p><img src="../../images_www/articles/win-with-netbeans/advancedcode.png" width="358" height="381"></p>
+<p>The method named getResultFromCars should be created in the source code of 
+  &quot;InsertTable.java&quot; manually like</p>
+<pre class='examplecode'><font color="#660000">
+ public ResultSet getResultFromCars() {
+        
+        ResultSet rs=null;
+        
+        try{
+            rs=stmt.executeQuery("Select * from cars");
+        
+        }
+        catch(SQLException e){}
+        
+        return rs;
+        
+    }</font></pre>
+<p>Click OK to return the &quot;User Code&quot; to fill.</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/setusermodel.png" width="263" height="47"></p>
+<p>Note that here semicolon&quot;;&quot; to terminate the sentence SHOUD NOT BE 
+  input. Why? check the source code. Check the <b>InitComponents()</b> method. 
+  Here!</p>
+<p><img src="../../images_www/articles/win-with-netbeans/insertedtobluearea.png" width="289" height="61"></p>
+<p>Light-blue &quot;Protected&quot;&quot;Uneditable&quot; area? Who said so? Ho-ho-ho! 
+  You can edit frrreely by this means prepared by NetBeans!</p>
+
+
+<h2><a name="db09"></a>First running of InsertTable</h2>
+<p>To make a first test run of this customized JTable, we still have something 
+  to do. First, declaration.</p>
+<p> <font color="#660000">private MyDBConnection mdbc;<br>
+  private java.sql.Statement stmt;</font></p>
+<p>They are to be written somewhere in the source. Near the EOF, close to other 
+  variables, would be nice.</p>
+<p>Then the constructor. Note that we should add throw declaration to it</p>
+<p><img src="../../images_www/articles/win-with-netbeans/exceptionconstruct.png" width="276" height="22"></p>
+<p>to avoid that annoying compile error &quot;java.sql.SQLException is not reported...&quot;.</p>
+
+<p>The whole content of the constructor is :</p>
+<pre class='examplecode'><font color="#660000"> 
+public InsertTable() throws  Exception{
+        
+         mdbc=new MyDBConnection();
+         mdbc.init();
+         Connection conn=mdbc.getMyConnection();
+         stmt= conn.createStatement();
+        
+        initComponents();
+    }
+
+</font> </pre>
+<p>One more to avoid the same compile error. Edit the main method prepared by 
+  NetBeans: </p>
+<p><img src="../../images_www/articles/win-with-netbeans/trycatchinmain.png" width="373" height="197"></p>
+<p><b>Add try-catch to the main method </b></p>
+<p>Now let's run the project! An window to select main class might be appear. 
+  In the list you will find only this &quot;InsertTable.class&quot;. Select it.</p>
+<p><img src="../../images_www/articles/win-with-netbeans/tableshown.png" width="399" height="222"></p>
+<p><b>The tabledata of MySQL was shown</b></p>
+
+<p>The only one row existing in &quot;cars&quot; table of MySQL database has been 
+  displayed!</p>
+
+<h2><a name="db10"></a>Taking a little care...</h2>
+<p>Now that we could display existing data from MySQL to JTable, Let's feel settled 
+  and take a little care for better application.</p>
+<p>One thing is a proper termination of this application, All the sessions with 
+  MySQL(connection, statement, resultsets) must be closed.<br>
+  This application is terminated by closing the window. So we should add an event 
+  processing method for WindowClosing event. <br>
+  Select &quot;JFrame&quot; in the Inspector window to show its properties window, 
+  and then click &quot;events&quot; to switch the page. Find &quot;windowClosing&quot; 
+  event. It is set to be &lt;none&gt; by default, but when you click the word 
+  &lt;none&gt;, it would be changed automatically to &quot;formWindowClosing&quot;...press 
+  the Enter key while this row is selected.</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/windowclosing.png" width="288" height="332"></p>
+<p><b>Setting windowClosing event of JFrame </b></p>
+<p>Then the source code appears to enable to edit the method.</p>
+<p><img src="../../images_www/articles/win-with-netbeans/windowclosingcode.png" width="452" height="93"></p>
+<p><b>Edit &quot;formWindowClosing&quot; method</b></p>
+<p>Close the statement and the connection.</p>
+<p>The other thing is to set items of the JComboBox named <b>typeCombo</b>. Yes, 
+  it should be equipped to select drive type of a car.</p>
+
+<p>Select &quot;typeCombo&quot; node in the Inspector Window to show its properties. 
+  Find &quot;<b>model</b>&quot; property and click &quot;...&quot; button on the 
+  right edge, just like we did for setting the TableModel for JTable.<br>
+  A window appears, This time we use the default<b> ComboBoxModelEditor</b>.</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/itemconbo.png" width="454" height="284"></p>
+<p>Input a new item in &quot;Item:&quot; field and click &quot;Add&quot; button. 
+  That's easy! I prepared the items &quot;FF&quot;, &quot;FR&quot;, &quot;MR&quot; 
+  and&quot;4WD&quot; as drive type. Are there anything else?</p>
+
+
+<h2><a name="db11"></a>Inserting data to MySQL</h2>
+<p>The finishing spurt! Inserting data to MySQL should be done at the clicking 
+  &quot;Send&quot; button(the JButton named &quot;<b>sendButton</b>&quot;).</p>
+<p>In NetBeans' GUI Editor, it's very easy to make event processing method for 
+  JButton. Just double-click the JButton itself on the form.</p>
+<p>The <b>&quot;sendButtonActionPerformed&quot;</b> method<b> </b>is created in 
+  the source file. Let's fill the content as this:</p>
+
+<pre class='examplecode'><font color="#660000">private void sendButtonActionPerformed(java.awt.event.ActionEvent evt) {<font color="#006600">//GEN-FIRST:event_sendButtonActionPerformed
+        // TODO add your handling code here:</font>
+        
+        String carid=idField.getText();
+        String name=nameField.getText();        
+        String vendor=vendorField.getText();
+        String type=(String)typeCombo.getSelectedItem();
+        
+        String insertStr="";
+        
+        try{
+            
+            insertStr="insert into cars (carid, name, vendor, type) values("
+                    +<b>quotate</b>(carid)+","
+                    +quotate(name)+","
+                    +quotate(vendor)+","
+                    +quotate(type)
+                    +")";
+            
+            int done=stmt.executeUpdate(insertStr);
+            
+            commentLabel.setText("1 row inserted");
+           
+            <b>getContentPane().removeAll();
+            initComponents();</b>
+        
+        }
+        catch(Exception e){
+            commentLabel.setText("Error occurred in inserting data");
+            e.printStackTrace();
+        }
+        
+    }</font><font color="#006600">//GEN-LAST:event_sendButtonActionPerformed</font>
+</pre>
+<p>Note that <b>initComponents</b> method is called after inserting data, and 
+  after <b>removing the current comtent pane</b>.It's necessary to refresh the 
+  JTable's appearance...If I were skilled more, I could refresh only JTable, instead 
+  of the whole container. This is, as is called in Japanese a way like &quot;Chopping 
+  tofu with the axe&quot;. Sorry!</p>
+
+<p>Also note here the <b>quotate</b> method is called. I created it not to hit 
+  so many quotation marks:</p>
+<pre class='examplecode'> <font color="#660000">public String quotate(String content){<br>    <br>        return &quot;'&quot;+content+&quot;'&quot;;<br>    }</font>
+
+</pre>
+<p>Now the whole code for<a href="https://netbeans.org/files/documents/4/299/InsertTable.java"> InsertTable.java</a>. </p>
+<p>Run the project! Input data and click the &quot;Send&quot; button. Now you 
+  can see another row just inserted in the JTable. Repeat inserting a few more!</p>
+<p><img src="../../images_www/articles/win-with-netbeans/appresult.png" width="399" height="263"></p>
+<p><b>Operating the completed application</b></p>
+<p>...And let's make sure these data will be viewed also from NetBeans' utility.</p>
+<p><img src="../../images_www/articles/win-with-netbeans/resultconfirmed.png" width="307" height="106"></p>
+
+<p>Tough work! But through this project we have learned:</p>
+<ul>
+  <li>How to operate database from NetBeans's utility</li>
+  <li>How to edit the &quot;protected&quot; codes in the light-blue area</li>
+  <li>How to use customized TableModel for JTable</li>
+</ul>
+<p>...and so on.</p>
+
+
+<p>&nbsp;</p>
+</body>
+</html>
+

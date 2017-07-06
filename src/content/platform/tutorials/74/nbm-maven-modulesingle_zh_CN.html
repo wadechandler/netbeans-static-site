@@ -1,0 +1,434 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>使用 Maven 创建 NetBeans 模块</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="AUDIENCE" content="NBUSER"/>
+    <meta name="TYPE" content="ARTICLE"/>
+    <meta name="EXPIRES" content="N"/>
+    <meta name="indexed" content="y"/>
+    <meta name="description" content="A short demonstration of how to use Maven to create and run a NetBeans Platform Module Suite."/>
+    <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+<body>
+
+    <h1>使用 Maven 创建 NetBeans 模块</h1>
+
+    <p>本文档演示了如何通过 Maven 原型创建 NetBeans 模块项目，并在 IDE 安装中生成和安装此模块。在本教程中，您将创建一个简单的模块项目，该模块在安装后可用于在项目中创建一种新的文件类型。使用该模块还可创建一个菜单操作，当您选择新的文件类型时，便可使用该操作。
+    </p>
+
+    <p>本文档根据基于 Ant 的 <a href="https://platform.netbeans.org/tutorials/nbm-filetype_zh_CN.html">NetBeans 文件类型教程</a>而编写，阐述了使用 Ant 和 Maven 开发 NetBeans 模块的一些不同之处。在了解其中的一些不同之处后，您便可以轻松地继续学习 <a href="https://netbeans.org/kb/trails/platform_zh_CN.html">NetBeans 平台学习资源</a>上的其他教程。</p>
+
+    <p class="tips">如果您不熟悉 NetBeans 平台，则可能需要观看截屏视频系列<a href="https://platform.netbeans.org/tutorials/nbm-10-top-apis.html">最主要的 10 个 NetBeans API</a>。</p>
+
+    <p><b>目录</b></p>
+    <p><img src="../images/articles/74/netbeans_stamp_74_73_72.png" class="stamp" width="114" height="114" alt="本页上的内容适用于 NetBeans IDE 6.5、6.7、6.8" title="本页上的内容适用于 NetBeans IDE 6.5、6.7、6.8" /></p>
+
+    <ul class="toc">
+        <li><a href="#config">在 IDE 中使用 Maven</a>
+            <ul>
+            <li><a href="#config1">配置 Maven 选项</a></li>
+            <li><a href="#config2">查看 Maven 资源库</a></li>
+            </ul></li>
+        <li><a href="#01">创建 NetBeans 平台模块项目</a>
+            <ul>
+            <li><a href="#01a">创建模块</a></li>
+            <li><a href="#01b">创建 DataObject 类</a></li>
+            </ul>
+        </li>
+        <li><a href="#02">生成和运行模块项目</a>
+            <ul>
+            <li><a href="#02a">指定 NetBeans 安装的位置</a></li>
+            <li><a href="#02b">运行模块</a></li>
+            </ul>
+        </li>
+        <li><a href="#03">为文件类型添加操作</a>
+            <ul>
+            <li><a href="#03a">创建操作类</a></li>
+            <li><a href="#03b">为操作指定行为</a></li>
+            </ul>
+        </li>
+        <li><a href="#04">为文件类型创建窗口</a></li>
+        <li><a href="#05">创建多视图窗口</a></li>
+      </ul>
+
+<p><b>要学习本教程，您需要具备下表中列出的软件和资源。</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">软件或资源</th>
+                <th class="tblheader" scope="col">要求的版本</th>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://download.netbeans.org/">NetBeans IDE</a></td>
+                <td class="tbltd1">版本 6.9</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">版本 6</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://maven.apache.org/">Maven</a></td>
+                <td class="tbltd1">版本 2.0.9 或更高</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><strong class="notes">注意：</strong>为开发适用于 NetBeans 平台的应用程序，您无需下载该平台的独立版本。通常，您是在 NetBeans IDE 中开发应用程序和模块，并且只包含运行 NetBeans 平台和您的应用程序所需的模块。</p>
+
+    <p>在开始本教程之前，您可以先阅读下面这些文档。</p>
+    <ul>
+        <li><a href="http://wiki.netbeans.org/MavenBestPractices">Best Practices for Apache Maven in NetBeans 6.x</a>（NetBeans 6.x 中 Apache Maven 的最佳做法）</li>
+        <li><a href="http://www.sonatype.com/books/maven-book/reference/introduction.html">Chapter 1. Introducing Apache Maven</a>（第 1 章. Apache Maven 简介，来自 <a href="http://www.sonatype.com/books/maven-book/reference/public-book.html">Maven: The Definitive Guide</a>（Maven：权威指南））</li>
+        <li><a href="https://netbeans.org/kb/docs/java/gui-functionality_zh_CN.html">生成 GUI 应用程序简介</a></li>
+    </ul>
+
+
+
+
+
+
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++ Configuring Maven +++++++++++++++++++++++++++++++++ -->
+
+    <h2><a name="config"></a>在 IDE 中使用 Maven</h2>
+    <p>如果这是您第一次创建 Maven 项目，则您会希望了解 Maven 配置设置和 Maven 资源库浏览器。</p>
+
+    <div class="indent">
+        <a name="config1"></a>
+        <h3>配置 Maven 选项</h3>
+        <p>您可以使用“选项”窗口中的 &quot;Maven&quot; 标签来在 IDE 中配置 Maven 的行为，并检查您的配置是否正确。</p>
+
+        <ol>
+            <li>在“选项”窗口中选择“其他”类别，然后单击 &quot;Maven&quot; 标签。</li>
+            <li>指定 Maven 在本地的安装位置（要求为 2.0.9 或更高版本）。</li>
+            <li>检查本地 Maven 资源库的位置是否正确。</li>
+            <li>单击“确定”。</li>
+        </ol>
+        <p>在大多数情况下，如果您执行了典型的 Maven 配置，则“选项”窗口中的信息应该已经是正确的。</p>
+
+        <p class="notes"><strong>注意：</strong>Maven 支持是作为 Java SE 功能集的一部分被激活的。如果“选项”窗口中的 &quot;Maven&quot; 标签不可用，请通过创建一个 Java 应用程序来确认 Java SE 已被激活。</p>
+
+        <h3><a name="config2"></a>查看 Maven 资源库</h3>
+        <p>Maven 用于生成所有项目的工件均存储在本地 Maven 资源库中。如果某一工件被声明为项目依赖关系，则会将其从已注册的某个远程资源库下载到您的本地资源库中。</p>
+
+        <p>缺省情况下，已注册 NetBeans 资源库和一些常见的索引 Maven 资源库，并将它们列在资源库浏览器窗口中。NetBeans 资源库包含生成项目所需的大多数公共工件。您可以使用“Maven 资源库”浏览器查看本地和远程资源库的内容。您可以展开“本地库”节点以查看本地存在的工件。NetBeans 资源库节点下列出的工件可以添加为项目依赖关系，但并非所有这些工件都在本地存在。仅当这些工件被声明为项目依赖关系时，才会将其添加到“本地库”。</p>
+
+        <p>打开“Maven 资源库”浏览器：</p>
+        <ul>
+            <li>从主菜单中选择“窗口”&gt;“其他”&gt;“Maven 资源库浏览器”。<br/>
+            <img src="../images/tutorials/maven-quickstart68/maven-nbm-netbeans-repo.png" alt="“Maven 资源库”浏览器的屏幕快照" title="“Maven 资源库”浏览器的屏幕快照" class="margin-around b-all"  />
+
+            </li>
+        </ul>
+    </div>
+
+
+    <!-- =================================================================== -->
+    <!-- ++++++++++++++++++++++ Creating the Module ++++++++++++++++++++++++ -->
+
+    <h2><a name="01"></a>创建 NetBeans 平台模块项目</h2>
+    <p>在此部分，您将创建一个 NetBeans 模块项目，然后为新的文件类型创建一个 DataObject。</p>
+    <div class="indent">
+        <h3><a name="01a"></a>创建模块</h3>
+        <p>在本练习中，您将使用“新建项目”向导来通过 Maven 原型创建 NetBeans 模块项目。</p>
+        <ol>
+            <li>打开“新建项目”向导，然后在 &quot;Maven&quot; 类别中选择“Maven NetBeans 模块”。单击“下一步”。</li>
+            <li>在“项目名称”中键入 <strong>AbcFileType</strong>。单击“完成”。</li>
+        </ol>
+        <p>单击“完成”后，IDE 会创建 AbcFileType 项目。如果查看 POM，则可以看到 Maven 将使用 <tt><a href="http://maven.apache.org/plugins/maven-jar-plugin/">maven-jar-plugin</a></tt> 来生成 JAR，而 <tt><a href="http://mojo.codehaus.org/nbm-maven-plugin/">nbm-maven-plugin</a></tt> 会将该 JAR 打包为一个 NetBeans 模块 (<tt>nbm</tt>)。</p>
+    
+        <pre class="examplecode">    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+    &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+    &lt;artifactId&gt;AbcFileType&lt;/artifactId&gt;
+    <strong>&lt;packaging&gt;nbm&lt;/packaging&gt;</strong>
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+    &lt;name&gt;AbcFileType NetBeans Module&lt;/name&gt;
+    ...
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+                <strong>&lt;artifactId&gt;nbm-maven-plugin&lt;/artifactId&gt;</strong>
+                &lt;extensions&gt;true&lt;/extensions&gt;
+            &lt;/plugin&gt;
+            ...
+            &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                <strong>&lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;</strong>
+                &lt;version&gt;2.2&lt;/version&gt;
+                &lt;configuration&gt;
+                    &lt;!-- to have the jar plugin pickup the nbm generated manifest --&gt;
+                    &lt;useDefaultManifestFile&gt;true&lt;/useDefaultManifestFile&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;</pre>
+
+        
+
+
+        <h3><a name="01b"></a>创建 DataObject 类</h3>
+
+        <p>在此部分，您将使用“新建文件类型”向导创建一些文件，以便创建和识别名为 <tt>.abc</tt> 的新文件类型。该向导将创建一个 <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/DataObject.html">DataObject</a></tt>、一个 MIME 类型解析器和一个用于 <tt>abc</tt> 文件的文件模板，并且会修改 <tt>layer.xml</tt> 来为新的文件类型添加注册条目。</p>
+
+        <ol>
+            <li>在“项目”窗口中右键单击项目节点，然后选择“新建”&gt;“文件类型”。</li>
+            <li>在“文件识别”面板的“MIME 类型”中键入 <strong>text/x-abc</strong>，在“扩展名”中键入 <strong>.abc .ABC</strong>。单击“下一步”。<br/>
+            <img src="../images/tutorials/maven-single/maven-single-new-filetype-wizard.png" alt="“新建文件类型”向导的屏幕快照" title="“新建文件类型”向导" class="margin-around b-all"  />
+            </li>
+            <li>在“类名前缀”中键入 <strong>Abc</strong>。</li>
+            <li>单击“浏览”，然后选择一个 16x16 像素的图像文件作为新文件类型的图标。单击“完成”。
+                <p class="tips">您可以将此图像 <tt><a href="../images/tutorials/maven-crud/abc16.png">abc16.png</a></tt> (&nbsp;<img src="../images/tutorials/maven-crud/abc16.png" alt="16x16 图标图像" title="16x16"  />&nbsp;) 保存到您的系统，然后在向导中指定该图像。</p>
+            </li>
+        </ol>
+
+
+        <p>单击“完成”后，IDE 会创建 <tt>AbcDataObject</tt> 类，并将您的文件类型图标复制到“其他源”下 <tt>src/main/resources</tt> 的包中。<br/>
+        <img src="../images/tutorials/maven-single/maven-single-projects1.png" alt="“项目”窗口的屏幕快照" title="“项目”窗口的屏幕快照" class="margin-around b-all"  />
+
+        </p>
+        <p>在“项目”窗口中，您可以看到向导在 <tt>src/main/resources</tt> 目录中创建了 MIME 类型解析器 (<tt>AbcResolver.xml</tt>) 和模板 (<tt>AbcTemplate.abc</tt>) 文件。</p>
+
+        <p class="tips">有关 IDE 所创建的文件的详细信息，请参见<a href="http://wiki.netbeans.org/DevFaqDataObject">什么是 DataObject</a> 以及 <a href="nbm-filetype_zh_CN.html">NBM 文件类型教程</a>中有关<a href="nbm-filetype_zh_CN.html#recognizing">识别 Abc 文件</a>的部分。</p>
+
+
+    </div>
+
+
+
+    <!-- =================================================================== -->
+    <!-- ++++++++++++++++++++++ Running the  Module ++++++++++++++++++++++++ -->
+    <h2><a name="02"></a>生成和运行项目</h2>
+
+    <p>在此部分，您将配置模块，以便将该模块安装到当前版本的 IDE 中。当您运行模块时，将会启动 IDE 的新实例。 </p>
+
+    <div class="indent">
+        <h3><a name="02a"></a>指定 NetBeans 安装的位置</h3>
+        <p>缺省情况下，当您使用 Maven 原型创建 NetBeans 平台模块时，不会指定任何目标 NetBeans 安装。您可以生成项目，但如果您在未设置安装目录的情况下尝试运行项目，则会在“输出”窗口中看到类似以下内容的生成错误。<br/>
+        <img src="../images/tutorials/maven-single/output-build-error.png" alt="显示生成错误的“输出”窗口的屏幕快照" title="显示生成错误的“输出”窗口" class="margin-around b-all"  />
+
+        </p>
+        <p>要在 IDE 安装中安装并运行此模块，您需要编辑 POM 中的 <tt>nbm-maven-plugin</tt> 元素以指定安装目录的路径。</p>
+        <ol>
+            <li>展开“项目文件”节点，然后在编辑器中打开 <tt>pom.xml</tt>。</li>
+            <li>指定 NetBeans 安装的路径，方法是修改 <tt>nbm-maven-plugin</tt> 元素以添加 <tt>&lt;netbeansInstallation&gt;</tt> 元素。
+<pre class="examplecode">&lt;plugin&gt;
+    &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+    &lt;artifactId&gt;nbm-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;3.2&lt;/version&gt;
+    &lt;extensions&gt;true&lt;/extensions&gt;
+    <strong>&lt;configuration&gt;
+       &lt;netbeansInstallation&gt;/home/me/netbeans-6.9&lt;/netbeansInstallation&gt;
+    &lt;/configuration&gt;</strong>
+&lt;/plugin&gt;</pre>
+       <!-- &lt;descriptor&gt;src/main/nbm/module.xml&lt;/descriptor&gt; -->
+            <p class="notes"><strong>注意：</strong>此路径需要指定包含可运行文件的 <tt>bin</tt> 目录所在的目录。</p>
+            <p>例如，在 OS X 上，此路径可能如下所示。</p>
+            <pre class="examplecode">&lt;netbeansInstallation&gt;/Applications/NetBeans/NetBeans 6.9.app/Contents/Resources/NetBeans&lt;/netbeansInstallation&gt;</pre>
+            </li>
+        </ol>
+
+        <h3><a name="02b"></a>运行模块</h3>
+        <p>在指定 NetBeans IDE 安装目录之后，您便可以生成和运行此模块。</p>
+        <ol>
+            <li>右键单击项目节点，然后选择“生成”。</li>
+            <li>右键单击项目节点，然后选择“运行”。</li>
+        </ol>
+        <p>选择“运行”后，将会启动安装了新模块的 IDE。要确认新模块能够正常使用，请创建一个新项目，然后使用“新建文件”向导来创建一个 <tt>abc</tt> 文件。例如，您可以创建一个简单的 Java 应用程序，然后打开“新建文件”向导，并在“其他”类别中选择“空 Abc 文件”类型。</p>
+        <p class="tips">在创建新文件时，如果您希望在“项目”窗口中看到该文件，请指定一个源包。缺省情况下，新文件类型的向导会在项目的根目录级别创建文件。</p>
+        <p><img src="../images/tutorials/maven-single/wizard-new-abc-file.png" alt="具有 Abc 文件类型的“新建文件”向导的屏幕快照" title="具有 Abc 文件类型的“新建文件”向导" class="margin-around b-all"  />
+        <br/>
+        在创建新的 abc 文件之后，您便可以看到“项目”窗口中会出现带有该文件类型图标的文件。如果您在编辑器中打开此文件，则可以看到新文件的内容是从文件模板生成的。<br/>
+        <img src="../images/tutorials/maven-single/maven-single-projects-abcfile.png" alt="“项目”窗口中以及编辑器中打开的 Abc 文件的屏幕快照" title="“项目”窗口中以及编辑器中打开的 Abc 文件" class="margin-around b-all"  />
+        </p>
+    </div>
+
+
+
+    <!-- =================================================================== -->
+    <!-- +++++++++++++++++++++++ Adding an Action ++++++++++++++++++++++++++ -->
+    <h2><a name="03"></a>为文件类型添加操作</h2>
+    <p>在此部分，您将添加一个操作，当用户右键单击新文件类型的节点时，可以从弹出式菜单中调用该操作。</p>
+
+    <div class="indent">
+        <h3><a name="03a"></a>创建操作类</h3>
+        <p>在本练习中，您将使用“新建操作”向导创建一个 Java 类，用于为新的文件类型执行操作。此向导还会在 <tt>layer.xml</tt> 中注册该类。</p>
+        <ol>
+            <li>右键单击项目节点，然后选择“新建”&gt;“操作”。</li>
+            <li>在“操作类型”面板中，选择“有条件地启用”，然后在“Cookie 类”中键入 <strong>com.mycompany.abcfiletype.AbcDataObject</strong>。单击“下一步”。<br/>
+            <img src="../images/tutorials/maven-single/maven-single-newactionwizard.png" alt="“新建操作”向导的屏幕快照" title="“新建操作”向导" class="margin-around b-all"  />
+            </li>
+            <li>在“类别”下拉列表中选择“编辑”，然后取消选择“全局菜单项”。</li>
+            <li>选择“文件类型上下文菜单项”，然后在“内容类型”下拉列表中选择 &quot;text/x-abc&quot;<strong></strong>。单击“下一步”。</li>
+            <li>在“类名”中键入 <strong>MyAction</strong>，在“显示名称”中键入 <strong>My Action</strong>。单击“完成”。</li>
+        </ol>
+        <p>单击“完成”后，在 <tt>com.mycompany.abcfiletype</tt> 源包中创建 <tt>MyAction.java</tt>。如果在编辑器中打开 <tt>layer.xml</tt>，则可以看到在 <tt>Actions</tt> 文件夹的 <tt>Edit</tt> 文件夹元素中，向导添加了有关该文件类型的新操作的详细信息。</p>
+        <pre class="examplecode">
+&lt;folder name=&quot;Actions&quot;&gt;
+    &lt;folder name=&quot;Edit&quot;&gt;
+        <strong>&lt;file name=&quot;com-mycompany-abcfiletype-MyAction.instance&quot;&gt;</strong>
+            &lt;attr name=&quot;delegate&quot; methodvalue=&quot;org.openide.awt.Actions.inject&quot;/&gt;
+            &lt;attr name=&quot;displayName&quot; bundlevalue=&quot;com.mycompany.abcfiletype.Bundle#CTL_MyAction&quot;/&gt;
+            &lt;attr name=&quot;injectable&quot; stringvalue=&quot;com.mycompany.abcfiletype.MyAction&quot;/&gt;
+            &lt;attr name=&quot;instanceCreate&quot; methodvalue=&quot;org.openide.awt.Actions.context&quot;/&gt;
+            &lt;attr name=&quot;noIconInMenu&quot; boolvalue=&quot;false&quot;/&gt;
+            &lt;attr name=&quot;selectionType&quot; stringvalue=&quot;EXACTLY_ONE&quot;/&gt;
+            &lt;attr name=&quot;type&quot; stringvalue=&quot;com.mycompany.abcfiletype.AbcDataObject&quot;/&gt;
+        &lt;/file&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+        <p>该向导还在适用于新文件类型的 <tt>Loaders</tt> 和 <tt>Factories</tt> 文件夹元素中生成了元素。<tt>abc</tt> 文件类型的菜单操作在 <tt>Actions</tt> 下面指定，而 <tt>DataLoader</tt> 则在 <tt>Factories</tt> 下面指定。</p>
+
+        <pre class="examplecode">
+&lt;folder name=&quot;Loaders&quot;&gt;
+    &lt;folder name=&quot;text&quot;&gt;
+        <strong>&lt;folder name=&quot;x-abc&quot;&gt;
+            &lt;folder name=&quot;Actions&quot;&gt;
+                &lt;file name=&quot;com-mycompany-abcfiletype-MyAction.shadow&quot;&gt;</strong>
+                    &lt;attr name=&quot;originalFile&quot; stringvalue=&quot;Actions/Edit/com-mycompany-abcfiletype-MyAction.instance&quot;/&gt;
+                    <strong>&lt;attr name=&quot;position&quot; intvalue=&quot;0&quot;/&gt;</strong>
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-CopyAction.shadow&quot;&gt;
+                    &lt;attr name=&quot;originalFile&quot; stringvalue=&quot;Actions/Edit/org-openide-actions-CopyAction.instance&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;400&quot;/&gt;
+                &lt;/file&gt;
+                ...
+            &lt;/folder&gt;
+            <strong>&lt;folder name=&quot;Factories&quot;&gt;
+                &lt;file name=&quot;AbcDataLoader.instance&quot;&gt;</strong>
+                    &lt;attr name=&quot;SystemFileSystem.icon&quot; urlvalue=&quot;nbresloc:/com/mycompany/abcfiletype/abc16.png&quot;/&gt;
+                    &lt;attr name=&quot;dataObjectClass&quot; stringvalue=&quot;com.mycompany.abcfiletype.AbcDataObject&quot;/&gt;
+                    &lt;attr name=&quot;instanceCreate&quot; methodvalue=&quot;org.openide.loaders.DataLoaderPool.factory&quot;/&gt;
+                    &lt;attr name=&quot;mimeType&quot; stringvalue=&quot;text/x-abc&quot;/&gt;
+                &lt;/file&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+
+        <p class="tips">&quot;My Action&quot; 在弹出式菜单中的位置由 <tt>position</tt> 属性 (<tt>&lt;attr name=&quot;position&quot; intvalue=&quot;0&quot;/&gt;</tt>) 指定。缺省情况下，会将新操作 position 属性的 <tt>intvalue</tt> 指定为 <tt>0</tt>，这样可使该操作位于列表的最上面。您可以通过更改 <tt>intvalue</tt> 来改变顺序。例如，如果您将 <tt>intvalue</tt> 更改为 <tt>200</tt>，则 &quot;My Action&quot; 菜单项将出现在“打开”菜单项的下面（“打开”操作的 <tt>intvalue</tt> 值为 <tt>100</tt>）。</p>
+
+
+        <h3><a name="03b"></a>为操作指定行为</h3>
+        <p>现在，您需要为该操作添加代码。在本示例中，您将添加一些代码，当从弹出式菜单中调用该操作时，这些代码会使用 <tt>DialogDisplayer</tt> 打开一个对话框。要使用 <tt>DialogDisplayer</tt>，您还需要声明对 <tt>org.openide.dialogs</tt> 的直接依赖关系。</p>
+        <ol>
+            <li>修改 <tt>MyAction.java</tt> 中的 <tt>actionPerformed(ActionEvent ev)</tt> 方法，以便在调用 &quot;My Action&quot; 时打开一个对话框。
+            <pre class="examplecode">@Override
+public void actionPerformed(ActionEvent ev) {
+   <strong>FileObject f = context.getPrimaryFile();
+   String displayName = FileUtil.getFileDisplayName(f);
+   String msg = &quot;This file is &quot; + displayName + &quot;.&quot;;
+   NotifyDescriptor nd = new NotifyDescriptor.Message(msg);
+   DialogDisplayer.getDefault().notify(nd);</strong>
+}</pre>
+            </li>
+            <li>修复导入，并确认您导入了 <tt><strong>org.openide.filesystems.FileObject</strong></tt>。保存所做的更改。
+            <p>当您修复导入时，您便为 <tt>org.openide.DialogDisplayer</tt> 添加了一条导入语句。现在，您需要将对 <tt>org.openide.dialogs</tt> 工件的依赖关系声明为直接依赖关系，而不是传递依赖关系。</p></li>
+            <li>右键单击项目“库”节点下的 <tt>org.openide.dialogs</tt> JAR，然后选择“声明为直接依赖关系”。</li>
+        </ol>
+        <p>现在，您可以对此模块进行测试，以确认新操作能够正常使用。</p>
+        <p class="notes"><strong>注意：</strong>要运行此模块，您首先需要清理和生成此模块。</p>
+        <p><img src="../images/tutorials/maven-single/maven-single-action-popup.png" alt="“项目”窗口中以及编辑器中打开的 Abc 文件的屏幕快照" title="“项目”窗口中以及编辑器中打开的 Abc 文件" class="margin-around b-all"  />
+        </p>
+        <p>当您右键单击 <tt>abc</tt> 文件类型的节点时，您会看到 &quot;My Action&quot; 包含在弹出式菜单的项目中。</p>
+    
+    </div>
+
+
+    <!-- =================================================================== -->
+    <!-- +++++++++++++++++++++++ Creating a Window +++++++++++++++++++++++++ -->
+
+    <h2><a name="04"></a>为文件类型创建窗口</h2>
+    <p>缺省情况下，会在一个基本的文本编辑器中打开新文件类型。如果您不希望对新文件类型使用编辑器，则可以创建一个新窗口，专门用于编辑新文件类型。然后，您可以修改此窗口组件以支持其他的文件编辑方式，例如，使窗口成为一个可视编辑器。在此部分，您将创建新窗口组件，专门用于新文件类型的文件。</p>
+
+    <ol>
+        <li>右键单击项目节点，然后选择“新建”&gt;“窗口”。</li>
+        <li>从下拉列表中选择 &quot;editor&quot;<strong></strong>，然后选择“在应用程序启动时打开”。单击“下一步”。</li>
+        <li>在“类名前缀”中键入 <strong>Abc</strong>。单击“完成”。</li>
+        <li>在编辑器中打开 <tt>AbcDataObject.java</tt>，然后将类构造函数修改为使用 <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/OpenSupport.html">OpenSupport</a></tt> 而不是 <tt>DataEditorSupport</tt>。
+        <pre class="examplecode">
+public AbcDataObject(FileObject pf, MultiFileLoader loader) throws DataObjectExistsException, IOException {
+    super(pf, loader);
+    CookieSet cookies = getCookieSet();
+    <strong>cookies.add((Node.Cookie) new AbcOpenSupport(getPrimaryEntry()));</strong>
+}</pre>
+        </li>
+        <li>创建由构造函数调用的 <tt>AbcOpenSupport</tt> 类。
+        <p class="tips">在包含 <tt>AbcOpenSupport</tt> 调用的代码行中按 Alt-Enter 组合键，以在包 <tt>com.mycompany.abcfiletype</tt> 中创建 <tt>AbcOpenSupport</tt>。</p></li>
+        <li>修改 <tt>AbcOpenSupport</tt> 以扩展 <tt>OpenSupport</tt> 并实现 <tt>OpenCookie</tt> 和 <tt>CloseCookie</tt>。
+        <pre class="examplecode">
+class AbcOpenSupport <strong>extends OpenSupport implements OpenCookie, CloseCookie</strong> {</pre>
+        </li>
+        <li>实现抽象方法 (Alt-Enter) 并对该类进行如下更改。
+        <pre class="examplecode">
+    public AbcOpenSupport(<strong>AbcDataObject.Entry entry</strong>) {
+        <strong>super(entry);</strong>
+    }
+
+    @Override
+    protected CloneableTopComponent createCloneableTopComponent() {
+        <strong>AbcDataObject dobj = (AbcDataObject) entry.getDataObject();
+        AbcTopComponent tc = new AbcTopComponent();
+        tc.setDisplayName(dobj.getName());
+        return tc;</strong>
+    }</pre>
+        </li>
+        <li>在编辑器中打开 <tt>AbcTopComponent</tt>，然后修改该类以扩展 <tt>CloneableTopComponent</tt> 而不是 <tt>TopComponent</tt>。
+        <pre class="examplecode">public final class AbcTopComponent extends <strong>CloneableTopComponent</strong> {</pre>
+        </li>
+        <li>将类修饰符由 <tt>private</tt> 更改为 <tt>public</tt>。 
+        <pre class="examplecode"><strong>public</strong> static AbcTopComponent instance;</pre>
+        </li>
+        <li>修复导入并保存更改。</li>
+    </ol>
+    <p>现在，您可以尝试在清理和生成项目之后重新运行此模块。<br/>
+    <img src="../images/tutorials/maven-single/maven-single-newfile-window.png" alt="“项目”窗口中以及编辑器中打开的 Abc 文件的屏幕快照" title="“项目”窗口中以及编辑器中打开的 Abc 文件" class="margin-around b-all"  /></p>
+    <p>现在，当您打开 abc 文件时，该文件将在新窗口中打开，而不是在基本编辑器中打开。</p>
+
+
+
+
+
+
+    
+   
+    <!--<p>The project also contains other XML files containing metadata about the project such as <tt>profiles.xml</tt>.
+    The <tt>profiles.xml</tt> file specifies the path to the NetBeans installation and is used by the IDE when running the project.
+    -->
+    
+    <!--<p>Unlike the original Ant-based tutorial, you do not specify the platform installation in the wizard.
+    For Maven module suites you need to modify the <tt>&lt;netbeans.installation&gt;</tt> element in the profiles.xml file
+    and explicitly specify the path to the NetBeans platform installation. </p>
+    see https://netbeans.org/bugzilla/show_bug.cgi?id=185941.
+-->
+
+
+ 
+    <p>本教程演示了如何创建和运行您通过 Maven 原型创建的 NetBeans 模块。您学习了如何修改项目 POM 以指定目标 NetBeans 安装，这样 IDE 中的“运行”命令就可以安装该模块并启动 IDE 的新实例。您还学习了一点有关如何使用文件类型和 <tt>DataObject</tt> 的知识，若要了解详细信息，您应该查看 <a href="https://platform.netbeans.org/tutorials/nbm-filetype_zh_CN.html">NetBeans 文件类型教程</a>。有关如何生成 NetBeans 平台应用程序和模块的更多示例，请参见 <a href="https://netbeans.org/kb/trails/platform_zh_CN.html">NetBeans 平台学习资源</a>中所列的教程。</p>
+
+
+<!-- ======================================================================================== -->
+
+
+    <h2><a name="nextsteps"></a>另请参见</h2>
+
+    <p>有关创建和开发应用程序的更多信息，请参见以下资源。</p>
+    <ul>
+        <li><a href="https://netbeans.org/kb/trails/platform_zh_CN.html">NetBeans 平台学习资源</a></li>
+        <li><a href="http://bits.netbeans.org/dev/javadoc/">NetBeans API Javadoc</a></li>
+    </ul>
+    <p>如果您有任何有关 NetBeans 平台的问题，可随时写信至邮件列表 dev@platform.netbeans.org，或查看 <a href="https://netbeans.org/projects/platform/lists/dev/archive">NetBeans 平台邮件列表归档</a>。</p>
+
+
+    <!-- ======================================================================================== -->
+
+
+
+</body>
+
+</html>

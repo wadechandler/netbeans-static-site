@@ -1,0 +1,245 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+			<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta name="Title" content="Creative uses of the Visual Library"/>
+        <meta name="Author" content="Fabrizio Giudici, fabrizio.giudici@tidalwave.it"/>
+        <meta name="description" content="The Visual Library is a NetBeans component for creating and drawing graphs and diagrams, such as UML artifacts, navigation schemes for MIDP and others. But with a little effort it can have many more creative uses."/>
+        <meta name="copyright" content="© 2007 NetBeans"/>
+        <meta name="Designer" content="pH Design"/>
+        <link rel="stylesheet" type="text/css" href="../magazine.css" media="screen"/>
+<title>NetBeans Magazine, Issue 4 . Creative uses of the Visual Library</title>
+</head>
+	<body>
+		<div id="nb04-virtuallibrary">
+		  <div class="image"><img src="../../../../images_www/magazine/issue04/top-visuallibrary.jpg" alt="Creative uses of the Visual Library" width="770" height="200" /> </div>
+            <div class="story"></div>
+		  <div class="story">
+				<p class="nb-body">The Visual Library has been conceived mainly for building, handling and rendering graphs, including flow and UML diagrams (it has been originally developed for the NetBeans Mobility Pack, but from NetBeans 6.0 on it’s part of the NetBeans Platform APIs). I like to think of the Visual Library more generally, however, as an API for creating interactive “whiteboards” where you can place, move, and rearrange items visually. </p>
+				<p class="nb-body">From this perspective, the Visual Library reveals all its power, as modern UIs are each day more focused on the concept of modeling “real-life” objects that can be moved around. Thus it found its way into blueMarine, an open-source photo management application I created which is based on the NetBeans Platform (see my article in Issue 3 of NetBeans Magazine for more about this tool). </p>
+			  <p class="nb-body">In blueMarine, the Visual Library is used to implement a virtual version of a photographer’s “Light Table” – a place where photos can be laid out and rearranged (see <span class="nb-body-bold">Figure 1</span>). It’s also the basis for an advanced geotagging component (<span class="nb-body-bold">Figure 2</span>). In this article I’ll describe the Light Table, which is the simpler of the two Visual Library-based components, but complex enough that we can show in practice many features of the API.</p>
+				<p class="nb-body"><a href="../../../../images_www/magazine/issue04/image20232_opt-small.jpg"><img src="../../../../images_www/magazine/issue04/image20232_opt-small.jpg" style="border: 0px;"  alt="Figure (click for full size)" /></a><span class="nb-body-bold"> <br />
+			    Figure 1. </span>The Light Table</p>
+<p class="nb-body"><a href="../../../../images_www/magazine/issue04/image20238_opt-small.jpg"><img src="../../../../images_www/magazine/issue04/image20238_opt-small.jpg" style="border: 0px;"  alt="Figure (click for full size)" /></a><br />
+			      <span class="nb-body-bold">			      Figure 2.</span> 
+		        The Geotagging Component</p>
+		      <div class="story">
+                <p class="nb-eye">Though all the examples illustrated in this article refer to a NetBeans Platform application, you can use the Visual Library in plain Swing apps by adding a couple of JAR files to the classpath.</p>
+	        </div>
+		      <p class="nb-section">Basic concepts</p>
+				<p class="nb-body">Let’s first introduce some key concepts of the Visual Library. Widgets (the <span class="nb-techtext-bold">org.netbeans.api.visual.widget.Widget </span>class and its descendants) represent a diagram’s nodes. A widget can consist of a simple drawing, a piece of text, an icon, or a group of these basic elements. It can also wrap a Swing component. You may need to subclass <span class="nb-techtext-bold">Widget</span> for special purposes, but in most cases you’ll be fine with one of the provided widget classes such as <span class="nb-techtext-bold">ImageWidget</span> and <span class="nb-techtext-bold">LabelWidget</span>. &nbsp;</p>
+				<p class="nb-body">Connection widgets, in particular, represent arcs that connect pairs of other widgets. They are usually drawn as arrows (with some graphic variants for line caps). Also, their paths can be “routed” using different algorithms, for example to avoid clutter in diagrams.</p>
+				<p class="nb-body">Other essential elements are Actions and ActionFactories. You probably won’t be satisfied by just creating a diagram and staring at it, so there’s plenty of support for making diagrams dynamic and interactive. It’s possible to create, delete and select widgets, and have them change appearance when you hover over them. You can additionally drag, connect and disconnect widgets. The Visual Library provides <span class="nb-techtext-bold">Action</span>s and corresponding factories to perform these tasks, and allows you to customize their behavior. Finally, a scene (<span class="nb-techtext-bold">org.netbeans.api.visual.widget.Scene</span>) is the container for everything (in my initial analogy it represents the actual “whiteboard”). </p>
+				<p class="nb-body">In this article I assume the reader is quite confident with these basic concepts. There are already various tutorials available on the library’s website where you can learn the essentials. Here I present a more advanced, let’s say “creative”, use of the library.</p>
+				<p class="nb-section">Getting the code</p>
+				<p class="nb-body">You can download the full working code described in this article by using Subversion:</p>
+				<pre><div class="nb-codelist-body">svn checkout \ http://bluemarine-incubator.dev.java.net/svn/<br />      bluemarine-incubator/trunk/src/LightTable -r 232 \ --username guest</div></pre>
+				<p class="nb-body">Revision 232 is the one matching the code listings in this article. </p>
+			<p class="nb-section">The Light Table</p>
+				<p class="nb-body">The Light Table lives inside a <span class="nb-techtext-bold">TopComponent</span> (in a plain Swing application you would use a <span class="nb-techtext-bold">JFrame</span> or a <span class="nb-techtext-bold">JPanel</span>).</p>
+				<div class="story">
+                  <p class="nb-eye1">If you’re not familiar with the NetBeans Platform, a TopComponent is sort of a hybrid between a JFrame and a JPanel. It is normally docked, thus behaving as a JPanel, but can be undocked and float around like a JFrame. It is usually the container used for a user interface in NetBeans Platform applications.</p>
+		    </div>
+			<p class="nb-body"> A number of required objects are initialized in the <span class="nb-techtext-bold">LightTableTopComponent </span>(see<span class="nb-body-bold"> Listing 1</span>): </p>
+			  <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                <tbody>
+                  <tr>
+                    <td bgcolor="#660066"><span class="nb-codelist-title">Listing 1. Basic objects for the Visual Library in LightTableTopComponent.java</span></td>
+                  </tr>
+                  <tr>
+                    <td valign="top"><pre><div class="nb-codelist-body">private final ObjectScene scene = new ObjectScene();<br />private final JComponent view = scene.createView();<br />private final LayerWidget mainLayer = new LayerWidget(scene);<br />private final JComponent satelliteView = scene.createSatelliteView();<br /></div></pre></td></tr></tbody></table>
+			  <p class="nb-body"><span class="nb-techtext-bold">• scene</span> – An instance of <span class="nb-techtext-bold">ObjectScene</span>, a class<span class="nb-techtext-bold"> </span>that<span class="nb-techtext-bold"> </span>keeps associations between widgets and the objects that model them. This facility is quite useful for implementing the MVC pattern.</p>
+				<p class="nb-body"><span class="nb-techtext-bold">• view</span> – A Swing <span class="nb-techtext-bold">JComponent</span> that renders the objects in the <span class="nb-techtext-bold">scene</span>. You obtain it by asking the scene object for its creation.</p>
+				<p class="nb-body"><span class="nb-techtext-bold">• mainLayer</span> – The Visual Library usually organizes widgets in different layers. This can be handy especially for improving performance of graphs with connections. Our Light Table does not need connections so we’re fine with a single layer.</p>
+				<p class="nb-body"><span class="nb-techtext-bold">• satelliteView</span> – This <span class="nb-techtext-bold">JComponent </span>will<span class="nb-techtext-bold"> </span>render a “bird’s eye view” of the scene, useful if you’re going to create a large scene that extends beyond the screen size.</p>
+			  <p class="nb-body"><span class="nb-body-bold">Listing 2</span> shows how the initialization is completed. You usually need to place the scene in a <span class="nb-techtext-bold">JScrollPane</span>, to allow users to navigate it. We also use a <span class="nb-techtext-bold">JLayeredPane</span> to render the satellite view above the scene in a corner. In the last line we enable zooming by creating a “zoom action” through the <span class="nb-techtext-bold">ActionFactory</span> class and adding it to the scene.<br />
+</p>
+			  <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                <tbody>
+                  <tr>
+                    <td bgcolor="#660066"><span class="nb-codelist-title">Listing 2. Initializing components in LightTableTopComponent</span></td>
+                  </tr>
+                  <tr>
+                    <td valign="top"><pre><div class="nb-codelist-body"><p>spScrollPane.setViewportView(view);<br />pnLayeredPane.add(spScrollPane, JLayeredPane.DEFAULT_LAYER);</p><p>// pnSatelliteView is a JPanel wrapping the satelliteView <br />pnLayeredPane.add(pnSatelliteView, JLayeredPane.PALETTE_LAYER);<br />scene.addChild(mainLayer);<br />scene.getActions().addAction(ActionFactory.createZoomAction());</p></div></pre></td></tr></tbody></table>
+			  <p class="nb-sub-section">Adding and removing objects</p>
+			  <p class="nb-body">We also need to include a couple of methods for adding and removing photos in the Light Table; see<span class="nb-body-bold"> Listing 3</span>. In this code, when a new <span class="nb-techtext-bold">DataObject</span> is added we perform the following steps (inside the <span class="nb-techtext-bold">internalAdd()</span> method):</p>
+			  <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                <tbody>
+                  <tr>
+                    <td bgcolor="#660066"><span class="nb-codelist-title">Listing 3. Adding and removing objects from the Light Table</span></td>
+                  </tr>
+                  <tr>
+                    <td valign="top"><pre><div class="nb-codelist-body"><p>public void addDataObject (final DataObject dataObject) {<br />  internalAdd(dataObject, new Point(100, 100)); // default coordinates<br />}</p><p>public void removeDataObject (final DataObject dataObject) {<br />  internalRemove(dataObject);<br />}</p><p>private void internalAdd (final DataObject dataObject, final Point viewLocation) {<br />  final ThumbnailWidget widget = new ThumbnailWidget(scene, dataObject.getNodeDelegate());<br />  final Point sceneLocation = scene.convertViewToScene(viewLocation);<br />  final Point localLocation = mainLayer.convertSceneToLocal(sceneLocation);</p><p>  widget.setPreferredLocation(localLocation);<br />  widget.setUnselectedBorder(EMPTY_BORDER);<br />  mainLayer.addChild(widget);<br />  scene.addObject(dataObject, widget);</p><p>  // resizeStrategy is described in Listing 4<br />  widget.getActions().addAction(ActionFactory.createResizeAction(resizeStrategy, null));       <br />  widget.getActions().addAction(ActionFactory.createMoveAction());<br />  widget.getActions().addAction(scene.createSelectAction());<br />  widget.getActions().addAction(scene.createObjectHoverAction());<br />  // bringToFrontAction is described in Listing 5<br />  widget.getActions().addAction(bringToFrontAction);<br />  scene.validate(); <br />}</p><p>private void internalRemove (final DataObject dataObject) {<br />  final List&lt;Widget&gt; widgets = scene.findWidgets(dataObject);<br />  scene.removeObject(dataObject);<br />  <br />  //removeObject() does not remove widgets<br />  for (final Widget widget : widgets) { <br />    widget.removeFromParent();<br />  }<br />}</p></div></pre></td></tr></tbody></table>
+			  <blockquote>
+			    <p class="nb-body">1. Create the widget that represents the <span class="nb-techtext-bold">DataObject</span> in the scene (the <span class="nb-techtext-bold">ThumbnailWidget</span>, discussed below).<br />
+			      2. Assign its initial position (with some code needed to convert a Swing <span class="nb-techtext-bold">Point</span> to a proper value in the Visual Library’s scene model coordinates).<br />
+			      3. Add the widget to the layer.<br />
+			      4. Add the widget and the <span class="nb-techtext-bold">DataObject</span> to the scene (which binds them together).<br />
+			      5. Define the dynamic behavior of the widget by adding some actions. Many actions are created through <span class="nb-techtext-bold">ActionFactory</span>, while others can be instantiated with specific methods of the <span class="nb-techtext-bold">scene </span>object.<br />
+			      6. Finally, call <span class="nb-techtext-bold">scene.validate()</span>. After one or more widgets are changed, the scene needs to be revalidated. The Visual Library usually does this automatically, but as we’re writing customized Swing code that performs a change we need to do this manually. </p>
+		    </blockquote>
+			  <p class="nb-body">Before we go on, let me discuss some basic concepts about the way the NetBeans Platform implements the MVC pattern. In the Platform, the <span class="nb-techtext-bold">DataObject </span>class is used to model a domain object, and an associated class – <span class="nb-techtext-bold">Node</span> – is used to model its representation inside a view (a list, a tree, etc.). For example, <span class="nb-techtext-bold">Node</span>s contain a text label, an icon, and a list of associated actions which can be activated by a popup menu. </p>
+			  <p class="nb-body">It’s a very good thing to have two distinct classes, since you can have multiple <span class="nb-techtext-bold">Node</span>s for each <span class="nb-techtext-bold">DataObject</span>. This lets you create different representations of the same domain object. You usually subclass <span class="nb-techtext-bold">DataObject</span> and add your application-specific logic. For example, blueMarine defines a <span class="nb-techtext-bold">PhotoDataObject</span> class which contains code for reading and writing an image. However, you won’t see this class in the code in this article because I’m following a best practice of keeping models as general as possible, by working with plain <span class="nb-techtext-bold">DataObject</span>s and delegating everything to the related <span class="nb-techtext-bold">Node</span> classes. Thus, I could use the same code, e.g. for rendering movies (with a <span class="nb-techtext-bold">MovieDataObject</span>) or other visual documents. Now let’s go back to the <span class="nb-techtext-bold">LightTableTopComponent</span>.</p>
+				<p class="nb-sub-section">Widget behavior</p>
+				<p class="nb-body">We want users to be able to select our widget, resize it by dragging its borders, and move it by dragging its contents. Also, the widget should change appearance when the mouse hovers over it, and come to the top of the stack when clicked. For movement, selection and hovering, adding predefined actions suffice. For resizing support though, the <span class="nb-techtext-bold">ActionFactory.createResizeAction()</span> method won’t do: it lets you arbitrarily change the widget’s dimensions, but the photos need to have a fixed aspect ratio. In such cases you can customize widget actions with special strategies. </p>
+				<p class="nb-body">See an example of a strategy in <span class="nb-body-bold">Listing 4</span>. The widget’s <span class="nb-techtext-bold">boundsSuggested()</span> method is called by the Visual Library while we are dragging the widget; it’s passed both the original and current bounds. By returning a freshly computed <span class="nb-techtext-bold">Rectangle</span> we can override the default settings. The code first gets the image’s aspect ratio and then computes the height from the new width or vice versa. This calculation takes into account the widget’s borders: if we draw a fixed-size border around the photo its thickness must not affect the aspect ratio calculation.</p>
+				<table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                  <tbody>
+                    <tr>
+                      <td bgcolor="#660066"><span class="nb-codelist-title">Listing 4. Providing a custom ResizeStrategy for preserving aspect ratio</span></td>
+                    </tr>
+                    <tr>
+                      <td valign="top"><pre><div class="nb-codelist-body"><p>private final static ResizeStrategy resizeStrategy = new ResizeStrategy() {<br />  public Rectangle boundsSuggested (final Widget widget, <br />      final Rectangle originalBounds, <br />      final Rectangle suggestedBounds, <br />      final ResizeProvider.ControlPoint controlPoint)<br />  {<br />    final Rectangle result = new Rectangle(suggestedBounds);      <br />    final Thumbnail thumbnail = widget.getLookup().lookup(Thumbnail.class);<br /></p><p>    // We could compute aspectRatio from originalBounds,<br />    // but rounding errors would accumulate.<br />    if (thumbnail != null)  {<br />      // isImageAvailable() doesn’t guarantee the image is online<br />      final BufferedImage image = thumbnail.getImage(); </p><p>      if (image != null) {<br />        final Insets insets = widget.getBorder().getInsets();<br />        final int mw = insets.left + insets.right;<br />        final int mh = insets.bottom + insets.top;<br />        final int contentWidth = result.width - mw;<br />        final int contentHeight = result.height - mh;<br />        final float aspectRatio = (float) image.getHeight()/image.getWidth();<br />        final double deltaW = Math.abs(suggestedBounds.getWidth() - originalBounds.getWidth());<br />        final double deltaH = Math.abs(suggestedBounds.getHeight() - originalBounds.getHeight());</p><p>        if (deltaW &gt;= deltaH) { // moving mostly horizontally<br />          result.height = mh + Math.round(contentWidth * aspectRatio);<br />        }<br />        else { // moving mostly vertically<br />          result.width = mw + Math.round(contentHeight / aspectRatio);<br />        }<br />      }<br />    }<br />    return result;<br />  }<br />};</p></div></pre></td></tr></tbody></table>
+                <div class="story">
+                  <p class="nb-eye11">In blueMarine, preview images are wrapped by a <span class="nb-techtext-bold">Thumbnail</span> <span class="nb-techtext-bold">class</span>. Similarly, in your applications you’ll usually have a specific class containing the data you want to render in the widget. The problem is how to bind a widget to a data model. While the simplest solution appears to be to create specific getter/setter methods in ThumbnailWidget, this would introduce specific dependencies and require explicit class casts (for example, as the method boundSuggested() is general, it deals with a Widget rather than with my ThumbnailWidget). Instead, I’ve used a Lookup, a very useful class from the NetBeans Platform (which is also available for use in plain Swing projects). It acts as a container of custom objects, which can be retrieved by specifying their class name. In Listing 4, you see that the thumbnail is retrieved by getLookup().lookup(Thumbnail.class). When we discuss the ThumbnailWidget class we’ll see how the Thumbnail object was made available.</p>
+            </div>
+            <p class="nb-tips style1">&nbsp;</p>
+<p class="nb-body"><span class="nb-body-bold">Listing 5</span> shows the code for bringing the widget to the front. This is an example of how you can define new actions. I’ve extended the <span class="nb-techtext-bold">WidgetAction.Adapter</span> class, which gets invoked by mouse and keyboard listeners, and overridden the relevant method.<br />
+</p>
+	      <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                <tbody>
+                  <tr>
+                    <td bgcolor="#660066"><span class="nb-codelist-title">Listing 5. Customized action for bringing a widget to the front with a mouse click</span></td>
+                  </tr>
+                  <tr>
+                    <td valign="top"><pre><div class="nb-codelist-body">private static final WidgetAction.Adapter <br />    bringToFrontAction = new WidgetAction.Adapter()<br />{<br />  @Override<br />  public State mouseClicked (final Widget widget, <br />      final WidgetMouseEvent event)<br />  {<br />    if (event.getButton() == MouseEvent.BUTTON1) {<br />      widget.bringToFront();<br />      return State.CONSUMED;<br />    } <br />    return State.REJECTED;<br />  }<br />};</div></pre></td></tr></tbody></table>
+			  <p class="nb-body">Actions are bound to the widget by defining a “pipeline” to which mouse and keyboard events are delivered. Sometimes an event is propagated through the whole pipeline; in other cases a certain action consumes it definitely. The propagation of events is controlled by returning some specific flags such as <span class="nb-techtext-bold">State.CONSUMED</span> (which stops the propagation).</p>
+			<p class="nb-section">The ThumbnailWidget</p>
+				<p class="nb-body">Now it’s time to take a look at the widget’s code. While the Visual Library already provides an <span class="nb-techtext-bold">ImageWidget</span> class which renders a generic <span class="nb-techtext-bold">Image</span>, we need something more complex, for the following reasons:</p>
+				<blockquote>
+				  <p class="nb-body">• First and most important from a performance perspective, reading an image from a file needs some time, and a Light Table can contain tens of images. For instance, twenty images requiring 50ms each would lead to a full second of loading time. We can&apos;t spend all this inside the event thread, or the Light Table would be sluggish. blueMarine deals with this by means of a <span class="nb-techtext-bold">ThumbnailRenderer</span> class that manages image loading on demand and renders placeholders while images <br />
+				    are not ready.<br />
+				    • Also, blueMarine will soon support image manipulation, and I’ll need to update all representations in real time when such changes happen (e.g. by painting specific decorations when a thumbnail is not up to date). This is solved using the <span class="nb-techtext-bold">Node</span> class’s capability of firing events that notify updates – and then <span class="nb-techtext-bold">ThumbnailRenderer</span> will do all the required work. <br />
+				    • Lastly, it’s necessary to implement a context menu for the widgets, which must be coherent with the rest of the application. <span class="nb-techtext-bold">Node</span>s again provide support for this. (See the result in <span class="nb-body-bold">Figure 3</span>).</p>
+		    </blockquote>
+				<p class="nb-body"><img src="../../../../images_www/magazine/issue04/image20244_opt.jpeg" alt="Figure" /><br />
+                  <span class="nb-body-bold">Figure 3. </span> Context menu for a widget</p>
+			<p class="nb-body">Considering all this, it seems obvious that we need to implement a special widget class that delegates the implementation of context menus to the <span class="nb-techtext-bold">Node</span> class and the rendering operations to <span class="nb-techtext-bold">ThumbnailRenderer</span>. Let’s first concentrate on the widget’s creation. </p>
+			  <p class="nb-body">In the code shown in <span class="nb-body-bold">Listing 6</span>, I set some fields to refer to the <span class="nb-techtext-bold">Node</span> and <span class="nb-techtext-bold">Thumbnail</span>; then I adjust the user-specified size to comply with the photo’s aspect ratio. I’ve previously mentioned the role of the <span class="nb-techtext-bold">Lookup</span> class in linking a widget to its model, and shown how to extract the model from a properly prepared<span class="nb-techtext-bold"> Lookup</span> instance. Now, in Listing 6, you can see how the <span class="nb-techtext-bold">Lookup</span> instance is prepared. A <span class="nb-techtext-bold">ProxyLookup</span> is a NetBeans Platform class that “merges” two existing instances of <span class="nb-techtext-bold">Lookup</span> – the one coming from the <span class="nb-techtext-bold">Node</span> (required for the context menus to work) and a new one that contains both the <span class="nb-techtext-bold">Node</span> and the <span class="nb-techtext-bold">Thumbnail</span>.<br />
+</p>
+	      <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                <tbody>
+                  <tr>
+                    <td bgcolor="#660066"><span class="nb-codelist-title">Listing 6. The ThumbnailWidget</span></td>
+                  </tr>
+                  <tr>
+                    <td valign="top"><pre><div class="nb-codelist-body"><p>public class ThumbnailWidget extends Widget {   <br />  private final Node node;<br />  private final Thumbnail thumbnail;<br />  private ThumbnailRenderer thumbnailRenderer = DEFAULT_THUMBNAIL_RENDERER;<br />  private final Lookup lookup;</p><p>  private final PopupMenuProvider popupMenuProvider = new PopupMenuProvider() {<br />    public JPopupMenu getPopupMenu (final Widget widget, final Point location) {<br />      return node.getContextMenu();<br />    }<br />  }; </p><p>  public ThumbnailWidget (final Scene scene, final Node node, Dimension size) {<br />    super(scene);  <br />    this.node = node;<br />    thumbnail = thumbnailManager.findThumbnail(node.getLookup().lookup((DataObject.class)));<br />    size = new Dimension(size);<br />    lookup = new ProxyLookup(node.getLookup(), Lookups.fixed(node, thumbnail));<br />    final BufferedImage image = thumbnail.getImage();</p><p>    if (image != null) {<br />      final int width = image.getWidth(); <br />      final int height = image.getHeight();<br />      final double hScale = size.getWidth() / (float)width;<br />      final double vScale = size.getHeight() / (float)height;<br />      final double scale = Math.min(hScale, vScale);<br />      size.setSize(Math.round(scale * width), Math.round(scale * height));<br />    }</p><p>    setUnselectedBorder(DEFAULT_UNSELECTED_BORDER);<br />    setSelectedBorder(DEFAULT_SELECTED_BORDER);<br />    setBorder(unselectedBorder); <br />    final Insets insets = getBorder().getInsets();<br />    size.width += insets.left + insets.right;<br />    size.height += insets.bottom + insets.top;<br />    setPreferredSize(size);<br />    setMinimumSize(DEFAULT_MINIMUM_SIZE);<br />    getActions().addAction(ActionFactory.createPopupMenuAction(popupMenuProvider));<br />  }</p><p>  @Override<br />  public Lookup getLookup() {<br />    return lookup;    <br />  }<br />  ...<br />}</p></div></pre></td></tr></tbody></table>
+			  <p class="nb-body">To paint a custom widget, we add code to the <span class="nb-techtext-bold">paintWidget()</span> method (see<span class="nb-body-bold"> Listing 7</span>). The obvious part here is that the image rendering is delegated to my <span class="nb-techtext-bold">thumbnailRenderer.paint() </span>method. Less trivial is managing the scaling (remember, a scene can be zoomed in and out). This is done by controlling the scale of <span class="nb-techtext-bold">Graphics2D</span>.</p>
+		      <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                <tbody>
+                  <tr>
+                    <td bgcolor="#660066"><span class="nb-codelist-title">Listing 7. Rendering the custom widget</span></td>
+                  </tr>
+                  <tr>
+                    <td valign="top"><pre><div class="nb-codelist-body"><p>@Override<br />protected void paintWidget(){<br />  final Graphics2D g = getGraphics();<br />  final AffineTransform transformSave = g.getTransform();<br />  final Rectangle bounds = getClientArea();</p><p>  thumbnailRenderer.setThumbnail(thumbnail);<br />  g.translate(bounds.x + 1, bounds.y + 1);<br />  bounds.width -= 1;<br />  bounds.height -= 1;<br />  thumbnailRenderer.setBounds(bounds);<br />  final double zoomFactor = getScene().getZoomFactor();<br />  g.scale(1 / zoomFactor, 1 / zoomFactor);<br />  thumbnailRenderer.paint(g);<br />  g.setTransform(transformSave);        <br />}</p></div></pre></td></tr></tbody></table>
+			  <p class="nb-sub-section">Listening for node changes</p>
+				<p class="nb-body">Changes in the representation of photos are handled by firing events on the relevant <span class="nb-techtext-bold">Node</span>. So that our <span class="nb-techtext-bold">ThumbnailWidget</span> updates correctly, we need to setup a <span class="nb-techtext-bold">NodeListener</span>, which you can attach and detach in the <span class="nb-techtext-bold">notifyAdded()</span> and <span class="nb-techtext-bold">notifyRemoved()</span> methods (see<span class="nb-body-bold"> Listing 8</span>). These are called when the widget is added to or removed from a scene (you can think of them as a kind of life-cycle control).<br />
+</p>
+				<table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                  <tbody>
+                    <tr>
+                      <td bgcolor="#660066"><span class="nb-codelist-title">Listing 8. Listening for changes</span></td>
+                    </tr>
+                    <tr>
+                      <td valign="top"><pre><div class="nb-codelist-body"><p>private final NodeListener iconChangeListener = <br />   new NodeAdapter()<br />{<br />  @Override<br />  public void propertyChange(final PropertyChangeEvent event) {<br />    if (Node.PROP_ICON.equals(event.getPropertyName())) {<br />       doRepaint();<br />    }<br />  }<br />};</p><p>@Override<br />protected void notifyAdded() {<br />  super.notifyAdded();<br />  node.addNodeListener(iconChangeListener);<br />}</p><p>@Override<br />protected void notifyRemoved() {<br />  super.notifyRemoved();<br />  node.removeNodeListener(iconChangeListener);<br />}<br /></p></div></pre></td></tr></tbody></table>
+				<p class="nb-body">Now take a look at the <span class="nb-techtext-bold">doRepaint()</span> method in<span class="nb-body-bold"> Listing 9</span>. Notice that it must cope with the usual Swing threading issues, since <span class="nb-techtext-bold">Node</span> events can be fired by an arbitrary thread. Also, after a widget has been changed (in this case by calling its <span class="nb-techtext-bold">repaint()</span> method), the scene must be validated. Otherwise you won’t see any updates.</p>
+			<table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                  <tbody>
+                    <tr>
+                      <td bgcolor="#660066"><span class="nb-codelist-title">Listing 9. Forcing the repaint of a widget</span></td>
+                    </tr>
+                    <tr>
+                      <td valign="top"><pre><div class="nb-codelist-body">private void doRepaint() {<br />  //The Nodes API can fire events outside the AWT Thread<br />  if (SwingUtilities.isEventDispatchThread()) {<br />    repaint();<br />    getScene().validate(); <br />    //required or repaint() doesn’t work<br />  } <br />  else {<br />    SwingUtilities.invokeLater(new Runnable() {<br />      public void run() {<br />        repaint(); <br />        getScene().validate();<br />      }<br />    });<br />  }<br />}</div></pre></td></tr></tbody></table>
+				<p class="nb-sub-section">Handling borders</p>
+			  <p class="nb-body">The cream on the cake is adding visual cues to the widgets. We want to render different borders around the photos according to their selection state: no border for unselected widgets, a white border if selected, and a special “resize border” when you hover over the photo (see <span class="nb-body-bold">Figure 4</span>).</p>
+			  <p class="nb-body"><span class="image"><img src="../../../../images_www/magazine/issue04/image20250_opt.jpeg" alt="Figure" /></span><span class="image"><img src="../../../../images_www/magazine/issue04/image20256_opt.jpeg" alt="Figure" /></span><span class="image"><img src="../../../../images_www/magazine/issue04/image20262_opt.jpeg" alt="Figure" /></span><br />
+			    <span class="nb-body-bold">Figure 4. </span>Visual cues for photos in the Light Table (normal, selected and resizing)<br />
+			  </p>
+		    <p class="nb-body">First, we need to override the <span class="nb-techtext-bold">notifyStateChanged() </span>method, which is called whenever the widget changes state (see <span class="nb-body-bold">Listing 10</span>). It receives two parameters representing the old and the new state. We use the <span class="nb-techtext-bold">isSelected()</span> and <span class="nb-techtext-bold">isHovered()</span> methods to choose the proper border. </p>
+				<p class="nb-body">There’s a subtle problem here: borders can vary in thickness. By default the Visual Library preserves the overall size of a widget, so setting a different border thickness would change the space reserved for the photo. To preserve the size of the photos, we just need to compute the change in the border and adjust the widget size (also in <span class="nb-body-bold">Listing 10</span>).<br />
+</p>
+				<table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                  <tbody>
+                    <tr>
+                      <td bgcolor="#660066"><span class="nb-codelist-title">Listing 10. Reacting on widget state changes</span></td>
+                    </tr>
+                    <tr>
+                      <td valign="top"><pre><div class="nb-codelist-body"><p>@Override<br />protected void notifyStateChanged(final ObjectState <br />    oldState, final ObjectState newState)<br />{<br />  super.notifyStateChanged(oldState, newState);<br />  final boolean isResizableBorder = <br />    newState.isHovered();<br />  final Dimension size = getPreferredSize();<br />  final Insets o = getBorder().getInsets();<br />    <br />  setBorder(newState.isSelected()<br />    ? (isResizableBorder ? resizeSelectedBorder : <br />        selectedBorder)<br />    : (isResizableBorder ? resizeBorder : <br />        unselectedBorder));</p><p>  // Preserve client area size<br />  if (size != null) // null at initialization {<br />     final Insets n = getBorder().getInsets();<br />     size.width += n.left + n.right - o.left - o.right;<br />     size.height += n.top + n.bottom - <br />       o.top - o.bottom;<br />     setPreferredSize(size);<br />  }<br />}</p></div></pre></td></tr></tbody></table>
+		      <p class="nb-body">Some final words about borders. The <span class="nb-techtext-bold">Border</span> class for <span class="nb-techtext-bold">Widget</span> is different from the usual Swing <span class="nb-techtext-bold">Border</span> classes (see <span class="nb-body-bold">Listing 11</span>). Widget borders are more complex. Also, there’s a similar <span class="nb-techtext-bold">BorderFactory</span> which provides some preset borders useful in most cases. In the Light Table, the default borders are just 
+			  rectangles with rounded corners that can be created with <span class="nb-techtext-bold">BorderFactory.createRoundedBorder()</span>. You can create several common borders similarly: for instance, <span class="nb-techtext-bold">BorderFactory.createResizeBorder() </span>gives you a standard “resize border” that is painted as a dashed line with “control handles”. In some special cases, we can write code to define customized borders. For instance, <span class="nb-body-bold">Listing 12</span> shows how to implement a “compound border” which sticks two borders together.<br />
+</p>
+          <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                <tbody>
+                  <tr>
+                    <td bgcolor="#660066"><span class="nb-codelist-title">Listing 11.  Widget Borders</span></td>
+                  </tr>
+                  <tr>
+                    <td valign="top"><pre><div class="nb-codelist-body"><p>private static final int BORDER_THICKNESS = 8;<br />private static final Color NORMAL_COLOR = <br />   new Color(200, 200, 200);<br />private static final Color NORMAL_GLOW_COLOR = <br />   new Color(200, 200, 200, 100);<br />private static final Color SELECTION_COLOR = <br />   new Color(255, 255, 255);<br />private static final Color SELECTION_GLOW_COLOR = <br />   new Color(255, 255, 255, 128);   <br />private static final Color RESIZE_COLOR = <br />    new Color(220, 220, 220);</p><p>private static final Border DEFAULT_UNSELECTED_BORDER = <br />   BorderFactory.createRoundedBorder(<br />      BORDER_THICKNESS, BORDER_THICKNESS, NORMAL_COLOR, <br />        NORMAL_GLOW_COLOR);<br />private static final Border DEFAULT_SELECTED_BORDER = <br />   BorderFactory.createRoundedBorder(<br />       BORDER_THICKNESS, BORDER_THICKNESS, <br />         SELECTION_COLOR, SELECTION_GLOW_COLOR);</p></div></pre></td></tr></tbody></table>
+	          <br />
+              <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                <tbody>
+                  <tr>
+                    <td bgcolor="#660066"><span class="nb-codelist-title">Listing 12.  Widget Borders</span></td>
+                  </tr>
+                  <tr>
+                    <td valign="top"><pre><div class="nb-codelist-body"><p>import org.netbeans.api.visual.border.Border;</p><p>public class CompoundBorder implements Border {<br />  private final Border border1;<br />  private final Border border2;<br />  <br />  public CompoundBorder (final Border border1, final Border border2) {<br />    this.border1 = border1;<br />    this.border2 = border2;<br />  }<br />  <br />  public Insets getInsets() {<br />    final Insets i1 = border1.getInsets();<br />    final Insets i2 = border2.getInsets();<br />    return new Insets(Math.max(i1.top, i2.top), Math.max(i1.left, i2.left), <br />        Math.max(i1.bottom, i2.bottom), Math.max(i1.right, i2.right));<br />  }</p><p>  public void paint (final Graphics2D g, final Rectangle bounds)  {<br />    // You should actually check if the insets are different...<br />    border1.paint(g, bounds);<br />    border2.paint(g, bounds);<br />  }</p><p>  public boolean isOpaque() {<br />    return border1.isOpaque() || border2.isOpaque();<br />  }<br />}</p></div></pre></td></tr></tbody></table>
+		      <p class="nb-section">Conclusion</p>
+			  <p class="nb-body">In this article, we’ve seen many features of the Visual Library and a “creative use” for it that goes a little outside its most common scope. This provides us some examples for understanding how the library can be extended to comply with your needs. We’ve only scratched the surface, however. For instance, we didn’t explore connection widgets, which are another powerful feature. 
+			  But that would be material for 
+			  another article! </p>
+			  <table width="100%" border="1" cellpadding="5" cellspacing="0" bordercolor="#660066">
+                <tbody>
+                  <tr>
+                    <td bgcolor="#660066"><span class="nb-codelist-title">Links</span></td>
+                  </tr>
+                  <tr>
+                    <td valign="top"><div class="group">
+                        <div class="story">
+                          <div class="story">
+                            <p class="nb-link-legend-url"><a href="http://weblogs.java.net/blog/fabriziogiudici/">http://weblogs.java.net/blog/fabriziogiudici/</a> </p>
+                          </div>
+                          <div class="story">
+                            <p class="nb-link-legend">The author’s blogs</p>
+                          </div>
+                          <div class="group">
+                            <div class="story">
+                              <p class="nb-link-legend-url"><a href="http://wiki.netbeans.org/wiki/view/Ruby">http://wiki.netbeans.org/wiki/view/Ruby</a></p>
+                              <div class="story">
+                                <p class="nb-link-legend">Wiki for Ruby support in NetBeans</p>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="story">
+                            <p class="nb-link-legend-url"><a href="https://netbeans.org/projects/platform/">https://netbeans.org/projects/platform/</a></p>
+                          </div>
+                          <div class="story">
+                            <p class="nb-link-legend">Homepage for the Visual Library</p>
+                          </div>
+                          <p class="nb-link-legend-url"><a href="http://bluemarine.tidalwave.it/">http://bluemarine.tidalwave.it/</a></p>
+                          <div class="story">
+                            <p class="nb-link-legend">The blueMarine Project</p>
+                          </div>
+                      </div>
+                    </div></td></tr>
+                </tbody>
+              </table>
+		    <br />
+		  </div>
+		  <div class="nb-figura-t-tulo"><div class="story"><div id="nb04-maven-platform">
+		    <div class="image">
+                      <table width="100%" border="1" cellpadding="0" cellspacing="0" bordercolor="#660066">
+                        <tr>
+                          <td><img src="../../../../images_www/magazine/issue04/fabrizio_giudici_opt.jpeg" alt="Fabrizio Giudici" width="101" height="93" /></td>
+                        <td><div class="story">
+                              <p class="nb-minibio"><span class="nb-body-bold">Fabrizio Giudici</span> has a Ph.D. in Computer Engineering from the University of Genoa (1998), and begun his career as a freelance technical writer and speaker. He started up a consultancy company with two friends, and since 2005 is running his own company. Fabrizio has been architect, designer and developer in many industrial projects, including a Jini-based real-time telemetry system for Formula One racing cars. He’s a member of the NetBeans Dream Team, the IEEE and of JUG Milano.</p>
+                          </div></td>
+                        </tr>
+                      </table>
+		            </div>
+	          </div>
+	        </div>
+		  </div>
+		  <div class="image"></div>
+	</div>
+</body>
+</html>

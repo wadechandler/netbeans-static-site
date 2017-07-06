@@ -1,0 +1,491 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+ <head>
+  <title>NetCAT Simplified Issue Entry Form</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+</head>
+ 
+<body onLoad="clear_form();">
+
+<h1>NetBeans 8.1 Quick Issue Report Form</h1>
+
+<table><tr>
+    <td><img src="https://qa.netbeans.org/processes/cat/81/logo.png" align="left" hspace="20" alt="NetCAT program logo"></td>
+    <td width="20"></td>
+    <td>
+        This is a special simplified issue submission form which requires JavaScript. Use this
+        form to file issues against any <b>features in NetBeans 8.1 only</b>. If you want to
+        file issues against any other NetBeans release, please use the
+        <a HREF="https://netbeans.org/bugzilla/enter_bug.cgi">normal IssueZilla new issue form</a>.<br><br>
+        <u>Important</u>: To prevent reporting duplicates please try at least one attempt to find
+        your issue using this very simple <a href="https://qa.netbeans.org/processes/cat/bug_query.html">bug query form</a>.
+    </td>
+</tr></table>
+
+<p><h3>Enter Issue Details</h3>
+
+<div id="simpleform"></div>
+
+<script language="javascript" type="text/javascript">
+<!--
+$(function() {
+// Determine if user is logged in or not ---------------------
+	// on live site, username is injected automatically by he framework, not needed to get it from div...
+    //var username=$('div.welcome a').html();
+    $('#simpleform').html(buildForm(username));
+});
+
+// convert all characters to lowercase to simplify testing
+var agt = navigator.userAgent.toLowerCase();
+var appVer = navigator.appVersion.toLowerCase();
+
+// *** BROWSER VERSION ***
+var is_minor = parseFloat(appVer);
+var is_major = parseInt(is_minor);
+
+// *** PLATFORM ***
+var is_win95 = ((agt.indexOf("win95")!=-1) || (agt.indexOf("windows 95")!=-1));
+var is_winme = ((agt.indexOf("win 9x 4.90")!=-1));
+var is_win2k = ((agt.indexOf("windows nt 5.0")!=-1) || (agt.indexOf("windows 2000")!=-1));
+var is_win7 = ((agt.indexOf("windows 7")!=-1));
+var is_win8 = ((agt.indexOf("windows 8")!=-1));
+var is_winxp = ((agt.indexOf("windows nt 5.1")!=-1));
+var is_win98 = ((agt.indexOf("win98")!=-1) || (agt.indexOf("windows 98")!=-1));
+var is_winnt = (((agt.indexOf("winnt")!=-1) || (agt.indexOf("windows nt")!=-1)) && (!is_win2k) && (!is_winxp));
+var is_os2   = ((agt.indexOf("os/2")!=-1) || (navigator.appVersion.indexOf("OS/2")!=-1) || (agt.indexOf("ibm-webexplorer")!=-1));
+var is_beos  = (agt.indexOf("beos")!=-1);
+var is_mac   = (agt.indexOf("mac")!=-1);
+var is_sun   = (agt.indexOf("sunos")!=-1);
+var is_sun4  = (agt.indexOf("sunos 4")!=-1);
+var is_sun5  = (agt.indexOf("sunos 5")!=-1);
+var is_suni86= (is_sun && (agt.indexOf("i86")!=-1));
+var is_irix  = (agt.indexOf("irix") !=-1);    // SGI
+var is_hpux  = (agt.indexOf("hp-ux")!=-1);
+var is_aix   = (agt.indexOf("aix") !=-1);     // IBM
+var is_linux = (agt.indexOf("inux")!=-1);
+var is_dec   = ((agt.indexOf("dec")!=-1) || (agt.indexOf("osf1")!=-1) || (agt.indexOf("dec_alpha")!=-1) || (agt.indexOf("alphaserver")!=-1) || (agt.indexOf("ultrix")!=-1) || (agt.indexOf("alphastation")!=-1));
+var is_freebsd = (agt.indexOf("freebsd")!=-1);
+var is_bsd = (agt.indexOf("bsd")!=-1);
+var is_openbsd = ((is_bsd) && (agt.indexOf("open")!=-1));
+var is_netbsd = ((is_bsd) && (agt.indexOf("net")!=-1));
+var is_vms   = ((agt.indexOf("vax")!=-1) || (agt.indexOf("openvms")!=-1));
+
+// Determine what platform we are on -------------------------
+if (is_win8 || is_win7 || is_win95 || is_winme || is_win2k || is_winxp || is_win98 || is_winnt || is_suni86 || (is_linux && (agt.indexOf("86")!=-1))) { var platform="PC"; }
+if (is_mac) { var platform="Macintosh"; }
+if (is_dec) { var platform="DEC"; }
+if (is_hpux) { var platform="HP"; }
+if (is_irix) { var platform="SGI"; }
+if ((is_sun || is_sun4 || is_sun5) && (!is_suni86)) { var platform="Sun"; }
+if (platform==null) { var platform="Other"; }
+
+// Determine what OS we are on -------------------------------
+if (is_linux)  { var os="Linux"; }
+if (is_sun || is_sun4)  { var os="SunOS"; }
+if (is_sun5 || is_suni86)  { var os="Solaris"; }
+if (is_os2) { var os="OS/2"; }
+if (is_vms) { var os="OpenVMS"; }
+if (is_winxp) { var os="Windows XP"; }
+if (is_win2k) { var os="Windows ME/2000"; }
+if (is_winnt) { var os="Windows 3.1/NT"; }
+if (is_win98) { var os="Windows 95/98"; }
+if (is_win95) { var os="Windows 95/98"; }
+if (is_winme) { var os="Windows ME/2000"; }
+if (is_win7) { var os="Windows 7"; }
+if (is_win8) { var os="Windows 8"; }
+if (is_mac) { var os="Mac OS X"; }
+if (os==null) { var os="Other"; }
+
+// Change platform when OS changed ---------------------------
+function setplatform(chosenos) {
+
+  if ( (chosenos.indexOf("Windows") != "-1") || (chosenos.indexOf("Linux") != "-1") || (chosenos.indexOf("x86") != '-1') ) {
+    document.simpleform.rep_platform.value="PC";
+  }
+  if (chosenos.indexOf("Sparc") != "-1") {
+    document.simpleform.rep_platform.value="Sun";
+  }
+  if (chosenos=='Mac OS X') {
+    document.simpleform.rep_platform.value="Macintosh";
+  }
+  if (chosenos=='Other - please specify in description') {
+    document.simpleform.rep_platform.value="Other";
+  }
+}
+
+// Validate submissions --------------------------------------
+function validate_form() {
+  var validated=true;
+
+  if ((document.simpleform.tmp_product.selectedIndex == 0) && (validated)) {
+    alert('Please choose a component for this issue.');
+    validated=false;
+  }
+
+  if ((document.simpleform.tmp_summary.value=='') && (validated)) {
+    alert('Please enter a summary sentence for this issue.');
+    validated=false;
+  }
+
+  if ((document.simpleform.tmp_comment.value=='') && (validated)) {
+    alert('Please enter the full problem description, including system info.');
+    validated=false;
+  }
+
+  if (validated) {
+
+    var header='';
+    if (document.simpleform.build.value!='') {
+      header='[ BUILD # : ' + document.simpleform.build.value + ' ]\n';
+    }
+    header=header + '[ JDK VERSION : ' + document.simpleform.jdk[document.simpleform.jdk.selectedIndex].value + ' ]\n\n';
+
+    var output = "";
+    var text = document.simpleform.tmp_comment.value;
+    var length = text.length;
+    while (length > 80) {
+        var first80 = text.substring(0, 80);
+        var wrapIndex = first80.indexOf("\n");
+        if (wrapIndex == -1) wrapIndex = first80.lastIndexOf(" ");
+        if (wrapIndex == -1) wrapIndex = 80;
+        var fullWords = first80.substring(0, wrapIndex);
+        output = output + fullWords + "\n";
+        if (wrapIndex != 80) text = text.substring(wrapIndex + 1);
+        else text = text.substring(80);
+        length = text.length;
+    }
+    output = output + text;
+    document.simpleform.comment.value=header + output;
+    document.simpleform.short_desc.value=document.simpleform.tmp_summary.value;
+
+    document.simpleform.component.value='Code';
+
+    if (document.simpleform.tmp_product.value=='apisupport_project') {
+      document.simpleform.product.value='apisupport';
+      document.simpleform.component.value='Project';
+    }
+
+    if (document.simpleform.tmp_product.value=='cd_framework') {
+      document.simpleform.product.value='connecteddeveloper';
+      document.simpleform.component.value='Issuetracking Framework';
+    }
+
+    if (document.simpleform.tmp_product.value=='cnd_other') {
+      document.simpleform.product.value='cnd';
+      document.simpleform.component.value='-- Other --';
+    }
+
+    if (document.simpleform.tmp_product.value=='db_code') {
+      document.simpleform.product.value='db';
+    }
+    
+    if (document.simpleform.tmp_product.value=='debugger_code') {
+      document.simpleform.product.value='debugger';
+    }
+
+    if (document.simpleform.tmp_product.value=='editor_other') {
+      document.simpleform.product.value='editor';
+      document.simpleform.component.value='-- Other --';
+    }
+
+    if (document.simpleform.tmp_product.value=='groovy_code') {
+      document.simpleform.product.value='groovy';
+    }
+
+    if (document.simpleform.tmp_product.value=='guibuilder_code') {
+      document.simpleform.product.value='guibuilder';
+    }
+
+    if (document.simpleform.tmp_product.value=='ide_code') {
+      document.simpleform.product.value='ide';
+    }
+    
+    if (document.simpleform.tmp_product.value=='installer_code') {
+      document.simpleform.product.value='installer';
+    }
+
+    if (document.simpleform.tmp_product.value=='java_editor') {
+      document.simpleform.product.value='java';
+      document.simpleform.component.value='Editor';
+    }
+
+    if (document.simpleform.tmp_product.value=='javaee_code') {
+      document.simpleform.product.value='javaee';
+    }
+
+    if (document.simpleform.tmp_product.value=='javafx_project') {
+      document.simpleform.product.value='javafx';
+      document.simpleform.component.value='Project';
+    }
+
+    if (document.simpleform.tmp_product.value=='javascript_editor') {
+      document.simpleform.product.value='javascript';
+      document.simpleform.component.value='Editor';
+    }
+
+    if (document.simpleform.tmp_product.value=='mobility_other') {
+      document.simpleform.product.value='javame';
+      document.simpleform.component.value='-- Other --';
+    }
+
+    if (document.simpleform.tmp_product.value=='php_code') {
+      document.simpleform.product.value='php';
+    }
+
+    if (document.simpleform.tmp_product.value=='profiler_base') {
+      document.simpleform.product.value='profiler';
+      document.simpleform.component.value='Base';
+    }
+
+    if (document.simpleform.tmp_product.value=='projects_ant') {
+      document.simpleform.product.value='projects';
+      document.simpleform.component.value='Ant';
+    }
+
+    if (document.simpleform.tmp_product.value=='projects_eclipse') {
+      document.simpleform.product.value='projects';
+      document.simpleform.component.value='Eclipse project importer';
+    }
+    
+    if (document.simpleform.tmp_product.value=='projects_maven') {
+      document.simpleform.product.value='projects';
+      document.simpleform.component.value='Maven';
+    }
+    
+    if (document.simpleform.tmp_product.value=='projects_ui') {
+      document.simpleform.product.value='projects';
+      document.simpleform.component.value='Generic Projects UI';
+    }
+
+    if (document.simpleform.tmp_product.value=='updatecenters') {
+      document.simpleform.product.value='updatecenters';
+      document.simpleform.component.value='AU Masters';
+    }
+    
+    if (document.simpleform.tmp_product.value=='versioncontrol_git') {
+      document.simpleform.product.value='versioncontrol';
+      document.simpleform.component.value='Git';
+    }
+
+    if (document.simpleform.tmp_product.value=='versioncontrol_mercurial') {
+      document.simpleform.product.value='versioncontrol';
+      document.simpleform.component.value='Mercurial';
+    }
+    
+    if (document.simpleform.tmp_product.value=='versioncontrol_subversion') {
+      document.simpleform.product.value='versioncontrol';
+      document.simpleform.component.value='Subversion';
+    }
+
+    if (document.simpleform.tmp_product.value=='websvc_code') {
+      document.simpleform.product.value='webservices';
+    }
+
+    if (document.simpleform.tmp_product.value=='www_admin') {
+      document.simpleform.product.value='www';
+      document.simpleform.component.value='Admin';
+    }
+  }
+ 
+  return validated;
+}
+
+// Generate code of the simplified bug form itself
+function buildForm(username) {
+
+    var code='';
+    if (username && username!='guest' && username.length>0) {
+        code = '<form method="POST" action="https://netbeans.org/bugzilla/post_bug.cgi" name="simpleform" onSubmit="return validate_form()">';
+        code = code + '<input type="hidden" name="reporter" VALUE="' + username + '">';
+        code = code + '<input type=hidden name="assigned_to" value="">\n';
+        code = code + '<input type=hidden name="cc" value="">\n';
+        code = code + '<input type=hidden name="issue_file_loc" value="http://">\n';
+        code = code + '<input type=hidden name="form_name" value="enter_issue">\n';
+        code = code + '<input type=hidden name="product" value="">\n';
+        code = code + '<input type=hidden name="component" value="Code">\n';
+        code = code + '<input type=hidden name="version" value="8.1">\n';
+        code = code + '<input type=hidden name="short_desc" value="">\n';
+        code = code + '<p><b>Reporter :</b> <font color="7C7C7C">' + username + '@netbeans.org</font>';
+        code = code + '<p><b>NetBeans Version :</b> <font color="7C7C7C">8.1</font>';
+        code = code + '<p><b>Issue Type :</b>\
+            <select size="1" name="cf_bug_type">\
+                <option value="DEFECT">DEFECT</option>\
+                <option value="ENHANCEMENT">ENHANCEMENT</option>\
+            </select>';
+
+        code = code + '<p><b>Build Number :</b> (optional)&nbsp;&nbsp;<input name="build" size="12" maxlength="12"> <font class="smalltext">Help | About, Detail tab</font>';
+
+        code = code + '<p><b>JDK Version :</b>\
+            <select size="1" name="jdk">\\n\
+                <option value="1.9">Java SE 9</option>\
+                <option value="1.8.0_45" selected>Java SE 8 Update 45</option>\
+                <option value="&lt;1.8.0_40">Java SE 8 Update 0-40</option>\
+                <option value="1.7.0_79">Java SE 7 Update 79</option>\
+                <option value="&lt;1.7.0_76">Java SE 7 Update 0-76</option>\
+                <option value="other">Other</option>\
+            </select>';
+
+        code = code + '<p><b>Choose Component :</b>\
+            <select name="tmp_product">\
+                <option value="Please_Choose" selected>Please_Choose</option>\
+                <option value="projects_ant">Ant support</option>\
+                <option value="cd_framework">Connected Developer</option>\
+                <option value="cnd_other">C/C++</option>\
+                <option value="db_code">Database support</option>\
+                <option value="debugger_code">Debugger</option>\
+                <option value="projects_eclipse">Eclipse projects</option>\
+                <option value="editor_other">Editor</option>\
+                <option value="javaee_code">Enterprise & web applications</option>\
+                <option value="versioncontrol_git">Git support</option>\
+                <option value="groovy_code">Groovy</option>\
+                <option value="guibuilder_code">GUI builder</option>\
+                <option value="installer_code">Installer</option>\
+                <option value="java_editor">Java</option>\
+                <option value="javafx_project">JavaFX</option>\
+                <option value="javascript_editor">JavaScript</option>\
+                <option value="projects_maven">Maven support</option>\
+                <option value="versioncontrol_mercurial">Mercurial support</option>\
+                <option value="mobility_other">Mobility</option>\
+                <option value="www_admin">NetBeans website</option>\
+                <option value="php_code">PHP</option>\
+                <option value="profiler_base">Profiler</option>\
+                <option value="projects_ui">Projects</option>\
+                <option value="apisupport_project">NetBeans RCP</option>\
+                <option value="versioncontrol_subversion">Subversion support</option>\
+                <option value="updatecenters">Update center</option>\
+                <option value="websvc_code">Web services</option>\
+                <option value="ide_code">Other</option>\
+            </select>';
+
+        code = code + '<p><b>Priority :</b>\
+            <select size="1" name="priority">\
+                <option>P1</option>\
+                <option>P2</option>\
+                <option selected>P3</option>\
+                <option>P4</option>\
+            </select>';
+
+        // Operating system is selectable, but try to pre-fill autodetected info
+        // Note that platform field will be auto-determined on form submission
+        // based on the op_sys field.
+
+        code = code + '&nbsp;&nbsp;<B>OS :</B> <select name="op_sys" onChange="setplatform(window.document.simpleform.op_sys.options[selectedIndex].text);">';
+        code = code + '<option>All</option>';
+        code = code + '<option>Windows 7</option>';
+
+        if (os=='Windows 8') {
+          var selected="selected";
+        } else {
+          var selected="";
+        }
+        code = code + '<option ' + selected + '>Windows 8</option>';
+
+        if (os=='Windows XP') {
+          var selected="selected";
+        } else {
+          var selected="";
+        }
+        code = code + '<option ' + selected + '>Windows XP</option>';
+
+        if (os=='Linux') {
+          var selected="selected";
+        } else {
+          var selected="";
+        }
+        code = code + '<option ' + selected + '>Linux</option>';
+
+        if (os=='Solaris') {
+          var selected="selected";
+        } else {
+          var selected="";
+        }
+        code = code + '<option ' + selected + ' value="Solaris">Solaris</option>';
+
+        if (os=='Mac OS X') {
+          var selected="selected";
+        } else {
+          var selected="";
+        }
+        code = code + '<option ' + selected + '>Mac OS X</option>';
+
+        code = code + '<option value="Other">Other - please specify in description</option>';
+
+        code = code + '</select>';
+
+        code = code + '<input type="hidden" name="rep_platform" value="' + platform + '">';
+        code = code + '<p><b>Summary :</b>&nbsp;&nbsp;<input name="tmp_summary" size="50">';
+        code = code + '<p><b>Description :</b><br><textarea wrap="hard" name="tmp_comment" rows="15" cols="80">STEPS:\n   * Open dialog Foo\n   * Click on button "Click me"\n\nACTUAL:\n   nothing happens\n\nEXPECTED:\n   message pops up</textarea>';
+        code = code + '<input type=hidden name="comment" value="">\n';
+        code = code + '<p><table width="50%" cellpadding="10"><tr><td>Want to file more issues ?  Use your browser\'s <i>Back</i> button to get back to this form after clicking Commit.</td>';
+        code = code + '<td><input name=submit type="submit" value="    Commit    "></td></tr></table>';
+        code = code + '</form>'
+
+    } else {
+     code = '<p><font class="titlec">Not Logged In!</font><p>You must be logged in to the netbeans.org site to use this form - use the login form in the navigation bar above.';
+     code = code + '<p><p>If you see this warning in spite of being logged in, please press ';
+     if (os=='MacOS X') { code = code + '<b>Command</b>+<b>Shift</b>+<b>R</b>' }
+     else { code = code + '<b>Ctrl</b>+<b>Shift</b>+<b>R</b>' }
+     code = code + ' to reload the form.';
+    }
+
+    return code;
+}
+
+//-->
+</script>
+
+<noscript>
+    <font class="titlec">JavaScript Required!</font>
+
+    <p>This is a specially simplified version of the netbeans.org bug entry
+    form, which uses JavaScript to automatically determine a few things,
+    and pre-fill them into the form.  You must have JavaScript enabled to
+    use this form.</p>
+
+    <p>You are seeing this message instead of the simplified form
+    because you either have JavaScript disabled, or you are using
+    a browser which does not support it.</p>
+
+    <p>You can always use the <a href="http://netbeans.org/bugzilla/enter_bug.cgi">
+    regular bug entry form</a>.</p>
+</noscript>
+
+<!-- Hack to bypass Bugzilla security token check. -->
+<iframe id="iframe_create" src="https://netbeans.org/bugzilla/enter_bug.cgi?product=ide" style="display:none" ></iframe >
+<script>
+    var _iframe_create = document.getElementById('iframe_create');
+    _iframe_create.onload = function() {
+        try {
+            document.domain = "netbeans.org";
+            var iframeDocument = document.getElementById("iframe_create").contentDocument || document.getElementById("iframe_create").contentWindow.document;
+            var form = iframeDocument.querySelector("#Create");
+            window.console.log(form);
+            var inputs = form.getElementsByTagName("input");
+            var token = "";
+            for (var i = 0, max = inputs.length; i < max; i++) {
+                if (inputs[i].getAttribute("name") === "token") {
+                    token = inputs[i].value;
+                    break;
+                }
+            }
+
+            // find form and insert token input field
+            var forms = document.querySelectorAll("form");
+            for (var i = 0, max = forms.length; i < max; i++) {
+                if (forms[i].getAttribute("name") === "simpleform") {
+                    var _input = document.createElement("input");
+                    _input.setAttribute("name", "token");
+                    _input.setAttribute("value", token);
+                    _input.setAttribute("type", "hidden");
+                    forms[i].appendChild(_input);
+                    return;
+                }
+            }
+
+        } catch (e) {
+        }
+        // find token from iframe  
+    };
+</script>
+</body>
+</html>

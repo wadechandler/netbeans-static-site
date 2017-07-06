@@ -1,0 +1,115 @@
+<HTML>
+
+<HEAD>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<TITLE>贡献补丁</TITLE>
+<META NAME="description" CONTENT="How to contribute patches for the NetBeans source code">
+<link rel="stylesheet" type="text/css" HREF="../../netbeans.css">
+</HEAD>
+
+<body>
+
+<P><A NAME="patches"></A><h1>贡献补丁</h1></p>
+
+<p>良好描述、易于应用的补丁是开发者乐于接受的，而且能使 IDE 变得更加稳定强大，因此我们事先向您贡献补丁表示感谢！下面介绍如何完成该工作。</p>
+
+<h2>对 NetBeans 5.0 用户的建议</h2>
+
+<!-- Issue #63325 is fixed! -->
+创建补丁有以下 3 步：
+<ul>
+  <li>切换至<i>文件（Files）</i>浏览视图。
+  <li>找的含有本地改动的文件夹。
+  <li>从 <i>CVS</i> 菜单中选择<i>导出比较（Diff）补丁...（Export Diff Patch...）</i>。
+
+</ul>
+
+<P><h2>制作并应用补丁</h2></p>
+
+<p>首先，确认您正在改动最新版本的源文件（要获取最新版本源文件，最好使用 CVS 检出源文件，一般处于 CVS 主干中，有时则处于最活跃的发布分支中，若不确定，须询问清楚），做出修改（但不要提交改动），然后执行下列操作（以 Unix 系统为例，其他操作系统类似）：</p>
+
+<pre>
+$ cd /sources/netbeans/nb_all
+$ ls
+<font class="comment">显示 ant，apisupport， applet， ...。</font>
+$ cvs update beans <font class="comment">... 或者任何您做出改动的地方；可能多于 1 个模块</font>
+<font class="comment">确认您在操作当前源文件</font>
+
+$ cvs diff beans
+<font class="comment">对改动进行完整性检查（sanity-check）</font>
+$ cvs -f diff -u -N beans &gt; /tmp/my-patch.diff
+<font class="comment">对补丁进行完整性检查（sanity-check）</font>
+</pre>
+
+<p>如果您添加或删除了二进制文件，最好单独附上，并且与文本补丁分隔开。</p>
+
+<p>常见的补丁错误包括：</p>
+
+<ol>
+
+<li><p>遗忘 <code>-u</code>。默认格式的比较文件（diff）不显示上下文，且<em>难以阅读和应用</em>，特别是对一些陈旧的源文件操作得出的结果。<code>-c</code> 也可以，但 <code>-u</code> 是最常见的。</p></li>
+
+<li><p>遗忘新（添加的）文件。执行 <code>cvs&nbsp;add</code>（但不要提交！）能确保 CVS 将这些文件作为新加入的、补丁的一部分，同时记住使用 <code>-N</code> 将它们包含进补丁中。当要在补丁中删除某些文件时，执行 <code>cvs&nbsp;remove</code>（但不要提交）。</p></li>
+
+<li><p>使用其他开关，如 <code>-t</code> 会导致补丁难于应用。</p></li>
+
+<li><p>在错误的目录下操作。<em>总是</em>在源文件树的根目录下制作补丁以避免混乱。</p></li>
+
+<li><p>手动编辑补丁。您也许想要连接补丁，或者编辑补丁以将不想提交的内容分离。<em>不要这样做。</em>这样可能会损坏补丁。修正您的源文件使其成为您所希望最终提交的内容，重新执行比较（diff）命令。在比较（diff）命令中会包含所有受影响的文件，即使它们在不同模块中。</p></li>
+
+<li><p>引入无关改动。检查您的补丁，确保每项改动都与您做出的修复有关而且必要。记住，他人会在应用之前阅读该补丁！不要做无意义的空白改动。不要对您没有修改的代码重新编排格式。</p></li>
+
+<li><p>使用无选项的比较（diff）命令。使用 <code>cvs&nbsp;diff</code> 确保代码仓库路径和补丁过的文件的原始版本保持不变。</p></li>
+
+<li><p>使用陈旧的源文件。通过过时的源文件制作的补丁一般情况下会难于使用。确保您在使用所有源文件的最近版本（操作前先执行 <code>cvs&nbsp;update</code>）。如果您需要提交对于同一文件的多个补丁，请确认给出应用这些补丁时所遵循的顺序。</p></li>
+
+</ol>
+
+<p>正确制作的补丁对有提交权限并且复查过它的人来说是很容易应用的。推荐使用 Unix 的 <code>patch</code> 工具；Windows 用户应能够从 Cygwin 工具分发中得到该工具。</p>
+
+<pre>
+<font class="comment">将补丁保存至磁盘，如 /tmp/suggested-patch.diff</font>
+$ cd /sources/netbeans/nb_all
+$ patch -p0 --dry-run &lt; /tmp/suggested-patch.diff
+<font class="comment">确认没有任何错误报告，这一步仅测试补丁格式</font>
+$ patch -p0 &lt; /tmp/suggested-patch.diff
+$ cvs diff beans/ <font class="comment">或者任何受影响的源文件部分</font>
+<font class="comment">对比较文件（diff）进行完整性检查（sanity-check），与补丁对比（应相同或相似）</font>
+<font class="comment">测试，完成一次构建，正常提交</font>
+</pre>
+
+<p>如果“dry-run”失败，可能需要 <code>patch</code> 的其他附加选项，或者最坏情况需要手动应用补丁。不要忘记对文件的添加和移除进行完整性检查（sanity-check）！您或许需要使用 <code>cvs&nbsp;add</code> 和 <code>cvs&nbsp;remove</code> 来完成这些工作。</p>
+
+<P><h2>使补丁可用以及接受补丁</h2></p>
+
+<p>提交补丁的最好方式是通过 IssueZilla。在某些情况下，比如补丁比较短小，而且您更期待它被查看来获取评论而非被应用，您可以将其作为 MIME 附件发送至合适的<a href="../lists/index.html">邮件列表</a>。但是在一般情况下，补丁应被提交至 IssueZilla。</p>
+
+<p>首先，如果一个描述您正尝试解决的问题（或者特性）的 issue 已经存在，那么直接使用它。如果不存在，创建一个 issue，并将其类型标记为 <code>PATCH</code>。该 issue 应至少包括以下内容：</p>
+
+<UL>
+
+<LI><p>补丁文件本身，作为 IssueZilla 的附件，<em>不要</em>粘贴到<b>描述</b>栏。（自动换行或者重新编排格式的补丁是不可用的。附件应与使用 <code>cvs&nbsp;diff</code> 生成的内容完全一致。）</p></li>
+
+<LI><p>对您正尝试修复的问题的描述，如果可能，在描述中加入可导致问题重现的操作步骤。</p></li>
+
+<LI><p>对使用补丁后产生的行为的描述。最好还能给出步骤说明补丁修复了所描述问题。</p></li>
+
+<LI><p>如果合理，描述补丁如何工作。</p></li>
+
+<LI><p>如果包含大量代码，在 issue 注释处说明您同意该补丁能够在遵循<A HREF="../../about/legal/license.html">公共开发和分发许可证（CDDL）</A>的情况下作为 IDE 代码的一部分使用，是最为稳妥的。如果您添加了新文件，使用 SPL 说明标记它们，否则补丁不能被接受。</p></li>
+
+<LI><P>如果这是您第一次向 netbeans.org 提交代码，您必须填写贡献者协议（CA），参阅 <A HREF="http://www.oracle.com/technetwork/oca-faq-405384.pdf">CA 政策</A>页面获取更多信息。<P></LI>
+
+<LI><p>补丁提交者或者是 issue 的提交者，或者把他/她加在该 issue 的抄送列表中（格式：<code><i>loginname</i>@netbeans.org</code>）。这样可以保证提交者能够看到对该 issue 的任何评论和改动，而且能在需要时做出回应。</p></li>
+
+</UL>
+
+<P>负责这部分受影响的代码的开发者应当应用该补丁并标记这个 issue 为 <code>FIXED</code>；或是当补丁看起来不安全、并没能修复问题、或者实际上一开始就没有问题需要修复时，写上反对的意见。开发者<STRONG>必须牢记</STRONG>要记录下自己应用的所有补丁的作者，以备生成荣誉列表。使用文件 <SAMP>core/release/CREDITS.html</SAMP> 处理这些内容。开发者也必须确认贡献者在提交补丁之前已填写并提交了 CA，参阅 <A HREF="http://www.oracle.com/technetwork/oca-faq-405384.pdf">CA 政策</A>页面获取更多信息。</p>
+
+<p>对 IssueZilla 的任何更改的通知以及 CVS 签入，会被自动发送至相关的 bug 和 CVS 邮件列表，这样您就可以监视补丁是否已被应用。请您确认至少订阅了与您正处理的模块的相关 CVS 和 bug 邮件列表，参阅<A HREF="../lists/index.html">邮件列表</A>页面获取详细信息。</p>
+
+<P>当然，若您不知如何精确地解决某个问题，但知道问题是由某段确定的代码引起的，您只需在邮件列表中提及您所知道的内容，也许会有其他人知道如果修复该问题。同时请<A HREF="../issues.html">提交一个与此相关的 bug</A>，以保证该问题不被遗漏。</p>
+
+</BODY>
+
+</HTML>

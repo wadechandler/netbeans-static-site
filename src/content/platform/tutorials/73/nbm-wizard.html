@@ -1,0 +1,782 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <!-- -*- xhtml -*- -->
+        <title>NetBeans Wizard Module Tutorial for NetBeans Platform 7.1</title>
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+        <meta name="AUDIENCE" content="NBUSER"/>
+        <meta name="TYPE" content="ARTICLE"/>
+        <meta name="EXPIRES" content="N"/>
+        <meta name="developer" content="geertjan.wielenga@oracle.com"/>
+        <meta name="indexed" content="y"/>
+        <meta name="description"
+              content="A walk-through of the 
+              basic features of the NetBeans Wizard API classes."/>
+        <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+
+    <body>
+
+        <h1>NetBeans Wizard Module Tutorial</h1>
+
+        <p>In this tutorial, you will learn how to use the main
+            features provided by the Wizard classes
+            of the <a href="http://bits.netbeans.org/dev/javadoc/org-openide-dialogs/org/openide/package-summary.html">NetBeans Dialogs API</a>.</p>
+
+        <p><strong class="notes">Note: </strong>This document uses 
+            NetBeans Platform 7.1 and NetBeans IDE 7.1. If you
+            are using an earlier version, see <a href="70/nbm-wizard.html">the previous version
+                of this document</a>.</p>
+
+        <p><b>Contents</b></p>
+
+        <p><img src="../images/articles/71/netbeans-stamp.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 7.1" title="Content on this page applies to NetBeans IDE 7.1"/></p>
+
+        <ul class="toc">
+            <li><a href="#set">Creating the Module Project</a></li>
+            <li><a href="#wiz">Creating the Wizard Infrastructure</a></li>
+            <li><a href="#action">Registering the Wizard Action Class</a></li>
+            <li><a href="#design">Designing the Wizard Content</a></li>
+            <li><a href="#process">Processing User Data</a></li>
+            <li><a href="#validate">Validating User Data</a></li>
+            <li><a href="#persist">Persisting Data Across Restarts</a></li>
+            <li><a href="#brand">Branding the Wizard</a></li>
+            <li><a href="#further">Further Reading</a></li>
+        </ul>
+
+
+        <p class="tips"> In NetBeans Platform applications, many different
+            kinds of wizards can be created. If you want to
+            create a wizard that appears in the New Project
+            dialog, see the <a href="https://platform.netbeans.org/tutorials/nbm-projectsamples.html">Project Sample Module Tutorial</a>.
+            If you want to create a wizard that appears
+            in the New File dialog, see the
+            <a href="https://platform.netbeans.org/tutorials/nbm-filetemplates.html">File Template Module Tutorial</a>.
+            In this tutorial, you create a general wizard that appears
+            when you click a button in the toolbar.</p>
+
+
+        <p><b>To follow this tutorial, you need the software and resources listed in the following 
+                table.</b></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Software or Resource</th>
+                    <th class="tblheader" scope="col">Version Required</th>
+                </tr> 
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                    <td class="tbltd1">version 7.1 above</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                    <td class="tbltd1">version 6 or above</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- ===================================================================================== -->
+
+        <h2 class="tutorial"><a name="set"></a>Creating the Module Project</h2>
+
+        <p>We begin by working through the New Module Project
+            wizard. At the end of it, we will have a basic
+            source structure, with some default files, that
+            every NetBeans module requires.</p>
+
+        <div class="indent">
+
+            <ol>
+                <li>Choose File &gt; New Project (Ctrl+Shift+N). Under Categories, select NetBeans Modules.
+                    Under Projects, select Module. Click Next.</li>
+                <li>In the Name and Location panel, type <tt>DemoWizard</tt> in the Project Name field.
+                    Change the Project Location to any directory on your computer. Click Next.</li>
+                <li>In the Basic Module Configuration panel, type <tt>org.demo.wizard</tt>
+                    in Code Name Base. Click Finish.</li>
+            </ol>
+
+        </div>
+
+        <p> The IDE creates the <tt>DemoWizard</tt>
+            project. The project contains all of your sources and
+            project metadata, such as the project's Ant build script. The project
+            opens in the IDE. You can view its logical structure in the Projects window (Ctrl-1) and its
+            file structure in the Files window (Ctrl-2).</p>
+
+
+        <!-- ===================================================================================== -->
+
+        <h2><a name="wiz"></a>Creating the Wizard Infrastructure</h2>
+
+        <p>In this section, we use the Wizard wizard
+            to add the stubs of a wizard to
+            our module.</p>
+
+        <div class="indent">
+
+            <ol>
+                <li><p>In the Projects window, right-click the
+                        DemoWizard project node, choose New | Other,
+                        and then choose Module Development | Wizard. Click Next.</p></li>
+                <li><p>In the Wizard Type panel, type 2 in 
+                        the "Number of Wizard Panels" field,
+                        and leave the other values unchanged:</p>
+                    <p><img alt="" src="../images/tutorials/wizard/70/wizard-wizard.png"/></p>
+                    <p>The fields in the panel above are as follows:</p>
+                    <ul>
+                        <li><b>Registration Type.</b> Determines
+                            where the user will access the wizard.
+                            If you select "Custom", the Wizard wizard
+                            will create a new action class that you
+                            can use to open and initialize your wizard.
+                            If you select "New File", the Wizard wizard
+                            will register your wizard in the module's
+                            <tt>layer.xml</tt> file.</li>
+                        <li><b>Wizard Step Sequence.</b> Determines
+                            whether the wizard will be linear or
+                            whether the user of the wizard will be
+                            able to skip wizard steps, depending
+                            on choices made earlier in the wizard. Linear
+                            wizards are 'Static', which is the default,
+                            while wizards with skippable steps require
+                            a custom iterator class, which is created
+                            if you select 'Dynamic'. (For details on dynamic wizards,
+                            see <a href="http://netbeans.dzone.com/nb-how-to-create-dynamic-wizard">How to Create a Dynamic Wizard</a>.)</li>
+                        <li><b>Number of Wizard Panels.</b> Determines
+                            the number of wizard panels that will be
+                            created. For each wizard step, two Java files
+                            will be created&#8212;a view and a
+                            controller.</li>
+                    </ul>
+                    <p>Click Next.</p>
+                </li>
+                <li><p>In the Name and Location panel, type <tt>Demo</tt>
+                        in the Class Name Prefix and select the main package
+                        from the Package drop-down list:</p>
+                    <p><img alt="" src="../images/tutorials/wizard/70/wizard-wizard-4.png"/></p>
+                    <p>Click Finish.</p>
+                </li>
+            </ol>
+
+        </div>
+
+        <p>In the Projects window, you should
+            now see this:</p>
+        <p><img alt="" src="../images/tutorials/wizard/70/projects-window.png"/></p>
+
+        <p class="tips">Read through the NetBeans wizard javadoc in the <a href="http://bits.netbeans.org/dev/javadoc/org-openide-dialogs/">NetBeans Dialogs API</a>
+            and compare the classes generated above to the classes described in the <a href="http://bits.netbeans.org/dev/javadoc/org-openide-dialogs/org/openide/package-summary.html">javadoc</a>,
+            which will prepare you for the next sections.</p>
+
+        <h2><a name="action"></a>Registering the Wizard Action Class</h2>
+
+        <p>In this section, we modify the generated Action class
+            and register it in the central registry.</p>
+
+        <div class="indent">
+
+            <ol>
+                <li>Open the <tt>DemoWizardAction.java</tt>
+                    file and notice that it consists of the following:
+
+                    <pre class="examplecode">package org.demo.wizard;
+
+import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import javax.swing.JComponent;
+import org.openide.DialogDisplayer;
+import org.openide.WizardDescriptor;
+
+// An example action demonstrating how the wizard could be called from within
+// your code. You can move the code below wherever you need, or register an action:
+// @ActionID(category="...", id="org.demo.wizard.DemoWizardAction")
+// @ActionRegistration(displayName="Open Demo Wizard")
+// @ActionReference(path="Menu/Tools", position=...)
+public final class DemoWizardAction implements ActionListener {
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        List&lt;WizardDescriptor.Panel&lt;WizardDescriptor&gt;&gt; panels = new ArrayList&lt;WizardDescriptor.Panel&lt;WizardDescriptor&gt;&gt;();
+        panels.add(new DemoWizardPanel1());
+        panels.add(new DemoWizardPanel2());
+        String[] steps = new String[panels.size()];
+        for (int i = 0; i &lt; panels.size(); i++) {
+            Component c = panels.get(i).getComponent();
+            // Default step name to component name of panel.
+            steps[i] = c.getName();
+            if (c instanceof JComponent) { // assume Swing components
+                JComponent jc = (JComponent) c;
+                jc.putClientProperty(WizardDescriptor.PROP_CONTENT_SELECTED_INDEX, i);
+                jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DATA, steps);
+                jc.putClientProperty(WizardDescriptor.PROP_AUTO_WIZARD_STYLE, true);
+                jc.putClientProperty(WizardDescriptor.PROP_CONTENT_DISPLAYED, true);
+                jc.putClientProperty(WizardDescriptor.PROP_CONTENT_NUMBERED, true);
+            }
+        }
+        WizardDescriptor wiz = new WizardDescriptor(new WizardDescriptor.ArrayIterator&lt;WizardDescriptor&gt;(panels));
+        // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()
+        wiz.setTitleFormat(new MessageFormat("{0}"));
+        wiz.setTitle("...dialog title...");
+        if (DialogDisplayer.getDefault().notify(wiz) == WizardDescriptor.FINISH_OPTION) {
+            // do something
+        }
+    }
+}</pre>
+
+                </li>
+
+                <li><p>At the top of the Action class, notice that some Action annotations have been
+                        commented out. Remove the comments and add
+                        a category and a position, so that the annotations
+                        are as follows:</p>
+
+                    <pre class="examplecode"><a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/ActionID.html">@ActionID</a>(category="Demo", id="org.demo.wizard.DemoWizardAction")
+<a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/ActionRegistration.html">@ActionRegistration</a>(displayName="Open Demo Wizard")
+<a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/ActionReference.html">@ActionReference</a>(path="Menu/Tools", position=10)</pre>
+                    <p>When the module is compiled, you will find a "<tt>generated-layer.xml</tt>" file,
+                        if you switch to the Files window and look in the <tt>build/classes/META-INF</tt> folder, as shown
+                        below:</p>
+                    <p><img style="border: 1px solid black" alt="" src="../images/tutorials/wizard/70/generated-layer.png"/></p>
+                    <p class="tips"> The <tt>generated-layer.xml</tt> file provides contributions to the NetBeans central registry (also known as the 'system filesystem'),
+                        where fixed folders (such as "Actions" and "Menu") provide placeholders for the registration
+                        of the content of menubars, toolbars, and many other NetBeans Platform features. For details,
+                        see <a href="http://wiki.netbeans.org/DevFaqSystemFilesystem">http://wiki.netbeans.org/DevFaqSystemFilesystem</a>.</p>
+                    <!--<p class="tips"> The "iconBase" element
+                     points to an image named "icon.png"
+                     in your main package. Use your own
+                     image with that name, making sure that
+                     it is 16x16 pixels in size, or use
+                     this one: <img alt="" src="../images/tutorials/wizard/icon.png"/></p>-->
+                </li>
+
+                <li><p>Run the module. The application
+                        starts up and you should see your menu item
+                        where you specified it
+                        to be in the annotation above:</p>
+
+                    <p><img style="border: 1px solid black" alt="" src="../images/tutorials/wizard/70/result-1.png"/></p>
+
+                    <p>Click the menu item and the wizard appears:</p>
+                    <p><img alt="" src="../images/tutorials/wizard/70/result-2.png"/></p>
+
+                    <p>Click Next and notice that in the final
+                        panel the Finish button is enabled:</p>
+
+                    <p><img alt="" src="../images/tutorials/wizard/70/result-3.png"/></p>
+
+                </li>
+
+            </ol>
+
+        </div>
+
+        <p>Now that the wizard infrastructure
+            is functioning, let's add some
+            content.</p>
+
+        <h2><a name="design"></a>Designing the Wizard Content</h2>
+
+        <p>In this section, we add content to the wizard
+            and customize its basic features. For purposes of this
+            example, we imagine that we are creating a wizard
+            in a music application.</p>
+
+        <div class="indent">
+
+            <ol>
+                <li><p>Open the <tt>DemoWizardAction.java</tt> file
+                        and notice that you can set a variety of customization properties
+                        for the wizard:</p>
+                    <p><img style="border: 1px solid black" alt="" src="../images/tutorials/wizard/70/wizard-tweaking.png"/></p>
+                    <p>Read about these properties <a href="http://ui.netbeans.org/docs/ui_apis/wide/index.html">here</a>.</p>
+
+                </li>
+                <li><p>In <tt>DemoWizardAction.java</tt>, change <tt>wizardDescriptor.setTitle</tt>
+                        to the following:</p>
+
+                    <pre class="examplecode">
+wizardDescriptor.setTitle("Music Selection");
+                    </pre>
+                </li>
+                <li><p>Open the <tt>DemoVisualPanel1.java</tt> file and the <tt>DemoVisualPanel2.java</tt>
+                        file and use the "Matisse" GUI Builder to add some Swing components, such as the following:</p>
+                    <p><img alt="" style="border: 1px solid black" src="../images/tutorials/wizard/panel-1-design.png"/></p>
+                    <p class="tips"> For code later in this tutorial to work, you need to set the name of the
+                        <tt>JTextFields</tt> above to <tt>nameField</tt> and <tt>addressField</tt>.</p>
+                    <p><img alt="" style="border: 1px solid black" src="../images/tutorials/wizard/panel-2-design.png"/></p>
+                    <p>Above, you see <tt>DemoVisualPanel1.java</tt> file and the <tt>DemoVisualPanel2.java</tt>,
+                        with some Swing components.</p>
+                </li>
+                <li>Open the two panels in the Source view and change their <tt>getName()</tt>
+                    methods to "Name and Address" and "Musician Details", respectively.</li>
+                <li><p>Run the module again. When you open the wizard, you should see
+                        something like this, depending on the Swing components you added and
+                        the customizations you provided:</p>
+                    <p><img alt="" src="../images/tutorials/wizard/70/result-4.png"/></p>
+
+                    <p class="tips"> The image in the left sidebar of the wizard above is set
+                        in the <tt>DemoWizardAction.java</tt> file, like this:</p>
+
+                    <pre class="examplecode">
+wizardDescriptor.putProperty(WizardDescriptor.PROP_IMAGE, ImageUtilities.loadImage("org/demo/wizard/banner.PNG", true));
+                    </pre>
+                </li>
+            </ol>
+
+        </div>
+
+        <p>Now that you have designed the wizard content, let's add some code
+            for processing the data that the user will enter.</p>
+
+        <!-- ===================================================================================== -->
+
+        <h2 class="tutorial"><a name="process"></a>Processing User Data</h2>
+
+        <p>In this section, you learn how to pass user data from panel
+            to panel and how to display the results to the user when
+            Finish is clicked.</p>
+
+        <div class="indent">
+
+            <ol>
+                <li><p>In the <tt>WizardPanel</tt> classes, i.e., in <tt>DemoWizardPanel1.java</tt> and
+                        in <tt>DemoWizardPanel2.java</tt>, use the <tt>storeSettings</tt>
+                        method to retrieve the data set in the visual panel.</p><p>For example,
+                        start by creating getters in the <tt>DemoVisualPanel1.java</tt> file:</p>
+
+                    <pre class="examplecode">public JTextField getNameField(){
+    return nameField;
+}
+
+public JTextField getAddressField(){
+    return addressField;
+}</pre>     
+
+                    <p>Then
+                        access the above from the <tt>DemoWizardPanel1.java</tt> file:</p>
+
+                    <pre class="examplecode">
+@Override
+public void storeSettings(Object settings) {
+    ((WizardDescriptor) settings).putProperty("name", ((DemoVisualPanel1)getComponent()).getNameField().getText());
+    ((WizardDescriptor) settings).putProperty("address", ((DemoVisualPanel1)getComponent()).getAddressField().getText());
+}
+                    </pre>
+
+                </li>
+                <li><p>Next, use the <tt>DemoWizardAction.java</tt> file to
+                        retrieve the properties you have set and do something with
+                        them:</p>
+
+                    <pre class="examplecode">
+public void actionPerformed(ActionEvent e) {
+    WizardDescriptor wizardDescriptor = new WizardDescriptor(getPanels());
+    // {0} will be replaced by WizardDesriptor.Panel.getComponent().getName()
+    wizardDescriptor.setTitleFormat(new MessageFormat("{0}"));
+    wizardDescriptor.setTitle("Music Selection");
+    Dialog dialog = DialogDisplayer.getDefault().createDialog(wizardDescriptor);
+    dialog.setVisible(true);
+    dialog.toFront();
+    boolean cancelled = wizardDescriptor.getValue() != WizardDescriptor.FINISH_OPTION;
+    if (!cancelled) {
+        <b>String name = (String) wizardDescriptor.getProperty("name");
+        String address = (String) wizardDescriptor.getProperty("address");
+        DialogDisplayer.getDefault().notify(new NotifyDescriptor.Message(name + " " + address));</b>
+    }
+}
+                    </pre>
+
+                    <p class="tips"> The <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-dialogs/org/openide/NotifyDescriptor.html">NotifyDescriptor</a></tt> can be used in
+                        other ways too, as indicated by the code completion box:</p>
+
+                    <p><img alt="" style="border: 1px solid black" src="../images/tutorials/wizard/70/notifydescriptor.png"/></p>
+                </li>
+
+            </ol>
+
+        </div>
+
+        <p>You now know how to process data entered by the user.</p>
+
+        <!-- ===================================================================================== -->
+
+        <h2 class="tutorial"><a name="validate"></a>Validating User Data</h2>
+
+        <p>In this section, you learn how to validate the user input when
+            "Next" is clicked in the wizard.</p>
+
+        <div class="indent">
+
+            <ol>
+                <li><p>In <tt>DemoWizardPanel1</tt>, change the class signature, implementing
+                        <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-dialogs/org/openide/WizardDescriptor.ValidatingPanel.html">WizardDescriptor.ValidatingPanel</a></tt> instead
+                        of <tt>WizardDescriptor.Panel</tt>:</p>
+
+                    <pre class="examplecode">
+public class DemoWizardPanel1 implements WizardDescriptor.ValidatingPanel
+                    </pre></li>
+
+                <li>At the top of the class, change the <tt>JComponent</tt> declaration to a typed declaration:
+
+                    <pre class="examplecode">
+private DemoVisualPanel1 component;
+                    </pre></li>
+
+                <li>Implement the required abstract method that throws a <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-dialogs/org/openide/WizardValidationException.html">WizardValidationException</a></tt>
+                    like this:
+
+                    <pre class="examplecode">
+@Override
+public void validate() throws WizardValidationException {
+
+    String name = component.getNameField().getText();
+    if (name.equals("")){
+        throw new WizardValidationException(null, "Invalid Name", null);
+    }
+
+}
+                    </pre></li>
+
+                <li><p>Run the module. Click "Next", without entering
+                        anything in the "Name" field, and you should see the result below.
+                        Also, note that you are not able to move to the next
+                        panel, as a result of the validation having failed:</p>
+
+                    <p><img alt="" src="../images/tutorials/wizard/70/validation1.png"/></p>
+                </li>
+                <li>Optionally, disable the "Next" button if the name field is empty. Start
+                    by declaring a boolean at the top of the class:
+
+                    <pre class="examplecode">
+private boolean isValid = true;
+                    </pre>
+
+                    <p>Then override <tt>isValid()</tt> like this:</p>
+
+                    <pre class="examplecode">
+@Override
+public boolean isValid() {
+    return isValid;
+}
+                    </pre>
+
+                    <p>And, when <tt>validate()</tt> is called, which is when
+                        the "Next" button is clicked, return false:</p>
+
+                    <pre class="examplecode">
+@Override
+public void validate() throws WizardValidationException {
+
+    String name = component.getNameTextField().getText();
+    if (name.equals("")) {
+        <b>isValid = false;</b>
+        throw new WizardValidationException(null, "Invalid Name", null);
+    }
+
+}
+                    </pre>
+
+                    <p>Run the module. This time, the first time you click "Next", you'll find that if
+                        there is no content is in the field, the "Next" button becomes disabled:</p>
+
+                    <p><img alt="" src="../images/tutorials/wizard/70/validation2.png"/></p>
+
+                    <p>Alternatively, set the boolean to false initially. That will cause the "Next"
+                        button to be disabled when the wizard is shown. Then
+                        add a <tt>DocumentListener</tt> to the text field and,
+                        when the user types something in the field, set the boolean
+                        to true and call <tt>isValid()</tt>.</p></li>
+            </ol>
+
+        </div>
+
+        <p>You now know how to validate data entered by the user.</p>
+
+        <p class="tips"> For more information
+            on validating user input, see Tom Wheeler's sample at the end of this
+            tutorial.</p>
+        <p class="tips"> For a very simple and powerful Swing validation framework, see
+            the <a href="http://kenai.com/projects/simplevalidation/pages/Home">Simple Validation API</a>.</p>
+
+        <!-- ===================================================================================== -->
+
+        <h2 class="tutorial"><a name="persist"></a>Persisting Data Across Restarts</h2>
+
+        <p>In this section, you learn how to store the data when
+            the wizard closes and retrieve it when the wizard
+            opens again.</p>
+
+        <div class="indent">
+
+            <ol>
+
+                <li><p>In <tt>DemoWizardPanel1.java</tt>, override the <tt>readSettings</tt>
+                        and the <tt>storeSettings</tt> methods as follows:</p>
+
+                    <pre class="examplecode">
+<b>JTextField nameField = ((DemoVisualPanel1) getComponent()).getNameField();
+JTextField addressField = ((DemoVisualPanel1) getComponent()).getAddressField();</b>
+
+@Override
+public void readSettings(Object settings) {
+    <b>nameField.setText(NbPreferences.forModule(DemoWizardPanel1.class).get("namePreference", ""));
+    addressField.setText(NbPreferences.forModule(DemoWizardPanel1.class).get("addressPreference", ""));</b>
+}
+
+@Override
+public void storeSettings(Object settings) {
+    ((WizardDescriptor) settings).putProperty("name", nameField.getText());
+    ((WizardDescriptor) settings).putProperty("address", addressField.getText());
+    <b>NbPreferences.forModule(DemoWizardPanel1.class).put("namePreference", nameField.getText());
+    NbPreferences.forModule(DemoWizardPanel1.class).put("addressPreference", addressField.getText());</b>
+}
+                    </pre>
+
+                </li>
+
+                <li><p>Run the module again and type a name and address in the first panel of the wizard:</p>
+                    <p><img alt="" src="../images/tutorials/wizard/70/nbpref1.png"/></p>
+                </li>
+
+                <li><p>Close the application, open the Files window, and look in the
+                        <tt>wizard.properties</tt> file within the application's <tt>build</tt> folder. You
+                        should now see settings like this:</p>
+                    <p><img alt="" style="border: 1px solid black" src="../images/tutorials/wizard/70/nbpref3.png"/></p>
+                </li>
+
+                <li><p>Run the application again and, when you next open the wizard,
+                        the settings specified above are automatically used to define the
+                        values in the fields in the wizard.</p>
+                </li>
+
+            </ol>
+
+        </div>
+
+        <p>You now know how to persist wizard data across restarts.</p>
+
+        <p class="tips"> For more information
+            on the <tt>NbPreferences</tt> class, used above, see the <a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/util/NbPreferences.html"><tt>NbPreferences</tt> javadoc</a>, as
+            well as the <a href="https://platform.netbeans.org/tutorials/nbm-options.html">NetBeans Options Window Tutorial</a>.</p>
+
+        <!-- ===================================================================================== -->
+
+        <h2 class="tutorial"><a name="brand"></a>Branding the Wizard</h2>
+
+        <p>In this section, you brand the "Next" button's string, which is provided by
+            the wizard infrastructure, to "Advance".</p>
+
+        <p class="tips"> The term "branding" implies customization, i.e., typically these are
+            minor modifications within the same language,
+            while "internationalization" or "localization" implies
+            translation into another language. For information on
+            localization of NetBeans modules, <a href="http://translatedfiles.netbeans.org/index-l10n.html">go here</a>.
+        </p>
+
+        <p>Branding entails overriding properties files in the NetBeans Platform. These 
+            properties files, normally referred to as "bundle properties" files, contain
+            strings that are used in display texts, such as the texts on the buttons
+            in the NetBeans Platform wizards. To override these bundle properties files,
+            your module needs to be part of a NetBeans Platform application. Each NetBeans
+            Platform application has a "branding" folder, which is where bundle properties
+            override files are placed.</p>
+
+        <div class="indent">
+
+            <ol>
+
+                <li><p>Make sure your NetBeans module is part of a NetBeans Platform
+                        application, rather than being a standalone module.</p></li>
+
+                <li><p>In the Files window, expand the application's <tt>"branding"</tt>
+                        folder and then create the folder/file structure highlighted below:</p>
+
+                    <p><img alt="" style="border: 1px black solid" src="../images/tutorials/wizard/70/branding-1.png"/></p>
+
+                </li>
+                <li>Define the content of the "Bundle.properties" file as follows:
+
+                    <pre class="examplecode">
+CTL_NEXT=&Advance &gt;
+                    </pre>
+
+                    <p>Other strings you might like to brand are as follows:</p>
+
+                    <pre class="examplecode">
+CTL_CANCEL
+CTL_PREVIOUS
+CTL_FINISH
+CTL_ContentName
+                    </pre>
+
+                    <p class="tips"> The key "CTL_ContentName" is set to "Steps"
+                        by default, which is used in the left panel of the
+                        wizard,if the "WizardPanel_autoWizardStyle" property has
+                        not been set to "FALSE".</p>
+
+
+                </li>
+                <li><p>Run the application and the "Next" button will be branded
+                        to "Advance":</p>
+
+                    <p><img alt="" src="../images/tutorials/wizard/70/branding-2.png"/></p>
+
+
+
+                    <p class="tips"> Optionally, use the <tt>DemoWizardAction.java</tt> file,
+                        as described earlier, to remove the whole left side of the wizard
+                        as follows:
+
+                    </p><pre class="examplecode">wizardDescriptor.putProperty(WizardDescriptor.PROP_AUTO_WIZARD_STYLE, Boolean.FALSE);</pre>
+
+                    <p>The above setting results in a wizard that looks as follows:</p>
+
+                    <p><img alt="" src="../images/tutorials/wizard/70/branding-3.png"/></p>
+                </li>
+            </ol>
+
+        </div>
+
+        <p>You now know how to brand the strings defined
+            in the wizard infrastructure with your own branded versions.</p>
+
+        <!-- ===================================================================================== -->
+
+        <h2 class="tutorial"><a name="further"></a>Further Reading</h2>
+
+        <p>Several pieces of related information are available on-line:</p>
+
+        <ul>
+            <li><a href="http://netbeans.dzone.com/nb-how-to-create-dynamic-wizard">How to Create a Dynamic Wizard</a></li>
+
+            <li><p>Tom Wheeler's NetBeans Site (click the image below):</p>
+                <p><a href="http://www.tomwheeler.com/netbeans/"><img alt="" src="../images/tutorials/wizard/tom.png"/></a></p>
+
+                <p class="tips"> Even though it was written for NetBeans 5.5,
+                    the above sample has been successfully tried
+                    in NetBeans IDE 6.5.1 on Ubuntu Linux with JDK 1.6.</p>
+
+                <p>The sample is especially useful in showing how to
+                    validate user data.</p></li>
+
+            <li>Geertjan's Blog:
+                <ul>
+                    <li><a href="http://blogs.oracle.com/geertjan/entry/how_wizards_work">How Wizards Work: Part 1&#8212;Introduction</a></li>
+                    <li><a href="http://blogs.oracle.com/geertjan/entry/how_wizards_work_part_2">How Wizards Work: Part 2&#8212;Different Types </a></li>
+                    <li><a href="http://blogs.oracle.com/geertjan/entry/how_wizards_work_part_3">How Wizards Work: Part 3&#8212;Your First Wizard</a></li>
+                    <li><a href="http://blogs.oracle.com/geertjan/entry/how_wizards_work_part_4">How Wizards Work: Part 4&#8212;Your Own Iterator </a></li>
+                    <li><a href="http://blogs.oracle.com/geertjan/entry/how_wizards_work_part_5">How Wizards Work: Part 5&#8212;Reusing and Embedding Existing Panels </a></li>
+                    <li><a href="http://blogs.oracle.com/geertjan/entry/creating_a_better_java_class">Creating a Better Java Class Wizard</a></li>
+                </ul>
+            </li>
+        </ul>
+
+
+        <!--
+        
+            <h2><a name="version"></a>Versioning </h2>
+        
+        
+            <table width="76%" border="1">
+                <tbody>
+                    <tr>
+                        <td>
+                            <div align="left"><b>Version</b></div>
+                        </td>
+                        <td>
+                            <div align="left"><b>Date</b></div>
+                        </td>
+                        <td>
+                            <div align="left"><b>Changes</b></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            1
+                        </td>
+                        <td>
+                            31 March 2009
+                        </td>
+                        <td>
+                            Initial version. To do:
+        
+                            <ul>
+                                <li><strike>Add a section on validating user input.</strike></li>
+                                <li><strike>Add a section on storing/retrieving data
+                                to/from the wizard.</strike></li>
+                                <li>Add a table listing all the WizardDescriptor
+                                 properties.</li>
+                                <li>Add a table listing & explaining all the
+                                 Wizard API classes.</li>
+                                <li><strike>Add links to Javadoc.</strike></li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            2
+                        </td>
+                        <td>
+                            1 April 2009
+                        </td>
+                        <td>
+                            Added a validation section, with code for disabling the Next button.
+                            Also added persistence section.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            3
+                        </td>
+                        <td>
+                            10 April 2009
+                        </td>
+                        <td>
+                            Integrated comments by Tom Wheeler, rewriting the branding
+                            section to actually be about branding, with a reference
+                            to the location where localization info can be found.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            4
+                        </td>
+                        <td>
+                            3 May 2011
+                        </td>
+                        <td>
+                            <ul>
+                                <li>Went through all the steps in the tutorial using NetBeans IDE 7.0
+                                     and tweaked a few texts to make them clearer.
+                                <li>Added links to javadoc.
+                                <li>Added links to <a href="http://netbeans.dzone.com/nb-how-to-create-dynamic-wizard">new article about dynamic wizards</a>.
+                                <li>Added link to the <a href="http://kenai.com/projects/simplevalidation/pages/Home">Simple Validation API</a>
+                                <li>Changed screenshots, which were quite ugly before.
+                                <li>Used Action annotations, instead of <tt>layer.xml</tt>, which means this tutorial only works for 7.0.
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            5
+                        </td>
+                        <td>
+                            20 November 2011
+                        </td>
+                        <td>
+                            <ul>
+                                <li>Went through and updated for 7.1
+                            </ul>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        -->
+    </body>
+
+</html>

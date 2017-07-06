@@ -1,0 +1,943 @@
+<html><head><style>
+    BODY {
+    background-color: #ffffff;
+    font-size: 12px;
+    font-family: Verdana, "Verdana CE",  Arial, "Arial CE", "Lucida Grande CE", lucida, "Helvetica CE", sans-serif;
+    color: #000000;
+
+    margin-top:0px;
+    margin-left:10px;
+    margin-right:8px;
+    margin-bottom:16px;
+
+    padding:0px;
+    min-width:780px;
+    }
+
+    h1 {
+    font-family: Arial, "Arial CE", "Lucida Grande CE", lucida, "Helvetica CE", sans-serif;
+    border-bottom:1px solid #AFAFAF;
+    clear:both;
+    font-size: 16px;
+    font-weight:bold;
+    margin:0px;
+    padding:0px;
+    color:#D20005;
+    }
+
+    h2 {
+    font-size: 14px;
+    font-weight:bold;
+    margin:0px;
+    border-bottom:1px solid #808080;
+    margin-top:5px;
+    margin-bottom:5px;
+    color:#D20005;
+    }
+
+    h3 {
+    font-family: Arial, "Arial CE", "Lucida Grande CE", lucida, "Helvetica CE", sans-serif;
+    font-size: 13px;
+    font-weight:bold;
+    margin:0px;
+    padding:0px;
+    color:#D20005;
+    }
+
+    .examplecode {
+    font-family: "Courier New", monospace;
+    background-color: #ffffcc;
+    }
+</style><title>NetBeans Drag and Drop Tutorial</title></head>
+
+
+
+<body>
+
+    <h1>NetBeans Drag and Drop Tutorial</h1>
+    <hr>
+    <p><b>Draft tutorial: Use/believe at your own risk.</b>
+    <hr>
+    
+    <p>Drag and drop enables data transfer 
+ across Java programming language and 
+ native applications, between Java programming 
+ language applications, and within a single Java 
+ programming language application. Within the
+  context of the NetBeans APIs, drag and drop is
+   commonly used between the Component Palette
+   and a Swing component. Different types of files
+  may provide different types of Component Palettes.
+   For example, JSP files in NetBeans IDE come
+    with a Component Palette with items that
+     generate JSP tags in the IDE's Source Editor.
+      Similarly, a Swing container in the IDE, such
+       as a JFrame, is supported by a Component
+        Palette containing items that can be dragged
+         and dropped onto the JFrame.
+         
+  <p>In this tutorial, you will learn how to
+        create a Component Palette for a custom
+         component. A custom component is
+ provided by the NetBeans API TopComponent class.
+         You will use a wizard to create
+        a TopComponent. Then you will create items
+  that can be dragged from the TopComponent's
+   Component Palette onto the TopComponent. You will
+   also be shown how to add functionality for dragging
+     an item after it has been dropped.
+
+
+    <p>In this tutorial, you will do the following:
+
+    <ol>
+        <li>Use the File Type wizard to create a 
+ new file type recognized by file extension. The
+  file type will be used to create the items in
+   the Component Palette.
+        <li>Create the file 
+ content that you want to drag 
+ from the Component Palette onto the TopComponent.
+        <li>Edit the data loader and data node 
+ to add the data into 
+  the data node's transferable.
+        <li>Create a few more sample files 
+ and create a palette folder in the XML layer file, to
+ register the items.
+        <li>Use the Window Component wizard to create 
+a new TopComponent.
+        <li>Add a palette controller to the TopComponent's
+  Lookup.
+        <li>Create an item displayer class for rendering
+ the item on the TopComponent.
+        <li>Add drag and drop listeners to the 
+ TopComponent, for handling drag and drop events.
+    </ol>
+
+    <p>The following topics are covered below:</p>
+<ul>
+
+<li><a href="#prerequisites">Prerequisites</a>
+<li><a href="#requirements">Requirements</a></li>
+<li><a href="#sample">Looking at the Sample</a></li>
+<li><a href="#moduleproject">Creating the Module Project</a></li>
+<li><a href="#topcomponent">Creating a Custom Window Component</a></li>
+<li><a href="#dataloader">Creating a New File Type</a></li>
+<li><a href="#dependencies">Setting Dependencies</a></li>
+<li><a href="#item">Creating, Registering, and Using a Drag and Drop Item</a></li>
+<li><a href="#associating">Associating a Component Palette with a Window Component</a></li>
+<li><a href="#droptarget">Creating a Drop Target</a></li>
+<li><a href="#draggesture">Defining a Drag Gesture</a></li>
+<li><a href="#dragimage">Defining a Drag Image</a></li>
+<li><a href="#additionalitems">Adding Additional Items</a></li>
+<li>Supplemental Topics</a></li>
+<ul>
+<li><a href="#visuallibraryapi">Drag and Drop and the Visual Library API</a></li>
+<li><a href="#explorermanagerapi">Drag and Drop and Bean Tree Views</a></li>
+<li><a href="#sourceeditor">Drag and Drop and the NetBeans Source Editor</a></li>
+<li><a href="#existing">Adding Items to Existing Component Palettes</a></li>
+</ul>
+</ul>
+
+
+
+<p><a name="top"></a>Once the software is installed, this tutorial can be completed in 60 minutes.
+
+<p>For more information on working with modules, see the <a href="https://platform.netbeans.org/index.html">
+NetBeans Development Project home</a> on the NetBeans website. If you have questions, visit the 
+ <a href="http://wiki.netbeans.org/wiki/view/NetBeansDeveloperFAQ">NetBeans Developer FAQ</a> or use the feedback link
+ at the top of this page.</p>
+
+<br />
+
+
+    
+    
+  <h2 class="tutorial"><a name="prerequisites"></a>Prerequisites</h2>
+<p>Before beginning this tutorial, you need
+ to be familiar with the concepts and terminology relating to Swing drag and drop.
+  
+
+<p>As a quick refresher, here are some common terms used in Swing drag and drop, taken
+ directly from the specification:
+    
+<ul>
+    <li><b>Drag Source.</b> The entity responsible for the initiation of the drag and drop operation.
+    <li><b>Drop Target.</b> Encapsulates all of the platform-specific handling of the Drag and Drop 
+ protocol with respect to the role of the recipient or destination of the operation.
+  <li><b>Transferable.</b> Represents the object(s) or data that are the operand(s), 
+ or the subject(s), of the Drag and Drop operation, that is, the information that will 
+ subsequently be passed from the DragSource to the DropTarget as a result of a successful 
+ Drop on the Component associated with that DropTarget.   
+<li><b>Data Flavor.</b> The type of data.
+<li><b>DragGestureEvent.</b> Encapsulates all the information regarding the nature of the gesture 
+ that has just been recognized.
+</ul>
+    
+<p>For details on these and other concepts related to drag and drop, see the links listed above.
+
+<h2 class="tutorial"><a name="requirements"></a>Requirements</h2>
+
+    <ul>
+        <li>NetBeans IDE 5.x.
+        <li>Optionally, and for troubleshooting purposes, the sources of the sample discussed in this tutorial. (To come.)
+    </ul>
+
+  
+    
+<h2 class="tutorial"><a name="sample"></a>Looking at the Sample</h2>
+
+    <p>Once completed, the module that this tutorial shows
+    you how to build will look as follows:
+
+    <p><img border=1 src="../images/tutorials/palette_api/dndsample1.png">
+    
+    
+    <p>When you install the module, you will have a TopComponent
+     with a Component Palette. You will be able to drag an item from
+      the Component Palette and drop it in a JPanel within the
+       TopComponent:
+       
+       <p><img border=1 src="../images/tutorials/palette_api/dndsample4.png">
+
+       <p>When you drag the dropped item, you will be able to drop it
+        somewhere else on the JPanel in the TopComponent.
+        
+       <p>You will also be able to drag the item from an explorer window,
+  in addition to being able to do so from the Component Palette:
+  
+  <p><img border=1 src="../images/tutorials/palette_api/dndsample5.png">
+  
+  <p>When you drag the item from the Component Palette, as shown above, you
+   will be able to drop it on the JPanel in the TopComponent.
+   
+   <p>You will also be shown how to add a drag image at the cursor:
+   
+   
+       <p><img border=1 src="../images/tutorials/palette_api/dndsample6.png">
+
+       
+<h2 class="tutorial"><a name="moduleproject"></a>Creating the Module Project</h2>
+
+    <ol>
+        <p><li>Choose File &gt; New Project. Under Categories, select
+        NetBeans Plug-in Modules. Under projects, select Module Project.
+        Click Next. 
+        <p><li>In the Name and Location panel, type <tt>DragAndDropSample</tt>
+        in Project Name. 
+        <p><li>In Project Location, specify an appropriate location for
+        storing your module. 
+        <p><li>Select the Standalone Module radio button, if not selected.
+        <p><li>Select the Set as Main Project checkbox, if not selected.
+        Click Next. 
+        <p><li>In the Basic Module Configuration panel, set the Code Name 
+        Base to <tt>org.netbeans.dndsample</tt>. 
+        <p><li>Leave the Module Display Name as <tt>DragAndDropSample</tt>.
+        Click Finish.
+    
+ 
+    </ol>
+
+
+  <h2 class="tutorial"><a name="topcomponent"></a>Creating a Custom Window Component</h2>
+
+
+    <ol>
+        <p><li>In the Projects window, right-click the DragAndDropSample
+        project,
+        and choose New &gt; File/Folder. In the New File wizard,
+        under Categories, select NetBeans Module Development.
+        Under File Types, select Window Component. Click Next.
+        <p><li>In the Basic Settings panel, select <tt>editor</tt> as
+        the Window Position. This specifies that the window component will
+        open in the 'editor' area of the IDE.
+        <p><li>Select Open on Application Start. Click Next.
+        <p><li>In the Name, Icon and Location panel, type 
+        <tt>DropTargetWindow</tt>. Optionally, select an icon
+ with a dimension of 16x16 pixels. Click Finish.
+        <p>
+        The DropTargetWindowTopComponent opens in the IDE,
+        together with several supporting
+        XML and Java files.
+    
+        <li>Right-click the module project and choose Install/Reload
+        in Development IDE.
+     
+        <p>If you receive a warning message, click OK. Once it is installed,
+        go to the Window menu and choose Open DropTargetWindow Window.
+        The new window component opens in the IDE.
+     
+    </ol>
+
+<h2 class="tutorial"><a name="dataloader"></a>Creating a New File Type</h2>
+
+
+    <ol>
+        <p><li>In the Projects window, right-click the project
+        and choose New &gt; File/Folder. In the New File wizard,
+        under Categories, select NetBeans Module Development.
+        Under File Types, select File Type. Click Next.
+        <p><li>In the Basic Settings panel, set the following:
+        <ul>
+            <li>MIME Type: <tt>text/x-my-palette-item</tt>
+            <li>Extension(s): <tt>myitem</tt>
+        </ul>
+        Click Next.
+        <p><li>In the Name, Icon and Location panel, type 
+        <tt>MyItem</tt> as the Class Name Prefix. Optionally, select an icon
+ with a dimension of 16x16 pixels.
+        <p><li>In Package, type <tt>org.netbeans.dndsample.palette</tt>.
+        Click Finish.
+    </ol>
+
+ <h2 class="tutorial"><a name="dependencies"></a>Setting Dependencies</h2>
+
+    <p>To use the Palette API,
+    you need to declare a dependency on the Component Palette API.
+    <ol>
+        <p><li>Right-click the module project and choose Properties.
+        <p><li>In the Libraries category, click Add, next to the
+        Module Dependencies list.
+        <p><li>Add <tt>Core - Component Palette</tt>
+        to the list of dependencies. The following dependencies
+        should now be in the module dependencies list:
+        <p><ul>
+            <li>Core - Component Palette
+            <li>Datasystems API
+            <li>File System API
+            <li>Nodes API
+            <li>Swing Layout Extensions integration
+            <li>Text API
+            <li>UI Utilities API
+            <li>Utilities API
+            <li>Window System API
+        </ul>
+        
+        <p><li>Click OK.
+    </ol>
+    
+    
+    <h2 class="tutorial"><a name="item"></a>Creating, Registering, and Using a Drag and Drop Item</h2>
+
+    <p>Each item that you drag from the Component Palette
+    can contain information that you want to transfer
+    to the drop target. In this section, you are shown how
+    to provide information to an item and how to register
+    the item in the <tt>layer.xml</tt> file.
+    
+    <ol>
+        <p><li>Create a new package called 
+        <tt>org.netbeans.dndsample.palette.items</tt>.
+        <p><li>Move <tt>MyItemTemplate.myitem</tt>
+        into the new package.
+        <p><li>Rename <tt>MyItemTemplate.myitem</tt>
+        to <tt>id1.myitem</tt>.
+        <p><li>Replace the content of the file
+        with the following:
+        <pre class="examplecode">id=id1
+displayName=Item 1
+icon16=org/netbeans/dndsample/palette/items/bean.gif
+icon32=org/netbeans/dndsample/palette/items/bean32.gif
+comment=This is item 1</pre>
+        <p><li>Add two image files, called
+        bean.gif and bean32.gif, to the package. The former
+        must be 16x16 pixels in size; the latter 32x32 pixels.
+        You can create you own or right-click the two images here
+         and save them in the folder specified in the item
+          file above:
+          
+ <p><img border=1 src="../images/tutorials/palette_api/bean.gif">
+ 
+ <p><img border=1 src="../images/tutorials/palette_api/bean32.gif">
+          
+        
+        <p><li>Register the item in the <tt>layer.xml</tt>
+        file, below the opening <tt>&lt;filesystem&gt;</tt> tag, as follows:
+        <pre class="examplecode">&lt;folder name="MyPalette"&gt;
+   &lt;folder name="Category"&gt;
+     &lt;file name="Item1.myitem" url="palette/items/id1.myitem"/&gt;
+   &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+        
+     <p><li>In <tt>org.netbeans.dndsample.palette</tt>,
+ create a Java class called <tt>MyItemData.java</tt>. The
+ content of the file is as follows:
+ 
+ <p><pre class="examplecode">package org.netbeans.dndsample.palette;
+
+import java.awt.Image;
+import java.util.Properties;
+import org.openide.util.Utilities;
+
+public class MyItemData {
+    private Properties props;
+    
+    private Image icon16;
+    private Image icon32;
+    
+    public static final String PROP_ID = "id";
+    public static final String PROP_NAME = "displayName";
+    public static final String PROP_COMMENT = "comment";
+    public static final String PROP_ICON16 = "icon16";
+    public static final String PROP_ICON32 = "icon32";
+    
+    /** Creates a new instance of MyItemData */
+    MyItemData( Properties props ) {
+        this.props = props;
+        loadIcons();
+    }
+    
+    public String getId() {
+        return props.getProperty( PROP_ID );
+    }
+    
+    public String getDisplayName() {
+        return props.getProperty( PROP_NAME );
+    }
+    
+    public String getComment() {
+        return props.getProperty( PROP_COMMENT );
+    }
+    
+    public Image getSmallImage() {
+        return icon16;
+    }
+    
+    public Image getBigImage() {
+        return icon32;
+    }
+
+    public boolean equals(Object obj) {
+        if( obj instanceof MyItemData ) {
+            return getId().equals( ((MyItemData)obj).getId() );
+        }
+        return false;
+    }
+    
+    private void loadIcons() {
+        String iconId = props.getProperty( PROP_ICON16 );
+        icon16 = Utilities.loadImage( iconId );
+        iconId = props.getProperty( PROP_ICON32 );
+        icon32 = Utilities.loadImage( iconId );
+    }
+}</pre>
+  
+  <p><li>We need to load the content of our data object
+   into the MyItemData class. To do this, declare the
+    MyItemData class at the top of the MyItemDataObject class:
+    
+    <p><pre class="examplecode">private MyItemData data;</pre>
+        
+    <p>Next, change the data object's Constructor to
+     the following:
+     
+    <p><pre class="examplecode">public MyItemDataObject(FileObject pf, MyItemDataLoader loader) throws DataObjectExistsException, IOException {
+    super(pf, loader);
+    //DND start 
+    //create the 'data' from properties file:
+    InputStream input = pf.getInputStream();
+    Properties props = new Properties();
+    props.load( input );
+    input.close();
+    data = new MyItemData( props );
+    //DND end
+}</pre>
+
+<p>Change <tt>createNodeDelegate()</tt>, so that the
+    data is passed to the node, together with the data object:
+ 
+<p><pre class="examplecode">protected Node createNodeDelegate() {
+    return new MyItemDataNode(this, data );
+}</pre>
+    
+
+<p>When prompted, let the IDE generate the following
+ import statements:
+ 
+ <p><pre class="examplecode">import java.io.InputStream;
+import java.util.Properties;</pre>
+
+
+
+<p><li>Now we edit the data node to add the data
+ to the data node's transferable. The data node
+  should be as follows:
+  
+    <p><pre class="examplecode">package org.netbeans.dndsample.palette;
+
+import java.awt.Image;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.beans.BeanInfo;
+import java.io.IOException;
+import org.openide.loaders.DataNode;
+import org.openide.nodes.Children;
+import org.openide.util.datatransfer.ExTransferable;
+
+public class MyItemDataNode extends DataNode {
+    private MyItemData data;
+    
+    public MyItemDataNode( MyItemDataObject obj, MyItemData data ) {
+        super( obj, Children.LEAF );
+        this.data = data;
+        setName( data.getId() );
+        setShortDescription( data.getComment() );
+    }
+
+    public Image getIcon(int i) {
+        if( i == BeanInfo.ICON_COLOR_16x16 || i == BeanInfo.ICON_MONO_16x16 ) {
+            return data.getSmallImage();
+        }
+        return data.getBigImage();
+    }
+    
+    public String getDisplayName() {
+        return data.getDisplayName();
+    }
+
+    // DND start
+    public Transferable drag() throws IOException {
+        ExTransferable retValue = ExTransferable.create( super.drag() );
+        //add the 'data' into the Transferable
+        retValue.put( new ExTransferable.Single( Utils.MY_DATA_FLAVOR ) {
+            protected Object getData() throws IOException, UnsupportedFlavorException {
+                return data;
+            }
+        });
+        return retValue;
+    }
+    //DND end
+}</pre>
+
+   <p>An error remains because the code referes to a data flavor
+        in a class that you have not created yet. You will do so
+        in the next step.
+        
+        <p><li>In <tt>org.netbeans.dndsample.palette</tt>,
+        create a Java class named <tt>Utils.java</tt>. 
+
+
+<p>Create the following data flavor
+ at the top of Utils.java:
+ 
+ <p><pre class="examplecode">public static final DataFlavor MY_DATA_FLAVOR = new DataFlavor( MyItemData.class, "My Item Data" );</pre>
+
+ <p>When prompted, let the IDE generate an import statement
+  for <tt>java.awt.datatransfer.DataFlavor</tt>.
+ 
+    </ol>
+    <p>Here, you have declared a folder called "MyPalette". This
+    represents our palette in the <tt>layer.xml</tt> file.
+    We added an
+    inner folder, which will be a new category. The files inside the categories folders are the items.
+    The items may have any names you want but note 
+    the <tt>url</tt> attribute refers to the location
+    of our item data.
+
+<h2 class="tutorial"><a name="associating"></a>Associating a Component Palette with the Window Component</h2>
+
+    <ol>
+        
+        <p><li>At the end of the window component's Constructor,
+        add the following lines:
+         
+        <p><pre class="examplecode">//make sure the common palette shows up when this window is activated
+associateLookup( Lookups.fixed( new Object[] {Utils.getPalette()} ) );</pre>
+
+
+        <p><li>The IDE prompts you to create an import statement
+        for <tt>org.openide.util.lookup.Lookup</tt>. Click on
+        the tip to let the IDE generate the import statement.
+  
+     
+<p><li>Declare the palette controller at the top of the Utils.java 
+class:
+
+<p><pre class="examplecode">private static PaletteController thePalette;</pre>
+        
+<p><li>Add this
+         method to the Utils.java class:
+         
+        <pre class="examplecode">public static PaletteController getPalette() {
+    //create the palette
+    if( null == thePalette ) {
+        try {
+            //DND start
+            //use custom DragAndDropHandler when creating the palette so that our custom
+            //dataflavor gets added when an item is being dragged from the palette:
+            thePalette = PaletteFactory.createPalette( "MyPalette", new MyActions() );//, null, new MyDnDHandler() );
+            //DND end
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+    return thePalette;
+}</pre>
+        
+<p><li>Add the following actions to the Utils.java class:
+
+        <p><pre class="examplecode">private static class MyActions extends PaletteActions {
+    public Action[] getImportActions() {
+        return null;
+    }
+
+    public Action[] getCustomPaletteActions() {
+        return null;
+    }
+
+    public Action[] getCustomCategoryActions(Lookup lookup) {
+        return null;
+    }
+
+    public Action[] getCustomItemActions(Lookup lookup) {
+        return null;
+    }
+
+    public Action getPreferredAction(Lookup lookup) {
+        return null;
+    }
+
+}</pre>
+
+<p><li>Right-click in the Source Editor, choose Fix Imports,
+ and choose to import <tt>javax.swing.Action</tt>.
+ 
+  <p><li>Right-click the module project and choose Install/Reload
+        in Development IDE.
+     
+        <p><li>Once it is installed,
+        go to the Window menu and choose Open DropTargetWindow Window.
+        The window component opens in the IDE. The new 
+     Component Palette, containing your one item, is 
+      displayed as well:
+      
+<p><img border=1 src="../images/tutorials/palette_api/dndsample2.png">      
+      
+      <p>As can be seen above, you can drag the item, but you
+       cannot drop it. That is because you have not created
+        a drop target yet, which we will do in the next section.
+         When you right-click in the Component Palette, several
+          menu items are available, which you didn't have to
+          code yourself. For example, if you choose Show Big Icons,
+          the 32x32 pixel icon will be shown.
+          
+<p><img border=1 src="../images/tutorials/palette_api/dndsample3.png">
+ 
+    </ol>
+
+   
+<h2 class="tutorial"><a name="droptarget"></a>Creating a Drop Target</h2>
+
+<p><ol><li>In <tt>org.netbeans.dndsample</tt>,
+ create a Java class called <tt>ItemDataDisplayer.java</tt>.
+  You will use this class to render the data in your
+   window component. It extends <tt>JLabel</tt> and is defined
+    as follows:
+    
+ <p><pre class="examplecode">package org.netbeans.dndsample;
+
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import org.netbeans.dndsample.palette.MyItemData;
+
+public class ItemDataDisplayer extends JLabel {
+    
+    private MyItemData data;
+    
+    /** Creates a new instance of ItemDataDisplayer */
+    public ItemDataDisplayer( MyItemData data ) {
+        super( "" );
+        this.data = data;
+        setIcon( new ImageIcon( data.getBigImage() ) );
+        setToolTipText( data.getComment() );
+    }
+    
+    public MyItemData getData() {
+        return data;
+    }
+}</pre>
+
+
+<li>Open DropTargetWindowTopComponent in the Design view
+    of the GUI Builder.
+    <p><li>Drag a JPanel from the Component Palette and drop
+     it on the window component.
+     <p><li>Resize the JPanel so that it covers the whole
+      window component.
+      <p><li>Right-click in the JPanel, choose Change Variable
+       Name, and rename the JPanel to <tt>dropPanel</tt>.
+       <p><li>In the Properties section of the Properties window (Ctrl-Shift-7),
+        click "border", choose Line Border, and click OK. Now you
+         can see the edges of the JPanel, if it doesn't completely
+          cover the window component. Doing this gives the user
+           a visual indication of where to drop an item from the
+            Component Palette.
+            
+            <p><li>In the Source view, declare the following
+             at the top of the class:
+             
+<p><pre class="examplecode">private Map displayers = new HashMap();
+private DragGestureRecognizer recognizer;</pre>     
+      
+<p>When prompted to do so, let the IDE generate import statements
+ for <tt>import java.util.HashMap</tt>, <tt>import java.util.Map</tt>,
+  and <tt>java.awt.dnd.DragGestureRecognizer</tt>.
+  
+            <p><li>Add the following to the end of the window
+            component's Constructor:
+      
+<p><pre class="examplecode">//DND start
+//start listening for for d'n'd events in the dropPanel
+dropPanel.setDropTarget( new DropTarget( dropPanel, new DropTargetListener() {
+    public void dragEnter(DropTargetDragEvent dtde) {
+        doDragOver( dtde );
+    }
+    public void dragExit(DropTargetEvent dte) {
+    }
+    public void dragOver(DropTargetDragEvent dtde) {
+        doDragOver( dtde );
+    }
+    public void drop(DropTargetDropEvent dtde) {
+        doDrop( dtde );
+    }
+    public void dropActionChanged(DropTargetDragEvent dtde) {
+        //ignore
+        //we don't really care whether it's a COPY or MOVE operation, let's treat both cases as the same
+    }
+}) );
+//DND end
+dropPanel.setLayout( null );</pre>   
+         
+<p>When prompted, let the IDE generate the following
+ import statements:
+ 
+<p><pre class="examplecode">import java.awt.dnd.DragGestureEvent;
+import java.awt.dnd.DragGestureListener;</pre> 
+
+ <p>Also let the IDE generate the following import statements:
+ 
+ <p><pre class="examplecode">import java.awt.dnd.DropTargetDragEvent;
+import java.awt.dnd.DropTargetDropEvent;
+import java.awt.dnd.DropTargetEvent;</pre>
+       
+<p><li>The <tt>doDragOver</tt> event is defined as follows:
+
+<p><pre class="examplecode">private void doDragOver( DropTargetDragEvent dtde ) {
+    if( dtde.isDataFlavorSupported( Utils.MY_DATA_FLAVOR ) ) {
+        //only accept object of our type
+        dtde.acceptDrag( DnDConstants.ACTION_COPY_OR_MOVE );
+    } else {
+        //reject everything else
+        dtde.rejectDrag();
+    }
+}</pre>
+
+
+<p><li>The <tt>doDrop</tt> event is defined as follows:
+
+<p><pre class="examplecode">private void doDrop( DropTargetDropEvent dtde ) {
+    //first check if we support this type of data
+    if( !dtde.isDataFlavorSupported( Utils.MY_DATA_FLAVOR ) ) {
+        dtde.rejectDrop();
+    }
+    //accept the drop so that we can access the Transferable
+    dtde.acceptDrop( DnDConstants.ACTION_COPY_OR_MOVE );
+    MyItemData data = null;
+    try {
+        //get the dragged data from the transferable
+        data = (MyItemData) dtde.getTransferable().getTransferData(Utils.MY_DATA_FLAVOR);
+    } catch (IOException ex) {
+        ex.printStackTrace();
+    } catch (UnsupportedFlavorException ex) {
+        ex.printStackTrace();
+    }
+
+    dtde.dropComplete( null != data );
+    if( null != data ) {
+        //find the displayer for the data
+        ItemDataDisplayer displayer = (ItemDataDisplayer)displayers.get( data );
+        if( null == displayer ) {
+            //it's a drop from the palette and the data is not in our list yet
+            displayer = new ItemDataDisplayer( data );
+            
+            //This is where a drag and drop listener should be added,
+            //if you want to add functionality for dragging after the item is dropped.
+            //See the next section for details.
+            
+            //add the displayer to the panel
+            dropPanel.add( displayer );
+            displayer.setSize( displayer.getPreferredSize() );
+            displayers.put( data, displayer );
+        }
+        //update displayer's location from the drop point
+        displayer.setLocation( dtde.getLocation() );
+    }
+}</pre>
+
+
+    <p><li>When you install the module, you will have a TopComponent
+     with a Component Palette. You will be able to drag an item from
+      the Component Palette and drop it in a JPanel within the
+       TopComponent:
+       
+       <p><img border=1 src="../images/tutorials/palette_api/dndsample4.png">
+
+       <p>When you try to drag the dropped item, nothing happens. The next
+        section explains how to define the drag gesture event.
+
+</ol>
+
+
+<h2 class="tutorial"><a name="draggesture"></a>Defining a Drag Gesture</h2>
+
+<p>You can specify what should happen when the user drags the dropped item. Here,
+ we assume that the dropped item should be dragged elsewhere when the drag event
+  is handled.
+
+<ol>
+<p><li>Change the window component's signature to 
+             specify that <tt>DragGestureListener</tt> should be implemented.
+              When prompted, let the IDE generate the import statements
+               and abstract methods.
+               
+<p>Fill out the generated <tt>dragGestureRecognized</tt> event as follows:
+
+<p><pre class="examplecode">public void dragGestureRecognized(DragGestureEvent dge) {
+    //first check which object is to be dragged
+    if( dge.getComponent() instanceof ItemDataDisplayer ) {
+        ItemDataDisplayer displayer = (ItemDataDisplayer)dge.getComponent();
+        //get the data from the displayer and create a new transferable for dragging
+        dge.startDrag( null, new ItemDataTransferable(displayer.getData()) );
+    }
+}</pre>
+
+
+<p><li>At the end of the window component class,
+ add this helper class that that wraps MyItemData 
+in a transferable, using the correct Data Flavor. 
+
+<p><pre class="examplecode">private static class ItemDataTransferable implements Transferable {
+    private MyItemData data;
+    public ItemDataTransferable( MyItemData data ) {
+        this.data = data;
+    }
+    public DataFlavor[] getTransferDataFlavors() {
+        return new DataFlavor[] { Utils.MY_DATA_FLAVOR };
+    }
+
+    public boolean isDataFlavorSupported(DataFlavor flavor) {
+        return Utils.MY_DATA_FLAVOR.equals( flavor );
+    }
+
+    public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
+        if( !isDataFlavorSupported( flavor ) ) {
+            throw new UnsupportedFlavorException( flavor );
+        }
+        return data;
+    }
+}</pre>            
+
+<p><li>Search for the following text in the TopComponent:
+
+<p><pre class="examplecode">//This is where a drag and drop listener should be added,
+//if you want to add functionality for dragging after the item is dropped.</pre> 
+
+<p>Replace the text with the following to register a listener on the displayer:
+
+<p><pre class="examplecode">//register a d'n'd listener on the new displayer so that we can drag it too
+DragSource.getDefaultDragSource().createDefaultDragGestureRecognizer( displayer, DnDConstants.ACTION_COPY_OR_MOVE, this );</pre> 
+
+
+
+</ol>
+
+<h2 class="tutorial"><a name="dragimage"></a>Defining a Drag Image</h2>
+
+<p>A nice touch is to display an image when the user drags an item. To 
+ do this, the assumption is that you want to show the large image, that is,
+  the image that is 32x32 pixels in size, as specified in the item's file earlier.
+
+  <ol>
+ <p><li>In the TopComponent's doDragOver() event, add the following after the code
+  that is already there:
+
+<p><pre class="examplecode">MyItemData data = null;
+try {
+    data = (MyItemData) dtde.getTransferable().getTransferData(Utils.MY_DATA_FLAVOR);
+} catch (IOException ex) {
+    ex.printStackTrace();
+} catch (UnsupportedFlavorException ex) {
+    ex.printStackTrace();
+}
+
+ItemDataDisplayer displayer = new ItemDataDisplayer( data );
+Image dragImage = displayer.getData().getBigImage();
+
+Graphics2D g2 = (Graphics2D) getGraphics();
+Rectangle visRect = getVisibleRect();
+paintImmediately(visRect.x, visRect.y, visRect.width, visRect.height);
+g2.drawImage(dragImage,
+        AffineTransform.getTranslateInstance(dtde.getLocation().getX(),
+        dtde.getLocation().getY()),
+        null);</pre>
+
+  <p><li>Install the module again. Drag an item, either from the
+       Component Palette or from an explorer window. When you do so,
+        notice that an image appears at the cursor, once the cursor
+ is over the drop target:
+        
+
+       <p><img border=1 src="../images/tutorials/palette_api/dndsample6.png">
+        
+        
+        </ol>
+<h2 class="tutorial"><a name="additionalitems"></a>Adding Additional Items</h2>
+
+<p>Currently, you only have one item in the Component Palette. To add additional items,
+ take the steps below.
+ 
+ <ol>
+     <p><li>If the module is installed, uninstall it using the Module Manager in the Tools menu.
+     <p><li>In <tt>org.netbeans.dndsample.palette.items</tt>, copy <tt>id1.myitem</tt>
+      and name it <tt>id2.myitem</tt>.
+     <p><li>Open the new file in the Source Editor and change the data.
+     <p><li>Add a new 16x16 pixel icon and a new 32x32 pixel icon.
+     <p><li>Register the new item in the <tt>layer.xml</tt> file, below the
+      one you registered earlier.
+ </ol>
+
+ <h2 class="tutorial"><a name="visuallibraryapi"></a>Drag and Drop and the Visual Library API</h2>
+ 
+ <p>See the <a href="https://platform.netbeans.org/tutorials/nbm-visual_library.html">Visual Library 2.0 Tutorial (Part 1)</a>.
+
+ 
+ <h2 class="tutorial"><a name="explorermanagerapi"></a>Drag and Drop and Bean Tree Views</h2>
+ 
+<p>See the <a href="https://platform.netbeans.org/tutorials/nbm-nodesapi3.html">NetBeans Nodes, Explorer Manager, and Component Palette Tutorial</a>.
+ 
+
+
+ <h2 class="tutorial"><a name="sourceeditor"></a>Drag and Drop and the NetBeans Source Editor</h2>
+ 
+<p>See the <a href="https://platform.netbeans.org/tutorials/nbm-palette-api2.html">NetBeans Component Palette Module Tutorial</a>.
+ 
+
+ <h2 class="tutorial"><a name="existing"></a>Adding Items to Existing Component Palettes</h2>
+ 
+<p>See the <a href="https://platform.netbeans.org/tutorials/nbm-palette-api1.html">NetBeans Code Snippet Module Tutorial</a>.
+
+ <br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Drag%20and%20Drop%20Tutorial">Send Us Your Feedback</a></div>
+<br style="clear:both;" />
+
+
+<h2>Open Issues</h2>
+
+    <ol>
+        <li>Add lots of explanatory text.
+        <li>Add icons.
+        <li>Review by Stan.
+    </ol>
+    <hr>
+</body></html>
+

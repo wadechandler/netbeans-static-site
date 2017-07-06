@@ -1,0 +1,292 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+
+<html>
+<head>
+   <title>可视 Mobile 设计器定制组件：为 Mobile 应用程序创建等待屏幕 - NetBeans Java ME 教程</title>
+   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+   <link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+   <meta name="author" content="Karol Harezlak">
+</head>
+<body>
+<a name="top"></a>
+<h1>可视 Mobile 设计器定制组件：为 Mobile 应用程序创建等待屏幕</h1>
+  <p> Java ME 应用程序通常需要连接到网络才能正常运行。不幸的是，无线网络的速度仍然较慢。后台任务等待网络连接或数据传输时会导致应用程序暂停，这样用户便会怀疑屏幕是否冻结，或是否需要中止并稍后重试（或不再重试）。那么，开发者是如何帮助用户消除这一不愉快但又很常见的体验呢？ </p>
+<p>答案就是添加一个 &quot;Wait Screen&quot;（等待屏幕）。利用 &quot;Wait Screen&quot;（等待屏幕），用户可以执行后台任务（例如，与网络建立连接），并且可以在屏幕上显示任务的执行进度或消息，以此来通知用户应用程序仍在继续运行。在本教程中，我们将介绍可视 Mobile 设计器 (Visual Mobile Designer, VMD) 如何通过添加 &quot;Wait Screen&quot;（等待屏幕）定制组件来简化等待屏幕的创建过程，您可以定制 &quot;Wait Screen&quot;（等待屏幕）组件并将其添加到应用程序流中。</p>
+<p>如果您对在 NetBeans 中开发 Mobile 应用程序不熟悉，则应首先阅读 <A HREF="quickstart.html">NetBeans Java ME MIDP 快速入门指南</A>，然后再继续学习本教程。</p>
+
+<h3>目录</h3>
+<img  src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" class="stamp" alt="本页上的内容适用于 NetBeans IDE 6.9 或更高版本" title="本页上的内容适用于 NetBeans IDE 6.9 或更高版本" >
+
+<ul>
+
+<li><a href="#intro" title="WaitScreen 组件的工作方式">WaitScreen 组件的工作方式</a></li>
+<li><a href="#sample" title="安装并运行样例应用程序">安装并运行样例应用程序</a></li>
+<li><a href="#creating" title="使用 &quot;Wait Screen&quot;（等待屏幕）定制组件创建 Mobile 应用程序">使用 &quot;Wait Screen&quot;（等待屏幕）定制组件创建 Mobile 应用程序</a>
+<ul>
+    <li> <a href="#create">创建 WaitScreenExample 项目</a> </li>
+    <li><a href="#add">在 MyWaitScreen 项目中添加包和 Visual MIDlet</a></li>
+    <li><a href="#addcomponent">在 MyWaitScreenMIDlet 中添加组件</a></li>
+    <li><a href="#addimage">添加 &quot;Image&quot;（图像）资源</a></li>
+    <li><a href="#addcomponents">在 &quot;Text Box&quot;（文本框）和 &quot;Wait Screen&quot;（等待屏幕）组件中添加 &quot;Ok Commands&quot;（确定命令）、&quot;Back Commands&quot;（后退命令）及 &quot;Exit Commands&quot;（退出命令）</a></li>
+    <li><a href="#createflow">创建应用程序流</a></li>
+    <li><a href="#backgroundtask">为等待屏幕创建后台任务</a></li>
+    <li><a href="#run">运行项目</a></li>
+  </ul></li>
+  <li><a href="#javadoc-waitscreen">&quot;Wait Screen&quot;（等待屏幕）和 SimpleCancellableTask 组件的 Javadoc</a></li>
+  <li><a href="#seealso" title="另请参见">另请参见</a></li>
+</ul>
+
+<p><b>要学完本教程，您需要具备以下软件和资源：</b></p>
+
+<table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">软件或资源</th>
+                <th class="tblheader" scope="col">要求的版本</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">带有 Java ME 的 NetBeans Beans</a></td>
+                <td class="tbltd1">版本 6.9 或更高版本</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit</a> (JDK)</td>
+                <td class="tbltd1">版本 6 或版本 7</td>
+            </tr>      
+        </tbody>
+</table>
+<h2><a name="intro"></a>WaitScreen 组件的工作方式</h2>
+<p> 为 &quot;Wait Screen&quot;（等待屏幕）组件创建后台任务有两种方法。可以编写一个实现 <code>CancellableTask</code> 接口的类，也可以只使用 <code>SimpleCancellableTask</code> 资源。您可以使用 <code>setTask()</code> 方法为 &quot;Wait Screen&quot;（等待屏幕）指定后台任务。 </p>
+  <p>在完成后台任务之后，&quot;Wait Screen&quot;（等待屏幕）组件会自动切换至其他可显示对象。如果任务成功完成，&quot;Wait Screen&quot;（等待屏幕）将切换至 <code>setNextDisplayable()</code> 方法所提供的显示对象。如果任务失败，&quot;Wait Screen&quot;（等待屏幕）将切换至 <code>setFailureDisplayable()</code> 方法所提供的显示对象。如果未设置失败时可显示的缺省对象，&quot;Wait Screen&quot;（等待屏幕）将切换至 <code>setNextDisplayable()</code> 方法所指定的显示对象。如果未指定下一个可显示的屏幕，&quot;Wait Screen&quot;（等待屏幕）将切换回之前所显示的屏幕。 </p>
+  <p>请注意，此组件仅可用于支持 MIDP 2.0 设备配置文件的应用程序。</p>
+  <p class="align-center"><a href="#top">返回页首</a></p>
+<h2><a name="sample"></a>安装并运行样例应用程序</h2>
+<div class="indent"> 开始之前，您可能希望查看本教程的最终结果。 
+  <p>请执行下列步骤以安装 waitscreenexample 样例应用程序：</p>
+  <ol>
+    <li> 下载 <a href="https://netbeans.org/projects/samples/downloads/download/Samples/Mobile/WaitScreenExample.zip"> WaitScreenExample.zip</a>。</li>
+    <li> 解压缩该文件。 </li>
+    <li> 在 IDE 中，选择 &quot;File&quot;（文件）&gt; &quot;Open Project&quot;（打开项目），然后浏览至包含该解压缩文件的文件夹。<tt></tt><tt></tt> </li>
+    <li>单击 &quot;Open Project&quot;（打开项目）。<br>&quot;Project&quot;（项目）视图应如下所示： 
+    <p class="align-center"><img src="../../../images_www/articles/71/mobility/waitscreen/ws-project-window.png" alt="包含 WaitScreenExample 文件的 &quot;Projects&quot;（项目）窗口" border=1> 
+    </p> </li>
+    <li>在 &quot;Projects&quot;（项目）窗口中，右键单击该项目节点，然后选择 &quot;Run&quot;（运行）（或按 F6 键）。当应用程序运行时，将会打开一个仿真器窗口，其中显示了在缺省设备仿真器中运行的应用程序。 </li>
+    <li>在仿真器窗口中，单击 &quot;Launch&quot; 下面的按钮。仿真器将显示 NetBeans Web 站点的 URL 地址：http://netbeans.org。</li>
+    <li>单击 &quot;Ok&quot; 下面的按钮。屏幕将询问您是否记录通话时间。 </li>
+    <li>单击 &quot;Yes&quot; 下面的按钮以继续。当仿真器尝试连接至该 Web 站点时，仿真器将显示 &quot;Wait Screen&quot;（等待屏幕）。 
+ <p class="align-center"> <img src="../../../images_www/articles/71/mobility/waitscreen/ws-emulator.png" alt="显示样例等待屏幕应用程序的 DefaultColorPhone 仿真器" border=1> </p>
+    </li>
+    <li>在仿真器建立连接后，关闭应用程序。 </li>
+  </ol>
+</div>
+
+<p class="align-center"><a href="#top">返回页首</a></p>
+<h2><a name="creating"></a>使用 &quot;Wait Screen&quot;（等待屏幕）定制组件创建 Mobile 应用程序 </h2>
+<div class="indent"> 
+<p>现在，您已看到运行中的 &quot;Wait Screen&quot;（等待屏幕）组件，接下来让我们开始创建此应用程序。要创建此应用程序，请执行以下操作： </p>
+  <ol>
+    <li> <a href="#create">创建 WaitScreenExample 项目</a> </li>
+    <li><a href="#add">在 MyWaitScreen 项目中添加包和 Visual MIDlet</a></li>
+    <li><a href="#addcomponent">在 MyWaitScreenMIDlet 中添加组件</a></li>
+    <li><a href="#addimage">添加 &quot;Image&quot;（图像）资源</a></li>
+    <li><a href="#addcomponents">在 &quot;Text Box&quot;（文本框）和 &quot;Wait Screen&quot;（等待屏幕）组件中添加 &quot;Ok Commands&quot;（确定命令）、&quot;Back Commands&quot;（后退命令）及 &quot;Exit Commands&quot;（退出命令）</a></li>
+    <li><a href="#createflow">创建应用程序流</a></li>
+    <li><a href="#backgroundtask">为等待屏幕创建后台任务</a></li>
+    <li><a href="#run">运行项目</a></li>
+  </ol>
+  <p class="notes"><strong>注意：</strong>在创建此项目之前，请确保关闭或删除在上述步骤中运行的样例 WaitScreenExample 项目。NetBeans IDE 不允许同时打开同名项目。 </p>
+</div>
+<div class="indent"> 
+  <h3 class="tutorial">创建 WaitScreenExample 项目<a name="create"></a></h3>
+  <ol>
+    <li> 选择 &quot;File&quot;（文件）&gt; &quot;New Project&quot;（新建项目）（Ctrl-Shift-N 组合键）。<tt></tt><tt></tt>在 &quot;Categories&quot;（类别）下，选择 &quot;Java ME&quot;。<tt></tt>在 &quot;Projects&quot;（项目）下，选择 &quot;Mobile Application&quot;（Mobile 应用程序），然后单击 &quot;Next&quot;（下一步）。<tt></tt> </li>
+    <li> 在 &quot;Project Name&quot;（项目名称）字段中输入 <code>WaitScreenExample</code>。将Project Location（项目位置）更改为系统中的某个目录。我们将此目录称为 <tt>$PROJECTHOME</tt>。 </li>
+    <li> 取消选中 &quot;Create Hello MIDlet&quot;（创建 Hello MIDlet）复选框。单击 &quot;Next&quot;（下一步）。 </li>
+    <li> 将 &quot;Sun Java Wireless Toolkit 2.5.2&quot; 保留为选定的仿真器平台。单击 &quot;Finish&quot;（完成）。 </li>
+    <!--li> Click Finish. The project folder contains all of your sources and project metadata, such as the project Ant script. The application itself is displayed in the Flow Design window of the Visual Mobile Designer. </li-->
+  </ol>
+  <h3 class="tutorial">在 WaitScreenExample 项目中添加包和 Visual MIDlet<a name="add"></a></h3>
+  <ol>
+    <li> 在 &quot;Project&quot;（项目）窗口中选择 <code>WaitScreenExample</code> 项目，然后选择 &quot;File&quot;（文件）&gt; &quot;New File&quot;（新建文件）（Ctrl-N 组合键）。<tt></tt><tt></tt>在 &quot;Categories&quot;（类别）下，选择 &quot;Java&quot;。在 &quot;File Types&quot;（文件类型）下，选择 &quot;Java Package&quot;（Java 包）。单击 &quot;Next&quot;（下一步）。 </li>
+    <li> 在 &quot;Package Name&quot;（包名）字段中输入 <code>waitscreenexample</code>。单击 &quot;Finish&quot;（完成）。 </li>
+    <li> 在 &quot;Project&quot;（项目）窗口中选择 <code>waitscreenexample</code> 包，然后选择 &quot;File&quot;（文件）&gt; &quot;New File&quot;（新建文件）（Ctrl-N 组合键）。<tt></tt><tt></tt>在 &quot;Categories&quot;（类别）下，选择 &quot;MIDP&quot;。在 &quot;File Types&quot;（文件类型）下，选择 &quot;Visual MIDlet&quot;。单击 &quot;Next&quot;（下一步）。 </li>
+      <li> 分别在 &quot;MIDlet Name&quot;（MIDlet 名称）和 &quot;MIDP Class Name&quot;（MIDP 类名）字段中输入 <code>MyWaitScreenMidlet</code>。单击 &quot;Finish&quot;（完成）。 </li>
+  </ol>
+  <h3 class="tutorial">在 MyWaitScreenMidlet 中添加组件<a name="addcomponent"></a></h3>
+  <p>选择 Visual MIDlet 以打开可视 Mobile 设计器 (Visual Mobile Designer, VMD)。单击 VMD 窗口顶部的 &quot;Flow&quot;（流）视图可打开 &quot;Flow&quot;（流）设计器，您将在其中设计应用程序流。 </p>
+  <ol>
+    <li> 将 Visual MIDlet 切换至 &quot;Flow&quot;（流）视图。将以下屏幕组件从 &quot;Component Palette&quot;（组件面板）拖放至 &quot;Flow&quot;（流）设计器中： 
+    
+    <ul>
+      <li> 
+        <div class="indent"> Text Box（文本框）</div>
+      </li>
+      <li> 
+        <div class="indent">Wait Screen（等待屏幕）</div>
+      </li>
+      <li> 
+        <div class="indent">List（列表）</div>
+      </li>
+      <li> 
+        <div class="indent">Alert（警报） 
+        </div>
+      </li>
+    </ul></li>
+    <li>选择 <tt>textBox</tt>。在 &quot;Properties&quot;（属性）窗口（位于 &quot;Component Palette&quot;（组件面板）下方）中，将其 &quot;Title&quot;（标题）属性更改为 <code>Text Box</code>。</li>
+    <li>采用相同的操作步骤更改以下组件的 &quot;Title&quot;（标题）属性：      
+      <ul>
+        <li> 
+          <div class="indent">将 <tt>waitScreen</tt> 更改为 <code>Wait Screen</code></div>
+        </li>
+        <li> 
+          <div class="indent">将 <tt>list</tt> 更改为 <code>List</code></div>
+        </li>
+        <li> 
+          <div class="indent">将 <tt>alert</tt> 更改为 <code>Alert</code></div>
+        </li>
+      </ul>
+    </li>
+    <li>对于以下各个组件，请使用这些属性值：  
+      <ul>
+        <li> 
+          <div class="indent">将 <tt>textBox</tt> 的 &quot;Text&quot;（文本）属性更改为 <code>http://netbeans.org</code></div>
+        </li>
+        <li> 
+          <div class="indent">将 <tt>alert</tt> 的 &quot;String&quot;（字符串）属性更改为 <code>Connection Failed</code></div>
+        </li>
+		<li> 
+          <div class="indent">将 <tt>WaitScreen</tt> 的 &quot;Text&quot;（文本）属性更改为 <code>Please Wait...</code></div>
+        </li>
+      </ul>
+    </li>
+   
+  </ol>
+  <p>&quot;Flow&quot;（流）视图应如下图所示： </p>
+   <p class="align-center">
+					  <a href="../../../images_www/articles/71/mobility/waitscreen/ws-flowdesigner.png" rel="lytebox"
+                       title="包含组件图标的 &quot;Flow&quot;（流）视图"> <img src="../../../images_www/articles/71/mobility/waitscreen/ws-flowdesigner-small.png"
+                     alt="包含组件图标的 &quot;Flow&quot;（流）视图" border=1></a></p>
+  
+  <h3 class="tutorial">添加 &quot;Image&quot;（图像）资源<a name="addimage" id="addimage"></a></h3>
+  <p>在此部分，您将添加 &quot;Wait Screen&quot;（等待屏幕）和 &quot;Alert Screen&quot;（警报屏幕）所使用的图像。 </p>
+  <ol>
+    <li>下载 <a href="../../../images_www/articles/71/mobility/waitscreen/alert.png">alert.png</a> 和 <a href="../../../images_www/articles/71/mobility/waitscreen/sandglass.png">sandglass.png</a> 文件，并将其复制到 <code>$PROJECTHOME/src/waitscreenexample</code> 文件夹中。</li>
+    <li>右键单击 <tt>alert</tt> 组件，然后在弹出式菜单中选择 &quot;Properties&quot;（属性）。</li>
+    <li>在 &quot;Properties&quot;（属性）对话框中，单击 &quot;Image&quot;（图像）属性的省略号按钮 (<img src="../../../images_www/articles/71/mobility/waitscreen/ellipsis-button.png" border=1 alt="省略号按钮"  >)。</li>
+    <li>在 &quot;Image&quot;（图像）对话框中，单击 &quot;Add&quot;（添加）。<br>
+    此时将添加 <tt>image1</tt> 组件。</li>
+<li>单击 &quot;Browse&quot;（浏览），然后在 &quot;Open&quot;（打开）对话框中指定复制的 alert.png 文件的路径。</li>
+<li>单击 &quot;Open&quot;（打开）。<br>此时将添加图像。</li>
+<li>单击 &quot;OK&quot;（确定）以关闭 &quot;Image&quot;（图像）对话框。</li>
+<li>单击 &quot;Close&quot;（关闭）以关闭 &quot;Properties&quot;（属性）对话框。<br>alert.png 图像将绑定到 <tt>alert</tt> 组件。</li>
+	
+	
+    
+    <li>对于 <tt>waitScreen</tt> 组件，请重复上面的步骤 2 至 8，将 sandglass.png 添加为 <tt>image2</tt>，然后将其绑定到该组件。 </li>
+  </ol>
+</div> 
+<div class="indent"> 
+  <h3 class="tutorial">在 &quot;Text Box&quot;（文本框）和 &quot;Wait Screen&quot;（等待屏幕）组件中添加 &quot;Ok Commands&quot;（确定命令）、&quot;Back Commands&quot;（后退命令）及 &quot;Exit Commands&quot;（退出命令）<a name="addcommands" id="addcommands"></a></h3>
+  <ol>
+    <li>从组件面板的 &quot;Commands&quot;（命令）类别中选择 &quot;Ok Command&quot;（确定命令）。<tt></tt>将其拖放至 <tt>textBox</tt> 中。</li>
+    <li> 从组件面板的 &quot;Commands&quot;（命令）类别中选择 &quot;Back Command&quot;（后退命令）。<tt></tt>将其拖放至 <tt>list</tt> 中。</li>
+    <li> 从组件面板的 &quot;Commands&quot;（命令）类别中选择 &quot;Exit Command&quot;（退出命令）。<tt></tt>将其拖放至 <tt>list</tt> 中。</li>
+  </ol>
+  <h3 class="tutorial">创建应用程序流<a name="createflow" id="createflow"></a></h3>
+  <p>现在，您可以创建应用程序流了。</p>
+  <ol>
+    <li>在 &quot;Flow&quot;（流）视图中，单击 &quot;Mobile Device&quot;（移动设备）上的 &quot;Started&quot;（已启动），然后将其拖至 <tt>textBox</tt> 组件中。<tt></tt></li>
+    <li>采用相同的方法，按照下图所示连接各个组件。 
+  
+  <p class="align-center">
+					  <a href="../../../images_www/articles/71/mobility/waitscreen/ws-flow.png" rel="lytebox"
+                       title="采用如下方式连接各个组件的 &quot;Flow&quot;（流）设计器屏幕：移动设备 - textBox - waitScreen - list1 - 移动设备。失败命令连接到 alert，然后再连接到 list"> <img src="../../../images_www/articles/71/mobility/waitscreen/ws-flow-small.png"
+                     alt="&quot;Flow Designer&quot;（流设计器）屏幕中的组件是按以下方式连接的：移动设备 - textBox1 - waitScreen1 - list - 移动设备。失败命令连接至 alert，然后再连接至 list" border=1></a></p>
+  
+    </li>
+  </ol>
+  <h3 class="tutorial">为等待屏幕创建后台任务<a name="backgroundtask" id="backgroundtask"></a></h3>
+  <ol>
+    <li>在 &quot;Flow&quot;（流）视图中，右键单击 <tt>waitScreen</tt> 组件，然后从弹出式菜单中选择 &quot;Properties&quot;（属性）。</li>
+    <li>在 &quot;Properties&quot;（属性）对话框中，从 &quot;Task&quot;（任务）下拉菜单中选择 &quot;&lt;NewCancellableTask&gt;&quot;，然后单击 &quot;Close&quot;（关闭）。<tt></tt> <br> 
+    现在，<tt>simpleCancellableTask</tt> 是 <tt>waitScreen</tt> 组件的后台任务。</li>
+    <li>单击可视 Mobile 设计器顶部的 &quot;Source&quot;（源）按钮，以切换至应用程序的源代码。 </li>
+    <li>将以下代码粘贴到 <code>MyWaitScreenMIDlet</code> 源代码的 <code>public void destroyapp(boolean unconditional) { }</code> 后面，为该后台任务添加一个方法：
+    <pre class="examplecode">
+      private void getServerInfo() throws IOException {
+      String url = textBox.getString();
+      list.deleteAll();
+      /**
+      * Open an HttpConnection
+      */ 
+      HttpConnection hc = (HttpConnection) Connector.open(url);
+
+      /**
+      * Gets a header field key and header field by index and
+      * insert it into list.
+      */
+      list.setTitle(hc.getURL());   
+      for (int i=0;hc.getHeaderFieldKey(i)!=null; i++){
+      list.insert(i,hc.getHeaderFieldKey(i)+&quot; :&quot;+hc.getHeaderField(i),null);       
+      }     
+      /**
+      * Closing time ...
+      */
+      hc.close();
+      } 
+</pre></li>
+    <li>在源代码中右键单击，然后在弹出式菜单中选择 &quot;Fix Imports&quot;（修复导入）（此外，也可以按 Ctrl+Shift+I 组合键）。</li>
+	<li>找到 <tt>public class MyWaitScreenMidlet extends MIDlet implements CommandListener {</tt> 字符串（第 18 行），然后插入 <tt>final</tt> 使其显示以下内容：
+	<pre class="examplecode"> public final class MyWaitScreenMidlet extends MIDlet implements CommandListener {</pre></li>
+	<li>在源代码（第 38 行）中找到 <tt>public MyWaitScreenMidlet()</tt> 方法，然后在 <tt>public MyWaitScreenMidlet() {</tt> 后面插入以下代码：<br>
+	<pre class="examplecode"> List list1 = getList();</pre> </li>
+    <li>单击 &quot;Screen&quot;（屏幕）以切换至 &quot;Screen&quot;（屏幕）视图，然后选择 &quot;SimpleCancellableTask&quot;。<tt></tt></li>
+	<li>在 &quot;Properties&quot;（属性）窗口中，单击 &quot;Executable Code&quot;（可执行代码）属性的省略号按钮 (<img src="../../../images_www/articles/71/mobility/waitscreen/ellipsis-button.png" border=1 alt="省略号按钮"  >)。<tt></tt></li>
+	<li>在 &quot;Executable code&quot;（可执行代码）对话框中，单击 &quot;Go To source&quot;（转至源）。</li>
+    <li>在源代码（第 328 行）中找到 <tt>getSimpleCancellableTask()</tt> 方法，然后将以下代码插入到 <tt>public void execute() throws Exception {</tt>（显示的内容为 <tt>// write task-execution user code here</tt>）后面：<br>
+	<pre class="examplecode"> getServerInfo();</pre></li> 
+  </ol>
+</div>
+<div class="indent"> 
+  <h3 class="tutorial">运行项目<a name="run"></a></h3>
+  
+      <p>按 F6 键以运行主项目。</p>
+      <p> 或者，也可以选择 &quot;Run&quot;（运行）&gt; &quot;Run Main Project&quot;（运行主项目）。</p>
+    
+ 
+</div>
+<p class="align-center"><a href="#top">返回页首</a></p>
+<div class="indent"> 
+<a name="javadoc-waitscreen"></a>
+  <h2>&quot;Wait Screen&quot;（等待屏幕）和 SimpleCancellableTask 组件的 Javadoc</h2>
+  <P>NetBeans IDE 提供 <tt>WaitScreen</tt> 和 <tt>SimpleCancellableTask</tt> 组件以及可在 VMD 中使用的其他组件的 API Javadoc。要阅读 <tt>WaitScreen</tt> 和 <tt>SimpleCancellableTask</tt> 组件的 Javadoc，请执行以下步骤：</P>
+  <OL>
+<li>将光标放在源代码中的 <tt>WaitScreen</tt> 或 <tt>SimpleCancellableTask</tt> 组件上，然后按 Ctr-Shift-空格组合键（或选择 &quot;Source&quot;（源）&gt; &quot;Show Documentation&quot;（显示文档））。<tt></tt><tt></tt><br>
+此时将在弹出式窗口中显示该元素的 Javadoc。 </li>
+<li>在弹出式窗口中单击 &quot;Show documentation in external web browser&quot;（在外部 Web 浏览器中显示文档）图标 (<img src="../../../images_www/articles/71/mobility/smscomposer/show-doc-button.png" alt="&quot;Show documentation in external web browser&quot;（在外部 Web 浏览器中显示文档）">)，以便在浏览器中查看有关 <tt>WaitScreen</tt> 或 <tt>SimpleCancellableTask</tt> 组件的详细信息。</li>
+
+	
+</OL>
+</div>
+
+<p class="align-center"><a href="#top">返回页首</a></p>
+ <div class="feedback-box"><a href="/about/contact_form.html?to=6&subject=VMD%20Custom%20Components:%20Creating%20Wait%20Screens">请将您的反馈发送给我们</a>
+  </div>
+  <br style="clear:both;" >
+   <br>
+<h2><a name="seealso"></a>另请参见</h2>
+  <ul>
+    <li><a href="smscomposer.html">可视 Mobile 设计器定制组件：创建 SMS 编写器应用程序</a></li>
+    <li><a href="filebrowser.html">可视 Mobile 设计器定制组件：创建移动设备文件浏览器</a></li>
+    <li><a href="pimbrowser.html">可视 Mobile 设计器定制组件：创建个人信息管理器应用程序</a></li>
+    <li><a href="loginscreen.html">可视 Mobile 设计器定制组件：创建 Mobile 登录屏幕</a></li>
+    <li><a href="splashscreen.html">可视 Mobile 设计器定制组件：在 Java ME 应用程序中使用闪屏</a></li>
+    <li><a href="tableitem.html">可视 Mobile 设计器定制组件：在 Java ME 应用程序中使用表项</a></li>
+    <li><a href="http://wiki.netbeans.org/VisualMobileDesignerPalatteReference">参考：可视 Mobile 设计器组件面板指南</a></li>
+  </ul>
+  <p class="align-center"><a href="#top">返回页首</a></p>
+</body>
+</html>

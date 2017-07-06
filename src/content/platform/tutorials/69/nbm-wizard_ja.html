@@ -1,0 +1,590 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+<title>NetBeans プラットフォーム 6.5: NetBeans ウィザードモジュールのチュートリアル</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="geertjan.wielenga@sun.com">
+  <meta name="indexed" content="y">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="description"
+ content="A walk-through of the 
+ basic features of the Wizard API classes.">
+         <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+
+<body>
+
+<h1>NetBeans ウィザードモジュールのチュートリアル</h1>
+
+<p>このチュートリアルでは、<a href="http://bits.netbeans.org/dev/javadoc/org-openide-dialogs/org/openide/package-summary.html">NetBeans のダイアログ API</a> のウィザードクラスが提供する、主な機能の使用方法について学習します。</p>
+
+     <p><b>目次</b></p>
+   
+   <p><img  src="../images/articles/69/netbeans-stamp7-8-9.png" class="stamp" width="114" height="114" alt="このページの内容は NetBeans IDE 6.5、6.7、および 6.8 が対象です" title="このページの内容は NetBeans IDE 6.5、6.7、および 6.8 が対象です" /></p>
+
+      <ul class="toc">
+<li><a href="#set">モジュールプロジェクトの作成</a>
+<li><a href="#wiz">ウィザードインフラストラクチャーの作成</a>
+<li><a href="#action">ウィザードのアクションクラスの登録</a>
+<li><a href="#design">ウィザードの内容の設計</a>
+<li><a href="#process">ユーザーデータの処理</a>
+<li><a href="#validate">ユーザーデータの検査</a>
+<li><a href="#persist">再起動時のデータの持続</a>
+<li><a href="#brand">ウィザードのブランディング</a>
+<li><a href="#further">参考情報</a>
+       </ul>
+
+
+<p class="tips"> NetBeans プラットフォームアプリケーションでは、さまざまな種類のウィザードを作成できます。「新規プロジェクト」ダイアログに表示するウィザードを作成する場合は、「<a href="https://platform.netbeans.org/tutorials/nbm-projectsamples.html">プロジェクトのサンプルモジュールのチュートリアル</a>」を参照してください。「新規ファイル」ダイアログに表示するウィザードを作成する場合は、「<a href="http://platform.netbeans.org/tutorials/nbm-filetemplates.html">ファイルテンプレートモジュールのチュートリアル</a>」を参照してください。このチュートリアルでは、ツールバーでボタンをクリックしたときに表示される一般的なウィザードを作成します。
+
+
+<p><b>このチュートリアルを行うには、次の表に示すソフトウェアおよびリソースが必要です。</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                <th class="tblheader" scope="col">必須バージョン</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.7 以上</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">version 6 または<br/>version 5</td>
+            </tr>
+        </tbody>
+    </table>
+
+<!-- ===================================================================================== -->
+
+    <h2 class="tutorial"><a name="set"></a> モジュールプロジェクトの作成</h2>
+
+    <p>はじめに、「新規モジュールプロジェクト」ウィザードを実行します。最終的に、すべての NetBeans モジュールに必要な、いくつかのデフォルトファイルを持つ基本的なソース構造を作成します。
+
+         <ol>
+    <li>「ファイル」&gt;「新規プロジェクト」(Ctrl-Shift-N) を選択します。「カテゴリ」で「NetBeans モジュール」を選択します。「プロジェクト」で「モジュール」を選択します。「次へ」をクリックします。</li>
+    <li>「名前と場所」パネルで、「プロジェクト名」フィールドに「<tt>DemoWizard</tt>」と入力します。「プロジェクトの場所」を使用コンピュータ上の任意のフォルダに変更します。「スタンドアロンモジュール」オプションはそのままにし、「主プロジェクトとして設定」チェックボックスを選択します。「次へ」をクリックします。</li>
+    <li>「基本モジュール構成」パネルで、コード名ベースに「<tt>org.demo.wizard</tt>」と入力します。</li>
+      <li>「XML レイヤーを生成」を選択します。「ローカライズ版バンドル」と「XML レイヤー」のファイルの場所は両方ともそのままにしておきます。これらは、<tt>org/demo/wizard</tt> という名前のパッケージに格納されます。「完了」をクリックします。</li>
+</ol>
+
+    <p> IDE によって <tt>DemoWizard</tt> プロジェクトが作成されます。このプロジェクトには、ソースや、プロジェクトの Ant 構築スクリプトなどのプロジェクトメタデータがすべて含まれます。IDE でプロジェクトが開きます。「プロジェクト」ウィンドウ (Ctrl-1) で、プロジェクトの論理構造を表示できます。また、「ファイル」ウィンドウ (Ctrl-2) で、プロジェクトのファイル構造を表示できます。</p>
+
+
+    <br />
+
+ <!-- ===================================================================================== -->
+
+<p><h2><a name="wiz"></a>ウィザードインフラストラクチャーの作成</h2>
+
+<p>この節では、「ウィザード」ウィザードを使用して、モジュールにウィザードのスタブを追加します。
+
+<ol>
+    <li><p>「プロジェクト」ウィンドウで「DemoWizard」プロジェクトノードを右クリックし、「新規」&gt;「その他」を選択して、「モジュールの開発」&gt;「ウィザード」を選択します。</p>
+    <p><img border="1" src="../images/tutorials/wizard/wizard-wizard.png"/>
+    <p>「次へ」をクリックします。</p>
+    </li>
+    <li><p>「ウィザードの種類」パネルで、「ウィザードパネルの数」フィールドに「2」と入力し、その他の値はそのままにします。</p>
+    <p><img border="1" src="../images/tutorials/wizard/wizard-wizard-3.png"/>
+    <p>前出のパネルのフィールドは次のようになります。
+    <ul>
+        <li><b>登録の種類。</b> ユーザーがウィザードにアクセスする場所を指定します。「カスタム」を選択した場合、「ウィザード」ウィザードは新しいアクションクラスを作成します。これは、ウィザードを開いたり、初期化したりするのに使用できます。「新規ファイル」を作成した場合、「ウィザード」ウィザードは、モジュールの <tt>layer.xml</tt> ファイルにウィザードを登録します。
+        <li><b>ウィザードステップのシーケンス。</b> ウィザードをリニアにするか、またはウィザードでの選択によって、ウィザードのユーザーがウィザードの手順をスキップできるようにするかを指定します。リニアウィザードは「静的」で、これがデフォルトです。一方、手順をスキップできるウィザードにはカスタム反復子クラスが必要で、これは「動的」を選択した場合に作成されます。
+        <li><b>ウィザードパネルの数。</b> 作成するウィザードパネルの数を指定します。ウィザードの各手順で、ビューとコントローラの 2 つの Java ファイルが作成されます。
+    </ul>
+    <p>「次へ」をクリックします。</p>
+    </li>
+    <li><p>「名前と場所」パネルで、「クラス名の接頭辞」に「<tt>Demo</tt>」と入力し、「パッケージ」ドロップダウンリストから主パッケージを選択します。</p>
+    <p><img border="1" src="../images/tutorials/wizard/wizard-wizard-4.png"/>
+    <p>「完了」をクリックします。</p>
+    </li>
+</ol>
+
+<p>「プロジェクト」ウィンドウは、次のようになっているはずです。
+<p><img border="1" src="../images/tutorials/wizard/projects-window.png"/>
+
+<p><h2><a name="action"></a>ウィザードのアクションクラスの登録</h2>
+
+<p>この節では、アクションクラスを変更し、<tt>layer.xml</tt> ファイルに登録します。
+
+<ol>
+    <li><tt>DemoWizardAction.java</tt> ファイルを開き、すべてのコードを次のコードに置き換えます。
+
+<pre class=examplecode>
+package org.demo.wizard;
+
+import java.awt.Component;
+import java.awt.Dialog;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.text.MessageFormat;
+import javax.swing.JComponent;
+import org.openide.DialogDisplayer;
+import org.openide.WizardDescriptor;
+
+public final class DemoWizardAction implements ActionListener {
+
+    private WizardDescriptor.Panel[] panels;
+
+    public void actionPerformed(ActionEvent e) {
+        WizardDescriptor wizardDescriptor = new WizardDescriptor(getPanels());
+        // {0} は WizardDesriptor.Panel.getComponent().getName() によって置き換えられる
+        wizardDescriptor.setTitleFormat(new MessageFormat(&quot;{0}&quot;));
+        wizardDescriptor.setTitle(&quot;Your wizard dialog title here&quot;);
+        Dialog dialog = DialogDisplayer.getDefault().createDialog(wizardDescriptor);
+        dialog.setVisible(true);
+        dialog.toFront();
+        boolean cancelled = wizardDescriptor.getValue() != WizardDescriptor.FINISH_OPTION;
+        if (!cancelled) {
+            // 何らかの処理
+        }
+    }
+
+    /**
+     * 個々のウィザードの手順を表すパネルを初期化し、
+      * ウィザードの見た目に影響を与えるプロパティーを設定。
+     */
+    private WizardDescriptor.Panel[] getPanels() {
+        if (panels == null) {
+            panels = new WizardDescriptor.Panel[]{
+                        new DemoWizardPanel1(),
+                        new DemoWizardPanel2()
+                    };
+            String[] steps = new String[panels.length];
+            for (int i = 0; i &lt; panels.length; i++) {
+                Component c = panels[i].getComponent();
+                // パネルのコンポーネント名に対するデフォルト手順名。
+                // 主に、手順のリストに表示するターゲット選択用ダイアログの名前を取得するのに役立つ。
+                steps[i] = c.getName();
+                if (c instanceof JComponent) { // assume Swing components
+                    JComponent jc = (JComponent) c;
+                    // コンポーネントの手順の数を設定
+                    // TODO org.openide.dialogs &gt;= 7.8 を使用する場合、WizardDescriptor.PROP_*: を使用できる
+                    jc.putClientProperty(&quot;WizardPanel_contentSelectedIndex&quot;, new Integer(i));
+                    // パネルの手順の名前を設定
+                    jc.putClientProperty(&quot;WizardPanel_contentData&quot;, steps);
+                    // 各手順のサブタイトルの作成をオン
+                    jc.putClientProperty(&quot;WizardPanel_autoWizardStyle&quot;, Boolean.TRUE);
+                    // 背景の画像とともに左側に手順を表示
+                    jc.putClientProperty(&quot;WizardPanel_contentDisplayed&quot;, Boolean.TRUE);
+                    // すべての手順の番号付けをオン
+                    jc.putClientProperty(&quot;WizardPanel_contentNumbered&quot;, Boolean.TRUE);
+                }
+            }
+        }
+        return panels;
+    }
+
+    public String getName() {
+        return &quot;Start Sample Wizard&quot;;
+    }
+
+}
+</pre>
+
+    </li>
+
+<p class="tips"> <tt>CallableSystemAction</tt> の代わりに <tt>ActionListener</tt> を実装している以外は、生成されたのと同じコードを使用します。<tt>ActionListener</tt> は標準の JDK クラスですが、<tt>CallableSystemAction</tt> はそうではないため、このようにしています。NetBeans プラットフォーム 6.5 以降では、より便利でコードが少なくて済む、標準の JDK クラスを代わりに使用できます。
+
+    <li>次のように、アクションクラスを <tt>layer.xml</tt> ファイルに登録します。
+
+<pre class=examplecode>
+&lt;filesystem&gt;
+    &lt;folder name=&quot;Actions&quot;&gt;
+        &lt;folder name=&quot;File&quot;&gt;
+            &lt;file name=&quot;org-demo-wizard-DemoWizardAction.instance&quot;&gt;
+                &lt;attr name=&quot;delegate&quot; newvalue=&quot;org.demo.wizard.DemoWizardAction&quot;/&gt;
+                &lt;attr name=&quot;iconBase&quot; stringvalue=&quot;org/demo/wizard/icon.png&quot;/&gt;
+                &lt;attr name=&quot;instanceCreate&quot; methodvalue=&quot;org.openide.awt.Actions.alwaysEnabled&quot;/&gt;
+                &lt;attr name=&quot;noIconInMenu&quot; stringvalue=&quot;false&quot;/&gt;
+            &lt;/file&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+    &lt;folder name=&quot;Toolbars&quot;&gt;
+        &lt;folder name=&quot;File&quot;&gt;
+            &lt;file name=&quot;org-demo-wizard-DemoWizardAction.shadow&quot;&gt;
+                &lt;attr name=&quot;originalFile&quot; stringvalue=&quot;Actions/File/org-demo-wizard-DemoWizardAction.instance&quot;/&gt;
+                &lt;attr name=&quot;position&quot; intvalue=&quot;0&quot;/&gt;
+            &lt;/file&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/filesystem&gt;
+</pre>
+
+<p class="tips"> 「iconBase」要素は、主パッケージの「icon.png」という画像を指しています。その名前を付けた独自の画像を使用する場合、サイズが 16x16 ピクセルであることを確認してください。または、次の画像を使用してください。<img border="1" src="../images/tutorials/wizard/icon.png"/>
+
+<li>モジュールを実行します。アプリケーションが起動し、<tt>layer.xml</tt> ファイルで指定した場所に、ツールバーのボタンが表示されるはずです。
+
+<p><img border="1" src="../images/tutorials/wizard/result-1.png"/>
+
+<p>ボタンをクリックするとウィザードが表示されます。
+<p><img border="1" src="../images/tutorials/wizard/result-2.png"/>
+<p>「次へ」をクリックすると、最後のパネルで「完了」ボタンが有効になっています。
+<p><img border="1" src="../images/tutorials/wizard/result-3.png"/>
+
+     </li>
+
+</ol>
+
+<p>これで、ウィザードのインフラストラクチャーが機能するようになりました。次に、内容をいくつか追加してみましょう。
+
+<p><h2><a name="design"></a>ウィザードの内容の設計</h2>
+
+<p>この節では、ウィザードに内容を追加し、基本的な機能をカスタマイズします。
+
+<ol>
+    <li><p><tt>DemoWizardAction.java</tt> ファイルを開き、さまざまなカスタマイズプロパティーをウィザードに設定できることを確認してください。</p>
+     <p><img border="1" src="../images/tutorials/wizard/wizard-tweaking.png"/></p>
+     <p>これらのプロパティーについては、<a href="http://ui.netbeans.org/docs/ui_apis/wide/index.html">ここ</a>を参照してください。
+    </li>
+    <li><p><tt>DemoWizardAction.java</tt> で、<tt>wizardDescriptor.setTitle</tt> を次のように変更します。
+<pre class=examplecode>
+wizardDescriptor.setTitle(&quot;Music Selection&quot;);
+</pre>
+    <li><p><tt>DemoVisualPanel1.java</tt> ファイルと <tt>DemoVisualPanel2.java</tt> ファイルを開き、「Matisse」GUI ビルダーを使用して、次のような Swing コンポーネントをいくつか追加します。</p>
+     <p><img border="1" src="../images/tutorials/wizard/panel-1-design.png"/></p>
+     <p><img border="1" src="../images/tutorials/wizard/panel-2-design.png"/></p>
+     <p>ここでは、いくつかの Swing コンポーネントを持つ、<tt>DemoVisualPanel1.java</tt> ファイルと <tt>DemoVisualPanel2.java</tt> ファイルを確認できます。
+    </li>
+    <li>「ソース」ビューで 2 つのパネルを開き、<tt>getName()</tt> メソッドをそれぞれ「Name and Address」および「Musician Details」に変更します。
+    <li><p>モジュールを再実行します。ウィザードを開くと、追加した Swing コンポーネントと、行なったカスタマイズに応じて、次のようなものが表示されるはずです。</p>
+<p><img border="1" src="../images/tutorials/wizard/result-4.png"/></p>
+
+<p class="tips"> 前出のウィザードにある左サイドバーの画像は、<tt>DemoWizardAction.java</tt> ファイルで次のように設定されています。
+
+<pre class=examplecode>
+wizardDescriptor.putProperty(&quot;WizardPanel_image&quot;, ImageUtilities.loadImage(&quot;org/demo/wizard/banner.png&quot;, true));
+</pre>
+     
+</ol>
+
+<p>これで、ウィザードの内容が設計されました。次に、ユーザーが入力するデータを処理するコードをいくつか追加してみましょう。
+
+ <!-- ===================================================================================== -->
+
+    <h2 class="tutorial"><a name="process"></a>ユーザーデータの処理</h2>
+
+    <p>この節では、ユーザーのデータをパネル間で受け渡す方法と、「完了」をクリックしたときに結果を表示する方法について学習します。
+
+         <ol>
+    <li><p><tt>WizardPanel</tt> クラスで、<tt>storeSettings</tt> メソッドを使用して、ビジュアルパネルに設定されたデータを取得します。たとえば、<tt>DemoVisualPanel1.java</tt> ファイルに取得メソッドを作成し、<tt>DemoWizardPanel1.java</tt> ファイルから次のようにアクセスします。</p>
+
+<pre class=examplecode>
+public void storeSettings(Object settings) {
+    ((WizardDescriptor) settings).putProperty(&quot;name&quot;, ((DemoVisualPanel1)getComponent()).getNameField());
+    ((WizardDescriptor) settings).putProperty(&quot;address&quot;, ((DemoVisualPanel1)getComponent()).getAddressField());
+}
+</pre>
+
+    </li>
+    <li><p>次に、<tt>DemoWizardAction.java</tt> ファイルを使用して、設定したプロパティーを取得し、何か操作を行います。</p>
+
+<pre class=examplecode>
+public void actionPerformed(ActionEvent e) {
+    WizardDescriptor wizardDescriptor = new WizardDescriptor(getPanels());
+    // は次で置き換えられます: WizardDesriptor.Panel.getComponent().getName()
+    wizardDescriptor.setTitleFormat(new MessageFormat(&quot;{0}&quot;));
+    wizardDescriptor.setTitle(&quot;Music Selection&quot;);
+    Dialog dialog = DialogDisplayer.getDefault().createDialog(wizardDescriptor);
+    dialog.setVisible(true);
+    dialog.toFront();
+    boolean cancelled = wizardDescriptor.getValue() != WizardDescriptor.FINISH_OPTION;
+    if (!cancelled) {
+        <b>String name = (String) wizardDescriptor.getProperty(&quot;name&quot;);
+        String address = (String) wizardDescriptor.getProperty(&quot;address&quot;);
+        DialogDisplayer.getDefault().notify(new NotifyDescriptor.Message(name + &quot; &quot; + address));</b>
+    }
+}
+</pre>
+
+<p class="tips"> <tt>NotifyDescriptor</tt> は、コード補完ボックスに示すように、ほかの方法にも使用できます。
+
+<p><img border="1" src="../images/tutorials/wizard/notifydescriptor.png"/></p>
+
+
+         </ol>
+
+<p>これで、ユーザーが入力したデータを処理する方法を学習しました。
+
+    <br />
+
+ <!-- ===================================================================================== -->
+
+    <h2 class="tutorial"><a name="validate"></a>ユーザーデータの検査</h2>
+
+    <p>この節では、ウィザードの「次へ」がクリックされたときに、ユーザーの入力を検査する方法を学習します。
+
+         <ol>
+    <li><p><tt>DemoWizardPanel1</tt> で、<tt>WizardDescriptor.Panel</tt> の代わりに <tt>WizardDescriptor.ValidatingPanel</tt> を実装して、クラスの署名を変更します。</p>
+
+<pre class=examplecode>
+public class DemoWizardPanel1 implements WizardDescriptor.ValidatingPanel
+</pre>
+
+<li>クラスの最上位で、<tt>JComponent</tt> 宣言を型指定宣言に変更します。
+
+<pre class=examplecode>
+private DemoVisualPanel1 component;
+</pre>
+
+<li>次のように、必要な抽象メソッドを実装します。
+
+<pre class=examplecode>
+@Override
+public void validate() throws WizardValidationException {
+
+    String name = component.getNameTextField().getText();
+    if (name.equals(&quot;&quot;)){
+        throw new WizardValidationException(null, &quot;Invalid Name&quot;, null);
+    }
+
+}
+</pre>
+
+<li><p>モジュールを実行します。「Name」フィールドに何も入力せずに「次へ」をクリックすると、次のような結果が表示されるはずです。検査の結果がエラーであったため、次のパネルに移動することもできません。</p>
+
+<p><img border="1" src="../images/tutorials/wizard/validation1.png"/></p>
+
+<li>必要に応じて、名前フィールドが空の場合に「次へ」ボタンを無効にすることができます。クラスの最上位で、boolean の宣言から始めます。
+
+<pre class=examplecode>
+private boolean isValid = true;
+</pre>
+
+<p>次のように、<tt>isValid()</tt> をオーバーライドします。
+
+<pre class=examplecode>
+@Override
+public boolean isValid() {
+    return isValid;
+}
+</pre>
+
+<p><tt>validate()</tt> が呼び出されたとき、つまり「次へ」ボタンがクリックされたときに、false を返します。
+
+<pre class=examplecode>
+@Override
+public void validate() throws WizardValidationException {
+
+    String name = component.getNameTextField().getText();
+    if (name.equals(&quot;&quot;)) {
+        <b>isValid = false;</b>
+        throw new WizardValidationException(null, &quot;Invalid Name&quot;, null);
+    }
+
+}
+</pre>
+
+<p>または、boolean の初期状態を false に設定します。次に <tt>DocumentListener</tt> を実装してフィールドにリスナーを追加し、ユーザーがフィールドに何かを入力したときに boolean を true に設定して <tt>isValid()</tt> を呼び出します。
+         </ol>
+
+<p>これで、ユーザーが入力したデータを検査する方法を学習しました。
+
+  <p class="tips"> ユーザー入力の検査の詳細については、このチュートリアルの最後にある Tom Wheeler のサンプルを参照してください。
+
+    <br />
+
+ <!-- ===================================================================================== -->
+
+    <h2 class="tutorial"><a name="persist"></a>再起動時のデータ持続</h2>
+
+    <p>この節では、アプリケーションが閉じるときにデータを格納する方法、および新しく開始したあとでウィザードが開くときにデータを取得する方法を学習します。
+
+         <ol>
+
+    <li><p><tt>DemoWizardPanel1.java</tt> で、<tt>readSettings</tt> メソッドと <tt>storeSettings</tt> メソッドを次のようにオーバーライドします。</p>
+
+<pre class=examplecode>
+<b>JTextField nameField = ((DemoVisualPanel1) getComponent()).getNameTextField();
+JTextField addressField = ((DemoVisualPanel1) getComponent()).getAddressTextField();</b>
+
+@Override
+public void readSettings(Object settings) {
+    <b>nameField.setText(NbPreferences.forModule(DemoWizardPanel1.class).get(&quot;namePreference&quot;, &quot;&quot;));
+    addressField.setText(NbPreferences.forModule(DemoWizardPanel1.class).get(&quot;addressPreference&quot;, &quot;&quot;));</b>
+}
+
+@Override
+public void storeSettings(Object settings) {
+    ((WizardDescriptor) settings).putProperty(&quot;name&quot;, nameField.getText());
+    ((WizardDescriptor) settings).putProperty(&quot;address&quot;, addressField.getText());
+    <b>NbPreferences.forModule(DemoWizardPanel1.class).put(&quot;namePreference&quot;, nameField.getText());
+    NbPreferences.forModule(DemoWizardPanel1.class).put(&quot;addressPreference&quot;, addressField.getText());</b>
+}
+</pre>
+
+     </li>
+
+    <li><p>モジュールを再実行し、ウィザードの最初のパネルで名前とアドレスを入力します。</p>
+<p><img border="1" src="../images/tutorials/wizard/nbpref1.png"/></p>
+     </li>
+
+    <li><p>アプリケーションを閉じ、「ファイル」ウィンドウを開いて、アプリケーションの <tt>build</tt> フォルダ内のプロパティーファイルを確認します。設定が次のようになっているはずです。</p>
+<p><img border="1" src="../images/tutorials/wizard/nbpref2.png"/></p>
+     </li>
+     
+    <li><p>アプリケーションを再実行し、次にウィザードを開いたとき、前に指定した設定が、ウィザード内のフィールドの値を定義するために自動的に使用されます。</p>
+     </li>
+     
+         </ol>
+         
+<p>これで、再起動時にウィザードのデータを持続する方法を学習しました。
+
+    <br />
+
+ <!-- ===================================================================================== -->
+
+    <h2 class="tutorial"><a name="brand"></a>ウィザードのブランディング</h2>
+
+    <p>この節では、ウィザードのインフラストラクチャーによって提供される「次へ」ボタンの文字列を、「詳細」にブランディングします。
+
+<p class="tips"> 「ブランディング」という用語は、カスタマイズの意味で使われます。「国際化」や「ローカリゼーション」が別の言語に翻訳することを指すのに対し、通常同じ言語間の小さな変更のことを意味します。NetBeans モジュールのローカリゼーションについては、<a href="http://translatedfiles.netbeans.org/index-l10n.html">ここを参照</a>してください。
+
+         <ol>
+    <li><p>「ファイル」ウィンドウで、アプリケーションの <tt>branding</tt> フォルダを展開し、強調表示されているフォルダとファイルを作成します。</p>
+
+<p><img border="1" src="../images/tutorials/wizard/branding-1.png"/></p>
+
+     </li>
+    <li>ファイルの内容を次のように定義します。
+
+<pre class=examplecode>
+CTL_NEXT=&amp;Advance &gt;
+</pre>
+
+<p>そのほかの文字列は次のようにブランディングしてもかまいません。
+
+<pre class=examplecode>
+CTL_CANCEL
+CTL_PREVIOUS
+CTL_FINISH
+CTL_ContentName
+</pre>
+
+<p class="tips"> 「CTL_ContentName」キーはデフォルトで「Steps」に設定されています。これは、「WizardPanel_autoWizardStyle」プロパティーが「FALSE」に設定されていない場合、ウィザードの左側のパネルで使用されます。
+
+
+    </li>
+    <li><p>アプリケーションを実行すると、「次へ」ボタンが「詳細」にブランディングされます。</p>
+
+<p><img border="1" src="../images/tutorials/wizard/branding-2.png"/></p>
+
+
+
+<p class="tips"> 必要に応じて、前に説明したように「<tt>DemoWizardAction.java</tt>」ファイルを使用して、次のようにウィザードの左側をすべて削除します。
+
+</p><pre class="examplecode"> wizardDescriptor.putProperty(&quot;WizardPanel_autoWizardStyle&quot;, Boolean.FALSE);
+</pre>
+
+<p>この設定を行うと、ウィザードは次のように表示されます。</p>
+
+    <p><img border="1" src="../images/tutorials/wizard/branding-3.png"/></p>
+
+</ol>
+
+<p>これで、ウィザードのインフラストラクチャーで定義された文字列を、独自のバージョンにブランディングする方法を学習しました。
+
+    <br />
+
+ <!-- ===================================================================================== -->
+
+    <h2 class="tutorial"><a name="further"></a>参考情報</h2>
+
+    <p>関連情報のいくつかは、オンラインで入手できます。
+
+         <ul>
+            <li><p>Tom Wheeler の NetBeans のサイト (次の画像をクリック):</p>
+              <p><a href="http://www.tomwheeler.com/netbeans/"><img border="1" src="../images/tutorials/wizard/tom.png"/></a></p>
+
+              <p class="tips"> これは NetBeans 5.5 向けに書かれたものですが、前出のサンプルは、JDK 1.6 を使用する Ubuntu Linux 上の NetBeans IDE 6.5.1 でも正しく使用できます。
+
+              <p>このサンプルは、特にユーザーデータの検査方法を示す場合に役立ちます。
+
+            <li>Geertjan のブログ:
+              <ul>
+                  <li><a href="http://blogs.sun.com/geertjan/entry/how_wizards_work">ウィザードの仕組み: パート 1 &mdash; はじめに</a>
+                  <li><a href="http://blogs.sun.com/geertjan/entry/how_wizards_work_part_2">ウィザードの仕組み: パート 2 &mdash; さまざまなタイプ</a>
+                  <li><a href="http://blogs.sun.com/geertjan/entry/how_wizards_work_part_3">ウィザードの仕組み: パート 3 &mdash; 最初のウィザード</a>
+                  <li><a href="http://blogs.sun.com/geertjan/entry/how_wizards_work_part_4">ウィザードの仕組み: パート 4 &mdash; 独自の反復子</a>
+                  <li><a href="http://blogs.sun.com/geertjan/entry/how_wizards_work_part_5">ウィザードの仕組み: パート 5 &mdash; 既存のパネルの再使用と埋め込み</a>
+                  <li><a href="http://blogs.sun.com/geertjan/entry/creating_a_better_java_class">優れた Java クラスウィザードの作成</a>
+              </ul>
+
+         </ul>
+
+    <br />
+
+
+
+    <h2><a name="version"></a>変更履歴 </h2>
+
+    <p>
+
+    <table width="76%" border="1">
+        <tbody>
+            <tr>
+                <td>
+                    <div align="left"><b>バージョン</b></div>
+                </td>
+                <td>
+                    <div align="left"><b>日付</b></div>
+                </td>
+                <td>
+                    <div align="left"><b>変更内容</b></div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    1
+                </td>
+                <td>
+                    2009 年 3 月 31 日
+                </td>
+                <td>
+                    初期バージョン。内容
+
+                    <p><ul>
+                        <li><strike>ユーザー入力の検査に関する節を追加。</strike>
+                        <li><strike>ウィザードからまたはウィザードへのデータの格納および取得に関する節を追加。</strike>
+                        <li>WizardDescriptor プロパティーをすべてリストした表を追加。
+                        <li>ウィザードの API クラスをすべてリストおよび説明した表を追加。
+                        <li>Javadoc へのリンクを追加。
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    2
+                </td>
+                <td>
+                    2009 年 4 月 1 日
+                </td>
+                <td>
+                    検査に関する節を追加。「次へ」ボタンを無効にするコードを追加。持続に関する節も追加。
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    3
+                </td>
+                <td>
+                    2009 年 4 月 10 日
+                </td>
+                <td>
+                    Tom Wheeler のコメントを統合し、ローカリゼーションの情報がある場所への参照を追加して、ブランディングの節を実際のブランディングの内容になるよう書き換え。
+                </td>
+            </tr>
+
+        </tbody>
+    </table>
+
+    </body>
+
+</html>

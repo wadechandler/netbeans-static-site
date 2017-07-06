@@ -1,0 +1,278 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>Meet a NetBeans Module Writer: Jens Trapp</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+<meta name="AUTHOR" content="Geertjan Wielenga">
+  <meta name="developer" content="gwielenga@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="">
+<!--      Copyright (c) 2005 Sun Microsystems, Inc. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>Meet a NetBeans Module Writer: Jens Trapp</h1>
+<p><small><a href="mailto:nbdocs_feedback@usersguide.netbeans.org?subject=Feedback:%20Meet%20A%20NetBeans%20Module%20Writer:%20Jens">Feedback</a></small></p>
+
+<table width="190" border="1" cellspacing="0" cellpadding="5" align="right" class="ltblue">
+  <tbody>
+  <tr>
+    <td align="center"><img align="center" src="nbm_interviews/jens/JensTrapp2005.png" alt="Jens's picture">
+
+	    <br><b>Jens Trapp</b></td>
+  </tr>
+ <tr>
+	  <td>
+		 <ul><li><a href="http://blogs.sun.com/roller/page/jct">My Blog</a></ul>
+			
+  </tr>
+  
+  </tbody>
+</table>
+
+<p>Jens Trapp recently popped up on the <a href="https://netbeans.org/community/lists/top.html">NetBeans mailing lists</a> to
+ announce that he had created a NetBeans module. (He also <a href="http://blogs.sun.com/roller/page/jct/20060411">blogged about it</a>.)
+NetBeans staff interviewed him.
+
+<p><h3>Jens, who and where are you?</h3>
+
+<p>Greetings from  the beautiful town of Hamburg in Germany!
+Java is the focus of my daily work. I work as a consultant at Sun Microsystems. As such, I work in quite a lot of different areas, from 
+design, to implementation (mainly of prototypes), reviews, troubleshooting, sizing, and technology consulting.
+So, I've put the title "software architect" on my business card, because I think this covers most of what I do!
+
+<p><h3>Are you active in the Java community in Germany?</h3>
+
+<p>I've been a member of the German Java user group for almost ten years now, but haven't been very active lately.
+ I contributed a little bit to some open source projects, but until now haven't actually been a member of any open source project. 
+
+<p><h3>You created a module for NetBeans recently. Why did you want to do so in the first place?</h3>
+
+<p>I always like to get a deep inside-view in a technology before I recommend it to others. I did quite a lot 
+of rich-client development in the past and it has always been hard work to create
+comfortable feature-rich client applications. So I thought that by using a higher level 
+framework, such as the <a href="https://netbeans.org/products/platform/">NetBeans Platform</a>, to implement a user interface, would not only save 
+me a ton of time, but also the result
+will be more feature-rich, because you get so many things for free.
+So, that was the reason for me, why I wanted to implement a NetBeans module. 
+
+
+<p><h3>So, tell us about your module. What does it do?</h3>
+
+<p>For my first module I was looking for a small tiny piece of functionality, so that I could start small and 
+then learn more while continuing. Then I got the idea of integrating the <a href="http://tidy.sourceforge.net/">HTML Tidy</a> checker into
+ NetBeans IDE. I use it quite often, so integrating it into NetBeans IDE was kind of natural and it 
+really met the above requirements.
+
+<p>The module currently consists of only three little pieces, but I think that's already very useful.
+Firstly, I call Tidy as an external program:
+
+<p><img src="nbm_interviews/jens/TidyPopup.png" alt="popup">
+
+<p>Secondly, I print the HTML errors in the output window:
+
+<p><img src="nbm_interviews/jens/output-window.png" alt="output">
+
+<p>If the user selects an error line, the cursor will automatically
+ jump to the line in the corresponding HTML file. Thirdly, there is an Options window that's required, because 
+ the path for the Tidy tool, which needs to be available on the system, is platform-dependent:
+
+ <p><img src="nbm_interviews/jens/options-window.png" alt="options">
+ 
+ <p>So, what I've achieved so far is a very generic approach for including external checking tools.
+
+ <p><h3>What did you do to connect to the HTML Tidy program? Which NetBeans APIs did you use? Can you share some code snippets with us?</h3>
+
+
+ <p>I basically did the work with NBTidy in three steps:
+ <ol><li>First, I created an <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/org/openide/util/actions/CookieAction.html">Action</a> for HTML files. I get the file name from the <a href="http://www.netbeans.org/download/dev/javadoc/org-openide-loaders/org/openide/loaders/DataObject.html">DataObject</a> 
+	 and <a href="https://netbeans.org/download/dev/javadoc/org-openide-filesystems/org/openide/filesystems/FileObject.html">FileObject</a>. (See the <a href="https://platform.netbeans.org/tutorials/nbm-filetype.html">NetBeans DataLoader Module Tutorial</a>
+ for details.)
+  I call the Tidy executable using the <a href="https://netbeans.org/download/dev/javadoc/org-openide-execution/org/openide/execution/NbProcessDescriptor.html">NbProcessDescriptor</a> class:
+
+<p><pre class="examplecode">DataObject dObj = (DataObject) activatedNodes[i].getCookie(DataObject.class);
+FileObject fileObj = dObj.getPrimaryFile();
+File file = FileUtil.toFile(fileObj);
+
+TidyOutputListener listener = new TidyOutputListener(dObj);
+writer.println(tabName + " - File: "+file+" - Size: "+file.length()+" Starting ...");
+writer.println("Calling "+TidySettings.get(TidySettings.KEY_EXECUTABLE));
+
+NbProcessDescriptor tidyProcessDesc = new NbProcessDescriptor(
+        TidySettings.get(TidySettings.KEY_EXECUTABLE),
+        TidySettings.get(TidySettings.KEY_ERROR_CHECK_ARGUMENT)
+        +" "+ file.getAbsolutePath());
+
+Process process = tidyProcessDesc.exec();</pre>
+
+
+
+And then I write to a tab in the Output window. Opening a new Output tab is quite simple, thanks to the
+ <a href="https://netbeans.org/download/dev/javadoc/org-openide-io/org/openide/windows/OutputWriter.html">OutputWriter</a> class, which is
+ a subclass of PrintWriter, and is used for writing to a tab in the NetBeans Output window:
+
+<p><pre class="examplecode">InputOutput io = IOProvider .getDefault ().getIO (tabName, false);
+io.select (); //Tree tab is selected
+OutputWriter writer = io.getOut ();</pre>
+
+<li>The second step was about establishing the connection between an error message in 
+the Output window with the corresponding line in the HTML file. So, when you click on the error 
+the cursor should jump to the the correct position in the HTML file.
+The way it is done is that a Listener is registered with the output line.
+This is simply done while printing the error message:
+
+<p><pre class="examplecode">writer.println (errMessage, listener);</pre>
+
+<p>The Listener is a class that needs to implement an Interface called <a href="https://netbeans.org/download/dev/javadoc/org-openide-io/org/openide/windows/OutputListener.html">OutputListener</a>. When a Listener
+is registered, the line is selectable with the mouse. When clicking on that line, the Listener class 
+will be invoked. I then parse the line to read the line number. From that I generate a NetBeans <a href="https://netbeans.org/download/dev/javadoc/org-openide-text/org/openide/text/Line.html">Line</a> object
+and then call <tt>show</tt> on that line to get it in focus:
+
+
+<p><pre class="examplecode">public void outputLineAction (OutputEvent outputEvent)
+{
+
+  String lineString = outputEvent.getLine ();
+  LineCookie lc = (LineCookie) dataObject.getCookie (LineCookie.class);
+
+  Pattern pattern = Pattern.compile (TidySettings.get (TidySettings.KEY_ERROR_OUTPUT_PATTERN));
+  Matcher matcher = pattern.matcher (lineString);
+  String lineNumberString = matcher.group (TidySettings.getInt (TidySettings.KEY_ERROR_OUTPUT_PATTERN_LINE_MATCH_GROUP_INDEX));
+  String columnNumberString = matcher.group (TidySettings.getInt (TidySettings.KEY_ERROR_OUTPUT_PATTERN_COLUMN_MATCH_GROUP_INDEX));
+  String raeson = matcher.group (TidySettings.getInt (TidySettings.KEY_ERROR_OUTPUT_PATTERN_LINE_MATCH_GROUP_REASON_MATCH_GROUP_INDEX));
+                                    
+  int lineNumber = Integer.parseInt (lineNumberString);
+  int columnNumber = Integer.parseInt (columnNumberString);
+                                  
+  Line l = lc.getLineSet ().getOriginal (lineNumber-1);
+  //System.out.println("Select "+lineNumberString+"["+l.getLineNumber()+"]/"+columnNumberString+":"+raeson);
+  l.show (Line.SHOW_GOTO, columnNumber);
+
+}</pre>
+
+
+<p>
+
+<p>Now the NBTidy integration is almost done. But since an external version of Tidy is used, the user needs to be given an
+opportunity to configure the path to the executable. This is done in step three.
+
+<p><li>Here I basically adopted the <a href="https://platform.netbeans.org/tutorials/nbm-options.html">NetBeans Options Window Extension Module Tutorial</a>
+to provide a configuration facility for setting the path to the executable. One thing that is not mentioned in that tutorial is
+where to store the settings. I discovered the answer in the <a href="https://platform.netbeans.org/tutorials/nbm-gmail-checker.html">GMail Checker Module Tutorial</a>. The following stores the settings in the NetBeans user directory:
+
+
+<p><pre class="examplecode">class TidySettings
+{
+    private Properties settings;
+
+    ...
+
+    FileObject settingsFolder = Repository.getDefault().getDefaultFileSystem().getRoot().getFileObject("Settings");
+    if (settingsFolder==null) {
+        settingsFolder=Repository.getDefault().getDefaultFileSystem().getRoot().createFolder("Settings");
+    }
+
+
+    FileObject settingsFile = settingsFolder.getFileObject("nbtidy","properties");
+    if (settingsFile==null) {
+        settingsFile = settingsFolder.createData("nbtidy","properties");
+    }
+
+    lock = settingsFile.lock();
+    OutputStream out = settingsFile.getOutputStream(lock);
+    settings.storeToXML(out,"Configuration for netbeans tidy module");
+    out.close();
+    lock.releaseLock();
+
+}</pre>
+
+<p>The settings properties are used to store the external path to the Tidy executable. I implemented 
+ a singleton to represent the settings. The first time this class is accessed, the settings are loaded (or generated).
+
+</ol>
+
+<p>As you can see, the approach so far is quite generic and could easily be applied to other tools as well.
+
+<p><h3>Do you plan to enhance the module in the future?</h3>
+
+<p>For the future I plan to add a wizard, which will allow you to call Tidy to do transformations on the document.
+
+<p><h3>From where can we get your module?</h3>
+
+<p><a href="https://nbtidy.dev.java.net/">https://nbtidy.dev.java.net/</a>
+
+
+<p><h3>What are some of the problems you have encountered while creating your module?</h3>
+
+<p>I think that NetBeans has already done quite a good job by offering wizards and tutorials. 
+ But I think that work is not complete. I had some difficulties finding documentation for some NetBeans APIs that have not 
+ been covered in tutorials yet. I also thought about writing a tutorial on how I built
+ my module to add to my experiences about the APIs I use to the knowledge pool.
+
+<p>Also, some of the tutorials are already a little outdated (e.g., the tutorial on Options), because NetBeans APIs 
+have slightly changed since their writing. It would be great, if they could get updated. 
+
+
+<p><h3>Yes, they'll get updated and it would be great if you could create that tutorial on your experiences! How
+ did you solve the problems you encountered?</h3>
+
+<p>Code completion is one of the coolest features. It allows you to examine an API really fast, even if the documentation is insufficient.
+
+
+<p><h3>What did you enjoy most about creating your NetBeans modules?</h3>
+
+<p>It's really amazing how fast you can add new features to the platform.
+The other thing is the capability of testing the modules in the same IDE without a restart. 
+ This makes it really easy  to test small changes. 
+
+<p>In a recent project we built a rich client to select and describe files. We built everything from scratch.
+In the end it looked much like typical IDEs and had many similar features. If  we had used the Netbeans Platform instead,
+we really could have saved a lot of time!
+
+<div style="float: right;"><img src="nbm_interviews/jens/jens-quote1.png" alt="Jens quote"></div>
+
+<p><h3>What are your favorite features in NetBeans?</h3>
+
+<p>It's hard to name a special feature. I think NetBeans has made huge progress in all areas. I consider
+  the following the most important: the windowing system, the Navigator, and refactoring.
+ Also the XML integration is quite cool. I'm doing quite a lot of complex things with Schemas and with XSLT. 
+ NetBeans is well-suited for it. 
+
+
+<p><h3>If you could change one thing in module development features in NetBeans, what would it be?</h3>
+
+<p>More of the little tutorials that explain a single aspect of the IDE.
+
+<p><h3>Is there anything else you'd like to say?</h3>
+
+<p>I've been using NetBeans for many years know. The progress it made over the last year was cool. Keep on going! 
+
+
+<p><h3>Thanks Jens, and have fun with NetBeans!</h3>
+<p>
+
+
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Further reading</h2>
+
+<p>For information about creating and developing plug-in modules and rich-client applications, see the following resources: 
+<ul>
+	
+	  <p><li><a href="https://platform.netbeans.org/tutorials/quickstart-nbm.html">Introduction to NetBeans Module Development</a></li>
+	  <p><li><a href="https://platform.netbeans.org/tutorials/nbm-paintapp.html">Introduction to Rich-Client Application Development</a></li>
+	  <p><li><a href="https://platform.netbeans.org/tutorials/index.html">NetBeans Modules and Rich-Client Applications Learning Trail</a></li>
+	  <p><li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API Javadoc (Current Development Version)</a></li>
+	  <p><li><a href="http://www.planetnetbeans.org">Blogs by NetBeans Engineers and NetBeans Users</a></li></ul>
+  </p>
+  
+  <hr>
+
+
+</body>
+</html>

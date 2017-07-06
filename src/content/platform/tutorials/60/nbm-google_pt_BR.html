@@ -1,0 +1,318 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <!-- -*- xhtml -*- -->
+    <title>In&iacute;cio r&aacute;pido do plug-in do NetBeans para Plataformas NetBeans 6.0 e 6.1</title>
+    <meta name="AUDIENCE" content="NBUSER">
+    <meta name="TYPE" content="ARTICLE">
+    <meta name="EXPIRES" content="N">
+    <meta name="developer" content="gwielenga@netbeans.org">
+    <meta name="indexed" content="y">
+       
+    <meta name="description"
+          content="A guide describing how to implement a Google Toolbar Module into NetBeans IDE.">
+    <link rel="stylesheet" type="text/css" href="../../../netbeans.css"> 
+</head>
+
+<!-- Copyright (c) 2005 Sun Microsystems, Inc. All rights reserved. -->
+               <!-- Use is subject to license terms. -->
+
+<body>
+<h1><a name="top"></a>In&iacute;cio r&aacute;pido de plug-in do NetBeans</h1>
+
+    <p>Bem-vindo ao desenvolvimento do plug-in do NetBeans!
+
+  </p><p>Este tutorial fornece uma introdu&ccedil;&atilde;o muito simples e r&aacute;pida ao fluxo de trabalho do desenvolvimento do plug-in do NetBeans orientando-o atrav&eacute;s da cria&ccedil;&atilde;o de uma nova barra de ferramentas para o NetBeans IDE. Ap&oacute;s concluir este tutorial, voc&ecirc; ter&aacute; adquirido um conhecimento geral sobre como criar, construir e instalar plug-ins do NetBeans IDE.
+   
+   </p><p>Ap&oacute;s concluir este tutorial, voc&ecirc; pode passar para a <a href="https://netbeans.org/kb/trails/platform.html">trilha do aprendizado da plataforma NetBeans</a> A trilha do aprendizado fornece tutoriais abrangentes que destacam uma ampla gama de APIs do NetBeans para uma variedade de tipos de aplicativos. Se n&atilde;o desejar criar um aplicativo &quot;Hello world&quot;, ignore este tutorial e v&aacute; direito para a trilha do aprendizado.
+   
+   </p><p><b>Conte&uacute;do</b></p>
+         
+      <img  src="../../images/articles/60/netbeans-stamp60-61.gif" class="stamp" width="114" height="114" alt="O conte&uacute;do desta p&aacute;gina se aplica ao IDE NetBeans 6.1 " title="O conte&uacute;do desta p&aacute;gina se aplica ao IDE NetBeans 6.1"> </p>
+      <ul class="toc">
+        <li><a href="#creating-module-project">Configurando o projeto de m&oacute;dulo</a></li>
+        <li><a href="#coding-module"> 
+        Codificando o m&oacute;dulo da </a>
+        <ul>
+            <li><a href="#creating-action">Criando a a&ccedil;&atilde;o</a></li>
+            <li><a href="#creating-panel">Criando o formul&aacute;rio JPanel</a></li>
+            <li><a href="#resolving-errors">Resolvendo erros</a></li>
+            <li><a href="#overriding">Substituindo getToolbarPresenter()</a></li>
+        </ul>
+        </li>
+        <li><a href="#compiling">Compilando, instalando e usando o m&oacute;dulo</a>
+        </li><li><a href="#sharing-plugin">Compartilhando o m&oacute;dulo</a></li>
+      </ul>
+         
+<p><b>Para seguir este tutorial, voc&ecirc; preciso dos softwares e recursos listados na tabela seguinte.</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software ou recurso</th>
+                <th class="tblheader" scope="col">Vers&atilde;o necess&aacute;ria</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1">NetBeans IDE</td>
+                <td class="tbltd1">vers&atilde;o <a href="http://download.netbeans.org/netbeans/6.1/final/">vers&atilde;o 6.1</a> ou<br>
+                vers&atilde;o 6.0</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">Java Developer Kit (JDK)</td>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">vers&atilde;o 6</a> ou<br>
+                vers&atilde;o 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+   <p class="tips">Opcionalmente, para fins de solu&ccedil;&atilde;o de problemas, voc&ecirc; pode <a href="https://netbeans.org/files/documents/4/570/GoogleToolbar.zip">baixar a amostra completa</a> e inspecionar os c&oacute;digos-fonte.
+    
+    </p><p>A barra de ferramentas criada neste tutorial ter&aacute; esta apar&ecirc;ncia:</p>
+
+    <img src="../../images/tutorials/google/60/googlebar-2.png" border="1"
+            alt="Barra de ferramentas do Google mostrando a string de pesquisa de amostra">
+        
+    <p></p><p>Quando o usu&aacute;rio pressionar Enter na barra de ferramentas acima, o navegador padr&atilde;o do IDE ser&aacute; aberto e o texto na barra de ferramentas ser&aacute; enviado para uma pesquisa do Google, com os resultados dispon&iacute;veis no navegador aberto. Para criar esta barra de ferramentas, voc&ecirc; usar&aacute; as <a href="https://netbeans.org/download/dev/javadoc/">APIs do NetBeans</a> para aprimorar o conjunto de recursos do IDE. Especificamente, crie uma a&ccedil;&atilde;o que seja chamada por um bot&atilde;o na barra de ferramentas. Em seguida, crie um Swing JPanel contendo <tt>JLabel</tt>  e <tt>JTextField</tt> como componentes de GUI. 
+ Finalmente, substitua o m&eacute;todo <tt><a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/actions/CallableSystemAction.html#getToolbarPresenter()">getToolbarPresenter()</a></tt> da a&ccedil;&atilde;o para retornar o JPanel de forma que ele seja exibido na barra de ferramentas, em vez do bot&atilde;o. 
+ 
+    
+<!-- ===================================================================================== -->  
+
+<br>
+</p><h2 class="tutorial"><a name="creating-module-project"></a>Configurando o projeto de m&oacute;dulo</h2>
+
+<p>Ao desenvolver o m&oacute;dulo, verifique se a estrutura do projeto est&aacute; configurada corretamente. 
+ O NetBeans IDE oferece um assistente para Projeto de m&oacute;dulo que configura todos os arquivos b&aacute;sicos necess&aacute;rios para um m&oacute;dulo.</p>
+    
+<ol>
+    <li>Escolha Arquivo &gt; Novo projeto (Ctrl-Shift-N).   Em Categorias, selecione M&oacute;dulos do NetBeans. Em Projetos, selecione M&oacute;dulo . Clique em Pr&oacute;ximo.</li>
+    <li>No painel Nome e localiza&ccedil;&atilde;o, digite <tt>GoogleToolbar</tt> no campo Nome do projeto.
+                Altere Local do projeto para qualquer diret&oacute;rio no computador. Deixe marcadas a op&ccedil;&atilde;o M&oacute;dulo independente e a caixa de verifica&ccedil;&atilde;o Definir como projeto principal.  Clique em Pr&oacute;ximo.</li>
+    <li>No painel Configura&ccedil;&atilde;o b&aacute;sica de m&oacute;dulos, substitua <tt>yourorghere</tt> em Nome base de c&oacute;digo por <tt>myorg</tt>, de maneira que o nome base de c&oacute;digo inteiro seja <tt>org.myorg.myfirstmodule</tt>. 
+    </li><li>Especifique as localiza&ccedil;&otilde;es do conjunto de localiza&ccedil;&otilde;es e a camada XML, de modo que sejam armazenados em um pacote com o nome <tt>org/myorg/googletoolbar</tt>.  Por exemplo, defina o campo de camada XML como <tt>org/myorg/googletoolbar/layer.xml</tt>. Clique em Terminar.</li>
+</ol>
+    
+<p>O IDE cria o  projeto <tt>GoogleToolbar</tt>. O projeto cont&eacute;m todos os metadados de projeto e fontes, como o script de constru&ccedil;&atilde;o Ant do projeto. O projeto se abre no IDE. Voc&ecirc; pode visualizar a estrutura l&oacute;gica na janela Projetos (Ctrl+1) e a estrutura de arquivos na janela Arquivos (Ctrl+2).  
+    
+<br>
+
+
+<!-- ===================================================================================== -->
+
+<br>
+</p><h2><a name="coding-module"></a>Codificando o m&oacute;dulo da </h2>
+
+<p>Para codificar o m&oacute;dulo, voc&ecirc; precisa completar as seguintes etapas:</p>
+
+<ul>
+    <li><a href="#creating-action">Criando a a&ccedil;&atilde;o</a></li>
+    <li><a href="#creating-panel">Criando o JPanel</a></li>
+    <li><a href="#resolving-errors">Resolvendo erros</a></li>
+    <li><a href="#overriding">Substituindo getToolbarPresenter()</a></li>
+</ul>
+
+<div class="indent">
+    <h3 class="tutorial"><a name="creating-action"></a>Criando a a&ccedil;&atilde;o</h3>
+    
+    <ol>
+        <li>Clique com o bot&atilde;o direito do mouse no n&oacute; do projeto e escolha Nova &gt; A&ccedil;&atilde;o (se A&ccedil;&atilde;o n&atilde;o estiver exibida, acesse-a escolhendo Outra, em seguida, no assistente para Novo arquivo em Categorias, selecione Desenvolvimento de m&oacute;dulo do NetBeans). 
+ Clique em Pr&oacute;ximo.</li>
+        <li>No painel Tipo de a&ccedil;&atilde;o, mantenha a configura&ccedil;&atilde;o padr&atilde;o, que permitir&aacute; que o IDE crie uma a&ccedil;&atilde;o que subclassifique <tt>CallableSystemAction</tt>, como mostrado abaixo:
+        
+            <br><br>
+            <img boder="1" src="../../images/tutorials/google/60/action-wiz-1.png" alt="Etapa 1 do assustente para Nova a&ccedil;&atilde;o">
+            
+            <br><br>
+            Clique em Pr&oacute;ximo.
+        
+        </li><li>No painel Registro com GUI, selecione Editar na lista suspensa Categoria. A lista suspensa Categoria 
+            controla onde uma a&ccedil;&atilde;o &eacute; mostrada no editor de atalhos de teclado no IDE. Em seguida, desmarque 
+            Item de menu global e selecione Bot&atilde;o da barra de ferramentas global. Na lista suspensa Barra de ferramentas, selecione Editar, em seguida, 
+            na lista suspensa Posi&ccedil;&atilde;o, selecione Localizar... - AQUI, como mostrado abaixo:
+        
+            <br><br>
+            <a href="../../images/tutorials/google/60/action-wiz-2.png" title="Clique para AUMENTAR">
+                <img src="../../images/tutorials/google/60/action-wiz-2-small.png" border="1" 
+                alt="Etapa 2 do assistente para Nova a&ccedil;&atilde;o"></a>
+            
+            <br><br>       
+            Clique em Pr&oacute;ximo.
+        
+        </li><li><p>No painel Novo e localiza&ccedil;&atilde;o, digite <tt>GoogleAction</tt> como o Nome da classe e <tt>Google 
+            Action</tt> como o Nome de exibi&ccedil;&atilde;o. V&aacute; para um &iacute;cone que tenha uma dimens&atilde;o de 16x16 pixels. Na verdade, 
+            voc&ecirc; n&atilde;o ver&aacute; o &iacute;cone - em vez disso, exibir&aacute; o formul&aacute;rio JPanel que criar&aacute; na pr&oacute;xima se&ccedil;&atilde;o. Entretanto, o assistente para Nova a&ccedil;&atilde;o requer que voc&ecirc; especifique um &iacute;cone. Portanto, o &iacute;cone poderia ser
+            de qualquer dimens&atilde;o, j&aacute; que voc&ecirc; n&atilde;o o usar&aacute;. Clique em Terminar.</p> 
+            <p><b class="notes">Observa&ccedil;&atilde;o:</b> <tt>GoogleAction.java</tt> &eacute; adicionado ao pacote <tt>org.myorg.googletoolbar</tt> na janela Projetos.</p></li>
+    </ol>
+    
+    <h3 class="tutorial"><a name="creating-panel"></a>Criando o JPanel</h3>
+    
+    <ol>
+        <li>Clique com o bot&atilde;o direito do mouse no n&oacute; do projeto e escolha Novo &gt; Outro.  Em Categorias, selecione Formul&aacute;rios GUI Java. 
+ Em Projetos, selecione Formul&aacute;rio JPanel. Clique em Pr&oacute;ximo.</li>
+        <li>No painel Nome e localiza&ccedil;&atilde;o, digite <tt>GooglePanel</tt> como o Nome da classe e selecione o painel na lista suspensa. Clique em Terminar. <tt>GooglePanel.java</tt> &eacute; adicionado ao pacote e &eacute; aberto na visualiza&ccedil;&atilde;o Design no Editor de c&oacute;digo-fonte.</li>
+        <li>Coloque o cursor no canto inferior direito do JPanel, em seguida, selecione o JPanel e arraste o cursor para redimension&aacute;-lo, de forma que sua largura e cumprimento fiquem parecidos com os de uma barra de ferramentas, como mostrado abaixo:
+        
+            <br><br>
+            <img src="../../images/tutorials/google/60/jpanel-2.png" border="1" alt="JPanel redimensionado"></li>
+        
+        <li>Arraste um item JTextField e um item JLabel da Paleta (Ctrl+Shift+8) diretamente para o JPanel, em seguida, redimensione o JPanel e os outros dois itens, para que eles se encaixem. Finalmente, clique no 
+            JLabel e altere seu texto para <tt>Google:</tt>, em seguida, exclua o texto padr&atilde;o no JTextField. 
+ Seu JPanel agora deve se parecer com a imagem mostrada abaixo:
+        
+            <br><br>
+            <img src="../../images/tutorials/google/60/jpanel-3.png" border="1" 
+                alt="JTextField e JLabel inclu&iacute;dos no JPanel"></li>
+        
+        <li>Verifique se o Inspetor de propriedades est&aacute; aberto (Janela &gt; Navega&ccedil;&atilde;o &gt; Inspetor), em seguida, clique com o bot&atilde;o direito do mouse em JTextField e escolha Eventos &gt; Tecla &gt; keyTyped. Isso gera um m&eacute;todo <tt>jTextField1KeyTyped()</tt> 
+            no c&oacute;digo-fonte <tt>GooglePanel.java</tt>, que &eacute; exibido no Editor de c&oacute;digo-fonte, como mostrado abaixo:
+        
+            <br><br>
+            <img src="../../images/tutorials/google/60/jpanel-4.png" border="1" 
+                alt="M&eacute;todo JTextField1KeyTyped() gerado no c&oacute;digo-fonte"></li>
+        
+        <li>No Editor de c&oacute;digo-fonte, na visualiza&ccedil;&atilde;o C&oacute;digo-fonte do <tt>GooglePanel.java</tt>, preencha o m&eacute;todo <tt>jTextField1KeyTyped()</tt>, da seguinte forma (texto inserido mostrado em <strong>negrito</strong>):
+        
+        <pre class="examplecode">    
+private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {
+    <strong>int i = evt.getKeyChar();
+    if (i==10){//The ENTER KEY
+        // exibimos a url do googlel.
+        try{
+            URLDisplayer.getDefault().showURL
+                    (new URL(&quot;http://www.google.com/search?hl=en&amp;q=&quot;+jTextField1.getText()+&quot;&amp;btnG=Google+Search&quot;));
+        } catch (Exception eee){
+            return;//nothing much to do
+        }
+    }</strong>
+}</pre>
+        </li>
+    </ol>
+        
+    <p>Se precisar, clique com o bot&atilde;o direito do mouse no Editor de c&oacute;digo-fonte e escolha Formatar (Alt+Shift+F).</p>
+           
+    <h3 class="tutorial"><a name="resolving-errors"></a>Resolvendo erros</h3>
+            
+    <p>Observe que v&aacute;rias linhas de c&oacute;digo s&atilde;o sublinhadas em vermelho, indicando erros. Isso acontece porque pacotes necess&aacute;rios ainda n&atilde;o foram importados. Coloque o cursor sobre o &iacute;cone da l&acirc;mpada exibido na coluna imediatamente &agrave; esquerda da linha vermelha de <tt>URLDisplayer</tt>. &Eacute; exibida 
+        uma dica de ferramenta, indicando o motivo do erro:
+        
+        <br><br>
+        <img src="../../images/tutorials/google/60/tooltip.png" border="1" 
+            alt="dica de ferramenta do erro URLDisplayer no Editor de c&oacute;digo-fonte"></p>
+                        
+    <p>Para resolver isso, voc&ecirc; precisa disponibilizar a classe <tt>HtmlBrowser.URLDisplayer</tt>, inclu&iacute;da no pacote <a href="https://netbeans.org/download/dev/javadoc/org-openide-awt/org/openide/awt/package-summary.html">
+        <tt>org.openide.awt</tt></a>, para o seu projeto. Para isso, execute as seguintes etapas:</p>
+        
+    <ol>
+        <li>Clique com o bot&atilde;o direito do mouse no n&oacute; do projeto na janela Projetos e escolha Propriedades. Na caixa de di&aacute;logo Propriedades do projeto, selecione Bibliotecas sob o t&iacute;tulo Categorias. Em seguida, em Depend&ecirc;ncias de m&oacute;dulo, 
+            clique no bot&atilde;o Adicionar. A caixa de di&aacute;logo Adicionar depend&ecirc;ncia de m&oacute;dulo &eacute; exibida.</li>
+        <li>Na caixa de texto do filtro exibida na parte inferior da caixa de di&aacute;logo Adicionar depend&ecirc;ncia de m&oacute;dulo, comece a digitar <tt>URLDisplayer</tt> e observe que a sele&ccedil;&atilde;o dos m&oacute;dulos retornados se estreita at&eacute; que somente a listagem restante seja a <a href="https://netbeans.org/download/dev/javadoc/org-openide-awt/overview-summary.html">API de utilit&aacute;rios de IU</a>:
+ 
+            <br><br>
+            <img src="../../images/tutorials/google/60/add-module-dependency.png"
+                alt="Caixa de di&aacute;logo Adicionar depend&ecirc;ncia de m&oacute;dulo exibindo a API de utilit&aacute;rios de IU">                 
+                
+            <br><br>
+            Clique em OK, em seguida, clique em OK novamente para sair da caixa de di&aacute;logo Propriedades do projeto.</li>
+        <li>Clique com o bot&atilde;o direito do mouse no Editor de c&oacute;digo-fonte e escolha Importa&ccedil;&otilde;es fixas (Alt+Shift+F). A caixa de di&aacute;logo Corrigir todas as importa&ccedil;&otilde;es &eacute; exibida, listando os caminhos sugeridos para classes n&atilde;o reconhecidas:
+            
+            <br><br>
+            <img src="../../images/tutorials/google/60/fix-all-imports.png"
+                alt="Caixa de di&aacute;logo Corrigir todas as importa&ccedil;&otilde;es contendo caminhos sugeridos para classes n&atilde;o reconhecidas">                
+            
+            <br><br>
+            Clique em OK. O IDE cria as instru&ccedil;&otilde;es de importa&ccedil;&atilde;o seguintes para <tt>GooglePanel.java</tt>:
+            
+            <pre>
+import java.net.URL;
+import org.openide.awt.HtmlBrowser.URLDisplayer;               
+            </pre>
+            
+            Observe tamb&eacute;m que todos os erros desaparecem do Editor de c&oacute;digo-fonte.</li>
+    </ol>
+        
+    <h3 class="tutorial"><a name="overriding"></a>Substituindo getToolbarPresenter()</h3>
+    
+    <p>Como o JPanel que voc&ecirc; criou &eacute; o componente real que exibir&aacute; a barra de ferramentas do Google, &eacute; preciso substituir o m&eacute;todo <a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/actions/CallableSystemAction.html#getToolbarPresenter()">
+        <tt>getToolbarPresenter()</tt></a> na classe da a&ccedil;&atilde;o. Em <tt>GoogleAction.java</tt>, fa&ccedil;a o 
+        seguinte:</p>
+        
+    <ol>
+        <li>Abaixo da declara&ccedil;&atilde;o da classe, declare e defina a vari&aacute;vel seguinte:
+            <pre class="examplecode">
+GooglePanel retValue = new GooglePanel();
+            </pre></li>
+        <li>Defina o m&eacute;todo <tt>getToolbarPresenter()</tt> para retornar a vari&aacute;vel <tt>retValue</tt>:
+        
+            <pre class="examplecode">
+public java.awt.Component getToolbarPresenter() {
+    return retValue;
+}
+            </pre>
+        </li>
+    </ol>
+</div>
+
+<!-- ======================================================================================= -->
+
+<br>
+<h2><a name="compiling"></a>Compilando, instalando e usando o m&oacute;dulo</h2>
+
+<p>O NetBeans IDE usa um script de constru&ccedil;&atilde;o Ant para compilar e instalar seu m&oacute;dulo no IDE. O script de constru&ccedil;&atilde;o foi criado para voc&ecirc; quando o projeto do m&oacute;dulo foi criado em <a href="#creating-module-project">Configurando o projeto de m&oacute;dulo</a> acima. Agora que o m&oacute;dulo est&aacute; pronto para ser compilado e adicionado ao IDE, voc&ecirc; pode usar o suporte a Ant do NetBeans IDE a fim faz&ecirc;-lo:</p>
+    
+<ol>
+    <li>Na janela Projetos, clique com o bot&atilde;o direito do mouse no n&oacute; do projeto <tt>GoogleToolbar</tt> e escolha Instalar/Recarregar na plataforma de destino.  O m&oacute;dulo &eacute; constru&iacute;do e instalado em uma nova inst&acirc;ncia do IDE (ou seja, a plataforma de destino). Por padr&atilde;o, a plataforma de destino padr&atilde;o &eacute; a vers&atilde;o do IDE  em que voc&ecirc; est&aacute; trabalhando no momento. A plataforma de destino se abre, de modo que voc&ecirc; possa experimentar o novo m&oacute;dulo.</li>
+    <li>Quando ele &eacute; instalado com &ecirc;xito, o m&oacute;dulo adiciona um novo bot&atilde;o na barra de ferramentas Editar do IDE. 
+    
+    <p><b class="notes">Observa&ccedil;&atilde;o:</b> O bot&atilde;o da barra de ferramentas n&atilde;o exibe um &iacute;cone. Em vez disso, ele exibe o JPanel que voc&ecirc; criou em
+        <a href="#creating-panel">Criando o JPanel</a> acima:
+        
+        <br><br>
+        <img src="../../images/tutorials/google/60/googlebar.png" border="1"
+            alt="Barra de ferramentas do Google incorporada na barra de ferramentas Editar do IDE"></p></li>
+
+    <li>Digite uma string de pesquisa no campo de texto:
+    
+        <br><br>
+        <img src="../../images/tutorials/google/60/googlebar-2.png" border="1"
+            alt="Barra de ferramentas do Google mostrando a string de pesquisa de amostra"></li>
+            
+    <li>Pressione Enter. O navegador padr&atilde;o do IDE &eacute; iniciado. A URL do Google e a sua string de pesquisa s&atilde;o enviadas para o navegador e uma pesquisa &eacute; realizada. Quando os resultados da pesquisa s&atilde;o retornados, voc&ecirc; pode visualiz&aacute;-los no navegador.</li>
+</ol>
+
+<br>
+<h2 class="tutorial"><a name="sharing-plugin"></a>Compartilhando o m&oacute;dulo</h2>
+
+<p>Agora que voc&ecirc; construiu um m&oacute;dulo de trabalho que aprimora o IDE, por que n&atilde;o compartilh&aacute;-lo com outros desenvolvedores?
+ O NetBeans IDE oferece uma forma f&aacute;cil de criar um arquivo de m&oacute;dulo bin&aacute;rio do NetBeans (.nbm), que &eacute; um meio universal de permitir que outros o experimentem em suas pr&oacute;prias vers&otilde;es do IDE (na verdade, isso &eacute; o que voc&ecirc; fez em <a href="#installing-sample">Instalando a amostra</a> acima. Para criar um bin&aacute;rio do m&oacute;dulo, fa&ccedil;a o seguinte:</p>
+    
+Na janela Projetos, clique com o bot&atilde;o direito do mouse no n&oacute; do projeto <tt>GoogleToolbar</tt> e escolha Criar NBM.  O  novo arquivo NBM &eacute; criado e voc&ecirc; pode visualiz&aacute;-lo na janela Arquivos (Ctrl+2):
+        
+        <br><br>
+        <img src="../../images/tutorials/google/60/create-nbm.png" border="1"
+            alt="novo arquivo NBM exibido na janela Arquivos"></li>
+
+
+<br>
+<div class="feedback-box"><a name="feedback"></a> <a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Google%20Toolbar%20Module%20Tutorial"> Envie-nos seus coment&aacute;rios</a></div>
+   <br style="clear:both;" />
+    <!-- ======================================================================================== -->
+    
+    <h2><a name="nextsteps"></a>Veja tamb&eacute;m</h2>
+    
+    <p>Isto conclui o In&iacute;cio r&aacute;pido do plug-in do NetBeans. Este documento descreveu como criar um plug-in que adiciona uma barra de ferramentas do Google Search ao IDE. 
+ Para obter mais informa&ccedil;&otilde;es sobre a cria&ccedil;&atilde;o e o desenvolvimento de plug-ins, consulte os seguintes recursos: 
+    </p><ul>
+        <p></p><li><a href="https://netbeans.org/kb/trails/platform.html">Outros tutoriais relacionados</a></li>
+        <p></p><li><a href="https://netbeans.org/download/dev/javadoc/">Javadoc da API da NetBeans </a></li>
+    </ul>
+    
+    <hr>
+    <!-- ======================================================================================== -->
+    
+    
+</body>
+</html>

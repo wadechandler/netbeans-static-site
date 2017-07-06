@@ -1,0 +1,752 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+    <!-- -*- xhtml -*- -->
+    <title>针对 NetBeans 6.5 平台的 NetBeans CRUD 应用程序教程</title>
+    <meta name="AUDIENCE" content="NBUSER">
+    <meta name="TYPE" content="ARTICLE">
+    <meta name="EXPIRES" content="N">
+    <meta name="developer" content="gwielenga@netbeans.org">
+    <meta name="indexed" content="y">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">   
+    <meta name="description"
+          content="A guide describing how to create a CRUD application on
+           NetBeans Platform 6.5.">
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+</head>
+
+<body>
+<h1><a name="top"></a>NetBeans 平台 CRUD 应用程序教程</h1>
+
+  <p>本教程介绍了如何将 Java DB 数据库集成到 NetBeans 平台应用程序中。我们先从分析 Java DB 数据库入手，将通过这些数据库创建实体类。但请注意，这些说明并非仅适用于 Java DB。对于 NetBeans IDE 所支持的任何关系数据库，这些说明均适用。接下来，我们将把这些实体类和相关 JPA JAR 的模块一起包装到一个模块中。
+
+  <p>在以上模块成为应用程序的一部分之后，我们将创建一个为应用程序提供用户界面的新模块。该新模块将为用户提供一个显示数据库中数据的树状分层结构。然后，我们将创建另一个模块，以使用户能够编辑第一个模块显示的数据。我们将使用不同模块将查看器和编辑器分开，以使用户能够为同一查看器安装不同的编辑器，因为外部供应商会创建各种不同的编辑器，有些用于商业用途，有些则是免费提供的。正是 NetBeans 平台的模块化体系结构促成了这种灵活性。
+
+  <p>有了编辑器后，我们将开始添加 CRUD 功能。首先，上面所述的查看器将处理代表“读取”的 &quot;R&quot;。接下来，将处理代表“更新”的 &quot;U&quot;，然后依次是代表“创建”的 &quot;C&quot; 和代表“删除”的 &quot;D&quot;。
+
+  <p>在本教程结束时，您将了解到多种帮助您创建此类应用程序的 NetBeans 平台功能。例如，您将会了解到 <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/UndoRedo.Manager.html">UndoRedo.Manager</a></tt> 和 <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-explorer/org/openide/explorer/ExplorerManager.html">ExplorerManager</a></tt>，以及一些 NetBeans 平台 Swing 组件，如 <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/org/openide/windows/TopComponent.html">TopComponent</a></tt> 和 <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-explorer/org/openide/explorer/view/BeanTreeView.html">BeanTreeView</a></tt>。
+
+   <p><b class="notes">注意：</b>本文档使用的是 NetBeans IDE 6.8 发行版。如果使用的是早期版本，请参见<a href="67/nbm-crud.html">本文档的 6.7 版</a>。</p>
+
+   <p><b>目录</b></p>
+         
+       <img  src="../images/articles/68/netbeans-stamp.gif" class="stamp" width="114" height="114" alt="本页上的内容适用于 NetBeans IDE 6.8" title="本页上的内容适用于 NetBeans IDE 6.8">
+      <ul class="toc">
+        <li><a href="#creating-app">设置应用程序</a></li>
+        <li><a href="#integrating-database">集成数据库</a>
+        <ul>
+            <li><a href="#creating-entity">从数据库创建实体类</a></li>
+            <li><a href="#wrapping-entity">将实体类 JAR 包装到模块中</a></li>
+            <li><a href="#creating-other">创建其他相关模块</a></li>
+            <li><a href="#designing-ui">设计用户界面</a></li>
+            <li><a href="#setting-dependencies">设置依赖关系</a></li>
+            <li><a href="#running-prototype">运行原型</a></li>
+        </ul>
+        <li><a href="#integrating-crud">集成 CRUD 功能</a>
+        <ul>
+            <li><a href="#read">读取</a></li>
+            <li><a href="#update">更新</a></li>
+            <li><a href="#create">创建</a></li>
+            <li><a href="#delete">删除</a></li>
+        </ul>
+        </li>
+      </ul>
+         
+<p><b>要学习本教程，您需要具备下表中列出的软件和资源。</b></p>
+
+ <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">软件或资源</th>
+                <th class="tblheader" scope="col">要求的版本</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">版本 6.8</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">版本 6 或<br/>版本 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <p>在本教程中创建的应用程序将如下所示：</p>
+
+<p><img alt="应用程序的最终状态" src="http://netbeans.dzone.com/sites/all/files/customer-app-on-nb.png" /> </p>
+
+<p class="tips"> 建议您在开始学习本教程之前，先观看截屏视频系列 <a href="https://platform.netbeans.org/tutorials/nbm-10-top-apis.html">Top 10 NetBeans APIs</a>（最主要的 10 个 NetBeans API）。本教程中提到的许多概念都在该截屏视频系列中进行了详细讨论。
+
+
+    <p>
+<!-- ===================================================================================== -->  
+
+<br>
+<h2 class="tutorial"><a name="creating-app"></a>设置应用程序</h2>
+
+<p>首先让我们来创建一个新的 NetBeans 平台应用程序。
+
+<ol>
+    <li>选择“文件”&gt;“新建项目”(Ctrl+Shift+N)。在“类别”下选择“NetBeans 模块”。在“项目”下选择“NetBeans 平台应用程序”。单击“下一步”。</li>
+    <li>在“名称和位置”面板的“项目名称”字段中键入 <tt>DBManager</tt>。单击“完成”。</li>
+</ol>
+    
+<p>IDE 将创建 <tt>DBManager</tt> 项目。此项目是一个容器，可包含您将创建的所有其他模块。
+
+<p><img alt="NetBeans 平台容器" src="../images/tutorials/crud/68dbmanager-1.png" /> </p>
+
+<br>
+
+<!-- ===================================================================================== -->
+
+<br>
+<h2><a name="integrating-database"></a>集成数据库</h2>
+
+<p>为了集成数据库，您需要从数据库创建实体类，并将这些实体类及其相关的 JAR 一起集成到 NetBeans 平台应用程序所包含的模块中。</p>
+
+<div class="indent">
+    <h3 class="tutorial"><a name="creating-entity"></a>创建实体类</h3>
+    <p>在此部分，您将从一个选定的数据库生成实体类。
+    <ol>
+        <li>就本示例而言，将使用“服务”窗口连接到 NetBeans IDE 附带的样例数据库：
+
+        <p><img alt="“服务”窗口" src="../images/tutorials/crud/68dbmanager-2.png" /> </p>
+
+        <p class="tips"> 或者，您可以随意使用任何数据库，并根据特定的用例调整操作步骤。对于 MySQL，请参见<a href="https://netbeans.org/kb/docs/ide/mysql_zh_CN.html">连接 MySQL 数据库</a>。</p>
+        <p><li>在 IDE 中，选择“文件”|“新建项目”，然后选择 &quot;Java&quot; |“Java 类库”以创建一个名为 <tt>CustomerLibrary</tt> 的新库项目。
+        <p><li>在“项目”窗口中，右键单击该库项目，选择“文件”|“新建文件”，然后从“数据库”中选择“持久性”|“实体类”。在向导中，选择数据库和所需的表。此处，我们选择 &quot;Customer&quot;，将会自动添加 &quot;Discount Code&quot;，因为这两个表是关联的。
+
+                 <p><img alt="添加表" src="../images/tutorials/crud/68dbmanager-3.png" /> </p>
+
+
+                 <p><li>指定持久性策略，它可以是任何可用的选项。此处，由于我们需要选择一些内容，因此，我们选择了 EclipseLink：
+
+                             <p><img alt="选择 eclipselink" src="../images/tutorials/crud/68dbmanager-4.png" /> </p>
+
+
+                            <p><li>将 &quot;demo&quot; 指定为将在其中生成实体类的包的名称。
+                             <p><img alt="包名称" src="../images/tutorials/crud/68dbmanager-5.png" /> </p>
+
+        <p><li>单击“完成”。完成此步骤后，查看生成的代码，注意，在一个名为 META-INF 的文件夹中出现了一个 <tt>persistence.xml</tt> 文件，并且每个表都有了实体类，等等：
+
+<p><img alt="实体类" src="../images/tutorials/crud/68dbmanager-7.png" /> </p>
+
+         <p><li>生成 Java 库，在库项目的 &quot;dist&quot; 文件夹中将出现一个 JAR 文件，可在“文件”窗口中查看此文件。
+
+<p><img alt="dist 文件夹" src="../images/tutorials/crud/68dbmanager-8.png" /> </p>
+
+         </li>
+    </ol>
+    
+    <h3 class="tutorial"><a name="wrapping-entity"></a>将实体类 JAR 包装到模块中</h3>
+    <p>在本节中，将在应用程序中添加第一个模块！新 NetBeans 模块将包装在上一节中创建的 JAR 文件。 
+    <ol>
+        <li>在“项目”窗口中右键单击 <tt>DBManager</tt> 的“模块”节点，然后选择“添加新库”。
+        <p><li>选择上一子部分创建的 JAR 并完成向导，指定任意值。假设应用程序用于处理 shop.org 上的客户，在这种情况下，唯一标识符 &quot;org.shop.model&quot; 对应于代码名称基：
+
+         <p><img alt="模块的唯一 ID" src="../images/tutorials/crud/68dbmanager-9.png" /> </p>
+
+    </ol>
+        <p>现在，新应用程序中已包含第一个定制模块，它包装的 JAR 包含实体类和 persistence.xml 文件：</p>
+
+        <p><img alt="persistence.xml" src="../images/tutorials/crud/68dbmanager-91.png" /> </p>
+
+    <h3 class="tutorial"><a name="creating-other"></a>创建其他相关模块</h3>
+    <p>在此部分，将创建两个新模块，用来包装 EclipseLink JAR 和数据库连接器 JAR。
+    <ol>
+        <li>执行与为实体类 JAR 创建库包装器相同的操作，但现在使用的是 EclipseLink JAR，它位于先前创建的 &quot;CustomerLibrary&quot; Java 库中：
+
+                <p><img alt="包装库" src="../images/tutorials/crud/68dbmanager-94.png" /></p>
+
+
+        <p class="tips"> 在“库包装模块”向导中，您可以按住 Ctrl 键并单击以选择多个 JAR。</p>
+
+        <p><li>接下来，再创建一个库包装模块，这次是为 Java DB 客户端 JAR 创建的，它位于 JDK 分发的 <tt>db/lib/derbyclient.jar</tt> 中。
+    </ol>
+    
+    <h3 class="tutorial"><a name="designing-ui"></a>设计用户界面</h3>
+    <p>在此部分，将创建一个简单的原型用户界面，此界面提供了一个使用 <tt>JTextArea</tt> 显示从数据库检索的数据的窗口。
+    <ol>
+        <li>在“项目”窗口中右键单击 <tt>DBManager</tt> 的“模块”节点，然后选择“添加新模块”。创建一个名为 <tt>CustomerViewer</tt> 的新模块，其代码名称基为 <tt>org.shop.ui</tt>。
+        <p><li>在“项目”窗口中，右键单击该新模块，然后选择“新建”|“窗口组件”。指定应在 <tt>editor</tt> 位置创建该窗口组件，并且在应用程序启动时应将其打开。将 <tt>Customer</tt> 设置为该窗口的类名前缀。
+        <p><li>使用“组件面板”(Ctrl-Shift-8) 将一个 <tt>JTextArea</tt> 拖放到新窗口中。
+
+        <p><img alt="放置的 JTextArea" src="../images/tutorials/crud/68dbmanager-93.png" /></p>
+
+       <p><li>在 TopComponent 构造函数的末尾添加以下代码：
+<pre class="examplecode">EntityManager entityManager = Persistence.createEntityManagerFactory(&quot;CustomerLibraryPU&quot;).createEntityManager();
+Query query = entityManager.createQuery(&quot;SELECT c FROM Customer c&quot;);
+List&lt;Customer&gt; resultList = query.getResultList();
+for (Customer c : resultList) {
+  jTextArea1.append(c.getName() + &quot; (&quot; + c.getCity() + &quot;)&quot; + &quot;\n&quot;);
+}</pre>
+
+<p class="tips"> 因为您未在提供 Customer 对象和持久性 JAR 的模块上设置依赖关系，将使用表示错误的红色下划线标记上面的语句。此问题将在下一部分中解决。</p>
+
+<p>在上面，您可以看到对一个名为 &quot;CustomerLibraryPU&quot; 的持久性单元的引用，此名称是在 <tt>persistence.xml</tt> 文件中设置的。此外，还有一个对名为 <tt>Customer</tt> 的实体类的引用，该实体类位于实体类模块中。如果不同于上面的内容，请根据需要修改这些代码。
+
+    </ol>
+
+    <h3 class="tutorial"><a name="setting-dependencies"></a>设置依赖关系</h3>
+    <p>在此部分，将使一些模块能够使用其他模块中的代码。通过在相关模块之间设置约定来清楚地执行此操作，即不会随意重复滥用代码（在没有诸如 NetBeans 平台所提供的严格模块化体系结构时容易发生此情况）。
+    <ol>
+         <li>实体类模块需要依赖于 Derby 客户端模块以及 EclipseLink 模块。右键单击 <tt>CustomerLibrary</tt> 模块，选择“属性”，然后使用“库”标签设置对 <tt>CustomerLibrary</tt> 模块所需的两个模块的依赖关系。
+        <p><li><tt>CustomerViewer</tt> 模块需要依赖于 EclipseLink 模块以及实体类模块。右键单击 <tt>CustomerViewer</tt> 模块，选择“属性”，然后使用“库”标签设置对 <tt>CustomerViewer</tt> 模块所需的两个模块的依赖关系。
+        <p><li>在“源”视图中打开 <tt>CustomerTopComponent</tt>，在编辑器中单击鼠标右键，然后选择“修复导入”。IDE 现在可以添加所需的导入语句，因为提供所需类的模块现已可用于 <tt>CustomerTopComponent</tt>。
+    </ol>
+        <p>现在，您已在应用程序中的各模块之间设置了约定，从而可以控制不同代码段之间的依赖关系。
+
+    <h3 class="tutorial"><a name="running-prototype"></a>运行原型</h3>
+    <p>在此部分，将运行该应用程序，以便查看能否正确访问数据库。
+    <ol>
+        <li>启动数据库服务器。
+        <p><li>运行应用程序。您应看到如下所示的内容：
+
+        <p><img alt="运行原型" src="../images/tutorials/crud/68dbmanager-92.png" /></p>
+    </ol>
+        <p>现在，您已具有一个简单原型，它包含的 NetBeans 平台应用程序将显示数据库中的数据，下一节将对其进行扩展。
+
+</div>
+
+<br>
+<h2><a name="integrating-crud"></a>集成 CRUD 功能</h2>
+
+<p>为了创建与 NetBeans 平台顺利集成的 CRUD 功能，需要实现一些特定的 NetBeans 平台编码模式。以下部分详细介绍了这些模式。</p>
+
+<div class="indent">
+    
+    <h3 class="tutorial"><a name="read"></a>读取</h3>
+    <p>在此部分，将针对 NetBeans 平台资源管理器视图更改上一部分中引入的 <tt>JTextArea</tt>。NetBeans 平台资源管理器视图是一种 Swing 组件，与标准 Swing 组件相比，此组件与 NetBeans 平台集成的效果更好。它们支持很多功能，其中之一是上下文概念，以便与上下文相关联。
+    <p>为了表示数据，NetBeans 平台 <tt>Node</tt> 类将提供一个通用的分层结构模型，此模型可通过任何 NetBeans 平台资源管理器视图显示。本部分末尾说明了如何将资源管理器视图与 NetBeans 平台“属性”窗口进行同步。
+    <ol>
+        <li>对于 <tt>TopComponent</tt>，在“设计”视图中删除 <tt>JTextArea</tt>，并在“源”视图中注释掉其相关代码：
+
+<pre class="examplecode">EntityManager entityManager =  Persistence.createEntityManagerFactory(&quot;CustomerLibraryPU&quot;).createEntityManager();
+Query query = entityManager.createQuery(&quot;SELECT c FROM Customer c&quot;);
+List&lt;Customer&gt; resultList = query.getResultList();
+//for (Customer c : resultList) {
+//    jTextArea1.append(c.getName() + &quot; (&quot; + c.getCity() + &quot;)&quot; + &quot;\n&quot;);
+//}</pre>
+
+<p><li>右键单击 <tt>CustomerViewer</tt> 模块，选择“属性”，然后使用“库”标签设置对节点 API 以及资源管理器和属性表单 API 的依赖关系。
+
+<p><li>接下来，更改类签名以实现 <tt>ExplorerManager.Provider</tt>：
+
+<pre class="examplecode">final class CustomerTopComponent extends TopComponent implements ExplorerManager.Provider</pre>
+
+<p>将需要覆盖 <tt>getExplorerManager()</tt>
+
+<pre class="examplecode">@Override
+public ExplorerManager getExplorerManager() {
+    return em;
+}</pre>
+
+<p>在类的顶部声明并初始化 <tt>ExplorerManager</tt>：
+
+<pre class="examplecode">private static ExplorerManager em = new ExplorerManager();</pre>
+
+<p class="tips"> 有关以上代码的详细信息，请观看 <a href="https://platform.netbeans.org/tutorials/nbm-10-top-apis.html">Top 10 NetBeans APIs</a>（最主要的 10 个 NetBeans API），特别是处理节点 API 以及资源管理器和属性表单 API 的截屏视频。
+
+<p><li>切换到 <tt>TopComponent</tt> 的“设计”视图，在“组件面板”中单击鼠标右键，选择“组件面板管理器”|“从 JAR 添加”。然后找到 NetBeans IDE 安装目录下 <tt>platform11/modules</tt> 文件夹中的 <tt>org-openide-explorer.jar</tt>。选择 BeanTreeView，然后完成向导。现在，应在“组件面板”中看到 <tt>BeanTreeView</tt>。将其从“组件面板”拖放到窗口上。
+ 
+<p><li>创建一个工厂类，它将为数据库中的每个客户创建一个新的 <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-db/org/netbeans/api/db/explorer/node/BaseNode.html">BeanNode</a>：
+
+<pre class="examplecode">import demo.Customer;
+import java.beans.IntrospectionException;
+import java.util.List;
+import org.openide.nodes.BeanNode;
+import org.openide.nodes.ChildFactory;
+import org.openide.nodes.Node;
+import org.openide.util.Exceptions;
+
+public class CustomerChildFactory extends ChildFactory&lt;Customer&gt; {
+
+    private List&lt;Customer&gt; resultList;
+
+    public CustomerChildFactory(List&lt;Customer&gt; resultList) {
+        this.resultList = resultList;
+    }
+
+    @Override
+    protected boolean createKeys(List&lt;Customer&gt; list) {
+        for (Customer Customer : resultList) {
+            list.add(Customer);
+        }
+        return true;
+    }
+
+    @Override
+    protected Node createNodeForKey(Customer c) {
+        try {
+            return new BeanNode(c);
+        } catch (IntrospectionException ex) {
+            Exceptions.printStackTrace(ex);
+            return null;
+        }
+    }
+
+}</pre>
+        <p><li>返回到 <tt>CustomerTopComponent</tt>，使用 <tt>ExplorerManager</tt> 将来自 JPA 查询的结果列表传递到 <tt>Node</tt>：
+
+<pre class="examplecode">EntityManager entityManager =  Persistence.createEntityManagerFactory(&quot;CustomerLibraryPU&quot;).createEntityManager();
+Query query = entityManager.createQuery(&quot;SELECT c FROM Customer c&quot;);
+List&lt;Customer&gt; resultList = query.getResultList();
+<b>em.setRootContext(new AbstractNode(Children.create(new CustomerChildFactory(resultList), true)));</b>
+//for (Customer c : resultList) {
+//    jTextArea1.append(c.getName() + &quot; (&quot; + c.getCity() + &quot;)&quot; + &quot;\n&quot;);
+//}</pre>
+
+        <p><li>运行应用程序。在应用程序运行后，打开“属性”窗口。请注意，尽管数据可用并显示在 <tt>BeanTreeView</tt> 中，但 <tt>BeanTreeView</tt> 不会与“属性”窗口（可通过选择“窗口”|“属性”打开该窗口）保持同步。换言之，在树状分层结构中上下移动时，“属性”窗口中不会显示任何内容。
+
+        <p><li>通过向 <tt>TopComponent</tt> 中的构造函数添加以下代码，将“属性”窗口与 <tt>BeanTreeView</tt> 进行同步。
+
+<pre class="examplecode">associateLookup(ExplorerUtils.createLookup(em, getActionMap()));</pre>
+
+<p>这里我们将 <tt>TopComponent</tt> 的 <tt>ActionMap</tt> 和 <tt>ExplorerManager</tt> 添加到 <tt>TopComponent</tt> 的 <tt>Lookup</tt> 中。此操作的一个副效应是“属性”窗口开始显示选定 <tt>Node</tt> 的显示名称和工具提示文本。
+
+        <p><li>再次运行应用程序，注意，“属性”窗口现在与资源管理器视图保持同步：
+
+        <p><img alt="同步" src="../images/tutorials/crud/68dbmanager-95.png" />
+
+    </ol>
+    <p>现在，您可以在树状层次结构中查看数据，就如同使用 <tt>JTree</tt> 一样。但是，您还可以切换到其他浏览器视图，而无需更改该模型，因为 <tt>ExplorerManager</tt> 会在模型和视图之间进行协调。最后，您还可以将视图与“属性”窗口进行同步。
+
+    <h3 class="tutorial"><a name="update"></a>更新</h3>
+    <p>在此部分，将首先创建一个编辑器。该编辑器将由一个新的 NetBeans 模块提供。因此，首先需要创建一个新的模块。然后，在新模块中创建一个新的 <tt>TopComponent</tt>，其中含有两个 <tt>JTextField</tt>（分别用于允许用户编辑的两个列）。您将需要使查看器模块与编辑器模块进行通信。每当在查看器模块中选择新的 <tt>Node</tt> 时，都会将当前的 <tt>Customer</tt> 对象添加到 <tt>Lookup</tt> 中。在编辑器模块中，将需要侦听 <tt>Lookup</tt> 以确定是否引入了 <tt>Customer</tt> 对象。每当将新的 <tt>Customer</tt> 对象引入到 <tt>Lookup</tt> 时，都会在编辑器中更新 <tt>JTextField</tt>。
+    <p>接下来，将 <tt>JTextField</tt> 与 NetBeans 平台的撤销、重做和保存功能进行同步。换言之，当用户更改 <tt>JTextField</tt> 时，您希望可以使用 NetBeans 平台的现有功能，以便无需创建新功能，即可轻松获得 NetBeans 平台支持。为此，您需要使用 <tt>UndoRedoManager</tt> 和 <tt>SaveCookie</tt>。
+    <ol>
+        <li>创建一个新模块，命名为 <tt>CustomerEditor</tt>，并将 <tt>org.shop.editor</tt> 作为其代码名称基。
+        <p><li>右键单击 <tt>CustomerEditor</tt> 模块，然后选择“新建”|“窗口组件”。确保指定在 <tt>editor</tt> 位置显示该窗口，并在应用程序启动时将其打开。在向导的最后一个面板中，将 &quot;Editor&quot; 设置为类名称前缀。
+        <p><li>使用“组件面板”(Ctrl-Shift-8) 向新窗口中添加两个 <tt>JLabel</tt> 和两个 <tt>JTextField</tt>。将标签的文本设置为 &quot;Name&quot; 和 &quot;City&quot;，并将两个 <tt>JTextField</tt> 的变量名称设置为 <tt>jTextField1</tt> 和 <tt>jTextField2</tt>。
+
+        <p>在 GUI 生成器中，该窗口的外观应与下图类似：</p>
+
+        <p><img alt="设计用户界面" src="../images/tutorials/crud/68dbmanager-96.png" /></p>
+
+        <p><li>返回到 <tt>CustomerViewer</tt> 模块并更改其 <tt>layer.xml</tt> 文件，指定 <tt>CustomerTopComponent</tt> 窗口将以 <tt>explorer</tt> 模式显示。
+
+         <p class="tips"> 在更改 <tt>layer.xml</tt> 文件后，右键单击该应用程序项目，然后选择“清理”。为什么要这样做？因为每当运行应用程序并将其关闭后，都会将窗口位置存储到用户目录中。因此，如果 <tt>CustomerViewer</tt> 最初以 <tt>editor</tt> 模式显示，则会一直处于 <tt>editor</tt> 模式，直到执行“清理”操作，此操作会重置用户目录（即，删除<i></i>用户目录），并使 <tt>CustomerViewer</tt> 在 <tt>layer.xml</tt> 文件中当前设置的位置显示。</p>
+
+
+         <p>同时，检查当用户调整应用程序大小时，<tt>CustomerViewer</tt> 中的 <tt>BeanTreeView</tt> 能否水平或垂直拉伸。检查方法是打开窗口，选择 <tt>BeanTreeView</tt>，然后单击 GUI 生成器工具栏中的箭头按钮。
+
+         <li>运行应用程序，并确保在应用程序启动时显示以下内容：
+
+                      <p><img alt="运行新 UI" src="../images/tutorials/crud/68dbmanager-97.png" /></p>
+
+
+        <li>现在我们可以开始添加一些代码。第一，我们需要在编辑器中显示当前选中的 Customer 对象：
+        <ul>
+         <li>首先调整 <tt>CustomerViewer</tt> 模块，以便每当选择了新的 <tt>Node</tt> 时，都会将当前的 <tt>Customer</tt> 对象添加到查看器窗口的 <tt>Lookup</tt> 中。为此，请在 <tt>CustomerChildFactory</tt> 类中创建 <tt>AbstractNode</tt>，而不是 <tt>BeanNode</tt>。这样，您就可以将当前 <tt>Customer</tt> 对象添加到该 Node 的 <tt>Lookup</tt> 中，如下所示（请注意粗体部分）：
+
+<pre class="examplecode">@Override
+protected Node createNodeForKey(Customer c) {
+    Node node = new AbstractNode(Children.LEAF, Lookups.singleton(c));
+    node.setDisplayName(c.getName());
+    node.setShortDescription(c.getCity());
+    return node;
+//        try {
+//            return new BeanNode(c);
+//        } catch (IntrospectionException ex) {
+//            Exceptions.printStackTrace(ex);
+//            return null;
+//        }
+}</pre>
+
+        <p>现在，每当创建新的 <tt>Node</tt>（当用户在查看器中选择新的客户时即会执行此操作）时，就会将新的 <tt>Customer</tt> 对象添加到该 <tt>Node</tt> 的 <tt>Lookup</tt> 中。
+
+         <p><li>现在，我们将通过某种方式来更改编辑器模块，使其窗口最终侦听被添加到 <tt>Lookup</tt> 的 <tt>Customer</tt> 对象。首先，在编辑器模块中设置对提供实体类的模块以及提供持久性 JAR 的模块的依赖关系。 
+
+         <p><li>接下来，更改 <tt>EditorTopComponent</tt> 类签名以实现 <tt>LookupListner</tt>：
+
+<pre class="examplecode">public final class EditorTopComponent extends TopComponent implements LookupListener</pre>
+
+         <p><li>覆盖 <tt>resultChanged</tt>，以便在将新的 <tt>Customer</tt> 对象引入 <tt>Lookup</tt> 中时，对 <tt>JTextField</tt> 进行更新：
+
+<pre class="examplecode">@Override
+public void resultChanged(LookupEvent lookupEvent) {
+    Lookup.Result r = (Lookup.Result) lookupEvent.getSource();
+    Collection&lt;Customer&gt; coll = r.allInstances();
+    if (!coll.isEmpty()) {
+        for (Customer cust : coll) {
+            jTextField1.setText(cust.getName());
+            jTextField2.setText(cust.getCity());
+        }
+    } else {
+        jTextField1.setText(&quot;[no name]&quot;);
+        jTextField2.setText(&quot;[no city]&quot;);
+    }
+}</pre>
+
+        <p><li>现在定义了 <tt>LookupListener</tt>，我们需要将其添加到某个对象。这里，我们将其添加到从全局上下文中获取的 <tt>Lookup.Result</tt> 中。全局上下文将代理选定 <tt>Node</tt> 的上下文。例如，如果在树状分层结构中选择了 &quot;Ford Motor Co&quot;，则会将 &quot;Ford Motor Co&quot; 的 <tt>Customer</tt> 对象添加到该 <tt>Node</tt> 的 <tt>Lookup</tt> 中，这意味着 &quot;Ford Motor Co&quot; 的 <tt>Customer</tt> 对象当前在全局上下文中可用（因为该节点为当前选定的 <tt>Node</tt>）。随后即会将此对象传递到 <tt>resultChanged</tt>，以填充该文本字段。
+
+         <p>每当编辑器窗口打开时，便开始执行上述所有操作，即会激活 <tt>LookupListener</tt>，如下所示：</p>
+
+<pre class="examplecode">@Override
+public void componentOpened() {
+    result = Utilities.actionsGlobalContext().lookupResult(Customer.class);
+    result.addLookupListener(this);
+    resultChanged(new LookupEvent(result));
+}
+
+@Override
+public void componentClosed() {
+    result.removeLookupListener(this);
+    result = null;
+}</pre>
+
+<p>由于编辑器窗口会在应用程序启动时打开，因此在应用程序启动时 <tt>LookupListener</tt> 即可用。
+
+<p><li>最后，在类的顶部声明结果变量，如下所示：
+
+<pre class="examplecode">private Lookup.Result result = null;</pre>
+
+        <p><li>再次运行应用程序，注意，每当选择一个新的 <tt>Node</tt> 时，编辑器窗口即会更新。
+
+                      <p><img alt="更新的编辑器窗口" src="../images/tutorials/crud/68dbmanager-98.png" /></p>
+
+
+<p>但请注意，将焦点切换到编辑器窗口时会发生什么情况：</p>
+
+                      <p><img alt="切换焦点" src="../images/tutorials/crud/68dbmanager-99.png" /></p>
+
+<p>由于该 <tt>Node</tt> 不再是当前节点，因此 <tt>Customer</tt> 对象不再位于全局上下文中。这是因为全局上下文代理的是当前 <tt>Node</tt> 的 <tt>Lookup</tt>（如上文中所述）。因此，在这种情况下，我们不能使用全局上下文。而应使用 Customer 窗口提供的本地 <tt>Lookup</tt>。</p>
+
+<p>将此行：
+
+<pre class="examplecode">result = Utilities.actionsGlobalContext().lookupResult(Customer.class);</pre>
+
+<p>重写为：
+
+<pre class="examplecode">result = WindowManager.getDefault().findTopComponent(&quot;CustomerTopComponent&quot;).getLookup().lookupResult(Customer.class);</pre>
+
+<p>字符串 &quot;CustomerTopComponent&quot; 是 <tt>CustomerTopComponent</tt> 的 ID，它是一个字符串常量，可以在 <tt>CustomerTopComponent</tt> 源代码中找到。上述方法有一个缺点，即，<tt>EditorTopComponent</tt> 仅在找到 ID 为 &quot;CustomerTopComponent&quot; 的 <tt>TopComponent</tt> 时才发挥作用。可通过以下两种方法解决此问题：明确记录此问题，以使其他编辑器的开发人员了解他们需要这样标识查看器 <tt>TopComponent</tt>，或者重写该选定模型，如 Tim Boudreau <a href="http://weblogs.java.net/blog/timboudreau/archive/2007/01/how_to_replace.html">在此处所述</a>。
+
+<p>如果使用上述方法之一，您会发现将焦点切换到 <tt>EditorTopComponent</tt> 时，上下文并未丢失，如下所示：</p>
+
+                      <p><img alt="上下文未丢失" src="../images/tutorials/crud/68dbmanager-991.png" /></p>
+
+<p class="tips"> 由于您现在使用的是 <tt>AbstractNode</tt> 而不是 <tt>BeanNode</tt>，“属性”窗口中不会显示任何属性。您需要自行提供这些属性，如<a href="https://platform.netbeans.org/tutorials/nbm-nodesapi2.html">节点 API 教程</a>中所述。
+        </ul>
+        <li>然后，让我们来处理撤销/重做功能。当用户更改某个 <tt>JTextField</tt> 时，我们希望启用“撤销”按钮、“重做”按钮以及“编辑”菜单中的相关菜单项。为此，NetBeans 平台提供了 <a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/UndoRedo.Manager.html">UndoRedo.Manager</a>。
+        <ul>
+        <li>在 <tt>EditorTopComponent</tt> 项部声明并实例化一个新的 UndoRedoManager：
+
+<pre class="examplecode">private UndoRedo.Manager manager = new UndoRedo.Manager();</pre>
+
+        <p><li>接下来，覆盖 <tt>EditorTopComponent</tt> 中的 <tt>getUndoRedo()</tt> 方法：
+
+<pre class="examplecode">@Override
+public UndoRedo getUndoRedo() {
+    return manager;
+}</pre>
+
+        <p><li>在 <tt>EditorTopComponent</tt> 的构造函数中，向 <tt>JTextField</tt> 中添加一个 <tt>KeyListener</tt>，并在需要实现的相关方法中，添加 <tt>UndoRedoListener</tt>：
+
+<pre class="examplecode">jTextField1.getDocument().addUndoableEditListener(manager);
+jTextField2.getDocument().addUndoableEditListener(manager);
+</pre>
+
+        <p><li>运行应用程序并显示运行中的撤销和重做功能，即相关按钮和菜单项。功能将按预期方式运行。您可能需要更改 <tt>KeyListener</tt>，以免任何键都可启用撤销/重做功能。例如，当按下 Enter 键时，您可能不希望启用撤销/重做功能。因此，请调整上述代码以满足您的业务需求。
+
+
+        </ul>
+        <li>接下来，我们需要集成 NetBeans 平台的保存功能。
+        <ul>
+        <li>缺省情况下，NetBeans 平台工具栏中提供了“全部保存”按钮。在当前情况下，我们并不希望保存“全部”，因为“全部”指许多不同的文档。在本例中，只有一个“文档”，即供树状分层结构中所有节点重复使用的编辑器。删除“全部保存”按钮，然后添加“保存”按钮，方法是向 <tt>CustomerEditor</tt> 模块的层文件中添加以下代码：
+
+<pre class="examplecode">&lt;folder name=&quot;Toolbars&quot;&gt;
+    &lt;folder name=&quot;File&quot;&gt;
+        &lt;file name=&quot;org-openide-actions-SaveAction.shadow&quot;&gt;
+            &lt;attr name=&quot;originalFile&quot; stringvalue=&quot;Actions/System/org-openide-actions-SaveAction.instance&quot;/&gt;
+            &lt;attr name=&quot;position&quot; intvalue=&quot;444&quot;/&gt;
+        &lt;/file&gt;
+        &lt;file name=&quot;org-openide-actions-SaveAllAction.shadow_hidden&quot;/&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+
+<p>现在运行应用程序时，将在工具栏中看到一个不同的图标。现在我们可以使用“保存”按钮，而非“全部保存”按钮。
+
+        <p><li>设置对于对话框 API 和节点 API 的依赖关系。
+
+            <p><li>在 <tt>EditorTopComponent</tt> 构造函数中添加一个调用，以便在每次检测到更改时触发一个方法（将在下一步骤中定义）：
+
+<pre class="examplecode">public EditorTopComponent() {
+
+        ...
+        ...
+        ...
+
+        jTextField1.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent arg0) {
+                fire(true);
+            }
+            public void removeUpdate(DocumentEvent arg0) {
+                fire(true);
+            }
+            public void changedUpdate(DocumentEvent arg0) {
+                fire(true);
+            }
+        });
+
+        jTextField2.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent arg0) {
+                fire(true);
+            }
+            public void removeUpdate(DocumentEvent arg0) {
+                fire(true);
+            }
+            public void changedUpdate(DocumentEvent arg0) {
+                fire(true);
+            }
+        });
+
+        //Create a new instance of our SaveCookie implementation:
+        impl = new SaveCookieImpl();
+
+        //Create a new instance of our dynamic object:
+        content = new InstanceContent();
+
+        //Add the dynamic object to the TopComponent Lookup:
+        associateLookup(new AbstractLookup(content));
+
+    }
+
+    ...
+    ...
+    ...
+</pre>
+
+             <p><li>以下是上面提到的两种方法。首先，每当检测到更改，就会触发该方法。每次检测到更改时，就会将节点 API 中的 <tt>SaveCookie</tt> 实现添加到 <tt>InstanceContent</tt> 中：
+
+<pre class="examplecode">    public void fire(boolean modified) {
+        if (modified) {
+            //If the text is modified,
+            //we add SaveCookie impl to Lookup:
+            content.add(impl);
+        } else {
+            //Otherwise, we remove the SaveCookie impl from the lookup:
+            content.remove(impl);
+        }
+    }
+
+    private class SaveCookieImpl implements SaveCookie {
+
+        @Override
+        public void save() throws IOException {
+
+           Confirmation message = new NotifyDescriptor.Confirmation(&quot;Do you want to save \&quot;&quot;
+                    + jTextField1.getText() + &quot; (&quot; + jTextField2.getText() + &quot;)\&quot;?&quot;,
+                    NotifyDescriptor.OK_CANCEL_OPTION,
+                    NotifyDescriptor.QUESTION_MESSAGE);
+
+            Object result = DialogDisplayer.getDefault().notify(message);
+            //When user clicks &quot;Yes&quot;, indicating they really want to save,
+            //we need to disable the Save action,
+            //so that it will only be usable when the next change is made
+            //to the JTextArea:
+            if (NotifyDescriptor.YES_OPTION.equals(result)) {
+                fire(false);
+                //Implement your save functionality here.
+            }
+        }
+    }
+</pre>
+        <p><li>运行应用程序并注意“保存”按钮的启用/禁用情况。
+
+                      <p><img alt="启用的保存按钮" src="../images/tutorials/crud/68dbmanager-992.png" /></p>
+
+<p class="tips"> 现在，单击上面对话框中的“确定”时什么也不会发生。在下一个步骤中，我们将添加一些 JPA 代码，用于处理更改的持久性。
+
+        <p><li>接下来，我们会添加 JPA 代码以持久保留更改。要执行此操作，请替换注释 &quot;//Implement your save functionality here.&quot;。应使用以下代码替换该注释：
+
+<pre class="examplecode">EntityManager entityManager = Persistence.createEntityManagerFactory(&quot;CustomerLibraryPU&quot;).createEntityManager();
+entityManager.getTransaction().begin();
+Customer c = entityManager.find(Customer.class, customer.getCustomerId());
+c.setName(jTextField1.getText());
+c.setCity(jTextField2.getText());
+entityManager.getTransaction().commit();</pre>
+
+<p class="tips"> 当前未定义 <tt>customer.getCustomerId()()</tt> 中的 &quot;customer&quot;。请在 <tt>resultChanged</tt> 中添加下面的粗体行（在类顶部声明 <tt>Customer customer;</tt> 后），以使当前 <tt>Customer</tt> 对象设置 <tt>customer</tt>，上面的持久性代码将使用它获取当前 <tt>Customer</tt> 对象的 ID。
+
+<pre class="examplecode">@Override
+public void resultChanged(LookupEvent lookupEvent) {
+    Lookup.Result r = (Lookup.Result) lookupEvent.getSource();
+    Collection&lt;Customer&gt; c = r.allInstances();
+    if (!c.isEmpty()) {
+        for (Customer customer : c) {
+            <b>customer = cust;</b>
+            jTextField1.setText(customer.getName());
+            jTextField2.setText(customer.getCity());
+        }
+    } else {
+        jTextField1.setText(&quot;[no name]&quot;);
+        jTextField2.setText(&quot;[no city]&quot;);
+    }
+}</pre>
+
+ <p><li>运行应用程序并更改一些数据。目前，没有“刷新”功能（将在下一步中添加），因此，要查看更改的数据，请重新启动应用程序。例如，此处的树状分层结构显示了保留的 &quot;Toyota Motor Co&quot; 客户名称：
+
+                      <p><img alt="更改的数据库" src="../images/tutorials/crud/68dbmanager-993.png" /></p>
+
+        </ul>
+
+
+ <li>第四，我们需要添加刷新客户查看器的功能。您可能希望添加一个定期刷新查看器的 <tt>Timer</tt>。而在此例中，我们将向根节点添加一个“刷新”菜单项，以便用户可以手动刷新查看器。
+<ul>
+        <li>在 <tt>CustomerViewer</tt> 模块的主包中，创建一个新的 <tt>Node</tt>，用于替换在查看器中用作子对象根的 <tt>AbstractNode</tt>。注意，我们还会将一个“刷新”操作绑定到新的根节点。
+
+<pre class="examplecode">public class CustomerRootNode extends AbstractNode {
+
+    public CustomerRootNode(Children kids) {
+        super(kids);
+        setDisplayName(&quot;Root&quot;);
+    }
+
+    @Override
+    public Action[] getActions(boolean context) {
+        Action[] result = new Action[]{
+            new RefreshAction()};
+        return result;
+    }
+
+    private final class RefreshAction extends AbstractAction {
+
+        public RefreshAction() {
+            putValue(Action.NAME, &quot;Refresh&quot;);
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            CustomerTopComponent.refreshNode();
+        }
+    }
+
+}</pre>
+
+<p><li>将以下方法添加到 <tt>CustomerTopComponent</tt>，用于刷新视图：
+
+<pre class="examplecode">public static void refreshNode() {
+    EntityManager entityManager = Persistence.createEntityManagerFactory(&quot;CustomerLibraryPU&quot;).createEntityManager();
+    Query query = entityManager.createQuery(&quot;SELECT c FROM Customer c&quot;);
+    List&lt;Customer&gt; resultList = query.getResultList();
+    em.setRootContext(new <b>CustomerRootNode</b>(Children.create(new CustomerChildFactory(resultList), true)));
+} </pre>
+
+
+<p>现在，用对以上方法的调用替换 <tt>CustomerTopComponent</tt> 构造函数中的以上代码。在上面的突出显示部分，我们可以看到现在使用的是 <tt>CustomerRootNode</tt>，而不是 <tt>AbstractNode</tt>。<tt>CustomerRootNode</tt> 包括“刷新”操作，此操作将调用以上代码。
+
+<p><li>在保存功能中，添加对上述方法的调用，以便每次保存数据时，都会自动进行刷新。可以使用不同方法为保存功能实现此扩展。例如，您可能希望创建一个包含刷新操作的新模块。然后，将在查看器模块和编辑器模块之间共享该模块，以便为两者提供相同的功能。
+
+ <p><li>再次运行应用程序，注意，您拥有了一个新的根节点，其中带有“刷新”操作。
+
+                      <p><img alt="新根节点" src="../images/tutorials/crud/68dbmanager-994.png" /></p>
+
+ <p><li>更改一些数据并保存，调用“刷新”操作，注意，将更新查看器。
+
+        </ul>
+    </ol>
+        <p>现在，您已学会了如何让 NetBeans 平台处理对 <tt>JTextField</tt> 所做的更改。当文本发生更改时，即会启用或禁用 NetBeans 平台的“撤销”和“重做”按钮。此外，还会正确启用和禁用“保存”按钮，让用户将更改的数据保存到数据库。
+
+    <h3 class="tutorial"><a name="create"></a>创建</h3>
+    <p>在此部分，将允许用户在数据库中创建一个新的条目。
+    <ol>
+        <li>右键单击 <tt>CustomerEditor</tt> 模块，然后选择“新建操作”。使用“新建操作”向导创建一个新的“始终启用”操作。新的操作应显示在工具栏和/或菜单栏中的任意位置。在向导的下一步中，调用操作 <tt>NewAction</tt>。
+
+         <p class="tips">确保有一个 16x16 的图标，当希望从工具栏调用此操作时，向导将强制选择此图标。</p>
+        <P><li>在新建操作中，使 <tt>TopComponent</tt> 处于打开状态，并使 <tt>JTextField</tt> 保留空白：
+
+<pre class="examplecode">import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public final class NewAction implements ActionListener {
+
+    public void actionPerformed(ActionEvent e) {
+        EditorTopComponent tc = EditorTopComponent.getDefault();
+        tc.resetFields();
+        tc.open();
+        tc.requestActive();
+    }
+
+}</pre>
+
+         <p class="tips">此操作将实现 <tt>ActionListener</tt> 类，此类通过层文件中的条目绑定到应用程序，并由“新建操作”向导在此处生成。设想一下将现有的 Swing 应用程序移植到 NetBeans 平台会有多么容易，因为您将可以使用与原始应用程序中相同的 <tt>Action</tt> 类，而无需重写这些类以符合 NetBeans 平台提供的 <tt>Action</tt> 类的标准！</p>
+
+
+<p>在 <tt>EditorTopComponent</tt> 中，添加以下方法以重置 <tt>JTextField</tt> 并创建新的 <tt>Customer</tt> 对象：
+
+<pre class="examplecode">public void resetFields() {
+    customer = new Customer();
+    jTextField1.setText(&quot;&quot;);
+    jTextField2.setText(&quot;&quot;);
+}</pre>
+
+        <p><li>在 <tt>SaveCookie</tt> 中，确保返回的 <tt>null</tt> 表示已保存新条目，而非更新了现有条目：
+
+<pre>public void save() throws IOException {
+
+    Confirmation message = new NotifyDescriptor.Confirmation(&quot;Do you want to save \&quot;&quot;
+                    + jTextField1.getText() + &quot; (&quot; + jTextField2.getText() + &quot;)\&quot;?&quot;,
+                    NotifyDescriptor.OK_CANCEL_OPTION,
+                    NotifyDescriptor.QUESTION_MESSAGE);
+
+    Object result = DialogDisplayer.getDefault().notify(msg);
+
+    //When user clicks &quot;Yes&quot;, indicating they really want to save,
+    //we need to disable the Save button and Save menu item,
+    //so that it will only be usable when the next change is made
+    //to the text field:
+    if (NotifyDescriptor.YES_OPTION.equals(result)) {
+        fire(false);
+        EntityManager entityManager = Persistence.createEntityManagerFactory(&quot;CustomerLibraryPU&quot;).createEntityManager();
+        entityManager.getTransaction().begin();
+        <b>if (customer.getCustomerId() != null)</b> {
+            Customer c = entityManager.find(Customer.class, cude.getCustomerId());
+            c.setName(jTextField1.getText());
+            c.setCity(jTextField2.getText());
+            entityManager.getTransaction().commit();
+        } else {
+            <b>Query query = entityManager.createQuery(&quot;SELECT c FROM Customer c&quot;);
+            List&lt;Customer&gt; resultList = query.getResultList();
+            customer.setCustomerId(resultList.size()+1);
+            customer.setName(jTextField1.getText());
+            customer.setCity(jTextField2.getText());
+            //add more fields that will populate all the other columns in the table!
+            entityManager.persist(customer);
+            entityManager.getTransaction().commit();</b>
+        }
+    }
+
+}</pre>
+
+<p><li>再次运行应用程序，并向数据库中添加一个新客户：
+
+    </ol>
+
+    <h3 class="tutorial"><a name="delete"></a>删除</h3>
+    <p>在此部分，将使用户能够删除数据库中选定的条目。使用上面介绍的概念和代码，自己实现“删除”操作。
+    <ol>
+        <li>创建一个新的操作 <tt>DeleteAction</tt>。确定要将其绑定到 &quot;Customer&quot; 节点，还是绑定到工具栏、菜单栏、快捷键或上述内容的组合。根据要绑定到的位置，您需要在代码中使用不同的方法。再次阅读教程以获取帮助，特别参见如何创建“新建”操作的部分，并将其与根节点上的“刷新”操作进行比较。
+        <p><li>获取当前 <tt>Customer</tt> 对象，返回“您是否确定？”对话框，然后删除该条目。有关此阶段的相关帮助，请再次阅读教程，重点查看实现“保存”功能的部分。现在不是保存，而是从数据库中删除条目。
+    </ol>
+
+</div>
+
+
+
+    <!-- ======================================================================================== -->
+    
+
+    <h2><a name="nextsteps"></a>另请参见</h2>
+
+    <p>NetBeans 平台 CRUD 教程到此结束。本文档介绍了如何针对给定数据库创建一个带有 CRUD 功能的新 NetBeans 平台应用程序。有关创建和开发应用程序的更多信息，请参见以下资源：
+    <ul>
+        <li><a href="https://netbeans.org/kb/trails/platform_zh_CN.html">NetBeans 平台学习资源</a></li>
+        <li><a href="http://bits.netbeans.org/dev/javadoc/">NetBeans API Javadoc</a></li>
+    </ul>
+
+    <!-- ======================================================================================== -->
+    
+</body>
+</html>

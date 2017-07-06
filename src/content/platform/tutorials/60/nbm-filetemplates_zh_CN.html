@@ -1,0 +1,529 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <!-- -*- xhtml -*- -->
+        <title>针对 NetBeans 平台 6.0 的 NetBeans 文件模板模块教程</title>
+    <link rel="stylesheet" type="text/css" href="../../../netbeans.css"> 
+        <meta name="AUDIENCE" content="NBUSER">
+        <meta name="TYPE" content="ARTICLE">
+        <meta name="EXPIRES" content="N">
+        <meta name="developer" content="gwielenga@netbeans.org">
+        <meta name="indexed" content="y">
+        <meta name="description"
+        content="A short guide to using the Nodes API.">
+        <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+    <body>
+    <h1>NetBeans 文件模板模块教程</h1>
+
+    <p>本教程将演示如何创建包含文件模板的模块。一旦用户在 IDE 中安装了此模块，他们便可在“新建文件”向导中使用其中包含的文件模板。获得包含文件模板的模块后，共享这些模板就变得很容易：您可以在 IDE 中创建一个可供他人使用的二进制文件，其他人可以通过插件管理器来安装此文件。
+
+    </p><p>文件模板包含一个模板文件、一个 HTML 描述文件和一个图标。HTML 描述文件用于在“新建文件”向导中显示有关模板的信息。图标用于在“新建文件”向导中标识模板并将该模板与其他模板区分开。在本教程中，您将通过把现有文件模板的内容复制到一个空文件来创建一个新的文件模板。接下来，设置用于在“新建文件”向导中显示的描述文件以及一个区分图标，然后在 NetBeans 配置文件（即 <tt>layer.xml</tt> 文件）中注册模板、HTML 描述文件以及图标。
+
+
+   </p><p><b>目录</b></p>
+   
+      <img  src="../../images/articles/60/netbeans-stamp60-61.gif" class="stamp" width="114" height="114" alt="本页上的内容适用于 NetBeans IDE 6.1" title="本页上的内容适用于 NetBeans IDE 6.1"> </p>
+      <ul class="toc">
+        <li><a href="#freemarker">FreeMarker 简介</a></li>
+        <li><a href="#creatingthemoduleproject">创建模块项目</a></li>
+        <li><a href="#creatingandgettingtoknowthemainfiles">创建文件模板</a>
+        <ul>
+            <li><a href="#creating-the-template-file">创建模板文件</a>
+            </li><li><a href="#creating-the-description-file">创建描述文件</a>
+            </li><li><a href="#getting-an-icon">获取图标</a>
+        </li></ul></li>
+        <li><a href="#registering">注册文件模板</a></li>
+        <li><a href="#building">生成和安装模块</a></li>
+        <li><a href="#additional">提供其他变量</a></li>
+        <li><a href="#license">提供项目许可证</a></li>
+       </ul>
+         
+<p><b>要学习本教程，您需要具备下表中列出的软件和资源。</b></p>
+
+     <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">软件或资源</th>
+                <th class="tblheader" scope="col">要求的版本</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1">NetBeans IDE</td>
+                <td class="tbltd1"><a href="http://download.netbeans.org/netbeans/6.1/final/">版本 6.1</a> 或<br>
+                版本 6.0</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">Java Developer Kit (JDK)</td>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">版本 6</a> 或<br>
+                版本 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+
+ <p class="tips">（可选）要解决疑难问题，可以<a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=3755">下载完整的样例</a>并查看其源代码。
+   
+
+ </p><h2 class="tutorial"><a name="freemarker"></a>FreeMarker 简介</h2>
+   
+
+<p>从 NetBeans IDE 6.0 开始，可以选择使用 <a href="http://freemarker.org/">FreeMarker</a> 模板语言来定义文件模板。某些与 IDE 捆绑在一起的模板就是以这种方式定义的。例如，Java 类模板的定义如下：
+
+</p><pre class="examplecode">&lt;#assign licenseFirst = &quot;/*&quot;&gt;
+&lt;#assign licensePrefix = &quot; * &quot;&gt;
+&lt;#assign licenseLast = &quot; */&quot;&gt;
+&lt;#include &quot;../Licenses/license-${project.license}.txt&quot;&gt;
+
+&lt;#if package?? &amp;&amp; package != &quot;&quot;&gt;
+package ${package};
+
+&lt;/#if&gt;
+/**
+ *
+ * @author ${user}
+ */
+public class ${name} {
+
+}</pre>
+
+<p>从上面的模板中可以看出使用 FreeMarker 的好处，即：可以通过 if/elseif/else 等<i>指令</i>以及循环结构向模板中添加<i>逻辑</i>。有关 FreeMarker 模板语言的完整描述，请参见《<a href="http://freemarker.org/docs/index.html">FreeMarker Manual</a>》（《FreeMarker 手册》），尤其是 &quot;<a href="http://freemarker.org/docs/dgui_template_directives.html">Directives</a>&quot;（指令）一章。在本教程中，您将了解把 FreeMarker 纳入文件模板所需的步骤以及其他一些内容。
+    
+
+
+    <!-- ===================================================================================== -->
+
+    </p><h2 class="tutorial"><a name="creatingthemoduleproject"></a>创建模块项目</h2>
+    
+    
+        <p>我们将首先按照新建模块项目向导进行操作，为新模块创建一个符合所有最低要求的源代码结构。
+    
+    </p><ol>
+    <li>选择“文件”&gt;“新建项目”(Ctrl-Shift-N)。在“类别”下选择“NetBeans 模块”。在“项目”下选择“模块”项目，然后单击“下一步”。</li>
+    <p></p><li>在“名称和位置”面板的“项目名称”中键入 <tt>AdditionalFileTemplates</tt>。将项目位置更改为计算机上的任意目录。将“独立模块”单选按钮和“设置为主项目”复选框保留为选中状态。单击“下一步”。
+
+    <p></p></li><li>在“基本模块配置”面板中，将“代码名称基”中的 <tt>yourorghere</tt> 替换为 <tt>myorg</tt>，以使整个代码名称基为 <tt>org.myorg.additionalfiletemplates</tt>。在缺省模块显示名称中添加空格，以将其更改为 <tt>Additional File Templates</tt>。保留本地化包和 XML 层的位置，以将其存储在名为 <tt>org/myorg/additionalfiletemplates</tt> 的包中。单击“完成”。</li></ol>
+
+    <p> IDE 将创建 <tt>Additional File Templates</tt> 项目。此项目包含所有源代码和项目 meta 数据，例如项目的 Ant 生成脚本。此项目将会在 IDE 中打开。您可以在“项目”窗口 (Ctrl-1) 中查看其逻辑结构，在“文件”窗口 (Ctrl-2) 中查看其文件结构。例如，“项目”窗口现在应如下所示：
+
+    </p><p><img border="1" src="../../images/tutorials/filetemplates/initial-projects-window-60.png" alt="最初的“项目”窗口。">
+
+   
+    <br />
+
+    <!-- ===================================================================================== -->
+    </p><h2><a name="creating-the-file-template"></a>创建文件模板</h2>
+    <p>文件模板包含一个模板文件、一个 HTML 描述文件和一个图标。创建新文件模板的一种简便方法是将现有文件模板的内容复制到一个空文件中。接下来，设置用于在“新建文件”向导中显示的描述文件以及一个区分图标，然后可以在 <tt>layer.xml</tt> 文件中注册模板。
+
+  
+    </p><div class="indent">
+        <p></p><h3 class="tutorial"><a name="creating-the-template-file"></a>创建模板文件</h3>
+<p>
+        
+        </p><ol>
+<li>右键单击 &quot;Additional File Templates&quot;<tt></tt> 节点，选择“新建”&gt;“其他”。在“新建文件”向导中的“类别”下选择“其他”，在“文件类型”下选择 &quot;HTML&quot;。单击“下一步”。 
+            <p></p></li><li>在“文件名”中键入 <tt>Description</tt>。单击“浏览”，然后找到 <tt>src/org/myorg/additionalfiletemplates</tt>。单击“选择文件夹”。单击“完成”。</p>
+
+            <p>将在源代码编辑器中打开一个名为 <tt>HTML.html</tt> 的新 HTML 文件，其中包含标准 HTML 文件的内容，如下所示：
+
+              </p><pre class="examplecode">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot;&gt;
+
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+  
+  &lt;/body&gt;
+&lt;/html&gt;</pre>
+
+
+            <p></p></li><li>根据需要更改此 HTML 文件。如果需要，可以添加下面的预定义变量：
+            
+<p></p><ul>
+<li>${date} 按以下格式插入当前日期：Feb 16, 2008
+</li><li>${encoding} 插入缺省编码，例如：UTF-8
+</li><li>${name} 插入文件的名称。
+</li><li>${nameAndExt} 插入文件的名称及其扩展名。
+</li><li>${package} 插入文件所在的包的名称。
+</li><li>${time} 按以下格式插入当前时间：7:37:58 PM
+</li><li>${user} 插入用户名。
+</li></ul>
+
+<p><b class="notes">注意：</b>您的用户将能够在“工具”菜单下的“模板管理器”中设置这些变量的值。在该管理器中，用户可以一直滚动到最后面的“用户配置属性”。该节点内的 <tt>user.properties</tt> 文件可用于设置上面的值，以覆盖由系统提供的值。但是，他们通常不会这样做，因为上述变量的缺省值完全能够满足工作需要。
+
+</p><p>除了预定义的变量外，您还可以通过模块向用户提供其他变量。关于这一点，将在本教程的后面部分进行说明。FreeMarker 指令的完整列表也可用于向模板中添加逻辑：
+
+</p><p></p><ul>
+<li>#assign
+</li><li>#else
+</li><li>#elseif
+</li><li>#end
+</li><li>#foreach
+</li><li>#if
+</li><li>#include
+</li><li>#list
+</li><li>#macro
+</li><li>#parse
+</li><li>#set
+</li><li>#stop
+</li></ul>
+
+<p>以 Java 类模板的定义为例：
+
+</p><pre class="examplecode">&lt;#assign licenseFirst = &quot;/*&quot;&gt;
+&lt;#assign licensePrefix = &quot; * &quot;&gt;
+&lt;#assign licenseLast = &quot; */&quot;&gt;
+&lt;#include &quot;../Licenses/license-${project.license}.txt&quot;&gt;
+
+&lt;#if package?? &amp;&amp; package != &quot;&quot;&gt;
+package ${package};
+
+&lt;/#if&gt;
+/**
+ *
+ * @author ${user}
+ */
+public class ${name} {
+
+}</pre>
+
+<p>有关 #assign 指令的信息，请参见<a href="#license">提供项目许可证</a>。有关 FreeMarker 模板语言的完整描述，请参见《<a href="http://freemarker.org/docs/index.html">FreeMarker Manual</a>》（《FreeMarker 手册》），尤其是 &quot;<a href="http://freemarker.org/docs/dgui_template_directives.html">Directives</a>&quot;（指令）一章。
+
+        </p></li>
+
+
+        <h3 class="tutorial"><a name="creating-the-description-file"></a>创建描述文件</h3>
+
+        <ol>
+            <li>右键单击 &quot;org.myorg.additionalfiletemplates&quot;<tt></tt> 节点，然后选择“新建”&gt;“其他”。在“类别”下选择“其他”。在“文件类型”下选择“HTML 文件”。单击“下一步”。在“文件名”中键入 <tt>HTML</tt>。单击“浏览”，然后找到 <tt>src/org/myorg/additionalfiletemplates</tt>。单击“选择文件夹”。单击“完成”。
+
+            <p>将在源代码编辑器中打开一个空的 HTML 文件，其节点显示在“项目”窗口中。
+
+            </p><p></p></li><li>在 <tt>&lt;body&gt;</tt> 标记之间键入 &quot;<tt>Creates new HTML file.</tt>&quot;（不带引号），以使文件如下所示：
+
+            <pre class="examplecode">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot;&gt;
+&lt;html&gt;
+   &lt;head&gt;
+      &lt;title&gt;&lt;/title&gt;
+   &lt;/head&gt;
+   &lt;body&gt;
+      Creates new HTML file.
+   &lt;/body&gt;
+&lt;/html&gt;</pre>
+
+        </li></ol>
+
+        <h3 class="tutorial"><a name="getting-an-icon"></a>获取图标</h3>
+
+        <p>图标随文件模板一起显示在“新建文件”向导中。它用于标识文件模板并将该模板与其他文件模板区分开。图标的尺寸必须为 16x16 像素。 
+        
+        </p><p>请将图标命名为 <tt>icon.png</tt> 并将其添加到 <tt>org.myorg.additionalfiletemplates</tt> 包中。
+
+        </p><p>“项目”窗口现在应如下所示：
+
+        </p><p align="left"><img border="1" src="../../images/tutorials/filetemplates/final-projects-window-60.png" alt="最终的“项目”窗口。">
+
+    </p></ol></div>
+    <br />
+
+    <!-- ===================================================================================== -->
+
+    <h2><a name="registering"></a>注册文件模板</h2>
+    <p>创建文件模板后，必须在 NetBeans 系统 Filesystem 中进行注册。<tt>layer.xml</tt> 文件就是为此目的而创建的。</p>
+
+    <ol><li>在 <tt>layer.xml</tt> 文件中的 <tt>&lt;filesystem&gt;</tt> 标记之间添加以下条目：
+
+<pre class="examplecode">&lt;folder name=&quot;Templates&quot;&gt;
+        
+        &lt;folder name=&quot;Other&quot;&gt;
+            
+            &lt;attr name=&quot;SystemFileSystem.localizingBundle&quot; stringvalue=&quot;org.myorg.additionalfiletemplates.Bundle&quot;/&gt;
+            &lt;file name=&quot;MyHTML.html&quot; url=&quot;HTML.html&quot;&gt;
+                &lt;attr name=&quot;template&quot; boolvalue=&quot;true&quot;/&gt;
+                &lt;attr name=&quot;SystemFileSystem.localizingBundle&quot; stringvalue=&quot;org.myorg.additionalfiletemplates.Bundle&quot;/&gt;
+                &lt;attr name=&quot;SystemFileSystem.icon&quot; urlvalue=&quot;nbresloc:/org/myorg/additionalfiletemplates/icon.png&quot;/&gt;
+                &lt;attr name=&quot;templateWizardURL&quot; urlvalue=&quot;nbresloc:/org/myorg/additionalfiletemplates/Description.html&quot;/&gt;
+                <b>&lt;!--Use this line only if your template makes use of the FreeMarker template language:--&gt;</b>
+                &lt;attr name=&quot;javax.script.ScriptEngine&quot; stringvalue=&quot;freemarker&quot;/&gt;
+            &lt;/file&gt;
+            
+        &lt;/folder&gt;
+        
+&lt;/folder&gt;</pre>
+
+        <p></p></li><li>将显示名称添加到 <tt>Bundle.properties</tt> 文件中：
+
+        <p></p><pre class="examplecode">Templates/Other/MyHTML.html=My HTML File</pre>
+
+    </li></ol>
+
+    <br />
+
+    <!-- ======================================================================================= -->
+
+    <h2><a name="building"></a>生成和安装模块</h2>
+    <p>IDE 使用 Ant 生成脚本来生成和安装模块。此生成脚本是在创建模块项目时创建的。</p>
+    <div class="indent">
+
+        <h3 class="tutorial">安装 NetBeans 模块</h3>
+
+            <p>在“项目”窗口中，右键单击 &quot;Additional File Templates&quot;<tt></tt> 项目，然后选择“在目标平台中安装/重新装入”。 </p>
+            <p>将生成此模块并将其安装在目标 IDE 或平台中。此时将打开目标 IDE 或平台，您可以在其中试用新模块。缺省目标 IDE 或平台是开发 IDE 的当前实例所使用的安装。 
+            </p><p><b class="notes">注意：</b>运行模块时，使用的是临时测试用户目录，而不是开发 IDE 的用户目录。 
+
+        </p><h3 class="tutorial">使用 NetBeans 模块</h3>
+
+        <ol>
+            <li>选择“文件”&gt;“新建项目”(Ctrl-Shift-N)，然后创建一个新项目。
+            <p></p></li><li>右键单击此项目，然后选择“新建”&gt;“其他”。将打开“新建文件”向导，并显示新类别及其新文件类型。该向导应该与下图类似，但图标可能会有所不同：</p>
+            <p><img border="1" src="../../images/tutorials/filetemplates/new-file-wizard-60.png" alt="“新建文件”向导。">
+            </p><p></p></li><li>选择新文件类型，然后单击“下一步”以创建一个新文件。单击“完成”后，源代码编辑器中应显示新创建的模板。
+        </li></ol>
+        <h3 class="tutorial">创建可共享的模块二进制文件</h3>
+  
+        <ol>
+            <li>在“项目”窗口中，右键单击 &quot;Additional File Templates&quot;<tt></tt> 项目，然后选择“创建 NBM”。
+
+            <p>将创建 NBM 文件，您可以在“文件”窗口 (Ctrl-2) 中查看它：
+            </p><p><img border="1" src="../../images/tutorials/filetemplates/shareable-nbm-60.png" alt="可共享的 NBM。">
+            </p></li><li>通过发送电子邮件等方式将该文件提供给他人使用。
+        </li></ol>
+ 
+</div>
+ <!-- ===================================================================================== -->
+
+    <h2><a name="additional"></a>提供其他变量</h2>
+    <p>正如前面所提到的，除了 ${user} 和 ${time} 等预定义变量外，您还可以附加自己的变量。例如，如果您要传入一个表示一系列名称的变量，则可以按如下所示定义模板：
+    
+     </p><pre class="examplecode">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot;&gt;
+
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+  
+        &lt;#list names as oneName&gt;
+            &lt;b&amp;gt；${oneName}&lt;/b&amp;gt；
+        &lt;/#list&gt;
+
+  &lt;/body&gt;
+&lt;/html&gt;</pre>
+
+<p>在上面的代码中，FreeMarker #list 指令通过一个名为 &quot;names&quot; 的变量执行迭代，其中每个实例称为 &quot;oneName&quot;。然后，在文件中通过粗体标记对输出迭代的每个值。&quot;names&quot; 的值可以来自多个不同的位置，通常来自向导面板。在本例中，用户将从该面板的列表中选择一组名称。
+    
+    </p><p>要实现上述功能，即，要通过某个新变量执行迭代，请参见 <a href="http://netbeans.dzone.com/news/freemarker-netbeans-ide-60-first-scenario">FreeMarker in NetBeans IDE 6.0: First Scenario</a>（NetBeans IDE 6.0 中 FreeMarker：第一种方案），然后查看<a href="http://blogs.oracle.com/geertjan/entry/freemarker_baked_into_netbeans_ide1">此博客条目</a>中关于 <tt>DataObject.createFromTemplate(df, targetName, hashMap)</tt> 的讨论。
+
+
+    <br />
+ <!-- ===================================================================================== -->
+
+    </p><h2><a name="license"></a>提供项目许可证</h2>
+   
+
+<p>目前还有一点尚未讨论，它与 FreeMarker #assign 指令有关，只有当您希望使用户能够在创建文件时生成项目许可证时，才需要用到该指令。为了满足用户的许可需求，您可以在文件模板中提供许可指令。之后，将以您提供的许可指令创建用户项目内的所有文件。 
+
+</p><p>要实现上述功能，请执行以下步骤：
+
+</p><ol>
+<li>转至“工具”菜单。选择“模板”。在编辑器中打开 &quot;Java&quot; 下面的“Java 类”模板：
+<p></p><p>
+</p><p><img src="http://blogs.oracle.com/geertjan/resource/freemarker-in-nb-2.png" border="1"/>
+
+</p><p></p></li><li>上述模板以及在 FreeMarker 中对其进行定义的相关问题已在前面讨论过。但是，我们需要特别关注一下前四行：
+
+<p></p><pre>&lt;#assign licenseFirst = &quot;/*&quot;&gt;
+&lt;#assign licensePrefix = &quot; * &quot;&gt;
+&lt;#assign licenseLast = &quot; */&quot;&gt;
+&lt;#include &quot;../Licenses/license-${project.license}.txt&quot;&gt;</pre>
+
+<p>这四行与<i>许可</i>有着密切的关系。最后一行决定了将在每个项目中使用的许可证。前三行决定了许可证中每一行内容前后的字符。以上是 Java 源文件的前四行。下面是您将在 Properties 文件模板的开头看到的一组相同定义：
+
+</p><p></p><pre>&lt;#assign licensePrefix = &quot;# &quot;&gt;
+&lt;#include &quot;../Licenses/license-${project.license}.txt&quot;&gt;</pre>
+
+<p>第一行告诉我们许可证中的每一行内容都将带有 &quot;#&quot; 前缀，而不是带有 &quot;*&quot; 前缀，&quot;*&quot; 是 Java 源文件使用的前缀（第一行的前缀为 &quot;/*&quot;，最后一行的前缀为 &quot;*/&quot;）。要对此进行验证，请创建一个 Java 源文件，然后再创建一个 Properties 文件。您将会看到两种情况下的不同许可证。但是，由于上面的定义，每一行的前缀字符和后缀字符是不同的。
+
+</p><p></p></li><li>接下来，我们了解一下许可证本身。请注意上面模板中的以下行：
+
+<p></p><pre>&lt;#include &quot;../Licenses/license-${project.license}.txt&quot;&gt;</pre>
+
+<p>尤其要注意以下部分：
+
+</p><p></p><pre>${project.license}</pre>
+
+<p>请将其作为一个键放在应用程序的 <tt>nbproject/project.properties</tt> 文件中。接下来，添加一个值。例如：
+
+</p><pre>project.license=apache</pre>
+
+<p>现在，再次查看“模板管理器”中的“许可证”文件夹。您会在该文件夹中看到一些模板。创建一个名为 &quot;license-apache.txt<tt></tt>&quot; 的新模板。此时，可以只复制现有模板并将其粘贴到模板管理器的同一类别中。然后，创建一个由包含下面一行的 FreeMarker 模板定义的文件：
+
+</p><p></p><pre>&lt;#include &quot;../Licenses/license-${project.license}.txt&quot;&gt;</pre>
+
+...您会将指定的许可证嵌入新创建的文件中。
+
+</li></ol>
+
+<p>简而言之，NetBeans IDE 6.0 使用户可以为每个项目定义一个许可证，项目的每个文件都应显示此许可证。另外，假定用户需要创建具有另一许可证的新项目。如果用户在“模板管理器”中定义了一组许可证，则使用新许可证如同在 <tt>nbproject/project.properties</tt> 文件中添加一个键/值对一样简单。这在以前是不可能实现的，但是，由于 NetBeans IDE 6.0 中新增了 FreeMarker 支持，才使此操作变得可行。有关许可证的详细信息，尤其是其末尾处的注释，请参见<a href="http://blogs.oracle.com/geertjan/date/20071126">此博客条目</a>。
+</p><p>
+
+
+    <br />
+
+<br>
+   </p><div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20NetBeans%206.0%20File%20Template%20Module%20Tutorial">请将您的意见和建议发送给我们</a></div>
+<br style="clear:both;" />
+    
+ <!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>后续步骤</h2>
+
+<p>有关创建和开发 NetBeans 模块的详细信息，请参见以下资源： 
+  </p><ul>
+	  <p></p><li><a href="https://netbeans.org/kb/trails/platform.html">其他相关教程</a></li>
+	  <p></p><li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API Javadoc</a></li>
+  </ul>
+  
+  <hr>
+    
+    <!-- ======================================================================================== -->
+
+
+<h2><a name="version"></a>版本控制 </h2>
+  
+    <p>
+
+    <table width="76%" border="1">
+        <tbody>
+            <tr>
+                <td>
+                    <div align="left"><b>版本</b></div>
+                </td>
+                <td>
+                    <div align="left"><b>日期</b></div>
+                </td>
+                <td>
+                    <div align="left"><b>更改</b></div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    1
+                </td>
+                <td>
+                    2005 年 6 月 26 日
+                </td>
+                <td>
+                    初始版本
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    2
+                </td>
+                <td>
+                    2005 年 6 月 28 日
+                </td>
+                <td>
+                    <ul>
+                    <li>在描述符文件中添加了粗体标记，以指示“描述”框显示 HTML 标记
+                    </li><li>添加了排序属性
+                    </li><li>显示名称移至 Bundle.properties 中
+                    </li><li>更改了“使用 NetBeans 插件”中的屏幕快照
+                    </li><li>为 &quot;BrandedJavaClass&quot; 文件添加了 &quot;.template&quot; 扩展名，因为 <tt>layer.xml</tt> 查找的是名为 &quot;BrandedJavaClass.template&quot; 的文件。此外，还更改了“创建文件模板”一节中末尾部分“项目”窗口的屏幕快照，以反映 &quot;.template&quot; 扩展名。
+                </li></ul></td>
+            </tr>
+            <tr>
+                <td>
+                    3
+                </td>
+                <td>
+                    2005 年 10 月 2 日
+                </td>
+                <td>
+                    <ul>
+                    <li>使用最新的 build 完成整个教程。进行了几处更改，主要是因为“模板”取代了模板的“选项”窗口。
+                    </li><li>在简介部分新增加了第 2 段和第 3 段，以说明如果您要创建新的文件类型，则此教程不是必需的。
+                </li></ul></td>
+            </tr>
+            <tr>
+                <td>
+                    4
+                </td>
+                <td>
+                    2005 年 10 月 3 日
+                </td>
+                <td>
+                    <ul>
+                    <li>将 layer.xml 中的 templateWizard[Iterator|URL] 更改为 instantiating[Iterator|WizardURL]，因为 templateWizard[Iterator|URL] 即将过时。</li></ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    5
+                </td>
+                <td>
+                    2006 年 3 月 16 日
+                </td>
+                <td>
+                    <ul>
+                        <li>完成了整个教程，并稍稍调整了行间距，所有操作保持正常。
+                        </li><li>需要更换屏幕快照，因为图标稍有不同。
+                        </li><li>需要在文档中添加图标，而不仅仅是指出位置。
+                        </li><li>需要指出如何从“新建文件”向导同时创建多个文件模板。 </li></ul>
+                </td>
+            </tr>
+              <tr>
+                <td>
+                    6
+                </td>
+                <td>
+                    2006 年 9 月 12 日
+                </td>
+                <td>
+                    <ul>
+                        <li>在 NetBeans IDE 5.5 Beta 2 中完成整个教程。
+                        </li><li>没有任何问题，完全按照所述进行操作。
+                        </li><li>更新了一些屏幕快照。
+                        </li><li>修复了代码中的缩进。 </li></ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    7
+                </td>
+                <td>
+                    2007 年 6 月 9 日
+                </td>
+                <td>
+                    开始更新为 NetBeans 6。
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    8
+                </td>
+                <td>
+                    2008 年 2 月 16 日
+                </td>
+                <td>
+                    开始将<a href="http://blogs.oracle.com/geertjan/entry/freemarker_baked_into_netbeans_ide1">此博客条目</a>、<a href="http://blogs.oracle.com/geertjan/entry/freemarker_baked_into_netbeans_ide2">此博客条目</a>、<a href="http://blogs.oracle.com/geertjan/date/20071126">此博客条目</a>以及<a href="http://netbeans.dzone.com/news/freemarker-netbeans-ide-60-first-scenario">此文章</a>中的信息迁移至本教程。
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    9
+                </td>
+                <td>
+                    2008 年 4 月 15 日
+                </td>
+                <td>
+                    将样式（标记、目录、所需软件表）更新为新格式。
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    </p></body>
+</html>

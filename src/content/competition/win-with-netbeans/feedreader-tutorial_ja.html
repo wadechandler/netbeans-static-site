@@ -1,0 +1,435 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=UTF-8">
+	<TITLE>フィードリーダー</TITLE>
+	
+	<link rel="stylesheet" type="text/css" href="../../netbeans.css">
+	<STYLE>
+	<!--
+		@page { size: 8.5in 11in }
+		PRE { color: #808000 }
+		P.boxnote { margin-left: 0.2in; margin-right: 0.2in; margin-top: 0.2in; margin-bottom: 0.2in; border: 1.00pt solid #9999cc; padding: 0.1in; color: #666699 }
+		BLOCKQUOTE.western { font-style: italic }
+	-->
+	</STYLE>
+</HEAD>
+<BODY >
+<H1>フィードリーダー</H1>
+<b>著者: Rich Unger 氏</b>
+<br><i>この記事は、Win With NetBeans コンテストの一部として投稿されたものです。</i>
+<p></p>
+<H2 >NetBeans プラットフォームのサンプルとチュートリアル</H2>
+
+<P><IMG SRC="../../images_www/articles/win-with-netbeans/feedreader-branded.jpg" NAME="Finished FeedReader" ALIGN=MIDDLE WIDTH=957 HEIGHT=714 BORDER=0>
+</P>
+<h2>フィードリーダーの機能</h2>
+<P>フィードリーダーとは、Mozilla Firefox の <A HREF="https://addons.mozilla.org/de/firefox/addon/77/">Sage</A> プラグインに基づいて作成された、基本的な RSS/Atom フィードブラウザのことです。その構成要素は次のとおりです。</P>
+<UL>
+	<LI><P>フィード (RSS/RDF/Atom の記述子ファイルへの URL) のリスト</P>
+	<LI><P>各フィードからのヘッドラインのリスト</P>
+	<LI><P>ブラウザウィンドウ (Mozilla が JFrame に埋め込まれたもの)</P>
+</UL>
+<P>Mozilla が埋め込まれるフレームは、JNI 呼び出しを使用する <A HREF="https://jdic.dev.java.net/">JDIC</A> ライブラリで提供されています。この例は、Linux 版と Windows 版の両方の JDIC バイナリを使用するように設定されています。</P>
+<H3>このチュートリアルの対象読者</H3>
+<P>主な読者層はもちろん、NetBeans プラットフォーム上でアプリケーションを構築したいと思っている方々です。筆者がどのようにしてフィードリーダーを作成したか、また、マニフェスト、レイヤーファイル、および Java ソースの各行で何が行われているのかなど、特に少し変わったことを行う必要があった箇所で、詳しく解説していきます。</P>
+<P>それが、このチュートリアルを執筆した 2 つ目の理由です。問題点と不自然な回避策には、「問題点ボックス」を付加しています。</P>
+<P CLASS="boxnote">これを解決するには、変わったことをする必要があります。</P>
+<P>そうしたすべての場合について、IssueZilla の対応する未解決の問題へのリンクを示します。このドキュメントが更新され続け、これらの問題点ボックスが時間の経過とともに削除され、より簡単にアプリケーションを作成できるプラットフォームが実現されることを期待しています。</P>
+<h2>はじめに</h2>
+<P>完全な<A HREF="https://netbeans.org/files/documents/4/296/feedreader-source.zip">ソースコード</A>を入手できます。</P>
+<P>このチュートリアルでは、特定の IDE を想定することはしません。むしろ、テキストエディタ、JDK 1.5.0 (1.4.x ではバグのためにこのサンプルのコンパイルが失敗するが、1.4.x でもこのサンプルの<i>実行</i>は可能)、および Apache Ant 1.6.2 以上があるだけとしましょう。コマンド行の例を単純化できるように、Bash (UNIX または Cygwin) を想定します。必要に応じて Windows のコマンド行に読み替えてください。それでもうまく動作するはずです。</P>
+<P>筆者は単に、NetBeans <b>IDE</b> や NetBeans <b>プラットフォーム</b>のことを説明して読者を混乱させたくないだけです。まずこのチュートリアルに従ってください。モジュールがどのように動作するのかを理解してください。そのあとで、それらの構築を少しだけ容易にしてくれるツール (NetBeans IDE など) について検討してください。</P>
+<P>作業を始めるにあたって最初に必要なものは、NetBeans プラットフォームのコピーです。それをソースコードから構築する必要はありません。単に<A HREF="/downloads/">バイナリリリース</A>をダウンロードし、それを任意の場所に解凍するだけです。ここでは <FONT FACE="Courier, monospace">/home/rich/netbeans</FONT> 内に配置しました。</P>
+<P>次に、最初の手掛かりとなる何らかのサンプルソースコードを手元に置いておくと便利です。筆者は開始時に<A HREF="http://contrib.netbeans.org/files/documents/130/269/cluster_build_harness.zip">クラスタ構築ハーネス</A>を使用しました。これは、モジュールの構築やパッケージ化を行うための Ant 構築スクリプトをすでに備えているほか、「snipe」という名前のスターターモジュールも含んでいるので、便利です。もちろん、筆者がこの記事を執筆したので、読者はフィードリーダーのソースツリーを使って同じくらい容易にアプリケーションを開始できます。 
+</P>
+<P>ここでは、ハーネスを <FONT FACE="Courier, monospace">/home/rich/src/rss</FONT> に解凍しました。</P>
+<P>最後に、構築スクリプトの設定を行うことで、構築スクリプトが NetBeans プラットフォームインストールをどこで検索すればよいかわかるようにする必要があります。</P>
+<P><FONT FACE="Courier, monospace">/home/rich/src/rss/nbbuild/user.build.properties</FONT> の数行を変更します。</P>
+<PRE><FONT COLOR="#808000">netbeans.dest.dir=/home/rich/netbeans</FONT>
+<FONT COLOR="#808000">clustername=rssreader1</FONT></PRE><P>
+慣例ではクラスタの末尾にバージョン番号を付けるようになっていますが、これは厳格に要求されているわけではありません。</P>
+<BLOCKQUOTE CLASS="western">定義: <B>クラスタ</B>とは、モジュールや関連するリソースファイルの集合のことです。NetBeans インストールは一連のクラスタで構成することが可能ですが、それらのクラスタは、NetBeans の起動時に選択されます。たとえば、NetBeans IDE は platform4、ide4、nb4.0、extra の各クラスタを実行します。クラスタの背後にある考え方は、NetBeans プラットフォームを 1 つインストールするだけで、多数のブランドアプリケーションが同じクラスタを共有できるようにする、というものです。たとえば、rssreader1 クラスタを 1 つの Netbeans IDE インストールにインストールし、異なる 2 つの起動スクリプトを実行することによって、IDE とフィードリーダーが、platform4 クラスタを共有しつつも、それ以外の点は完全に独立したアプリケーションとなるようにすることができます。</BLOCKQUOTE>
+<P>次に、<FONT FACE="Courier, monospace">user.build.properties</FONT> で指定したばかりのクラスタ名と同期が取れるように、<FONT FACE="Courier, monospace">/home/rich/src/rss/nbbuild/user.cluster.properties</FONT> の数行を変更します。</P>
+<PRE>user.cluster=cluster.rssreader1
+cluster.rssreader1.dir=rssreader1
+cluster.rssreader1= snipe</PRE><P>
+この時点で、<FONT FACE="Courier, monospace">nbbuild/</FONT> ディレクトリで <B><FONT FACE="Courier, monospace">ant</FONT></B> を実行すると、snipe モジュールを含むディレクトリ <FONT FACE="Courier, monospace">/home/rich/netbeans/rssreader1</FONT> が得られます。もちろん、snipe モジュールは不要なので、<B><FONT FACE="Courier, monospace">ant clean</FONT></B> と入力してこれを削除します。</P>
+<P>次に、必要なモジュールのことに話を進めます。</P>
+<h2>ライブラリモジュール</h2>
+<P>フィードリーダーアプリケーションの全体を単一のモジュールにまとめることも可能です。そうすると、モジュール性があまり高くなくなります。フィードリーダーはたまたま、ライブラリ JDOM、Rome、および JDIC を必要としています。これらのライブラリを使用する可能性のあるほかのモジュールを使ってこのアプリケーションを拡張する際には、フィードリーダー全体に依存するのではなく、そのライブラリモジュールのみに依存することをお勧めします。また、ライブラリモジュールの自動読み込みを有効にすることもできます。</P>
+<BLOCKQUOTE CLASS="western">定義: <B>自動読み込み</B>モジュールとは、(別のモジュールから) 要求された時点で NetBeans によって自動的に読み込まれるモジュールのことです。それまでは、実行時にメモリーが占有されることはありません。</BLOCKQUOTE>
+<H4>ソースツリーへのモジュールの追加</H4>
+<P>新しいモジュールを追加するたびに、そのことを構築ハーネスに知らせる必要があります。2 つのファイルを変更します。</P>
+<P><FONT FACE="Courier, monospace">/home/rich/src/rss/nbbuild/user.cluster.properties:</FONT></P>
+<PRE>cluster.rssreader1=snipe, \
+                   anothermodule, \
+                   yetanother</PRE><P>
+これは、クラスタに含まれるモジュールを構築スクリプトに通知することで、クラスタを 1 つの単位として構築する方法や結果となる JAR ファイルのインストール先ディレクトリを構築スクリプトが判断できるようにします。</P>
+<P><FONT FACE="Courier, monospace">/home/rich/src/rss/nbbuild/modules.xml:</FONT></P>
+<PRE>&lt;module&gt;
+  &lt;path&gt;snipe&lt;/path&gt;
+  &lt;cnb&gt;org.netbeans.modules.snipe&lt;/cnb&gt;
+&lt;/module&gt;</PRE><P>
+これは、モジュールのソースコードを含むディレクトリの名前を、NetBeans が実行時にモジュールを認識する際に使用する名前 (「cnb」は code-name-base を表します) にマップします。</P>
+<H4>JDOM</H4>
+<P>ここでは、JDOM が何であるかをほとんどの読者が知っているものと仮定します。これは XML 解析 API の 1 つですが、フィードリーダーでこれが必要となる唯一の理由は、Rome ライブラリで使用されるからです。</P>
+<P>まず、「jdom」をクラスタリストに追加し、 
+</P>
+<PRE>&lt;module&gt;
+  &lt;path&gt;jdom&lt;/path&gt;
+  &lt;cnb&gt;org.jdom.api&lt;/cnb&gt;
+&lt;/module&gt;</PRE><P>
+モジュールリストに追加します。続いて、JDOM モジュールのファイルリストを次に示します。</P>
+<PRE>build.xml
+manifest.mf
+nbproject/project.xml
+nbproject/project.properties
+lib/jdom.jar
+src/org/jdom/api/Bundle.properties</PRE><P>
+これらを一度に 1 つずつ取り上げましょう。</P>
+<P><B>build.xml</B>: 構築ファイル内ではまず、projectized.xml という名前の別の構築ファイルがインポートされます。ほとんどの場合、モジュールの構築ファイルに含める必要があるのは、それだけです。ただし、JDOM モジュールでは、モジュール自体の JAR のほかに jdom.jar も、モジュールのパッケージングに含める必要があります。</P>
+<P CLASS="boxnote">問題点 #1: 追加のライブラリを含める際に、構築動作を上書きしないですむようにすべきです。project.xml ファイル内でそのような依存性を宣言すれば、対応するマニフェストエントリを作成して nbm ファイル内に含める方法を構築スクリプトが認識できるようにすべきです。
+<BR><BR><A HREF="https://netbeans.org/bugzilla/show_bug.cgi?id=52354">https://netbeans.org/bugzilla/show_bug.cgi?id=52354</A></P>
+<P>したがって、2 つのターゲットを上書きします。「files-init」ターゲットは、次の行が追加されている点を除けば、projectized.xml 内のターゲットとまったく同じです。</P>
+<PRE STYLE="margin-bottom: 0.2in">&lt;include name=&quot;${nb.modules.dir}/ext/jdom.jar&quot;/&gt;</PRE><P>
+「files-init」ターゲットは、モジュールに属するファイルを構築スクリプトが認識できるようにします。これらは、「clean」ターゲットの実行時に削除されるファイルです。規約上、モジュールでない JAR は <FONT FACE="Courier, monospace">ext/</FONT> ディレクトリに格納することになっています。
+<p>上書きする必要のあるもう 1 つのターゲットは、「netbeans-extra」です。これは、配備プロセスの一部としてファイルコピーなどを行うための場所として、構築スクリプトによって提供されているフックです。</P>
+<PRE>&lt;target name=&quot;netbeans-extra&quot; depends=&quot;init&quot;&gt;
+    &lt;mkdir dir=&quot;${netbeans.dest.dir}/${cluster.dir}/${nb.modules.dir}/ext&quot;/&gt;
+    &lt;copy todir=&quot;${netbeans.dest.dir}/${cluster.dir}/${nb.modules.dir}/ext&quot;&gt;
+      &lt;fileset dir=&quot;lib&quot;&gt;
+        &lt;include name=&quot;jdom.jar&quot;/&gt;
+      &lt;/fileset&gt;
+    &lt;/copy&gt;
+&lt;/target&gt;</PRE><P>
+これは、jdom.jar ファイルを <FONT FACE="Courier, monospace">/home/rich/netbeans/rssreader1/modules/ext</FONT> にコピーします。</P>
+<P><FONT FACE="Times New Roman"><B>manifest.mf</B>: JAR ファイルは必ずマニフェストを必要とします。NetBeans モジュールとは単に、少なくとも次の 2 つの行がマニフェストに含まれている JAR ファイルのことです。</FONT></P>
+<PRE>OpenIDE-Module: org.jdom.api/1
+OpenIDE-Module-Specification-Version: 1.0</PRE><P>
+1 行目は単なるモジュールの名前であり、必要に応じて<I>リリースバージョン</I>が付加されます。この名前は、modules.xml ファイルの &lt;cnb&gt; (code-name-base) に一致します。</P>
+<P STYLE="font-style: normal">2 行目は、モジュールの<I>仕様バージョン</I>です。</P>
+<BLOCKQUOTE CLASS="western">バージョン番号について一言... モジュールは異なる 3 つのバージョン番号を持つことができます。<B>リリースバージョン</B>、<B>仕様バージョン</B>、および<B>実装バージョン</B>です。 
+</BLOCKQUOTE>
+<BLOCKQUOTE CLASS="western">たとえば、モジュール A のリリースバージョンは 1、仕様バージョンは 2.0、実装バージョンは beta3 であるとします。このとき、モジュール B で、モジュール A への依存性を (project.xml ファイル内で) 宣言します。リリースバージョン 1 は指定する<SPAN STYLE="text-decoration: none"><SPAN STYLE="font-style: normal">必要</SPAN>があります。仕様バージョン 2.0 への依存性は<SPAN STYLE="font-style: normal">必要に応じて</SPAN>指定できます。指定した場合、A の作者がバージョン 2.1 をリリースしても問題は生じず、依存性は引き続き機能します。規約上、モジュール A によって公開された公開 API クラス (project.xml の &lt;public-packages&gt; 要素を参照) は、互換性を破らないことになっています。仕様バージョンへの依存性は、それら API クラスへのアクセス権のみを B に与えます。</SPAN>
+</BLOCKQUOTE>
+<BLOCKQUOTE CLASS="western" STYLE="text-decoration: none"><I>モジュール B で実装バージョン beta3 への依存性を指定した場合、B はそのバージョンのモジュール A でのみ動作します。ただしそれは、モジュール A のすべての公開クラスにアクセスすることができます。(モジュールの実行時に NoClassDefFoundException が発生する場合は、実装依存を指定せずに非 API クラスにアクセスしようとしていることが原因である可能性があります。)</I></BLOCKQUOTE>
+<P>マニフェスト内の残りの行は、あと 2 行だけです。</P>
+<PRE>OpenIDE-Module-Localizing-Bundle: org/jdom/api/Bundle.properties
+Class-Path: ext/jdom.jar</PRE><P>
+1 行目は完全に省略可能です。これは、追加のマニフェストエントリを含むバンドルを指します。それらのマニフェストエントリはすべて、このモジュールの表示名や説明など、ローカライズ可能な文字列です。</P>
+<P>2 行目は標準のマニフェストエントリ Class-Path であり、モジュールの JAR ファイルのクラスパスに jdom.jar ファイルを含めます。パス「ext/jdom.jar」は、build.xml ファイルでの jdom.jar のコピー先と一致します。</P>
+<P CLASS="boxnote">問題点 #2: Class-Path を指定しないで済むようにすべきです。これは自動生成されるべきです (問題点 #1 を参照)。</P>
+<P><B>nbproject/project.xml</B>: これは、依存性宣言とクラスパスの生成方法を構築スクリプト (および IDE を使用している場合は IDE) に指示するファイルです。ここでも、見慣れた情報 &lt;code-name-base&gt; と &lt;path&gt; を指定する必要があります。次に、ほかのモジュールへの依存をすべて指定する必要があります。ここで、モジュール自体には実際のコードは含まれておらず、jdom.jar はコア JRE クラスの外側のコードを一切必要としないので、宣言すべきモジュールの依存性は実際に存在しません。それでも、コア OpenAPI クラスへの依存性は常に宣言すべきです。</P>
+<PRE>&lt;dependency&gt;
+  &lt;code-name-base&gt;org.openide&lt;/code-name-base&gt;
+    &lt;build-prerequisite/&gt;
+    &lt;compile-dependency/&gt;
+    &lt;run-dependency&gt;
+      &lt;release-version&gt;1&lt;/release-version&gt;
+      &lt;specification-version&gt;4.5&lt;/specification-version&gt;
+  &lt;/run-dependency&gt;
+&lt;/dependency&gt;</PRE><P>
+これはある意味で特殊な場合です。最近の仕様バージョンを使ってこれを指定しなかった場合、NetBeans はこれを古いモジュールとみなし、実行時に下位互換性のために一連の依存関係を自動的に読み込みます。</P>
+<P>次に、モジュールの <FONT FACE="Courier, monospace">&lt;public-packages&gt;</FONT> を宣言する必要があります。これには 2 つの目的があります。公開パッケージは、このモジュールへの依存を宣言したほかのモジュールから表示可能であるほか、「javadoc」Ant ターゲットの実行時に Javadoc が生成される一連のパッケージを構成します。</P>
+<P>各パッケージを個別に指定できます。</P>
+<PRE>&lt;public-packages&gt;
+  &lt;package&gt;org.jdom&lt;/package&gt;
+  &lt;package&gt;org.jdom.adapters&lt;/package&gt;
+  &lt;package&gt;org.jdom.input&lt;/package&gt;
+  ...
+&lt;/public-packages&gt;</PRE><P>
+あるいは、ツリー全体を 1 行で取得することもできます。</P>
+<PRE>&lt;public-packages&gt;
+  &lt;subpackages&gt;org.jdom&lt;/subpackages&gt;
+&lt;/public-packages&gt;</PRE><P>
+ただし、この方法は「javadoc」ターゲットでは使えません。</P>
+<P><B>project.properties</B>: 構築プロセスに対するいくつかの追加のヒント...</P>
+<PRE>is.autoload=true
+cp.extra=lib/jdom.jar
+module.javadoc.packages=org.jdom</PRE><P>
+1 行目は、このモジュールを<I>自動読み込み</I>モジュールにします。2 行目は、コンパイルのクラスパスの末尾に追加されます。3 行目が必要となるのは、project.xml 内で <FONT FACE="Courier, monospace">&lt;subpackages&gt;</FONT> の方法を使って <FONT FACE="Courier, monospace">&lt;public-packages&gt;</FONT> を宣言した場合です。</P>
+<P CLASS="boxnote">問題点 #3: ここでは、module.javadoc.packages の指定は必須でないようにすべきです。構築スクリプトは、ユーザーがこのモジュールの Javadoc には興味を持っていないとみなし、正常に引き下がるべきです。今は、これを指定しないと構築が失敗します。<BR><BR><A HREF="https://netbeans.org/bugzilla/show_bug.cgi?id=52135">https://netbeans.org/bugzilla/show_bug.cgi?id=52135</A>
+<br><br>* 更新: NetBeans 4.1 で修正されました</P>
+<h3 class='tutorial'>Rome</h3>
+<H3>Rome</H3>
+<P><A HREF="https://rome.dev.java.net/">Rome</A> ライブラリは、RSS および Atom フィードを読み取ります (ただし、API は非常に単純である)。Rome モジュールと JDOM モジュールの違いは 2 点だけです。Rome モジュールには 1 つではなく 2 つの JAR ファイル (rome-0.4.jar と rome-fetcher-0.4.jar) がバンドルされており、その project.xml 内では JDOM モジュールへの依存性が宣言されています。</P>
+<PRE>&lt;dependency&gt;
+  &lt;code-name-base&gt;org.jdom.api&lt;/code-name-base&gt;
+  &lt;build-prerequisite/&gt;
+  &lt;compile-dependency/&gt;
+  &lt;run-dependency&gt;
+    &lt;release-version&gt;1&lt;/release-version&gt;
+    &lt;specification-version&gt;1.0&lt;/specification-version&gt;
+  &lt;/run-dependency&gt;
+&lt;/dependency&gt;</PRE><H3>
+JDIC</H3>
+<P><A HREF="https://jdic.dev.java.net/">JDIC</A> ライブラリは、Java プログラムが、ブラウザやメーラー、システムトレイ、MIME タイプレジストリといった特定のネイティブデスクトップ機能を活用できるようにします。フィードリーダーは、IE または Mozilla レンダリングエンジンを使って JFrame 内に Web ページをレンダリングする目的で、埋め込みネイティブブラウザコンポーネントを使用します。</P>
+<P>JDIC はこれを実現するため、その共有ライブラリ (<FONT FACE="Courier, monospace">jdic.dll</FONT> または <FONT FACE="Courier, monospace">libjdic.so</FONT>) に対して Java Native Interface (JNI) 呼び出しを行うとともに、ネイティブの実行可能ファイル (<FONT FACE="Courier, monospace">IeEmbed.exe</FONT> または <FONT FACE="Courier, monospace">mozembed-linux-gtk2</FONT>) を実行します。これらのライブラリや実行可能ファイルが実行時に NetBeans から使用可能となるようにするには、モジュールの構築ファイル内で若干の設定を行う必要があります。</P>
+<P>「files-init」タスク内で一連のファイルが宣言されています。</P>
+<PRE>&lt;include name=&quot;${nb.modules.dir}/ext/jdic.jar&quot;/&gt;
+&lt;include name=&quot;lib/libjdic.so&quot;/&gt;
+&lt;include name=&quot;lib/libmozembed-linux-gtk1.2.so&quot;/&gt;
+&lt;include name=&quot;lib/libmozembed-linux-gtk2.so&quot;/&gt;
+&lt;include name=&quot;lib/mozembed-linux-gtk1.2&quot;/&gt;
+&lt;include name=&quot;lib/mozembed-linux-gtk2&quot;/&gt;
+&lt;include name=&quot;lib/jdic.dll&quot;/&gt;
+&lt;include name=&quot;lib/IeEmbed.exe&quot;/&gt;
+&lt;include name=&quot;lib/nspr4.dll&quot;/&gt;
+&lt;include name=&quot;bin/${shell.script}&quot;/&gt;
+&lt;include name=&quot;bin/${batch.script}&quot;/&gt;</PRE><P>
+見慣れた JAR ファイル宣言のほかに、<FONT FACE="Courier, monospace">lib/</FONT> 内の一連のネイティブライブラリや実行可能ファイル、および 1 対のスクリプトが存在します。この特定のディレクトリ内にネイティブ情報を配置するという決定は多少任意的なものですが、これが、<A HREF="http://openide.netbeans.org/proposals/arch/installation.html#logical">アーキテクチャードキュメント</A>での推奨の場所となります。この場所を把握しておく必要があるのは、ほかには起動スクリプトだけです。</P>
+<P>構築ファイルの <FONT FACE="Courier, monospace">shellscript</FONT> ターゲットによってシェルスクリプトとバッチスクリプトが生成されます。これらのスクリプトは、NetBeans プラットフォームを rssreader1 クラスタで起動し、JDIC バイナリを適切なパスで起動します。</P>
+<h2>フィードリーダーモジュール</h2>
+<P>これで、必要なライブラリモジュールがすべて得られたので、実際に何かを<I>行う</I>モジュールを作成する準備が整ったことになります。</P>
+<P STYLE="font-style: normal">まず、モジュールの構築スクリプトと宣言要素を作成します。<FONT FACE="Courier, monospace">build.xml</FONT> ファイルは、標準の「projectized.xml」に対するインポート行を除けば、幸いなことに空になっています。<FONT FACE="Courier, monospace">nbproject/project.xml</FONT> ファイルでは、単純に 3 つのライブラリモジュールへの依存が宣言されており、公開パッケージは 1 つもありません (このモジュールはほかのモジュールに API を提供しません)。<FONT FACE="Courier, monospace">nbproject/project.properties</FONT> ファイルも空です。<FONT FACE="Courier, monospace">manifest.mf</FONT> ファイルもごく普通に見えるはずです。ここでの新しい要素は 1 つだけです。</P>
+<PRE STYLE="margin-bottom: 0.2in">OpenIDE-Module-Layer: org/netbeans/modules/feedreader/resources/layer.xml</PRE><P>
+ライブラリモジュールの場合と異なり、「システムファイルシステム」に含めるための、フィードリーダーのユーザーインタフェースに関する情報を、レイヤーファイル内に宣言します。</P>
+<BLOCKQUOTE CLASS="western">定義: <B>システムファイルシステム</B>とは、NetBeans が、すべてのシステム設定、GUI レイアウト情報、アクション、テンプレート、およびその他の、NetBeans インストールの状態維持に必要なあらゆるものを格納する場所のことです。これは、各クラスタの「config」ディレクトリの下や NetBeans ユーザーディレクトリの「config」ディレクトリの下に格納された実際のファイル、およびモジュールのレイヤーファイル内で宣言された仮想的な「ファイル」から構成されます。
+</BLOCKQUOTE>
+<h3 class='tutorial'>レイヤーファイル</h3>
+<P>最初のエントリは、<FONT FACE="Courier, monospace">Actions</FONT> という名前の最上位フォルダの下にあります。これは、<FONT FACE="Courier, monospace">javax.swing.Action</FONT> の実装のためのリポジトリです。これらはメニュー項目、ツールバーボタン、およびキーボードショートカットで使用できます。このエントリを追加すると、メニューから「ツール」&gt;「キーボードショートカット」を選択して VewFeedsAction にキーボードショートカットを割り当てることができます。</P>
+<P>2 番目のエントリは、ViewFeedsAction を「表示」メニューの下に配置します。シャドウファイル構文に注意してください。これは、UNIX のソフトリンクや Windows のショートカットを使用するのに似ています。</P>
+<P>残りのエントリは、<FONT FACE="Courier, monospace">Windows2</FONT> 最上位フォルダの下に収まっています。このフォルダはプラットフォームに対し、インスタンス化すべき <A HREF="https://netbeans.org/download/4_0/javadoc/OpenAPIs/org/openide/windows/doc-files/api.html#overview-top">TopComponent</A> の種類とそれらの配置先に関する情報を提供します。(なお、これが「Windows2」と呼ばれているのは、「Windows」が 3.6 より前の古いウィンドウシステムであり、その古いシステムが下位互換のために維持されているからです。) フィードリーダーに含まれる TopComponent 定義は 2 つあります。SiteListComponent と EntryListComponent です。後者は、デフォルトの場所 (中央) で開かれるように設計されているため、この動作を上書きする情報はレイヤーファイル内に一切必要ありません。</P>
+<P>これに対し、<FONT FACE="Courier, monospace">SiteListComponent</FONT> は左側で合体するように、つまり「explorer」モードで合体するように設計されています。したがって、エントリを追加します。</P>
+<PRE>&lt;folder name=&quot;Modes&quot;&gt;
+    &lt;folder name=&quot;explorer&quot;&gt;            
+        &lt;file name=&quot;rss_list.wstcref&quot; url=&quot;feedList.wstcref&quot;/&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</PRE><P>
+これは、ID が「rss_list」の <FONT FACE="Courier, monospace">TopComponent</FONT> はデフォルトで「explorer」モードで合体することを宣言しています。(なお、拡張子「wstcref」は <I>Window System Top Component REFerence</I> を表します。) 宣言されたモード内での「rss_list」の配置は、ファイル <FONT FACE="Courier, monospace">feedList.wstcref</FONT> から派生したものです。</P>
+<PRE>&lt;tc-ref version=&quot;2.0&quot;&gt;
+    &lt;module name=&quot;org.netbeans.modules.feedreader/1&quot; spec=&quot;1.0&quot; /&gt;
+    &lt;tc-id id=&quot;rss_list&quot; /&gt;
+    &lt;state opened=&quot;true&quot; /&gt;
+&lt;/tc-ref&gt;</PRE><P>
+<FONT FACE="Courier, monospace">&lt;tc-id id&gt;</FONT> の値は、レイヤー内で宣言されたファイルのベース名 (「rss_list」) と一致する必要があります。また、「.settings」拡張子を持つ同じ名前が、<FONT FACE="Courier, monospace">Windows2/Components</FONT> フォルダ内にも存在する必要があります。</P>
+<PRE>&lt;folder name=&quot;Components&quot;&gt;
+    &lt;file name=&quot;rss_list.settings&quot; url=&quot;feedList.settings&quot; /&gt;
+&lt;/folder&gt;</PRE><P>
+この設定ファイルの内容は、「rss_list」をインスタンス化する方法を NetBeans に指示します。このファイルの内容を手動で記述してもかまいませんが、このレイヤーファイルの Windows2 セクションの全体をコメントアウトして NetBeans を起動し、<FONT FACE="Courier, monospace">ViewFeedsAction</FONT> を実行して <FONT FACE="Courier, monospace">SiteListComponent</FONT> をインスタンス化し、<FONT FACE="Courier, monospace">$userdir/config/Windows2Local/Component</FONT> 内に自動生成された設定ファイルを取り出すこともできます。続いて、<FONT FACE="Courier, monospace">&lt;serialdata&gt;</FONT> セクションを次で置き換えます。</P>
+<PRE STYLE="margin-bottom: 0.2in">&lt;instance class=&quot;org.netbeans.modules.feedreader.SiteListComponent&quot;/&gt;</PRE><P>
+この場合、<FONT FACE="Courier, monospace">SiteListComponent</FONT> のデフォルトコンストラクタを使ってコンポーネントが作成されます。クラスで静的なファクトリメソッドが必要な場合は、メソッド属性を追加できます。</P>
+<PRE STYLE="margin-bottom: 0.2in">&lt;instance class=&quot;org.netbeans.modules.feedreader.SiteListComponent&quot; method=”makeSiteListComponent”/&gt;</PRE><H4>
+ViewFeedsAction.java</H4>
+<P>これで、残りの作業は、実際の Java コードだけになりました。レイヤーファイル内で宣言されている最初のクラスは、<FONT FACE="Courier, monospace">ViewFeedsAction.java</FONT> です。これは、<FONT FACE="Courier, monospace">javax.swing.Action</FONT> のシングルトン実装である <FONT FACE="Courier, monospace">CallableSystemAction</FONT> の単純なサブクラスです。</P>
+<PRE>    public void performAction() {
+        SiteListComponent.activate();
+    }</PRE><P>
+このアクションを実行すると、SiteListComponent のシングルトンインスタンスが開かれ、そのインスタンスにフォーカスが移ります (後述の SiteListComponent の実装を参照)。</P>
+<PRE>    public String getName() {
+        return NbBundle.getMessage(SiteListComponent.class, &quot;SLC_title&quot;);
+    }</PRE><P>
+このアクションの名前は Bundle.properties 内に格納されているため、名前のローカライズが可能です。</P>
+<PRE>    public HelpCtx getHelpCtx() {
+        return HelpCtx.DEFAULT_HELP;
+    }</PRE><P>
+JavaHelp の ID や、このアクションのより具体的なヘルプを含む URL がわかっている場合は、これを変更します。</P>
+<PRE>    protected boolean asynchronous() {
+        return false;
+    }</PRE><P>
+詳細は、<A HREF="https://netbeans.org/download/4_0/javadoc/OpenAPIs/org/openide/util/actions/CallableSystemAction.html#asynchronous()">javadoc のエントリ</A>を参照してください。</P>
+<h3 class='tutorial'>SiteListComponent.java</h3>
+<P CLASS="boxnote">問題点 #4: このクラス内の煩雑なコードの一部 (ID を処理している部分) は、レイヤーファイル内で指定された ID を使って SiteListComponent のシングルトンインスタンスを保証することと関係があります。これは頻繁に必要となる処理だと思われるので、理想的には SingletonTopComponent のような名前を持つ、TopComponent のサブクラスが存在すべきです。<BR><BR><A HREF="https://netbeans.org/bugzilla/show_bug.cgi?id=53252">https://netbeans.org/bugzilla/show_bug.cgi?id=53252</A></P>
+<P>シングルトンを保証するコードを次に示します。</P>
+<PRE>    /** ウィンドウシステムに対する、一意の ID を生成するためのヒント */
+    private static final String PREFERRED_ID = &quot;rss_list&quot;; // NOI18N
+    
+    /** (シングルトン) インスタンスの実際の ID */
+    private static String s_id = PREFERRED_ID;
+
+    ...
+
+    public static synchronized SiteListComponent getInstance()
+    {
+        TopComponent c;
+        c = WindowManager.getDefault().findTopComponent(s_id);
+        if (c == null)
+        {
+            c = new SiteListComponent();
+            s_id = WindowManager.getDefault().findTopComponentID(c);
+        }
+        return (SiteListComponent)c;
+    }
+
+    ...
+
+    protected String preferredID() { 
+        return PREFERRED_ID;
+    }</PRE><P>
+NetBeans は、現在メモリー内に存在するすべての <FONT FACE="Courier, monospace">TopComponent</FONT> のマップを維持します。このマップのキーは、筆者が「ID」と呼んでいるものです。「優先」ID は、新しいインスタンスの作成時に使用される、ウィンドウシステムへのヒントにすぎません。このヒントが何らかの効果を持つ<I>保証は一切ありません</I>。これは一般に非常に有用であり、<FONT FACE="Courier, monospace">$userdir/config/Windows2Local</FONT> の内容を詳細に調べることで問題の原因を突きとめる場合に、コンポーネントの名前を認識できます。</P>
+<P STYLE="font-style: normal">一方、静的なフィールド <FONT FACE="Courier, monospace">s_id</FONT> は、メモリー内の 1 つの <FONT FACE="Courier, monospace">SiteListComponent</FONT> インスタンスの ID となるよう設計されています。そのデフォルトは「rss_list」ですが、これは、それが <FONT FACE="Courier, monospace">feedList.wstcref</FONT> 内で指定された ID の値であるからです。したがって、ユーザーがこのモジュールをはじめて使用する場合は、ID が「rss_list」のコンポーネントが宣言的にインスタンス化されます。一方、ユーザーがそのコンポーネントを閉じ、NetBeans を再起動してから <FONT FACE="Courier, monospace">ViewFeedsAction</FONT> を呼び出した場合、新しいコンポーネントは別の ID を持つ可能性があります。これが、getInstance() メソッドによって新しい値が s_id に代入される可能性がある理由です。</P>
+<P STYLE="font-style: normal">ID が実際に変更された場合、レイヤーファイル内には、新しいコンポーネントが「explorer」モードで合体することを主張するものは何もありません。これを強制するには、open() メソッドを上書きします。</P>
+<PRE>    private static final String MODE = &quot;explorer&quot;; // NOI18N
+
+    public void open()
+    {
+        Mode m = WindowManager.getDefault().findMode(MODE);
+        m.dockInto(this);
+        super.open();
+    }</PRE><P>
+このクラスの残りは、NetBeans に固有のものではありません。このコンポーネントは 1 つの JList と 2 つのボタンから構成されており、ボタンの 1 つは新しいフィードの追加用、もう 1 つは選択されたフィードの削除用です。このリストは SiteListModel によってサポートされます。</P>
+<h3 class='tutorial'>SiteListModel</h3>
+<P><FONT FACE="Courier, monospace">SiteListModel</FONT> クラスは、Swing の <FONT FACE="Courier, monospace">DefaultListModel</FONT> に直列化だけを追加したものです。これは構築時に、フィードのリストをディスクから読み込みます。これは、リストが編集されるたびにディスク上のリストを更新します。(やりすぎでしょうか。そうかもしれませんが、これはそれほど長いリストにはならず、ユーザーが一度設定を行えば、編集頻度も少なくなります。)</P>
+<P>重要な部分は、リストを直列化する<I>場所</I>を判定する部分です。それをシステムファイルシステム内に配置することで、直列化されたファイルを <FONT FACE="Courier, monospace">$userdir/config</FONT> 内のファイル構造の一部にすることができます。</P>
+<PRE>    private static final String DIR = &quot;FeedReader&quot;; //NOI18N
+    private static final String FILENAME = &quot;feeds.ser&quot;; //NOI18N
+
+    private FileObject getSerializedFile(boolean create) throws IOException
+    {
+        FileSystem sysFs = Repository.getDefault().getDefaultFileSystem();
+        FileObject dir = sysFs.findResource(DIR);
+        if (dir == null)
+        {
+            if (create)
+                dir = sysFs.getRoot().createFolder(DIR);
+            else
+                return null;
+        }
+        
+        FileObject fo = dir.getFileObject(FILENAME);
+        if (fo == null)
+        {
+            if (create)
+                fo = dir.createData(FILENAME);
+            else
+                return null;
+        }
+        
+        return fo;
+    }</PRE><P>
+ブール型パラメータの <FONT FACE="Courier, monospace">create</FONT> によって、ファイルがまだ存在していない場合にファイルを作成するかどうかが決まります (書き込みは true、読み取りは false です)。</P>
+<P>したがって、直列化されたリストは <FONT FACE="Courier, monospace">$userdir/config/FeedReader/feeds.ser</FONT> 内に格納されます。</P>
+<P>これは、フィードのリストを書き出すための若干低レベルのアプローチです。実際、この一部をユーザーに代わって処理してくれる NetBeans API が存在します。<FONT FACE="Courier, monospace">SystemOption</FONT> のサブクラスを作成し、その <FONT FACE="Courier, monospace">readExternal()</FONT> と <FONT FACE="Courier, monospace">writeExternal()</FONT> をオーバーライドするだけで、直列化を実装できます。ここでは、内部で何が起こっているかを理解しやすいように、システムファイルシステムに直接書き込むことを選択しました。またこの実装では、異なるファイル形式を使用する柔軟性も得られます。<FONT FACE="Courier, monospace">getSerializedFile()</FONT> から返された <FONT FACE="Courier, monospace">FileObject</FONT> には、<FONT FACE="Courier, monospace">ObjectOutputStream</FONT> を使用する場合と同じくらい簡単に、XML データを書き込むことができます。</P>
+<H4>EntryListComponent</H4>
+<P><FONT FACE="Times New Roman">このクラスは、中央つまり「editor」モードで開かれ、単一フィードからのニュース項目のリストを含むコンポーネントを定義します。</FONT></P>
+<PRE>public class EntryListComponent extends TopComponent 
+{
+    protected static final String PREFERRED_ID = &quot;rss_entry_list&quot;; //NOI18N
+    
+    protected String preferredID() { 
+        return PREFERRED_ID;
+    } </PRE><P>
+このクラス内の ID について、変わったことは何もありません。それらは、ウィンドウシステムへのヒントとして機能しているだけです。</P>
+<PRE>    public static TopComponent getInstance(Feed feed)
+    {
+        // このフィードを含むオープン状態のインスタンスを検索します
+        Iterator opened = TopComponent.getRegistry().getOpened().iterator();
+        while (opened.hasNext())
+        {
+            Object tc = opened.next();
+            if (tc instanceof EntryListComponent)
+            {
+                EntryListComponent elc = (EntryListComponent)tc;
+                if (feed.equals(elc.m_feed))
+                {
+                    elc.initData(feed);
+                    return elc;
+                }
+            }
+        }
+        
+        // 1 つも見つからない場合は新しいものを作成します
+        return new EntryListComponent(feed);
+    }</PRE><P>
+<FONT FACE="Courier, monospace">getInstance()</FONT> メソッドは、一意のフィードごとにインスタンスが 1 つだけ存在することを保証します。したがって、開かれたタブが一度に複数存在していてもかまいませんが、それらのタブはフィード URL ごとに 1 つだけです。</P>
+<PRE>    
+    protected EntryListComponent(Feed feed) 
+    {
+        super();
+        initComponents();
+        if (feed != null)
+            initData(feed);
+    }</PRE><P>
+コンストラクタを protected にすることで、クライアントが <FONT FACE="Courier, monospace">getInstance()</FONT> を使用する必要があるようにします。</P>
+<PRE>    
+    protected void initData(Feed feed)
+    {
+        m_list.setFeed(feed);
+        setDisplayName(feed.toString());
+        
+        m_feed = feed;
+    }</PRE><P>
+<FONT FACE="Courier, monospace">JList</FONT> にフィードを与え、コンポーネントタブ上やウィンドウメニュー内などで使用される表示名を設定します。</P>
+<PRE>    public int getPersistenceType() {
+        return PERSISTENCE_NEVER;
+    }</PRE><P>
+NetBeans の終了時に、これらのコンポーネントの直列化で困らせません。</P>
+<h3 class='tutorial'>EntryList、BrowserFrame、Feed</h3>
+<P>これらのクラスには、NetBeans に固有のコードはあまり含まれていません。コード内のコメントをお読みください。</P>
+<h2>試してみましょう</h2>
+<P><FONT FACE="Courier, monospace">nbbuild/</FONT> ディレクトリで <B><FONT FACE="Courier, monospace">ant</FONT></B> を実行します。次に、<B><FONT FACE="Courier, monospace">/home/rich/netbeans/rssreader1/bin/rss-reader.sh</FONT></B> (Windows の場合は <B><FONT FACE="Courier, monospace">rss-reader.bat</FONT></B>) を実行します。フィードの URL を追加可能な空のリストが左側に表示されるはずです。</P>
+<P><BR><BR>
+</P>
+<P ALIGN=CENTER><IMG SRC="../../images_www/articles/win-with-netbeans/feedreader-nobrand.jpg" NAME="Unbranded FeedReader" ALIGN=MIDDLE WIDTH=957 HEIGHT=714 BORDER=0></P>
+<P>動作中のフィードリーダーです。不適切な箇所が 1 つだけあります。RSS 機能がまだ NetBeans にひも付けされているように見えます。RSS の読み取りに役立つことを何も行わないツールバーボタンやメニュー項目がまだ存在します。</P>
+<h2>ブランド設定</h2>
+<P>フィードリーダーのブランド設定モジュールは、非常に単純なモジュールです。Java コードは一切ありません。一連の不要なツールバーやメニュー項目を非表示にするレイヤーファイルがあるだけです。</P>
+<PRE>    &lt;folder name=&quot;Toolbars&quot;&gt;
+        &lt;folder name=&quot;File_hidden&quot;/&gt;
+        &lt;folder name=&quot;Edit_hidden&quot;/&gt;
+    &lt;/folder&gt;
+    
+    &lt;folder name=&quot;Menu&quot;&gt;
+        &lt;folder name=&quot;File&quot;&gt;
+            &lt;file name=&quot;org-openide-actions-SaveAction.instance_hidden&quot;/&gt;
+            &lt;file name=&quot;org-openide-actions-SaveAllAction.instance_hidden&quot;/&gt;
+            &lt;file name=&quot;org-netbeans-core-actions-RefreshAllFilesystemsAction.instance_hidden&quot;/&gt;
+            &lt;file name=&quot;org-openide-actions-PageSetupAction.instance_hidden&quot;/&gt;
+            &lt;file name=&quot;org-openide-actions-PrintAction.instance_hidden&quot;/&gt;
+        &lt;/folder&gt;
+        
+        &lt;folder name=&quot;Edit_hidden&quot;/&gt;
+        
+        &lt;folder name=&quot;View&quot;&gt;
+            &lt;!-- コンテンツのレンダリング品質があまり良くないデフォルトの Web ブラウザを非表示にします --&gt;
+            &lt;file name=&quot;org-netbeans-core-actions-HTMLViewAction.instance_hidden&quot;/&gt;
+        &lt;/folder&gt;
+        
+        &lt;folder name=&quot;Window&quot;&gt;
+            &lt;file name=&quot;org-netbeans-core-actions-GlobalPropertiesAction.instance_hidden&quot;/&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;</PRE><P>
+皆さんが心に抱いているに違いない質問は、「非表示にするこれらのファイルすべての名前を、筆者はどうやって知ったのか」でしょう。確かに、「ファイル」&gt;「保存」メニュー項目を非表示にするには <FONT FACE="Courier, monospace">&lt;file name=”org-openide-actions-SaveAction.instance_hidden”/&gt;</FONT> を指定する必要があるということは、すぐにはわかりません。方法は 2 つあります。NetBeans のソースコード内をあちこち調べ、それが最初に宣言されたレイヤーファイルを見つけます。あるいは、NetBeans アップデートセンターの「Open APIs Support」 (org-netbeans-modules-apisupport) モジュールに含まれるツールである Bean ブラウザを使用してもかまいません。この場合、システムファイルシステムの参照を可能にする「Bean ブラウザ」という名前のノードが、「ウィンドウ」 &gt; 「実行時」ウィンドウに作成されます。 
+</P>
+<P>非常に有用な小規模ツールです。</P>
+<P>ブランド設定モジュールには、レイヤーファイル以外に、通常とは異なる側面がもう 1 つ存在します。構築スクリプト内には、今となっては見慣れた、配備対象ファイルセットにリソースファイルを追加するセクションが存在します。</P>
+<PRE>    &lt;!-- 
+    配備時にこのモジュールの一部とみなすべきファイルをすべて特定します 
+    --&gt;
+    &lt;target name=&quot;files-init&quot; depends=&quot;basic-init&quot;&gt;
+        &lt;patternset id=&quot;module.files&quot;&gt;
+            &lt;include name=&quot;${module.jar}&quot;/&gt;
+            &lt;include name=&quot;${javahelp.jar}&quot; if=&quot;has.javahelp&quot;/&gt;
+            &lt;include name=&quot;${nb.system.dir}/Modules/${code.name.base.dashes}.xml&quot;/&gt;
+
+            &lt;!-- フィードリーダー用の追加がここから始まります --&gt;
+            &lt;include name=&quot;${nb.lib.dir}/locale/core_rss.jar&quot;/&gt;
+            &lt;include name=&quot;${nb.modules.dir}/locale/org-netbeans-core-windows_rss.jar&quot;/&gt;
+        &lt;/patternset&gt;
+    &lt;/target&gt;
+
+    &lt;!-- 
+    netbeans-extra は、ファイルコピーをプラグインするために用意されたフックです。
+    --&gt;
+    &lt;target name=&quot;netbeans-extra&quot; depends=&quot;init&quot;&gt;
+        &lt;mkdir dir=&quot;${netbeans.dest.dir}/${cluster.dir}/${nb.lib.dir}/locale&quot;/&gt;
+        &lt;mkdir dir=&quot;${netbeans.dest.dir}/${cluster.dir}/${nb.modules.dir}/locale&quot;/&gt;
+
+        &lt;jar destfile=&quot;${netbeans.dest.dir}/${cluster.dir}/${nb.lib.dir}/locale/core_rss.jar&quot; 
+             basedir=&quot;core&quot;/&gt;
+        &lt;jar destfile=&quot;${netbeans.dest.dir}/${cluster.dir}/${nb.modules.dir}/locale/org-netbeans-core-windows_rss.jar&quot; 
+             basedir=&quot;core-windows&quot;/&gt;
+    &lt;/target&gt;</PRE><P>
+この場合、2 つのJAR ファイル <FONT FACE="Courier, monospace">core_rss.jar</FONT> と <FONT FACE="Courier, monospace">org-netbeans-core-windows_rss.jar</FONT> を追加しています。これらの JAR は <FONT FACE="Courier, monospace">core.jar</FONT> と <FONT FACE="Courier, monospace">org-netbeans-core-windows.jar</FONT> に対応しています。実際、標準 NetBeans インストール内の任意の JAR に対して「ブランド設定」を行うには、その元の JAR からの相対的な位置に別の JAR を配置します。</P>
+<PRE>/path/to/original.jar
+/path/to/locale/original_brandname.jar</PRE><P>
+JDIC モジュールのシェルスクリプトが「&ndash;branding rss」をパラメータとして渡していたことを思い出してください。したがって、この場合の「brandname」は「rss」です。</P>
+<P>ほとんどすべてのリソースファイルにブランドを設定できます。アイコン、バンドル、レイヤーファイルなど。<FONT FACE="Courier, monospace">core_rss.jar</FONT> では、スプラッシュ画面と、そのスプラッシュ画面の表示方法に影響を与えるキーを含むリソースバンドルとにブランドを設定しました。<FONT FACE="Courier, monospace">org-netbeans-core-windows_rss.jar</FONT> では、1 つのバンドルだけにブランドを設定し、メインタイトルバーのテキストを上書きしました。</P>
+<h2>もう一度試してみましょう</h2>
+<P>これで、この記事の冒頭のスクリーンショットに似た画面が表示されるはずです。そして、この時点で皆さんは、NetBeans プラットフォーム用の実際のアプリケーションを記述する方法を理解できているはずです。</P>
+<h2>質問</h2>
+<P>ご質問があれば、<A HREF="mailto:dev@openide.netbeans.org">dev@openide.netbeans.org</A> メーリングリスト宛にご連絡ください。NetBeans のメーリングリストについては、<A HREF="https://netbeans.org/community/lists/top.html">https://netbeans.org/community/lists/top.html</A> を参照してください。</P>
+</BODY>
+</HTML>
+

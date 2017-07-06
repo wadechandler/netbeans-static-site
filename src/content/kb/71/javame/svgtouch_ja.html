@@ -1,0 +1,430 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+<html>
+<head>
+   <title>Java ME デバイス用のタッチ対応 SVG UI の作成 - NetBeans IDE チュートリアル</title>
+   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+   <link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+   <meta name="Karol Harezlak" content="">
+</head>
+  <body>
+  <a name="top"></a>
+<h1>Java ME デバイス用のタッチ対応 SVG UI の作成</h1>
+ <p>このチュートリアルでは、SVG UI ウィジェットを使用して、Java ME ベースのタッチ画面デバイス用の機能豊富な UI を開発する方法を示します。Samsung の Omnia や Instinct、Nokia 5800 Xpress Music、Blackberry Storm などの Java ME ベースのタッチ画面デバイスの急増により、モバイルアプリケーションの開発者は、これらのデバイスの開発を学習する必要があります。リッチ SVG UI ウィジェットは、タッチ画面のないデバイスでもサポートされるため、このチュートリアルで作成するアプリケーションは J2ME (<a href="http://jcp.org/en/jsr/summary?id=226">JSR226</a>) 向けの SVG API をサポートするほとんどのデバイスで動作します。</p> 
+<!--<p class="notes"><b>注:</b> NetBeans IDE 6.8 を使用している場合、<a href="../../68/javame/svgtouch.html">「Java ME デバイス用のタッチ対応 SVG UI の作成」(NetBeans IDE 6.8)</a> チュートリアルを参照してください。</p>-->
+ <h3>目次</h3>
+<img  src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" class="stamp" alt="このページの内容は NetBeans IDE 6.9 以降が対象です" title="このページの内容は NetBeans IDE 6.9 以降が対象です" >
+<ul>
+<li><a href="#reqs" title="チュートリアルの要件">チュートリアルの要件</a></li>
+<li><a href="#setup" title="プロジェクト環境設定の開始">プロジェクト環境設定の開始</a></li>
+<li><a href="#svgcomp" title="SVG コンポーザでの UI の作成">SVG コンポーザでの UI の作成</a>
+<ul>
+<li><a href="#backinfo" title="背景情報">背景情報</a></li>
+<li><a href="#svgintro" title="SVG ウィジェットと機能入門">SVG ウィジェットと機能入門</a></li>
+<li><a href="#svgui" title="SVG UI の作成手順">SVG UI の作成手順</a></li>
+<li><a href="#createmidlet" title="ビジュアルモバイルデザイナでの MIDlet の作成">ビジュアルモバイルデザイナでの MIDlet の作成</a></li>
+</ul></li>
+<li><a href="#vmdflow" title="ビジュアルモバイルデザイナを使用したアプリケーションフローの作成">ビジュアルモバイルデザイナを使用したアプリケーションフローの作成</a></li>
+
+<li><a href="#applogic" title="アプリケーションロジックの UI への追加">アプリケーションロジックの UI への追加</a>
+<ul>
+<li><a href="#background" title="背景情報">背景情報</a></li>
+<li><a href="#creatingsvg" title="カスタム SVGList モデルの作成">カスタム SVGList モデルの作成</a></li>
+<li><a href="#nextprevious" title="「Next」ボタンおよび「Previous」ボタンのロジック">「Next」ボタンおよび「Previous」ボタンのロジック</a></li>
+</ul></li>
+<li><a href="#uitest" title="タッチ画面デバイスエミュレータでのアプリケーションのテスト">タッチ画面デバイスエミュレータでのアプリケーションのテスト</a></li>
+<li><a href="#summary" title="まとめ">まとめ</a></li>
+<li><a href="#see-also">関連項目</a></li>
+</ul>
+<h2><a name="reqs"></a>要件</h2>
+<p><b>このチュートリアルを完了するには、次のソフトウェアとリソースが必要です。</b></p>
+
+<table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                <th class="tblheader" scope="col">必須バージョン</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE と Java ME</a></td>
+                <td class="tbltd1">version 6.9 以降</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit</a> (JDK)</td>
+                <td class="tbltd1">Version 6 または 7 </td>
+            </tr> 
+             <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/projects/samples/downloads/download/Samples/Mobile/ContactBrowserExample.zip">Contact Browser の例</a></td>
+                <td class="tbltd1">NetBeans プロジェクト</td>
+             </tr>
+             <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/projects/www/downloads/download/mobility%252Forg-netbeans-modules-mobility-svg-snippets.nbm">SVG UI スニペット</a></td>
+                <td class="tbltd1">NetBeans プラグイン</td>
+            </tr> 
+                 
+        </tbody>
+</table>
+
+          
+<p class="notes">Java ME 機能が有効になっていることを確認するため、カスタムインストールを実行し、IDE のインストール中はオンデマンド機能コンポーネントの選択を解除することをお勧めします。</p>
+      
+
+<h2><a name="setup"></a>プロジェクト環境設定の開始</h2>
+
+                      <p> 前出の一覧表示された必須ソフトウェアに加え、次のものもコンピュータにインストールしておくようにしてください。</p>
+
+                      <ul>
+                        <li><code>ContactBrowser.zip</code> ファイルは、NetBeans プロジェクトフォルダに展開するようにします。</li>
+                        <li>次の手順に従って、SVG スニペットプラグインをダウンロードして NetBeans にインストールするようにします。
+                        <ol>
+                        <li>IDE で「ツール」&gt;「プラグイン」に移動します。「ダウンロード済み」タブをクリックし、「プラグインの追加」をクリックします。</li>
+                        <li><tt>svg-snippets.nbm</tt> ファイルが含まれているローカルフォルダに移動し、ファイルを選択して「インストール」をクリックします。</li> 
+                        </ol></li>
+                      <li>「インストール」をクリックすると、プラグインをインストールするための手順が表示されます。プラグインのインストール後、IDE を再起動する必要があります。 </li>
+                      <li>IDE を再起動したら、「ツール」&gt;「オプション」に移動します。「オプション」ダイアログウィンドウの「その他」をクリックし、「SVG」タブをクリックします。</li>
+                      <li>「SVG リッチコンポーネントスニペット」セクションで、「スニペット」ドロップダウンメニューを開き、「<strong>J1 HOL SVG Snippets</strong>」を選択します。「了解」をクリックします。
+                       <p class="align-center"><a href="../../../images_www/articles/71/mobility/svgtouch/ex0_3.png" rel="lytebox"
+                       title="「オプション」ダイアログボックス"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex0_3-small.png"
+                     alt="「オプション」ダイアログボックス" border=1></a></p>
+                      </li>
+                      </ul>
+<p class="align-center"><a href="#top">ページの先頭へ</a></p>                      
+<h2><a name="svgcomp"></a>SVG コンポーザでの UI の作成</h2>
+      <p> SVG ベースの基本的なアプリケーション UI を作成します。このアプリケーションはとても簡単なものですが、Java ME アプリケーションを新規作成する方法、SVG コンポーザからビジュアル MIDlet に SVG 画像をインポートする方法、MIDP デバイスエミュレータでプロジェクトを実行する方法がわかります。</p>
+ <a name="backinfo"></a>
+  <h3>背景情報</h3>
+
+      <p><strong>SVG:</strong> JSR-226 では、スケーラブルな 2 次元のベクトルグラフィックスを XML で描画するための API を指定します。GIF 形式や JPG 形式のように各ピクセルの内容をエンコーディングする代わりに、ベクトルグラフィックスには各ピクセルの描画命令のみが含まれています。これはベクトル画像にとって、いくつかの利点があります。 </p>
+      <ul>
+        <li><strong>スケーラブル</strong>なので、サイズや解像度が異なっても、表示される画像の質が保たれます。また、質を損なわずに画像を拡大、反転、または裏返しできます。</li>
+        <li><strong>スクリプトおよびアニメーション</strong>がサポートされているため、対話式でデータ駆動型のグラフィックスに最適です。</li>
+        <li><strong>サイズが小さく</strong>収まります。ベクトルベースの画像は、GIF または JPEG 形式の同じ画像の 10 分の 1 までのサイズになります。この重要な利点によって、リソースが限られている携帯型デバイス向けに、グラフィック機能の豊富なアプリケーションを作成できます。 </li>
+        <li>これを活用することで、画像コンテンツとユーザーとの<strong>対話</strong>が可能になります。</li>
+        <li>これらは<strong>検索可能</strong>なので、ユーザーが画像の中のテキストを検索できます。たとえば、ユーザーが特定の通りの名前を地図から検索したり、レストランのメニューから好みの品を探したりできます。</li>
+      </ul>
+      <p>モバイルデバイス向けの機能が完備された SVG のサブセットは SVG Tiny と呼ばれ、JSR-226 は J2ME ベクトルグラフィックスの公式ファイル形式として SVG Tiny プロファイルの version 1.1 を採用しています。 
+      </p>
+ <a name="svgintro"></a>
+      <h3>SVG ウィジェットと機能入門</h3>
+      <p>ユーザーインタフェースは、NetBeans で SVG コンポーザおよび SVG フォームリッチ UI コンポーネントを使用すると、簡単に作成できます。 </p>
+          <p>SVG コンポーザパレットにある SVG UI スニペットの概要は次のとおりです。</p>       
+          <ul>
+              <li>SVG リスト - 開発者が、UI に必要な UI 要素のリストを作成できます。</li>
+              <li>SVG ラジオボタン - SVG スニペットで使用することで、ユーザーが性別を選択できるようにします。</li>
+              <li>SVG コンボボックス - ドロップダウンリストメニュー用の UI コンポーネントです。 </li>
+              <li>SVG テキスト - 人名や製品 ID などのテキストを表示できるフィールドです。 </li>
+              <li>SVG ボタン - 「Next」、「Previous」、「OK」などの UI 機能に使用するボタンです。</li>
+              <li>SVG スピナ - ユーザーが上下ボタンを使用して変数をスクロールできるようにします。</li>
+              <li>SVG スライダ - ユーザーが可変的な特徴を調整できるようにします。たとえば、明るいから濃い、0% - 100% などです。</li>
+              <li>SVG ラベル - ユーザーがテキストフィールドやその他の UI コンポーネントにラベルを付けられるようにします。</li>
+        </ul>
+          <p class="align-center"> <a href="../../../images_www/articles/71/mobility/svgtouch/ex1_2.png" rel="lytebox"
+                       title="SVG コンポーザパレットにある SVG UI スニペット"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex1_2-small.png"
+                     alt="SVG コンポーザパレットにある SVG UI スニペット" border=1></a></p>
+  
+   <p>この説明は、SVG UI リッチコンポーネントの概要を簡潔に述べただけのものです。詳細については、<a href="http://wiki.netbeans.org/MobilityDesignerRichComponents">NetBeans ビジュアルモバイルデザイナの Wiki</a> ページを参照してください。</p>
+
+       <a name="svgui"></a>
+	  <h3>SVG UI を作成する手順</h3>
+  <p> すぐに始めるには、前もって用意されている ContactBrowser プロジェクトを開きます。このプロジェクトを、プロジェクト作成の基礎として使用します。 </p>
+    <ol>
+    <li>提供された ContactBrowser Java ME プロジェクトを、NetBeans IDE で開きます。
+          <p>ContactBrowser プロジェクトの概要</p>
+          <p class="align-center"><img src="../../../images_www/articles/71/mobility/svgtouch/ex2_2.png"></p></li>
+        <li><code>employeeList.svg</code> 画像を SVG コンポーザで開き、次に示すように、2 つの SVG ボタンと 1 つの SVG リストフォームコンポーネントをパレットから「プレビュー」キャンバスにドラッグ＆ドロップします。ボタンの名前は、このチュートリアルの後半で変更します。
+       <p>次のコンポーネントが追加され、完了したフォームを次に示します。</p>
+        <ul>
+          <li>2 つのボタン</li>
+          <li>1 つのリスト</li>
+        </ul>
+     
+
+        <p class="align-center">
+		<a href="../../../images_www/articles/71/mobility/svgtouch/ex2_3.png" rel="lytebox"
+                       title="2 つのボタンとリストがあるフォーム"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_3-small.png"
+                     alt="2 つのボタンとリストがあるフォーム" border=1></a>
+		</p></li>
+<li>「プレビュー」ウィンドウで、左上の「OK」ボタン内のテキストをクリックし、次のスクリーンショットに示すように左側にドラッグします。こうすると、UI ボタン上に「Select」という語が正しく表示されます。
+ <p class="align-center">
+ <a href="../../../images_www/articles/71/mobility/svgtouch/ex2_4b.png" rel="lytebox"
+                       title="2 つのボタンとリストがあるフォーム"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_4b-small.png"
+                     alt="2 つのボタンとリストがあるフォーム" border=1></a></p></li>
+
+       <li>この SVG UI には追加の SVG ファイル (<code>employeeForm.svg</code>) が必要なため、再度ファイルを開き、ボタン、テキストフィールド、ラベルをパレットから SVG コンポーザの画像に追加し、これらの名前を変更して UI を作成します。完了すると、次の画像のような外観になるはずです。
+      <ul>
+        <li>追加されたコンポーネント
+        <ul>
+          <li>3 つのボタン</li>
+          <li>4 つのラベル</li>
+          <li>2 つのテキストフィールド</li>
+          <li>1 つのラジオボタン</li>
+          <li>1 つのスピナ</li>
+        </ul></li>
+      </ul>
+
+        <p class="align-center">
+		<a href="../../../images_www/articles/71/mobility/svgtouch/ex2_4.png" rel="lytebox"
+                       title="追加された SVG コンポーネント"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_4-small.png"
+                     alt="追加された SVG コンポーネント" border=1></a>
+		
+		</p></li>
+
+ <li>「プレビュー」ウィンドウで、左下の「OK」ボタン内のテキストをクリックし、次のスクリーンショットに示すように左側にドラッグします。こうすると、UI ボタン上に「Previous」という語が正しく表示されます。
+ <p class="align-center">
+ <a href="../../../images_www/articles/71/mobility/svgtouch/ex2_4a.png" rel="lytebox"
+                       title="左にドラッグされた「OK」ボタンのテキスト"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_4a-small.png"
+                     alt="左にドラッグされた「OK」ボタンのテキスト" border=1></a>
+ </p></li>
+  </ol>
+
+<a name="createmidlet"></a>
+<h3>ビジュアルモバイルデザイナでの MIDlet の作成</h3>
+  
+<p>SVG リッチ UI コンポーネントフレームワークは、次の 2 つの部分に分けられます。</p> 
+<ul>
+<li>SVG スニペットは、SVG コンポーザまたはその他の SVG エディタで UI を構築するために使用します。</li>
+<li>UI 機能をサポートする Java ME ライブラリ</li>
+</ul>
+<p>SVG コンポーザとスニペットについては、すでに説明をしました。次の手順では、SVG 画像を Java ME ソースコードのアプリケーションロジックとマージするのに役立つ実行時ライブラリをビジュアルモバイルデザイナで見ていきます。</p>
+
+  <ol>
+    <li>新しいビジュアル MIDlet を作成するには、「<tt>ファイル</tt>」&gt;「<tt>新規ファイル</tt>」を選択し、「カテゴリ」の下の「新規ファイル」ダイアログボックスで「MIDP」を選択し、「ファイルの種類」の「ビジュアル MIDlet」を選択します。新しいファイルは <tt>org.netbeans.lab.ui.svg</tt> パッケージの一部になるはずです。           
+          <p class="align-center">
+		   <a href="../../../images_www/articles/71/mobility/svgtouch/ex2_5.png" rel="lytebox"
+                       title="「新規ファイル」ダイアログボックス"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_5-small.png"
+                     alt="「新規ファイル」ダイアログボックス" border=1></a>
+		  
+		  </p>
+    </li>
+
+        <li>新しく作成した MIDlet 内で、「フロー」ビューに切り替えます。パレットの「SVG コンポーネント」セクションから、2 つの SVG フォームコンポーネントをドラッグして「フロー」ビューのデザインキャンバスにドロップし、右クリックコンテキストメニューを使用してそれらの名前を <code>employeeList</code> および <code>employeeForm</code> に変更します。
+          
+          <p class="align-center"><a href="../../../images_www/articles/71/mobility/svgtouch/ex2_6.png" rel="lytebox"
+                       title="追加された 2 つの SVG フォーム"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_6-small.png"
+                     alt="追加された 2 つの SVG フォーム" border=1></a></p>
+        </li>
+        
+        <li>次の手順では、SVG 画像をソースコードに接続します。SVG UI コンポーネントをソースコードに接続するには、<code>employeeList.svg</code> ファイルを「プロジェクト」ウィンドウからドラッグして <code>employeeList</code> コンポーネントにドロップし、<code>employeeForm.svg</code> を <code>employeeForm</code> にドラッグして、この操作を繰り返します。
+          
+          <p class="align-center"><a href="../../../images_www/articles/71/mobility/svgtouch/ex2_8.png" rel="lytebox"
+                       title="ソースコードに接続された SVG UI コンポーネント"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_8-small.png"
+                     alt="ソースコードに接続された SVG UI コンポーネント" border=1></a></p>
+        </li>
+        
+        <li>次に <code>svgButtons</code> のインスタンス名を、実行するアクションに対応する名前に変更します。この操作でボタンの UI が変更されることはありません。変更はあとで行います。<code>svgButtons</code> のインスタンス名を変更するには、このボタンを右クリックし、コンテキストメニューから「名前を変更」を選択します。「インスタンス名を変更」ダイアログの「新しい名前」フィールドに、<code>svgButtons</code> インスタンスに対するアクション名を入力します。
+           <p class="notes"><b>注:</b> UI コンポーネントのインスタンス名を変更する場合、新しい名前は UI ボタンの機能と対応するようにしてください。</p>
+           <p class="align-center">
+		  <a href="../../../images_www/articles/71/mobility/svgtouch/ex2_9.png" rel="lytebox"
+                       title="変更された svgButtons のインスタンス名"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_9-small.png"
+                     alt="変更された svgButtons のインスタンス名" border=1></a>
+		  </p>
+        </li>
+         <li>次の手順で、ボタンとテキストフィールドのデフォルトの SVG ラベルを <strong>ContactBrowser</strong> アプリケーションで表示される情報と一致するように変更する必要があります。これを行うには、「画面」ビューに切り替えて、<code>employeeForm</code> を表示します。「画面」ビューの「ラベル」項目を選択し、各ラベルとボタンのテキストプロパティーを変更します。変更後は、次のスクリーンショットのようになります。
+          <p class="align-center">
+		   <a href="../../../images_www/articles/71/mobility/svgtouch/ex2_11.png" rel="lytebox"
+                       title="変更されたラベルおよびボタンのテキストプロパティー"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_11-small.png"
+                     alt="変更されたラベルおよびボタンのテキストプロパティー" border=1></a>
+		  
+		  </p>  </li>
+        <li>また、SVG テキストフィールドのインスタンス名も変更する必要があります。「First Name」を右クリックし、コンテキストメニューから「名前を変更」を選択して、この名前を <code>svgTextFieldFirstName</code> に変更します。この手順を「Last Name」フィールドに対して繰り返し、名前を <code>svgTextFieldLastName</code> に変更します。</li>
+		
+        <li>IDE プロジェクトウィンドウのドロップダウンメニューで「<strong>employeeForm</strong>」から「<strong>employeeList</strong>」に切り替え、ボタン名を次のスクリーンショットに示すように変更します。変更結果は、「プロパティー」ウィンドウの「テキスト」フィールドで確認できます。
+        <p class="align-center">
+		<a href="../../../images_www/articles/71/mobility/svgtouch/ex2_11a.png" rel="lytebox"
+                       title="変更されたボタンのテキストプロパティー"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_11a-small.png"
+                     alt="変更されたボタンのテキストプロパティー" border=1></a>
+		
+		</p> </li> 
+  </ol>
+<p class="align-center"><a href="#top">ページの先頭へ</a></p>
+ <h2><a name="vmdflow"></a>ビジュアルモバイルデザイナを使用したアプリケーションフローの作成</h2>
+  <p>これで、ビジュアルモバイルデザイナの「フロー」ビューを使用し、アプリケーションフローを作成する準備ができました。 </p>
+        <ol>
+        <li>IDE の「画面」ビューから「フロー」ビューに切り替えます。</li>
+        <li>次に示すように、コンポーネントを接続します。「<strong>モバイルデバイス</strong>」要素の「起動」をクリックして開始し、マウスを「<strong>employeeList</strong>」要素にドラッグします。ほかのコンポーネントの接続でも、この方法を繰り返します。
+                  <p class="align-center">
+				  <a href="../../../images_www/articles/71/mobility/svgtouch/ex2_12.png" rel="lytebox"
+                       title="作成されたアプリケーションフロー"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex2_12-small.png"
+                     alt="作成されたアプリケーションフロー" border=1></a>
+				  </p>
+        </li>
+        </ol>
+  <p>「ソース」ビューで、SVG XML UI コンポーネントスニペットを Java ME 実行時ライブラリとバインドする仕組みを確認できます。次の例に、SVG ボタンスニペットを Java ME オブジェクトとバインドする方法を示します。SVG コンポーネントは XML スニペット ID に基づいて認識されます。この例では、その ID は <code>button_0</code> です。</p>
+      <p class="align-center"><img src="../../../images_www/articles/71/mobility/svgtouch/ex2_14.png"></p>
+      
+      <h3>アプリケーションの実行</h3>
+      <p>アプリケーションロジックを追加する前に、エミュレータ上で Contact Browser UI をテストするようにします。</p>
+
+<p>メニューから「主プロジェクトを実行」(F6) を選択し、エミュレータの起動後、UI を確認してテストできます。アプリケーションロジックをまだ実装していませんが、ビジュアルモバイルデザイナで行なった作業に基づいて、UI が予想どおりに表示されることを確認できます。</p>
+  
+
+  <p class="align-center"><a href="#top">ページの先頭へ</a></p>      
+  <h2><a name="applogic"></a>アプリケーションロジックの SVG ユーザーインタフェースへの追加</h2>
+
+  <p>これで、これまでの手順で作成した UI に対し、ビジュアルモバイルデザイナを使用してアプリケーションロジックを作成できるようになりました。ここでいくつかの追加のコンポーネントとメソッドを使用して、Java ME SDK 3.0 エミュレータでのアプリケーションの実行を完了します。</p>
+  <a name="background"></a>
+  <h3>背景情報</h3>
+<ul>
+<li><strong>SVG ListModel</strong>: SVGList のようなコンポーネントでリスト内の各セルの値を取得するために使用するメソッドと、表示に必要なセルの数の計算が定義されます。論理的にこのモデルはベクトルであり、指数は <tt>0</tt> から <tt>ListDataModel.getSize() - 1</tt> まで変化します。この内容またはデータモデルの長さが変更された場合、変更内容が SVGList のすべての DataListener に通知される必要があります。Swing の JList モデルに習熟している場合、SVGListModel は理解しやすいはずです。</li>
+<li><strong>エントリポイントコンポーネント</strong>: エントリポイントコンポーネントを使用して、デザインしたクラスにメソッドを表すことができます。このメソッドには、メソッドに割り当てられたアクションで指定されたコードが格納されます。このメソッドは、アプリケーション画面の切り替え時にコードを実行する必要がある場合や、この例であれば、ビジュアル MIDlet の「フロー」ビューに SVG ボタンロジックを表現する場合に大変役立ちます。</li>
+</ul>  
+<a name="creatingsvg"></a>
+<h3>カスタム SVGList モデルの作成</h3>
+<p> この手順では、独自の SVGListModel の実装を作成します。ここで作成する SVGListModel の実装は、<code>getSvgList</code> メソッドの内部の匿名クラスです。</p>
+      <ol>
+         <li> 「ナビゲータ」(表示されていない場合は Ctrl+7) を使用して、右クリックしてコンテキストメニューから「ソースへ移動」を選択することで <code>employeeList</code> コンポーネントの <code>getSvgList</code> 要素を検索します。</li>
+         <li><code>getSVGList</code> メソッドの内部で、<code>svgList = new SVGList(getEmployeeList(), &quot;list_0&quot;);</code> のあとに次のコードを追加します。<br>
+		 <pre class="examplecode">
+		    //匿名クラスとしての新規 SVGListModel の作成と追加。ListModel の実装
+            svgList.setModel(new SVGList.ListModel() {
+                //EmployeeData クラスからベクトルとして連絡先データを取得
+                Vector data = EmployeeData.getData();  
+                                
+                /**
+                 * メソッドは文字列の組み合わせを返す: First Name + Last Name
+                 * @return 文字列としての従業員名
+                 */
+                public Object getElementAt(int index) {
+                    //First Name 文字列を取得
+                    String firstName = ((Employee) data.elementAt(index)).getFirstName();
+                    //Last Name 文字列を取得
+                    String lastName = ((Employee) data.elementAt(index)).getLastName();
+                    
+                    return firstName + &quot; &quot; + lastName;
+                }
+                 /**
+                 * 従業員数
+                 * @return 従業員数
+                 */
+                public int getSize() {
+                    return data.size();
+                }
+                //使用されない
+                public void addDataListener(DataListener listener) { }               
+                
+                //使用されない
+                public void removeDataListener(DataListener listener) { }                          
+            });</pre></li>
+  </ol>
+      <p class="notes"><b>注:</b> IDE のコード補完機能を使用して、コードを自分で入力できます。</p>
+      
+<a name="nextprevious"></a>
+<h3>「Next」ボタンおよび「Previous」ボタンのロジック</h3> 
+      <p>この手順では、<code>employeeForm</code> の一部である SVG ボタンロジックを追加します。これらのボタンを使用することで、ユーザーは従業員データ間を移動できます。「Next」をクリックすると、ユーザーは次の従業員の連絡先にジャンプできます。「Previous」ボタンをクリックすると、ユーザーには前の従業員レコードが表示されるはずです。この手順では、前の手順で説明したエントリポイント要素を使用します。</p>
+     <ol>
+        <li>「フロー」ビューに切り替えて、パレットの「フロー」カテゴリから 2 つの「エントリポイント」コンポーネントを追加します。コンポーネントを右クリックし、次に示すように名前を「<tt>nextMethod</tt>」および「<tt>previousMethod</tt>」に変更します。   
+      <p class="align-center">
+	  <a href="../../../images_www/articles/71/mobility/svgtouch/ex3_1.png" rel="lytebox"
+                       title="作成された SVGButtons フロー"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex3_1-small.png"
+                     alt="作成された SVGButtons フロー" border=1></a>
+	 </p>
+      </li>
+      <li> 次に、グローバルな非公開整数のプロパティー索引をビジュアル MIDlet に追加する必要があります。「ソース」ビューに戻り、生成されたフィールドの保護されたブロックの下に次のコードを追加します。<br>
+     
+     <pre class="examplecode">private int index = 0;</pre></li>
+      
+      <li>次は、UI を更新するロジックを <code>employeeForm</code> に追加します。ここで使用するメソッドによって、<code>employeeForm</code> コンポーネント内の SVG UI 要素が更新されます。「ソース」エディタで、クラスの最後に次のメソッドを追加します。
+      <p class="notes"><b>注:</b> IDE のコード補完機能を使用してコードを入力できます。</p>
+      
+	  <pre class="examplecode">
+	        //**メソッドは、従業員に関する情報を従業員の UI フォームに設定する役割を担います。            private void updateEmployeeFormUI() {
+              //現在選択されている従業員を取得
+              final Employee employee = (Employee) EmployeeData.getData().elementAt(index);
+              //First Name を設定
+              getSvgTextFieldFirstName().setText(employee.getFirstName());
+              //Last Name を設定
+              getSvgTextFieldLastName().setText(employee.getLastName());
+              //性別を設定
+              if (employee.getGender()) {
+                  getSvgRadioButton().setSelected(false);
+                  getSvgRadioButton1().setSelected(true);
+              } else {
+                  getSvgRadioButton().setSelected(true);
+                  getSvgRadioButton1().setSelected(false);
+              }    
+              //年齢を設定
+              getSvgSpinner().getModel().setValue(new Integer(employee.getAge()));
+            }  
+	  </pre>
+         
+      <p>これで、<tt>nextMethod</tt> および <tt>previousMethod</tt> にロジックを追加できるようになりました。</p></li> 
+
+        <li>「フロー」ビューに切り替えて、「<code>nextMethod</code>」エントリポイントを右クリックし、ポップアップメニューから「ソースへ移動」オプションを選択します。</li>
+        <li>ソースエディタで、次のコードを <tt>nextMethod()</tt> メソッドの <tt>switchDisplayable(null, getEmployeeForm().getSvgCanvas());</tt> の前に追加します。このコードによって、従業員データレコードのキュー内の次のレコードが表示されます。また、表示する情報を更新する UI を呼び出します。<br>
+		<pre class="examplecode">// 次の Employee レコードに移動する
+        if (index &lt; EmployeeData.getData().size() - 1) {
+            //索引を更新する。
+            index++;
+        }
+        //UI - 従業員フォームを更新する
+        updateEmployeeFormUI();
+        //employeeForm に戻る
+		</pre></li>
+       <li>「フロー」ビューに切り替えて、「<code>previousMethod</code>」エントリポイントを右クリックし、ポップアップメニューから「ソースへ移動」オプションを選択します。</li> 
+	   <li>ソースエディタで、次のコードを <tt>previousMethod()</tt> メソッドの <tt>switchDisplayable(null, getEmployeeForm().getSvgCanvas());</tt> の前に追加し、データ参照機能が動作するようにします。<br>
+       <pre class="examplecode">// 前の Employee レコードに移動する
+        if (index &gt; 0) {
+            //索引を更新する
+            index--;
+        }
+        //UI を更新する
+        updateEmployeeFormUI();
+        //employeeForm に戻る
+	  </pre>
+          
+     
+   <p>次に、<code>employeeForm</code> の呼び出し時に UI が更新され、従業員リストで実行される選択操作に基づいてグローバル索引が設定されることを確認する必要があります。</p></li>
+      <li>「フロー」ビューに切り替えて、<code>employeeList</code> 内の<tt>選択</tt>ボタンを右クリックし、ポップアップメニューから「ソースへ移動」を選択します。</li>
+      <li>ソースエディタで、次のコードを <code>getSelect()</code> メソッドの <tt>public void actionPerformed(SVGComponent svgComponent){</tt> のあとに追加します。<br>
+	  <pre class="examplecode"> //グローバル索引の更新
+                    index = getSvgList().getSelectionModel().getSelectedIndex();
+                    //選択の実行後に UI を更新
+                    updateEmployeeFormUI();
+                    //employeeForm に切り替える</pre></li>
+      
+  </ol>
+<p class="align-center"><a href="#top">ページの先頭へ</a></p>    
+    <h2><a name="uitest"></a>タッチ画面デバイスエミュレータでのアプリケーションのテスト</h2>
+      <p>NetBeans IDE インストーラにバンドルされている Java ME SDK 3.0 <strong>DefaultFxTouchPhone1</strong> デバイスエミュレータでアプリケーションをテストする準備ができました。アプリケーションを起動するには、プロジェクトプロパティーを編集する必要があります。</p>
+      
+      <ol>
+        <li>プロジェクトのノードを右クリックし、コンテキストメニューから「プロパティー」を選択します。「プロジェクト」ダイアログの「カテゴリ」の下で「プラットフォーム」を選択し、次に「エミュレータプラットフォーム」ドロップダウンメニューから「Java Platform Micro Edition SDK 3.0」を選択します。</li>
+        <li>次に示すように、タッチ画面デバイスエミュレーションに対して「デバイス」ドロップダウンメニューから「DefaultFxTouchPhone1」を選択し、「デバイス構成」として「CLDC-1.1」を選択して、「了解」をクリックします。
+          <p class="align-center">
+	 <a href="../../../images_www/articles/71/mobility/svgtouch/ex4_4.png" rel="lytebox"
+                       title="選択されたエミュレータプラットフォームおよびデバイス"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex4_4-small.png"
+                     alt="選択されたエミュレータプラットフォームおよびデバイス" border=1></a>
+	</p>
+	</li>
+        <li>「実行」&gt;「プロジェクトを実行」に移動して、エミュレータでアプリケーションを起動します。マウスポインタを SVG コンポーネントの上に置くことによって、タッチ画面プロパティーが有効であることを検証できます。ユーザーが指先で行うように、マウスカーソルを画面内で移動して、アプリケーションメニューをナビゲートできます。</li>
+        <li>エミュレータ内で、UI 要素が正しく動作することを確認するための「Previous」または「Next」ボタンの使用など、いくつかの基本的な UI テストを実行できます。
+     <p class="align-center">
+	 <a href="../../../images_www/articles/71/mobility/svgtouch/ex4_5.png" rel="lytebox"
+                       title="エミュレータ内で起動したアプリケーション"> <img src="../../../images_www/articles/71/mobility/svgtouch/ex4_5-small.png"
+                     alt="エミュレータ内で起動したアプリケーション" border=1></a>
+	</p> </li>
+</ol>
+
+ <h2>まとめ<a name="summary"></a></h2>
+      <p> このチュートリアルでは、NetBeans IDE を使用して、Java ME デバイス用の SVG ベースのタッチ画面対応 UI を作成する方法について学びました。</p>
+
+      <p class="align-center"><a href="#top">ページの先頭へ</a></p>
+
+ <div class="feedback-box"><a href="/about/contact_form.html?to=6&subject=Creating%20a%20Touch%20Enabled%20SVG%20UI%20for%20Java%20ME%20Devices">ご意見をお寄せください</a></div>
+   <br style="clear:both;" >
+     
+<a name="see-also"></a>
+<h2>関連項目</h2>
+<ul>	
+         <li><a href="http://wiki.netbeans.org/MobilityDesignerRichComponents">リッチ SVG UI コンポーネントの参照</a></li>
+         <li><a href="http://blogs.sun.com/kharezlak/entry/playing_with_svg_components_in">リッチ SVG UI アプリケーション</a></li>
+         <li><a href="http://wiki.netbeans.org/MobilitySVGComponents">SVG リッチ UI コンポーネントの使用</a></li>
+         <li><a href="http://wiki.netbeans.org/VisualMobileDesignerPalatteReference">参照: ビジュアルモバイルデザイナのパレットのガイド</a></li>
+  <li><a href="../../../kb/trails/mobility.html">NetBeans Java ME アプリケーションの学習</a></li>
+  </ul>
+	 <p class="align-center"><a href="#top">ページの先頭へ</a></p>
+  </body>
+  </HTML>

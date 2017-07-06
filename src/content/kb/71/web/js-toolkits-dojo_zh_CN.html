@@ -1,0 +1,409 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <meta name="author" content="troy.giunipero@sun.com">
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <meta name="description" content="A tutorial demonstrating how to connect a
+              Dojo Tree widget to an ArrayList using JSON">
+
+        <meta name="keywords" content="NetBeans, IDE, integrated development environment, 
+            JavaScript, JavaScript Toolkit, Dojo, JavaScript Editor, web 2.0, Ajax, open
+            source, web technology">
+
+        <link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+        <link rel="stylesheet" type="text/css" href="../../../lytebox.css" media="screen">
+        <script type="text/javascript" src="../../../images_www/js/lytebox-compressed.js"></script>
+
+        <title>使用 JSON 将 Dojo 树连接至 ArrayList - NetBeans 教程</title>
+    </head>
+
+    <body>
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+
+        <h1>使用 JSON 将 Dojo 树连接至 ArrayList</h1>
+
+        <p>在当今的应用程序中，Web 2.0 功能变得越来越重要。一个日见重要的功能是使用 JavaScript 工具包（如 <a href="http://www.dojotoolkit.org/">Dojo</a>），这使得网页的工作方式更像桌面界面，同时可以克服浏览器不兼容性并利用可维护、可访问且符合标准的代码。</p>
+
+        <p>本教程改编自 <a href="http://developers.sun.com/learning/javaoneonline/j1lab.jsp?lab=LAB-5573&yr=2009&track=1">Java One 动手实验室：对 Web 应用程序中的端到端连接利用 JavaScript 工具包</a>，说明了如何在网页中添加和配置 <a href="http://dojocampus.org/explorer/#Dijit_Tree_Basic">Dojo 树窗口部件</a>，并使服务器端可以响应 JSON 格式的树请求。在执行此操作时，将会利用 <a href="http://json.org">http://json.org</a> 中免费提供的 Java 类将 ArrayList 中的数据处理为 JSON 格式。</p>
+
+        <p><img alt="此页上的内容适用于 NetBeans IDE 6.7 - 7.1" class="stamp" height="114" src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" title="此页上的内容适用于 NetBeans IDE 6.7 - 7.1" width="114"></p>
+        
+        <p><strong>目录</strong></p>
+
+        <ul class="toc">
+            <li><a href="#addLib">将 Dojo 工具包添加到 NetBeans 项目中</a></li>
+            <li><a href="#linkFromFile">从项目文件链接到工具包资源</a></li>
+            <li><a href="#addWidget">添加和配置 Dojo 树窗口部件</a></li>
+            <li><a href="#addJSON">将第三方 JSON 转换源代码作为 JAR 文件添加到项目中</a></li>
+            <li><a href="#prepareServlet">准备 Servlet 以启动 JSON 响应</a></li>
+            <li><a href="#seeAlso">另请参见</a></li>
+        </ul>
+
+        <a name="requiredSoftware"></a>
+        <p><strong>要完成本文档，您需要具备以下软件和资源。</strong></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">软件或资源</th>
+                    <th class="tblheader" scope="col">要求的版本</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE，Java EE 包</a></td>
+                    <td class="tbltd1">6.7 或更高版本</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java 开发工具包 (JDK)</a></td>
+                    <td class="tbltd1">6 或 7</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1">GlassFish Server <br><em class="indent margin-around">或</em> <br>Tomcat Servlet 容器</td>
+                    <td class="tbltd1">Open Source Edition 3.1.x <br><em class="margin-around indent"> </em> <br>6.x 或 7.x</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.dojotoolkit.org/download">Dojo 工具包</a></td>
+                    <td class="tbltd1">版本 1.2.x 或更高版本</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/projects/samples/downloads/download/Samples%252FJavaScript%252FDojoTreeSample.zip">Dojo 样例项目</a></td>
+                    <td class="tbltd1">N/A</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <br>
+        <p><strong class="notes">注：</strong></p>
+
+        <ul>
+            <li>您需要具有 Internet 连接，才能完成此教程中包括的若干个步骤。</li>
+
+            <li>IDE 的 Java 下载包安装允许您选择性地下载 GlassFish Server Open Source Edition 并在 IDE 中注册。在此教程中，您需要服务器来模拟客户端-服务器通信。</li>
+
+            <li>可将 IDE 的早期版本用于此教程。在版本 6.5 中，IDE 捆绑提供了各种工具包；1.1.0 版的核心 Dojo 库包括在 NetBeans 6.5 中。本教程同时需要 <a href="http://dojotoolkit.org/projects/core">Dojo Core</a> 库和 <a href="http://dojotoolkit.org/projects/dijit">Dijit</a> 库中的组件。您需要下载工具包的更新版本（1.2.x 或更高版本，其中包含 Core 和 Dijit 库），并使用 IDE 的 JavaScript 库管理器注册它。
+                </li>
+
+            <li><a name="final"></a>完成的项目如下所示： <br> <img alt="在浏览器中查看的已完成练习" class="b-all margin-around" src="../../../images_www/articles/71/web/js-toolkits-dojo/dojo-tree-complete.png" title="在浏览器中查看的已完成练习">
+            </li>
+        </ul>
+
+        <br><a name="addLib"></a>
+        <h2>将 Dojo 工具包添加到 NetBeans 项目中</h2>
+
+        <p>首先在 IDE 中打开样例项目。打开项目后，将 Dojo 资源直接复制到 IDE 的 "Projects"（项目）窗口的项目中：</p>
+
+        <ol>
+            <li>将教程的 <a href="https://netbeans.org/projects/samples/downloads/download/Samples%252FJavaScript%252FDojoTreeSample.zip">Dojo 样例项目</a>下载到计算机上的某个位置。</li>
+
+            <li>启动 NetBeans 并单击 IDE 工具栏中的 "Open Project"（打开项目）按钮 (<img alt="Open Project（打开项目）按钮" src="../../../images_www/articles/71/web/js-toolkits-dojo/open-project-btn.png">)。</li>
+
+            <li>在所显示的 "Open Project"（打开项目）对话框中，导航至 Dojo 样例项目在计算机上的位置并单击 "Open Project"（打开项目）。<br><br> 当您在 IDE 中打开 <code>DojoTreeSample</code> 项目时，项目最初以带有错误标记的红色文本来显示，指示存在引用问题： <br> <img alt="以红色文本显示 DojoTreeSample 项目且具有错误标记的 Projects（项目）窗口" class="b-all margin-around" src="../../../images_www/articles/71/web/js-toolkits-dojo/proj-win-ref-problems.png" title="项目引用问题由红色文本和错误标记指示"> <br> 存在引用问题的原因是项目中使用的 Java 类（<code>Tribe</code> 和 <code>TribeDataManager</code>）引用了在 JSON JAR 文件中找到的类，稍后将在<a href="#addJSON">将 JSON JAR 文件添加到项目中</a>部分添加这些类。</li>
+
+            <li>在项目中创建一个文件夹，使之包含要添加的 Dojo 资源。为此，请在 "Projects"（项目）窗口中右键单击 <code>Web Pages</code>（Web 页）节点，然后选择 "New"（新建）> "Folder"（文件夹）。在 "New Folder"（新建文件夹）对话框的 "Folder Name"（文件夹名称）字段中键入 '<code>resources</code>'。请注意，默认情况下会在 "Parent Folder"（父文件夹）字段中输入 '<code>web</code>'。单击 "Finish"（完成）以创建新文件夹，并查看它现在是否已列在 "Projects"（项目）窗口中的 <code>Web Pages</code>（Web 页）节点下。<br><br> <strong class="notes">注：</strong>"Projects"（项目）窗口（Ctrl-1 组合键；在 Mac 上为 ⌘-1 组合键）提供了重要项目内容的<em>逻辑视图</em>，也是项目源的主入口点。"Files"（文件）窗口（Ctrl-2 组合键；在 Mac 上为 ⌘-2 组合键）显示<em>基于目录的项目视图</em>，其中包括 "Projects"（项目）窗口中未显示的任何文件和文件夹。在此步骤的 "New Folder"（新建文件夹）对话框中，在从 <code>Web Pages</code>（Web 页）节点创建新项目时，默认情况下会在 "Parent Folder"（父文件夹）字段中输入 '<code>web</code>'。如果打开 "Files"（文件）窗口，现在将会看到在 <code>web</code> 目录下列出了新的 <code>resources</code> 文件夹。</li>
+
+            <li>获取 <a href="http://www.dojotoolkit.org/downloads">Dojo 工具包</a>（版本 1.2.x 或更高版本）的副本。可从 <a href="http://www.dojotoolkit.org/downloads">http://www.dojotoolkit.org/downloads</a> 中下载 Dojo 工具包。<br><br> 请注意，Dojo 工具包的当前版本包括 <a href="http://www.dojotoolkit.org/projects/core">Dojo Core</a>、<a href="http://www.dojotoolkit.org/projects/dijit">Dijit</a> 和 <a href="http://www.dojotoolkit.org/projects/dojox">DojoX</a> 库。为了实现 Dojo 的树窗口部件，您需要 2 个组件：来自 Core 库的 <code>ItemFileReadStore</code> 模块以及 Dijit 库中包含的 <code>Tree</code> 窗口部件本身。
+
+                <ul>
+                    <li><code><a href="http://docs.dojocampus.org/dojo/data/ItemFileReadStore">dojo.data.ItemFileReadStore</a></code>：从 HTTP 端点（在此教程中为 Servlet）读取 JSON 结构化内容并将所有项都存储在内存中，以便简单、快速地进行访问。</li>
+
+                    <li><code><a href="http://docs.dojocampus.org/dijit/Tree">dijit.Tree</a></code>：树窗口部件，它提供了从 <code>ItemFileReadStore</code> 中检索的 JSON 数据的视图。</li>
+                </ul></li>
+
+            <li>要将 Dojo 资源添加到项目中，只需从资源在计算机上的位置复制资源（Ctrl-C 组合键；在 Mac 上为 ⌘-C 组合键），然后在 IDE 中右键单击新 <code>resources</code> 节点并选择 "Paste"（粘贴）（或只选择 <code>resources</code> 节点并按（Ctrl-V 组合键；在 Mac 上为 ⌘-V 组合键））。<br><br> 回想一下，您只需要 <code>Dojo Core</code> 和 <code>Dijit</code> 库，因此如果您只下载了工具包的最新副本，则请注意，<em>不</em>需要将 <code>DojoX</code> 库添加到项目中。<br><br> 在添加 <code>Dojo Core</code> 和 <code>Dijit</code> 库之后，"Projects"（项目）窗口应显示如下： <br> <img alt="显示 Dojo 资源的 Projects（项目）窗口" class="b-all margin-around" src="../../../images_www/articles/71/web/js-toolkits-dojo/proj-win-dojo-resources.png" title="Dojo 和 Dijit 库已添加到项目的 "resources" 文件夹中">
+            </li>
+        </ol>
+
+        <p>在此阶段，您已成功在 IDE 中打开 <code>DojoTreeSample</code> 项目，并向项目中添加了必要的 Dojo 资源。在下一步中，您将开始在 HTML 文件中工作，该文件将向最终用户显示树窗口部件。</p>
+
+        <br><a name="linkFromFile"></a>
+        <h2>从项目文件链接到工具包资源</h2>
+
+        <p>为了使用工具包中的资源，您需要链接至在 Core 库中找到的 <code>dojo.js</code> 文件。<code>dojo.js</code> 文件是 Dojo 的<em>源代码加载器</em>，用于确定要使用的正确托管环境。在执行此操作时，还可以通过添加 <code>parseOnLoad</code> 参数来配置 <code>djConfig</code>。</p>
+
+        <ol>
+            <li>在 "Projects"（项目）窗口中，双击 <code>dojoDemo.html</code> 文件在编辑器中将其打开。</li>
+
+            <li>在 <code>dojoDemo.html</code> 文件中，将
+
+                <pre class="examplecode">&lt;!-- TODO: link to Dojo resources here --&gt;</pre>
+
+                注释替换为以下 <code>&lt;script&gt;</code> 标记：
+
+<pre class="examplecode">&lt;script type=&quot;text/javascript&quot;
+    src=&quot;resources/dojo/dojo.js&quot;
+    djConfig=&quot;parseOnLoad: true&quot;&gt;
+&lt;/script&gt;</pre>
+
+                <ul>
+                    <li><code><a href="http://docs.dojocampus.org/djConfig">djConfig</a></code> 允许您覆盖用于控制 Dojo 运行方式的全局设置（例如，使用 <code>parseOnLoad</code> 属性）。</li>
+
+                    <li><code>parseOnLoad</code> 设置为 <code>true</code> 可确保在加载页面时解析窗口部件和页面标记。</li>
+                </ul></li>
+
+            <li><a name="themes"></a>链接到工具包中包含的<a href="http://docs.dojocampus.org/dijit/themes">样例主题</a>。Dijit 提供三个样例主题：<code>tundra</code>、<code>soria</code> 和 <code>nihilo</code>。这三个主题包含在 <code>dijit/themes</code> 文件夹中，从 "Projects"（项目）窗口中可以验证这一点： <br> <img alt="Projects（项目）窗口中显示的 Dijit 主题文件夹" class="b-all margin-around" src="../../../images_www/articles/71/web/js-toolkits-dojo/dijit-themes.png" title="Dijit 样例主题包含在 "dijit/themes" 文件夹中"> <br> 要链接到 <code>nihilo</code> 主题，请将以下 <code>@import</code> 语句添加到页面中。可在页面的 <code>&lt;head&gt;</code> 标记之间添加该语句，例如，恰好添加到您刚添加的 <code>&lt;script&gt;</code> 标记下面（更改以<strong>粗体</strong>显示）：
+
+<pre class="examplecode">&lt;script type=&quot;text/javascript&quot;
+    src=&quot;resources/dojo/dojo.js&quot;
+    djConfig=&quot;parseOnLoad: true&quot;&gt;
+&lt;/script&gt;
+
+<strong>&lt;style type=&quot;text/css&quot;&gt;
+    @import &quot;resources/dijit/themes/nihilo/nihilo.css&quot;;
+&lt;/style&gt;</strong></pre></li>
+
+            <li>向页面的 <code>&lt;body&gt;</code> 标记中添加一个类，以指定要使用的主题的名称。当您执行此操作时，加载到页面中的任何 Dojo 窗口部件都将使用与主题关联的样式来呈现。
+
+                <pre class="examplecode">&lt;body <strong>class=&quot;nihilo&quot;</strong>&gt;</pre>
+            </li>
+        </ol>
+
+        <p>在此阶段，<code>dojoDemo.html</code> 文件准备就绪，可以接受引用 Dojo Core 和 Dijit 库的任意代码，并将使用 Dojo 的 <code>nihilo</code> 主题来呈现任何窗口部件。</p>
+
+        <br><a name="addWidget"></a>
+        <h2>添加和配置 Dojo 树窗口部件</h2>
+
+        <p>链接到 <code>dojo.js</code> 之后，便可开始添加代码，以利用 Dojo 的模块和窗口部件。首先，添加代码，以使用 <code><a href="http://docs.dojocampus.org/dojo/require">dojo.require</a></code> 语句加载 <code>dijit.Tree</code> 窗口部件和 <code>dojo.data.ItemFileReadStore</code>。然后，将窗口部件和模块本身添加到页面中。</p>
+
+        <ol>
+            <li>将
+
+                <pre class="examplecode">// TODO: add dojo.require statements here</pre>
+
+                注释（第 8 行）替换为以下 <code>dojo.require</code> 语句：
+
+<pre class="examplecode">dojo.require(&quot;dojo.data.ItemFileReadStore&quot;);
+dojo.require(&quot;dijit.Tree&quot;);</pre>
+
+                <ul>
+                    <li><code><a href="http://docs.dojocampus.org/dojo/data/ItemFileReadStore">dojo.data.ItemFileReadStore</a></code>：从 HTTP 端点读取 JSON 结构化内容（在<a href="#prepareServlet">准备 Servlet 以启动 JSON 响应</a>中，将为此用途实现 servlet。）并将所有项都存储在内存中，以便简单、快速地进行访问。</li>
+
+                    <li><code><a href="http://docs.dojocampus.org/dijit/Tree">digit.Tree</a></code>：树窗口部件，它提供了从 <code>ItemFileReadStore</code> 中检索的 JSON 数据的视图。</li>
+                </ul></li>
+
+            <li><a name="TribeServlet"></a>向页面中添加 <code>ItemFileReadStore</code> 和 <code>Tree</code> 窗口部件。将
+
+<pre class="examplecode">&lt;!-- TODO: specify AJAX retrieval --&gt;
+
+&lt;!-- TODO: add Tree widget and configure attributes --&gt;</pre>
+
+                注释替换为以下内容：
+
+<pre class="examplecode">&lt;div dojoType=&quot;dojo.data.ItemFileReadStore&quot;
+     url=&quot;TribeServlet&quot;
+     jsId=&quot;indianStore&quot;&gt;
+&lt;/div&gt;
+
+&lt;div dojoType=&quot;dijit.Tree&quot;
+     store=&quot;indianStore&quot;
+     query=&quot;{type:'region'}&quot;
+     label=&quot;North American Indians&quot;&gt;
+&lt;/div&gt;</pre>
+
+                <ul>
+                    <li><code>ItemFileReadStore</code> 需要您通过指向返回 JSON 数据的服务器端资源来指定 <code>url</code> 属性。这是 <code>TribeServlet</code>，以后将对其进行说明。使用 <code>jsId</code> 属性可为检索的 JSON 数据指定 ID，然后可以通过窗口部件来使用该 ID 以引用数据存储。</li>
+
+                    <li><code>Tree</code> 使用 <code>store</code> 属性指向提供 JSON 数据的 <code>ItemFileReadStore</code>。通过 <code>query</code> 属性，可以根据 JSON 文件中使用的关键字来排列数据的显示。</li>
+                </ul>
+            </li>
+        </ol>
+
+        <p>在此阶段，<code>dojoDemo.html</code> 文件已完成，对项目的所有<em>客户端修改</em>也已就绪。在下面的两个步骤中，您要进行的更改将在发出树请求时影响项目的<em>服务器端</em>行为。</p>
+
+        <br><a name="addJSON"></a>
+        <h2>将第三方 JSON 转换源代码作为 JAR 文件添加到项目中</h2>
+
+        <p>在本教程中，在 <code>Tribe</code> 和 <code>TribeDataManager</code> 类中为您准备了用于解压缩 ArrayList 样例数据的逻辑。实际上，只需包括为项目处理 JSON 转换的第三方 Java 类，然后在 <code>Tribe</code> 和 <code>TribeDataManager</code> 类中为这些类添加 <code>import</code> 语句即可。但要完成此操作，需先编译第三方 Java 类并创建 Java 档案（JAR 文件）。IDE 可以使用 Java 类库向导帮助您完成此操作。</p>
+
+        <ol>
+            <li>访问 <a href="http://json.org/java">http://json.org/java</a>，并请注意，用于 JSON 转换的 Java 类可以免费使用。单击 "Free source code is available"（提供免费源代码）链接，以下载包含源代码的 <code>json.zip</code> 文件。</li>
+
+            <li>解压缩 <code>json.zip</code> 文件，并请注意，解压缩的文件夹包含在 <a href="http://json.org/java">http://json.org/java</a> 中列出的源代码。<br><br> 现在，我们要编译这些源代码并创建将来能够添加到 <code>DojoTreeSample</code> 项目中的 Java 档案（JAR 文件）。</li>
+
+            <li>在 IDE 主工具栏中，单击 "New Project"（新建项目）按钮 (<img alt="New Project（新建项目）按钮" src="../../../images_www/articles/71/web/js-toolkits-dojo/new-project-btn.png">)。</li>
+
+            <li>在显示的向导中的 "Categories"（类别）下，选择 "Java"，并在 "Projects"（项目）下选择 "Java Class Library"（Java 类库），然后单击 "Next"（下一步）。</li>
+
+            <li>在 Java 类库向导的 "Name and Location"（名称和位置）面板中，将新项目命名为 "<code>json</code>"，然后单击 "Finish"（完成）。将创建新项目并在 "Projects"（项目）窗口中将其打开。<br><br> 按照复制 Dojo 工具包资源并将其粘贴到 IDE "Projects"（项目）窗口的 <code>resources</code> 文件夹中的相同方式，复制刚刚下载的源代码并将其直接粘贴到新的 <code>json</code> 项目中。</li>
+
+            <li>转到解压缩的 <code>json.zip</code> 文件在计算机上的位置并复制（Ctrl-C 组合键；在 Mac 上为 ⌘-C 组合键）<code>json</code> 文件夹。<code>json</code> 文件夹包含源文件。</li>
+
+            <li>在 IDE 的 "Projects"（项目）窗口中，右键单击 <code>json</code> 项目中的 <code>&lt;默认包&gt;</code> 节点并选择 "Paste"（粘贴）。<br><br> 当您执行此操作时，"<code>json</code>" 将变为包名称，并列出其中的所有源代码。 <br> <img alt="Projects（项目）窗口 - 包含在 json 项目中的源文件" class="b-all margin-around" src="../../../images_www/articles/71/web/js-toolkits-dojo/proj-win-json-sources.png" title="源文件现已包含在新的 "json" 项目中"></li>
+
+            <li>构建 <code>json</code> 项目。要执行此操作，请在 "Projects"（项目）窗口中右键单击 <code>json</code> 项目节点，并选择 "Clean and Build"（清理并构建）。<br><br> 在构建项目时，所有 Java 类都将编译到 <code>.class</code> 文件中。IDE 会创建一个 <code>build</code> 文件夹来包含编译的类，同时创建一个 <code>dist</code> 文件夹来包含项目的 JAR 文件。从 IDE 的 "Files"（文件）窗口中可以查看这些文件夹。<br><br> 在构建 <code>json</code> 项目后，打开 "Files"（文件）窗口（Ctrl-2 组合键；在 Mac 上为 ⌘-2 组合键）并展开 <code>json</code> 文件夹。<code>build</code> 文件夹包含 <code>json.zip</code> 文件中的已编译源代码，<code>dist</code> 文件夹包含 <code>DojoTreeSample</code> 项目需要引用的 JAR 文件。<br> <img alt="Files（文件）窗口 - build 文件夹中显示的已编译源代码" class="b-all margin-around" src="../../../images_www/articles/71/web/js-toolkits-dojo/files-win-compiled-classes.png" title="可在项目的 "build" 文件夹中查看已编译源代码"> <br> 现在，您已具有 <code>json.jar</code> 文件，因此可以解决 <code>DojoTreeSample</code> 项目自打开以来显现的引用问题。</li>
+
+            <li>在 "Projects"（项目）窗口中，右键单击 <code>DojoTreeSample</code> 的 "Libraries"（库）节点并选择 "Add JAR/Folder"（添加 JAR/文件夹）。然后，在对话框中，导航至 <code>json</code> 项目的 <code>dist</code> 文件夹的位置并选择 <code>json.jar</code> 文件。<br><br> 退出该对话框时，将在 <code>Libraries</code> 节点下列出 <code>json.jar</code> 文件。<br> <img alt="Projects（项目）窗口 - 添加到 Libraries（库）节点的 JAR 文件" class="b-all margin-around" src="../../../images_www/articles/71/web/js-toolkits-dojo/libraries-json-jar.png" title="JAR 文件由项目引用"> <br> <strong class="notes">注：</strong>尽管 <code>json.jar</code> 文件列在项目的 <code>Libraries</code> 节点下，但该文件却是从原始位置引用的，而不是复制并添加到项目中的（例如，您将无法在 "Files"（文件）窗口中的 <code>DojoTreeSample</code> 项目下找到它）。因此，如果更改 JAR 文件的位置，引用将中断。</li>
+
+            <li>展开 <code>Source Packages</code>（源包）> <code>dojo.indians</code> 包并双击 <code>Tribe</code> 和 <code>TribeDataManager</code> 类，以便在编辑器中将其打开。</li>
+
+            <li>向两个类中添加必要的 import 语句。在每个类中，右键单击编辑器并选择 "Fix Imports"（修复导入）。<br><br> <code>Tribe</code> 类需要以下导入：
+
+<pre class="examplecode">import dojo.org.json.JSONException;
+import dojo.org.json.JSONObject;</pre>
+
+                <code>TribeDataManager</code> 类需要以下导入：
+
+<pre class="examplecode">import dojo.org.json.JSONArray;
+import dojo.org.json.JSONException;
+import dojo.org.json.JSONObject;</pre>
+
+                <p class="tips">请注意，<a href="http://json.org/java">http://json.org/java</a> 中还提供用于 JSON 的 API - 以后检查 <code>Tribe</code> 和 <code>TribeDataManager</code> 中的代码时，可能要使此页保持打开状态。</p></li>
+
+            <li>检查 <code>TribeDataManager</code> 中的 ArrayList。ArrayList 是 <code>Tribe</code> 对象的集合。查看 ArrayList 的第一个元素，您可以看到创建了一个新 <code>Tribe</code> 对象并将其添加到了列表中：
+
+<pre class="examplecode">indians.add(new Tribe(&quot;Eskimo-Aleut&quot;, &quot;Arctic&quot;, &quot;Alaska Natives&quot;));</pre>
+
+                每个 <code>Tribe</code> 对象捕获三个信息点：<em>tribe</em>、<em>category</em> 和 <em>region</em>。此练习中的数据摘自维基百科中有关 <a href="http://en.wikipedia.org/wiki/Native_Americans_in_the_United_States#Ethno-linguistic_classification">Native Americans in the United States</a> 的条目。您可以确定，在一个 category 中可以对多个 <em>tribe </em><em>分类</em>，一个大的 <em>region</em> 中可以包含许多 category。</li>
+
+            <li>在编辑器中打开 <code>Tribe</code> 类，并请注意，它基本上是 <a href="http://java.sun.com/docs/books/tutorial/javabeans/index.html">JavaBean</a>，<code>toJSONObject()</code> 方法除外：
+
+<pre class="examplecode">public JSONObject toJSONObject() throws JSONException {
+    JSONObject jo = new JSONObject();
+    jo.put(&quot;name&quot;, this.name);
+    jo.put(&quot;type&quot;, &quot;tribe&quot;);
+
+    return jo;
+}</pre></li>
+
+            <li>切换回 <code>TribeDataManager</code>（Ctrl-Tab 组合键）并检查该类中包括的方法。打开导航器（Ctrl-7 组合键；在 Mac 上为 ⌘-7 组合键），以查看该类中包含的字段和属性的列表。<br> <img alt="在导航器中查看的 TribeDataManager 类" class="margin-around" src="../../../images_www/articles/71/web/js-toolkits-dojo/dojo-navigator.png" title="使用导航器查看类字段和属性"> <br> 其中包含的最重要方法是 <code>getIndiansAsJSONObject()</code>。此方法会扫描 ArrayList，处理数据，并以 <code>JSONObject</code> 的形式返回它。JSONObject 的 <code>String</code> 形式是 Dojo 的 <code>ItemFileReadStore</code> 所需要的。
+
+<pre class="examplecode">public static JSONObject getIndiansAsJSONObject() throws JSONException {
+
+    JSONObject jo = new JSONObject();
+    JSONArray itemsArray = new JSONArray();
+
+    jo.put(&quot;identifier&quot;, &quot;name&quot;);
+    jo.put(&quot;label&quot;, &quot;name&quot;);
+
+    // add regions
+    addRegionsToJSONArray(itemsArray);
+
+    // add categories
+    addCategoriesToJSONArray(itemsArray);
+
+    // add tribes
+    addTribesToJSONArray(itemsArray);
+
+    jo.put(&quot;items&quot;, itemsArray);
+    return jo;
+}</pre></li>
+
+            <li>在 <code>getIndiansAsJSONObject()</code> 方法中打开 Javadoc。通过返回到导航器（Ctrl-7 组合键；在 Mac 上为 ⌘-7 组合键）并将光标悬停于方法上方可以执行此操作。否则，请从主菜单中选择 "Window"（窗口）> "Other"（其他）> "Javadoc"，然后在编辑器中单击方法签名。 <br><a name="javadoc"></a> <img alt="打开到 TribeDataManager 类的 Javadoc 窗口" class="margin-around" src="../../../images_www/articles/71/web/js-toolkits-dojo/javadoc-window.png" title="TribeDataManager 的 Javadoc 提供 JSON 数据的示例"></li>
+
+            <li>检查在 Javadoc 中提供的 JSON 数据的示例。请注意，数据格式符合 <a href="http://o.dojotoolkit.org/book/dojo-book-0-9/part-3-programmatic-dijit-and-dojo/what-dojo-data/available-stores/dojo-data-item">Dojo 文档</a>中提供的示例。</li>
+        </ol>
+
+        <div class="indent">
+            <div class="feedback-box float-left" style="width:700px">
+                <h3>NetBeans IDE 的 Java 调试器</h3>
+
+                <p>您将实现一个 Servlet，它将在下一步中调用 <code>getIndiansAsJSONObject()</code> 方法。执行此操作后，可以使用 IDE 的 Java 调试器逐句执行该方法并检查 <code>JSONObject</code> 的构成。可通过以下方法实现此目标：</p>
+
+                <ol>
+                    <li>在方法中设置断点（在编辑器的左旁注中单击行号（即第 99 行）），<br> <img alt="在编辑器中设置的方法断点" class="margin-around b-all" src="../../../images_www/articles/71/web/js-toolkits-dojo/debugger-breakpoint.png" title="使用 Java 调试器逐步执行代码"></li>
+
+                    <li>运行调试器（从 IDE 工具栏中单击 "Debug Main Project"（调试主项目）按钮 (<img alt="Debug Main Project（调试主项目）按钮" src="../../../images_www/articles/71/web/js-toolkits-dojo/debug-btn.png">)），</li>
+
+                    <li>使用调试器工具栏中的 "Step Into"（步入）(<img alt="Step Into（步入）按钮" src="../../../images_www/articles/71/web/js-toolkits-dojo/step-into-btn.png">) 和 "Step Over"（步过）(<img alt="Step Over（步过）按钮" src="../../../images_www/articles/71/web/js-toolkits-dojo/step-over-btn.png">) 按钮，</li>
+
+                    <li>在 "Local Variables"（局部变量）窗口中检查变量和表达式值（"Window"（窗口）> "Debugging"（调试）> "Local Variables"（局部变量））。</li>
+                </ol>
+
+                <p>有关 Java 调试器的详细信息，请参见以下屏幕快照：</p>
+
+                <ul>
+                    <li><a href="../java/debug-stepinto-screencast.html">NetBeans 调试器中可视“步入”操作</a></li>
+                    <li><a href="../java/debug-deadlock-screencast.html">使用 NetBeans 调试器进行死锁检测</a></li>
+                    <li><a href="../java/debug-evaluator-screencast.html">在 NetBeans 调试器中使用代码片段计算器</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <br style="clear:both;">
+
+        <br>
+        <p>在此步骤中，您已编译来自 <a href="http://json.org">http://json.org</a> 的第三方源代码并将其作为 JAR 文件添加至 <code>DojoTreeSample</code> 项目中。然后，在 <code>Tribe</code> 和 <code>TribeDataManager</code> 类中，向 JAR 文件中的类添加 import 语句。最后，您检查了 <code>TribeDataManager</code> 中包含的一些方法，这些方法用于将 ArrayList 数据转换为 JSON 字符串。</p>
+
+        <p>在下一步中，您将创建一个 servlet，它将通过调用 <code>TribeDataManager</code> 的 <code>getIndiansAsJSONObject()</code> 方法处理传入请求，并将生成的 JSON 字符串作为响应发送至客户端。</p>
+
+        <br><a name="prepareServlet"></a>
+        <h2>准备 Servlet 以启动 JSON 响应</h2>
+
+        <p>回想一下，您在向 Web 页中添加 <code>ItemFileReadStore</code> 时，<a href="#TribeServlet">已将 "<code>TribeServlet</code>" 指定为 <code>url</code> 属性的值</a>。这是任务为准备 JSON 数据并将其返回客户端的服务器端中的目标。现在，我们要创建此 Servlet。</p>
+
+        <ol>
+            <li>在 "Projects"（项目）窗口中，右键单击 <code>dojo.indians</code> 源包并选择 "New"（新建）> "Servlet"。</li>
+
+            <li>在 "New Servlet"（新建 Servlet）对话框中，键入 <code>TribeServlet</code> 作为类名。而且，还要在 <code>dojo.indians</code> 包中创建 Servlet。<br> <img alt="新建 Servlet 向导" class="margin-around b-all" src="../../../images_www/articles/71/web/js-toolkits-dojo/new-servlet-wizard.png" title="使用新建 Servlet 向导创建 Servlet"> <br><br> 单击 "Next"（下一步）。</li>
+
+            <li>请注意，在向导的 "Configure Servlet Deployment"（配置 Servlet 部署）步骤中，默认情况下会选择 "Add information to deployment descriptor"（将信息添加到部署描述符）选项，这意味着会自动将默认的 Servlet 名称和 URL 模式添加到 <code>web.xml</code> 中。因此，对用于 <code>TribeServlet</code> 的主机域的任何请求（即 <code>http://localhost:8080/DojoTreeSample/</code>）都将由 <code>dojo.indians.TribeServlet</code> 类来处理。</li>
+
+            <li>单击 "Finish"（完成）。将生成用于新 Servlet 的框架类并在编辑器中打开该类。<br><br> Servlet 的功能是调用 <code>getIndiansAsJSONObject()</code> 方法，并使用来自此方法的数据响应客户端请求。为了准备 JSON 格式的响应，必须首先将响应的 MIME 类型设置为 JSON 格式。</li>
+
+            <li><a name="contentType"></a>查找 <code>processRequest()</code> 方法，并将
+
+                <pre class="examplecode">response.setContentType(&quot;text/html;charset=UTF-8&quot;);</pre>
+
+                更改为：
+
+                <pre class="examplecode">response.setContentType(&quot;application/json&quot;);</pre>
+
+                此代码将设置 HTTP 响应的 <code>Content-Type</code> 头，以指示任何返回的内容均为 JSON 格式。</li>
+
+            <li>将 <code>processRequest()</code> 方法的 <code>try</code> 块内的注释代码替换为以下代码（更改以<strong>粗体</strong>显示）：
+
+<pre class="examplecode">try {
+
+    <strong>JSONObject jo = null;
+    try {
+        jo = TribeDataManager.getIndiansAsJSONObject();
+    } catch (JSONException ex) {
+        System.out.println(&quot;Unable to get JSONObject: &quot; + ex.getMessage());
+    }
+
+    out.println(jo);</strong>
+
+} finally {
+    out.close();
+}</pre>
+
+                <p class="tips">要重新格式化代码，请在编辑器中单击右键并选择 "Format"（格式化代码）。</p></li>
+
+            <li>使用 IDE 的提示添加必要的 import 语句。它们是：
+
+<pre class="examplecode">import dojo.org.json.JSONException;
+import dojo.org.json.JSONObject;</pre></li>
+
+            <li>要运行项目，请在 "Projects"（项目）窗口中选择 <code>DojoTreeSample</code> 项目节点，然后单击 IDE 工具栏中的 "Run Project"（运行项目）(<img alt="Run Main Project（运行主项目）按钮" src="../../../images_www/articles/71/web/js-toolkits-dojo/run-project-btn.png">) 按钮。<br><br> 浏览器将打开以显示欢迎页 (<code>dojoDemo.html</code>)，您可以看到 Dojo 数窗口部件正在正确显示 ArrayList 中的数据，如<a href="#final">上面的屏幕快照</a>所示。</li>
+        </ol>
+
+        <div class="feedback-box">
+            <a href="/about/contact_form.html?to=3&amp;subject=Feedback: Connecting a Dojo Tree to an ArrayList">请将您的反馈意见发送给我们</a></div>
+
+        <br style="clear:both;">
+
+        <a name="seeAlso"></a>
+        <h2>另请参见</h2>
+
+        <p>有关 Dojo 的更多信息，请参见官方文档：</p>
+
+        <ul>
+            <li>Dojo Toolkit 参考指南：<a href="http://dojotoolkit.org/reference-guide/">Reference Guide</a></li>
+            <li>联机 API 参考：<a href="http://api.dojotoolkit.org/">http://api.dojotoolkit.org/</a></li>
+            <li>Dojo 演示：<a href="http://demos.dojotoolkit.org/demos/">http://demos.dojotoolkit.org/demos/</a></li>
+        </ul>
+
+        <p>有关 <a href="https://netbeans.org/">netbeans.org</a> 中 JavaScript 和 JavaScript 工具包的更多信息，请参见以下资源：</p>
+
+        <ul>
+            <li><a href="js-toolkits-jquery.html">使用 jQuery 改善 Web 页的外观和可用性</a>。提供了 jQuery 简介，还介绍了一些步骤演示如何将 jQuery 的可折叠窗口部件应用于 Web 页中的 HTML 标记。</li>
+
+            <li><a href="ajax-quickstart.html">Ajax 简介 (Java)</a>。介绍如何使用 Servlet 技术构建简单的应用程序，同时讲解了 Ajax 请求的基础过程流。</li>
+
+            <li><a href="../../73/ide/javascript-editor.html">编辑 JavaScript</a>。介绍 IDE 提供的基本 JavaScript 编辑功能的文档。</li>
+            
+        </ul>
+
+    </body>
+</html>

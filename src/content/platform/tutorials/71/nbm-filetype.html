@@ -1,0 +1,1105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>File Type Integration Tutorial for NetBeans Platform 7.1</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+  <meta name="AUDIENCE" content="NBUSER"/>
+  <meta name="TYPE" content="ARTICLE"/>
+  <meta name="EXPIRES" content="N"/>
+  <meta name="developer" content="gwielenga@netbeans.org"/>
+  <meta name="indexed" content="y"/>
+  <meta name="description"
+ content="A short guide to using the DataLoader API, as well as other APIs
+ relating to file support."/>
+<!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+	<h1>File Type Integration Tutorial</h1>
+
+<p>This tutorial shows you how to write a module that lets the IDE,
+or any other application built on the NetBeans Platform, recognize a new file type.</p>
+
+   <p><b class="notes">Note:</b> This document uses NetBeans IDE 7.1 and NetBeans Platform 7.1. If you
+    are using an earlier version, see <a href="../70/nbm-filetype.html">the previous version
+    of this document</a>.</p>
+
+   <p><b>Contents</b></p>
+   
+   <p><img src="../../images/articles/71/netbeans-stamp.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 7.1" title="Content on this page applies to NetBeans IDE 7.1"/></p>
+      <ul class="toc">
+  <li><a href="#intro">Introduction to File Type Integration</a></li>
+  <li><a href="#creating">Creating the Module Project</a></li>
+  <li><a href="#recognizing">Recognizing Abc Files</a></li>
+  <li><a href="#install">Installing and Trying Out the Functionality</a></li>
+  <li><a href="#adding">Creating Features for Abc Files</a>
+  <ul>
+      <li><a href="#action">Adding a Context-Sensitive Action</a></li>
+      <li><a href="#multiview">Creating Additional Multiview Windows</a></li>
+      <li><a href="#parse">Parsing the File</a></li>
+      <li><a href="#properties">Extending the Properties Window</a></li>
+      <li><a href="#synchronized">Creating Synchronized Views</a></li>
+  </ul></li>
+  <li><a href="#share">Creating a Shareable Binary</a></li>
+       </ul>
+         
+<p><b>To follow this tutorial, you need the software and resources listed in the following 
+table.</b></p>
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 7.1 or above</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">version 6 or above</td>
+            </tr>
+        </tbody>
+    </table>
+    
+
+
+
+<h2 class="tutorial"><a name="intro"></a>Introduction to File Type Integration</h2>
+
+<p>File types that are recognized in the IDE have their own icons, menu items, and behavior. 
+The "files" being shown are <tt>FileObjects</tt>&#8212;wrappers
+around <tt>java.io.File</tt> or, in the case of configuration files, typically wrappers around data stored in some other way, 
+such as inside XML files in modules. What you actually <i>see</i> are <tt>Nodes</tt>, which provide functionality like actions
+and localized names to objects like files. In between <tt>Nodes</tt> and <tt>FileObjects</tt> are <tt>DataObjects</tt>. 
+A <tt>DataObject</tt> is like a <tt>FileObject</tt>, except that it knows what kind of file is being shown, and there are 
+usually different types of <tt>DataObject</tt> for files with different extensions and XML files with different namespaces.
+Each <tt>DataObject</tt> is provided by a different module, each implementing support for one or more file types&#8212;for example,
+the Image module makes it possible to recognize and open <tt>.gif</tt> and <tt>.png</tt> files.</p>
+
+<p>A module that recognizes a file type installs a <tt>DataLoader</tt>&#8212;a factory for a file-type-specific <tt>DataObject</tt>.
+When a folder is expanded, the IDE asks each known <tt>DataLoader</tt>, "Do you know what this is?" The first one that says 
+"Yes" creates the <tt>DataObject</tt> for the file. In order to actually display something for each file, the system calls 
+<tt>DataObject.getNodeDelegate()</tt> for each <tt>DataObject</tt> and the <tt>Nodes</tt> are what you actually see in the IDE.</p>
+
+<p>Below, the diagram on the left shows what each item mentioned above makes available:</p>
+
+<p><img  src="../../images/tutorials/filetype/diagram-dataobject2.png" alt="Diagram."/></p>
+
+<p>In this tutorial, you create a module that installs a <tt>DataLoader</tt> for imaginary "Abc" files 
+(<tt>.abc</tt> file extension). By default, a file with the "abc" extension is treated as any other file that
+the IDE does not recognize&#8212;it is treated as a text file and, as a result, the IDE provides the same functionality for
+Abc files as it does for text files. Once you have created the module, you will be shown how to enhance it
+with functionality that will be available to Abc files only. When you complete the development cycle, you can easily let others make use of
+ your module&#8212;the IDE lets you create a binary that you can share with others, who can then install it through the
+ Plugin Manager of their application.</p>
+
+<!-- ===================================================================================== -->
+
+<h2 class="tutorial"><a name="creating"></a>Creating the Module Project</h2>
+      
+<p>In this section, we use a wizard to create the source structure that every NetBeans module requires. The
+source structure consists of certain folders in specific places and a set of files that are
+always needed. For example, every NetBeans module requires a <tt>nbproject</tt> folder, which holds
+the project's metadata, and a <tt>layer.xml</tt> file, for declarative registration of items
+such as toolbar buttons and windows.</p>
+
+<ol>
+          
+	      <li>Choose File &gt; New Project (Ctrl-Shift-N). Under Categories, select NetBeans Modules. Under Projects, 
+ select Module. Click Next.</li>
+	<li><p>In the Name and Location panel, type <tt>AbcFileType</tt> in Project Name.
+ Change the
+Project Location to any directory on your computer. Click Next.</p></li>
+
+<li><p>In the Basic Module Configuration panel, type <tt>org.myorg.abcfiletype</tt>
+ as the Code Name Base. Click Finish.</p></li></ol>
+
+<p> The IDE creates the <tt>Abc File Type</tt>
+project. The project contains all of your sources and
+project metadata, such as the project's Ant build script. The project
+opens in the IDE. You can view its logical structure in the Projects window (Ctrl-1) and its
+file structure in the Files window (Ctrl-2). </p>
+
+<!-- ===================================================================================== -->
+<h2><a name="recognizing"></a>Recognizing Abc Files</h2>
+
+<p>In this section, we use a wizard to create the classes necessary for
+ recognizing Abc files as being distinct from all other files. As discussed
+ at the start of this tutorial, we need a data object and a data loader, as
+ well as a MIME type resolver, and registration entries in the <tt>layer.xml</tt> file,
+ to do so. The New File Type wizard will create all of these for us.</p>
+
+  
+ <ol>
+	
+	 <li>Right-click the project node and 
+	      choose New &gt; Other &gt; Module Development &gt; File Type.</li>
+	      <li>In the File Recognition panel, do the following:
+<ul>
+<li>Type <tt>text/x-abc</tt> in the MIME Type edit box.</li>
+<li>Type <tt>.abc .ABC</tt> in the by Filename Extension edit box.</li>
+</ul>
+<p>The File Recognition panel should now look as follows:</p>
+
+	       <p><img src="../../images/tutorials/filetype/71/filewizard1.png" alt="Step 1 of New File wizard."/></p>
+
+	       <p>Note the following about the fields in the File Recognition panel:</p>
+	       <ul>
+		       <li><b>MIME Type.</b> Specifies the data object's unique MIME type.</li>
+		       <li>by
+			       <ul><li><b>Filename Extension.</b> Specifies one or more file extensions that the IDE will recognize 
+		       as belonging to the specified MIME type. The file extension can optionally be preceded 
+		       by a dot. Separators are commas, spaces, or both. Therefore, all of the following are valid:
+		       <ul><li><tt>.abc,.def</tt></li>
+			       <li><tt>.abc .def</tt></li>
+			       <li><tt>abc def</tt></li>
+			       <li><tt>abc,.def ghi, .wow</tt></li></ul>
+			<p>Let's imagine that Abc files be case-sensitive. For
+ this reason, you specify <i>two</i> MIME types in this tutorial&#8212;<tt>.abc</tt> and <tt>.ABC</tt>.</p></li>
+		       <li><b>XML Root Element.</b> Specifies a unique namespace that distinguishes the XML file 
+		       type from all other XML file types. Since many XML files have the same extension (<tt>xml</tt>),
+			 the IDE distinguishes between
+		       XML files via their XML root elements. More specifically, the IDE can distinguish between namespaces and
+		       the first XML element in XML files. You can use this to, for example, distinguish
+		       between a JBoss deployment descriptor and a WebLogic deployment descriptor. Once you have made
+		       this distinction, you can ensure that menu items added to the JBoss deployment descriptor's contextual menu
+			are not available to the WebLogic deployment descriptor. For an example, see
+ the <a href="nbm-palette-api2.html">NetBeans Component Palette Module Tutorial</a>.</li></ul></li>
+</ul>
+	      
+	      <p>Click Next.</p></li>
+
+	      <li><p>In the Name and Location panel, type <tt>Abc</tt> as the Class Name Prefix
+	      and browse to any 16x16 pixel image file as the new file type's icon, as shown below.</p>
+	      
+<p><img src="../../images/tutorials/filetype/71/filewizard2.png" alt="Step 2 of New File wizard."/></p>
+
+
+              <p><b>Note:</b> You can use any icon of a 16x16 pixel dimension. If you like, you can
+              right-click on this one and save it locally, and then
+              specify it in the wizard step above: <img src="../../images/tutorials/filetype/Datasource.gif" alt="Datasource.gif"/></p></li>
+
+<li>Click Finish.</li></ol>
+
+<p>The Projects window should now look as follows:</p>
+
+<p><img src="../../images/tutorials/filetype/71/filewizard3.png" alt="Final Projects window."/></p>
+
+<p>Each of the newly generated files is briefly introduced:</p>
+ <ul>
+	<li><b>AbcDataObject.java.</b> Wraps a <tt>FileObject</tt>. DataObjects are produced by DataLoaders.
+	 For more information, see <a href="http://wiki.netbeans.org/wiki/view/DevFaqDataObject">What is a DataObject?</a>.</li>
+ <li><b>AbcResolver.xml.</b> Maps the <tt>.abc</tt> and <tt>.ABC</tt> extensions to the MIME type. The <tt>AbcDataLoader</tt> only 
+ recognizes the MIME type; it does not know about the file extension. That is the task of the MIME type resolver,
+  which uses <a href="http://bits.nbextras.org/dev/javadoc/org-openide-filesystems/org/openide/filesystems/doc-files/resolverDocumentation.html">these</a>
+  rules to determine whether a file is recognized.</li>
+	 <li><b>AbcTemplate.abc.</b> Provides the basis of a file template that is registered
+         in the <tt>layer.xml</tt> such that it will be installed in the New File dialog
+         as a new template.</li>
+         <li><b>AbcVisualElement.java.</b> Sample visual tab in multiview editor.</li>
+</ul>
+      
+      <p>In the <tt>layer.xml</tt> file, you should see the following:</p>
+      
+<pre class="examplecode">&lt;folder name="Loaders"&gt;
+    &lt;folder name="text"&gt;
+        &lt;folder name="x-abc"&gt;
+            &lt;folder name="Actions"&gt;
+                &lt;file name="org-openide-actions-CopyAction.shadow"&gt;
+                    &lt;attr name="originalFile" stringvalue="Actions/Edit/org-openide-actions-CopyAction.instance"/&gt;
+                    &lt;attr name="position" intvalue="400"/&gt;
+                &lt;/file&gt;
+                &lt;file name="org-openide-actions-CutAction.shadow"&gt;
+                    &lt;attr name="originalFile" stringvalue="Actions/Edit/org-openide-actions-CutAction.instance"/&gt;
+                    &lt;attr name="position" intvalue="300"/&gt;
+                &lt;/file&gt;
+                &lt;file name="org-openide-actions-DeleteAction.shadow"&gt;
+                    &lt;attr name="originalFile" stringvalue="Actions/Edit/org-openide-actions-DeleteAction.instance"/&gt;
+                    &lt;attr name="position" intvalue="600"/&gt;
+                &lt;/file&gt;
+                &lt;file name="org-openide-actions-FileSystemAction.shadow"&gt;
+                    &lt;attr name="originalFile" stringvalue="Actions/System/org-openide-actions-FileSystemAction.instance"/&gt;
+                    &lt;attr name="position" intvalue="1100"/&gt;
+                &lt;/file&gt;
+                &lt;file name="org-openide-actions-OpenAction.shadow"&gt;
+                    &lt;attr name="originalFile" stringvalue="Actions/System/org-openide-actions-OpenAction.instance"/&gt;
+                    &lt;attr name="position" intvalue="100"/&gt;
+                &lt;/file&gt;
+                &lt;file name="org-openide-actions-PropertiesAction.shadow"&gt;
+                    &lt;attr name="originalFile" stringvalue="Actions/System/org-openide-actions-PropertiesAction.instance"/&gt;
+                    &lt;attr name="position" intvalue="1400"/&gt;
+                &lt;/file&gt;
+                &lt;file name="org-openide-actions-RenameAction.shadow"&gt;
+                    &lt;attr name="originalFile" stringvalue="Actions/System/org-openide-actions-RenameAction.instance"/&gt;
+                    &lt;attr name="position" intvalue="700"/&gt;
+                &lt;/file&gt;
+                &lt;file name="org-openide-actions-SaveAsTemplateAction.shadow"&gt;
+                    &lt;attr name="originalFile" stringvalue="Actions/System/org-openide-actions-SaveAsTemplateAction.instance"/&gt;
+                    &lt;attr name="position" intvalue="900"/&gt;
+                &lt;/file&gt;
+                &lt;file name="org-openide-actions-ToolsAction.shadow"&gt;
+                    &lt;attr name="originalFile" stringvalue="Actions/System/org-openide-actions-ToolsAction.instance"/&gt;
+                    &lt;attr name="position" intvalue="1300"/&gt;
+                &lt;/file&gt;
+                &lt;file name="sep-1.instance"&gt;
+                    &lt;attr name="instanceClass" stringvalue="javax.swing.JSeparator"/&gt;
+                    &lt;attr name="position" intvalue="200"/&gt;
+                &lt;/file&gt;
+                &lt;file name="sep-2.instance"&gt;
+                    &lt;attr name="instanceClass" stringvalue="javax.swing.JSeparator"/&gt;
+                    &lt;attr name="position" intvalue="500"/&gt;
+                &lt;/file&gt;
+                &lt;file name="sep-3.instance"&gt;
+                    &lt;attr name="instanceClass" stringvalue="javax.swing.JSeparator"/&gt;
+                    &lt;attr name="position" intvalue="800"/&gt;
+                &lt;/file&gt;
+                &lt;file name="sep-4.instance"&gt;
+                    &lt;attr name="instanceClass" stringvalue="javax.swing.JSeparator"/&gt;
+                    &lt;attr name="position" intvalue="1000"/&gt;
+                &lt;/file&gt;
+                &lt;file name="sep-5.instance"&gt;
+                    &lt;attr name="instanceClass" stringvalue="javax.swing.JSeparator"/&gt;
+                    &lt;attr name="position" intvalue="1200"/&gt;
+                &lt;/file&gt;
+            &lt;/folder&gt;
+            &lt;folder name="Factories"&gt;
+                &lt;file name="AbcDataLoader.instance"&gt;
+                    &lt;attr name="SystemFileSystem.icon" urlvalue="nbresloc:/org/myorg/abcfiletype/Datasource.gif"/&gt;
+                    &lt;attr name="dataObjectClass" stringvalue="org.myorg.abcfiletype.AbcDataObject"/&gt;
+                    &lt;attr name="instanceCreate" methodvalue="org.openide.loaders.DataLoaderPool.factory"/&gt;
+                    &lt;attr name="mimeType" stringvalue="text/x-abc"/&gt;
+                &lt;/file&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;
+&lt;folder name="Services"&gt;
+    &lt;folder name="MIMEResolver"&gt;
+        &lt;file name="AbcResolver.xml" url="AbcResolver.xml"&gt;
+            &lt;attr name="displayName" bundlevalue="org.myorg.abcfiletype.Bundle#Services/MIMEResolver/AbcResolver.xml"/&gt;
+        &lt;/file&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+
+      
+    <!-- ======================================================================================= -->
+
+<h2><a name="install"></a>Installing and Trying Out the Functionality</h2>
+<p>Let's now install the module and then use the basic
+ functionality we've created so far.
+  The IDE uses an Ant build script to build and install your module. The build 
+  script is created for you
+when you create the project.</p>
+<div class="indent">
+
+
+      <ol>
+	      <li><p>In the Projects window, right-click the <tt>AbcFileType</tt> project and choose Run.
+                      A new instance of the IDE starts, installing your module into itself.</p></li>
+	       <li><p>Choose Window | Favorites and then browse to the "AbcTemplate.abc" file
+                   in your module source structure. Notice that the icon assigned to
+                   your file type is shown for your file and that you can open the
+                   file in the IDE's text editor:</p>
+         <p><img style="border: 1px solid #0e1b55"  src="../../images/tutorials/filetype/71/run1.png" alt="Dummy template."/></p>
+               </li>
+          <li><p>Click the "Visual" tab and notice that you have a starting point for
+                   creating a visual page in a multiview editor:</p>
+         <p><img style="border: 1px solid #0e1b55"  src="../../images/tutorials/filetype/71/run2.png" alt="Dummy template."/></p></li>
+	       <li><p>Next, let's use the IDE to create a new file
+                   using the Abc template registered in the module. To get started,
+                   use the New Project dialog (Ctrl-Shift-N)
+            to create any kind of application in the IDE. Once you have a project, right-click the project node and choose New &gt; Other. In the Other
+		 category, a template is available for working with the new file type:</p>
+         <p><img  src="../../images/tutorials/filetype/71/filetemplate.png" alt="Dummy template."/></p>
+         <p>Complete the wizard and you will have created a file that
+         can be used for starting off the user's work with the given file type.</p>
+		 <p class="tips">If you want to provide default code via the template, add the code to the
+		  <tt>AbcTemplate.abc</tt> file that the New File Type wizard created for you.</p></li>
+       </ol>          
+   </div>
+
+<!-- ===================================================================================== -->
+<h2><a name="adding"></a>Creating Features for Abc Files</h2>
+<p>Now that the NetBeans Platform is able to distinguish Abc files from all other types of files,
+it is time to add features specifically for these types of files. In this section, we add a menu
+item on the right-click contextual menu of the file's node in the explorer windows, such as in
+the Projects window, and we enable the file to open into a window, instead of into an editor.</p>
+
+      <div class="indent">
+          
+          <h3 class="tutorial"><a name="action"></a>Adding a Context-Sensitive Action</h3>
+          
+          <p>In this subsection, we use the New Action wizard to create a Java class that
+          will perform an action for our file type. The wizard will also register the class
+          in the <tt>layer.xml</tt> file such that the user will be able to invoke the
+          action from the right-click contextual menu of the file type's node in an explorer window.</p>
+          
+          <ol>
+              
+              <li>Right-click the project node and 
+              choose New &gt; Action.</li>
+              <li><p>In the Action Type panel, click Conditionally Enabled. Type <tt>org.myorg.abcfiletype.AbcDataObject</tt>, which
+              is the fully qualified name of the data object generated above by the New File Type wizard, as shown below:</p>
+              
+              <p><img  src="../../images/tutorials/filetype/71/newaction1.png" alt="Step 1 of New Action wizard."/></p>
+              
+              <p>Click Next.</p></li>
+              
+              <li><p>In the GUI Registration panel, select the 'File' category in the Category drop-down list.
+              The Category drop-down list controls where an action is shown in the Keyboard Shortcuts editor in the IDE.</p>
+              <p>Next, Unselect Global Menu Item and then select File Type Contect Menu Item.
+              In the Content Type drop-down list, select the MIME type you specified above in the New File Type
+              wizard, as shown below:</p>
+              
+              <p><img  src="../../images/tutorials/filetype/71/newaction2.png" alt="Step 2 of New Action wizard."/></p>
+              
+              <p>Notice that you can set the position of the menu item and that you
+              can separate the menu item from the item before it and after it. Click Next.</p></li>
+              
+              <li><p>In the Name and Location panel, type <tt>MyAction</tt> as the Class Name
+              and type <tt>My Action</tt> as the Display Name. Optionally, provide an icon
+              to be displayed.</p>
+              
+              <p><img  src="../../images/tutorials/filetype/71/newaction3.png" alt="Step 3 of New Action wizard."/></p>
+              
+              <p>Click Finish and <tt>MyAction.java</tt> is added to the <tt>org.myorg.abcfiletype</tt> package.</p></li>
+              
+              <li>In the Source Editor, add some code to the action's <tt>actionPerformed</tt> method:
+              
+<pre class="examplecode">@Override
+public void actionPerformed(ActionEvent ev) {
+   FileObject f = context.getPrimaryFile();
+   String displayName = FileUtil.getFileDisplayName(f);
+   String msg = "I am " + displayName + ". Hear me roar!";
+   NotifyDescriptor nd = new NotifyDescriptor.Message(msg);
+   DialogDisplayer.getDefault().notify(nd);
+}</pre>
+              <p>Press Ctrl-Shift-I. The IDE automatically adds import statements to the top of the class.</p>
+
+<p class="tips">Some code
+              is still underlined in red, to indicate that not all of the required packages are on the classpath.
+              Right-click the project node, choose Properties, and click Libraries in the Project Properties dialog box.
+              Click Add at the top of the Libraries tab and add the Dialogs API.</p>
+              
+              <p>In the <tt>MyAction.java</tt> class, press Ctrl-Shift-I again. The red underlining disappears because
+              the IDE finds the required packages in the Dialogs API.</p>
+
+              <p>The code should now be as follows:</p>
+
+<pre class="examplecode">import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
+
+import org.openide.awt.ActionRegistration;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.awt.ActionID;
+import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
+import org.openide.util.NbBundle.Messages;
+
+@ActionID(category = "File",
+id = "org.myorg.abcfiletype.MyAction")
+@ActionRegistration(displayName = "#CTL_MyAction")
+@ActionReferences({
+    @ActionReference(path = "Loaders/text/x-abc/Actions", position = 0)
+})
+@Messages("CTL_MyAction=My Action")
+public final class MyAction implements ActionListener {
+
+    private final AbcDataObject context;
+
+    public MyAction(AbcDataObject context) {
+        this.context = context;
+    }
+
+    public void actionPerformed(ActionEvent ev) {
+        FileObject f = context.getPrimaryFile();
+        String displayName = FileUtil.getFileDisplayName(f);
+        String msg = "I am " + displayName + ". Hear me roar!";
+        NotifyDescriptor nd = new NotifyDescriptor.Message(msg);
+        DialogDisplayer.getDefault().notify(nd);
+    }
+    
+}</pre>
+
+              </li>
+
+              <li>Run the module again, as you did in the previous section.</li>
+              <li><p>Create an Abc file, using the template shown
+               in the previous section, and right-click the file's node in one of the
+               explorer views, such as in the Projects window or Favorites window.</p>
+	       <p>Notice that, again, the Abc file has the icon
+	       you assigned to it and that the list of actions defined in its <tt>layer.xml</tt> file
+	        is available from the right-click contextual menu:</p>
+		<p><img src="../../images/tutorials/filetype/71/newaction4.png" alt="Final Projects window."/></p></li>
+		<li><p>Choose the new menu item, the Abc file's name and location are shown:</p>
+		<p><img src="../../images/tutorials/filetype/69-information.png" alt="Information."/></p></li>
+		
+              
+          </ol>
+
+ <p>You now know how to create a new context-sensitive action that appears in the context
+  menu of a file of the given type, in the Projects window, Files window
+ or the Favorites window.</p>
+          <h3 class="tutorial"><a name="multiview"></a>Creating Additional Multiview Windows</h3>
+
+<p>Let's create a new multiview window. The first tab of
+ a multiview window is typically used to display the source view
+ of the file, while the second and subsequent tabs typically show various visual views. More
+ than two tabs can also be provided, each tab providing further levels
+ of detail about the opened file.</p>
+
+      <ol>
+	      <li>For each tab that you want to create in the multiview window, create a class that
+          implements JPanel and MultiViewElement.
+           For purposes of this tutorial, start by creating a class called
+          <tt>AbcVisualElement2</tt>, implementing the specified classes:
+<pre class="examplecode">import javax.swing.Action;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+import javax.swing.JToolBar;
+import org.netbeans.core.spi.multiview.CloseOperationState;
+import org.netbeans.core.spi.multiview.MultiViewElement;
+import org.netbeans.core.spi.multiview.MultiViewElementCallback;
+import org.openide.awt.UndoRedo;
+import org.openide.util.Lookup;
+import org.openide.util.NbBundle;
+import org.openide.windows.TopComponent;
+
+@MultiViewElement.Registration(displayName = "#LBL_Abc_VISUAL2",
+iconBase = "org/myorg/abcfiletype/Datasource.gif",
+mimeType = "text/x-abc",
+persistenceType = TopComponent.PERSISTENCE_NEVER,
+preferredID = "AbcVisual2",
+position = 3000)
+@NbBundle.Messages({
+    "LBL_Abc_VISUAL2=Visual2"
+})
+public class AbcVisualElement2 extends JPanel implements MultiViewElement {
+
+    private AbcDataObject obj;
+    private JToolBar toolbar = new JToolBar();
+    private transient MultiViewElementCallback callback;
+
+    public AbcVisualElement2(Lookup lkp) {
+        obj = lkp.lookup(AbcDataObject.class);
+        assert obj != null;
+    }
+
+    @Override
+    public String getName() {
+        return "AbcVisualElement2";
+    }
+    
+    @Override
+    public JComponent getVisualRepresentation() {
+        return this;
+    }
+
+    @Override
+    public JComponent getToolbarRepresentation() {
+        return toolbar;
+    }
+
+    @Override
+    public Action[] getActions() {
+        return new Action[0];
+    }
+
+    @Override
+    public Lookup getLookup() {
+        return obj.getLookup();
+    }
+
+    @Override
+    public void componentOpened() {
+    }
+
+    @Override
+    public void componentClosed() {
+    }
+
+    @Override
+    public void componentShowing() {
+    }
+
+    @Override
+    public void componentHidden() {
+    }
+
+    @Override
+    public void componentActivated() {
+    }
+
+    @Override
+    public void componentDeactivated() {
+    }
+
+    @Override
+    public UndoRedo getUndoRedo() {
+        return UndoRedo.NONE;
+    }
+
+    @Override
+    public void setMultiViewCallback(MultiViewElementCallback callback) {
+        this.callback = callback;
+    }
+
+    @Override
+    public CloseOperationState canCloseElement() {
+        return CloseOperationState.STATE_OK;
+    }
+    
+}</pre>
+              </li>
+
+<li><p>Install and open the file again. Now you have a multiview window with an additional visual tab.</p>
+
+</li>
+
+       </ol>
+
+ <p>You now have two visual tabs in a multiview window. For each additional tab,
+  create a new class just like the above.</p>
+
+
+<!-- ======================================================================================= -->
+          <h3 class="tutorial"><a name="parse"></a>Parsing the File</h3>
+
+<p>A <tt>DataObject</tt> is like a <tt>FileObject</tt>, except that it 
+    knows what kind of file is being shown. The "New File Type" wizard
+ created a <tt>DataObject</tt> for our file type, so let's now use it
+ to parse the underlying file and expose its content as new nodes
+ in the explorer views, e.g., the Projects window, Files window,
+ and the Favorites window.</p>
+
+
+		 <p class="tips">For background to this section and
+                     complete details on support for nodes
+                  on the NetBeans Platform, see <a href="https://platform.netbeans.org/tutorials/nbm-nodesapi2.html">NetBeans Nodes API Tutorial</a>.</p>
+
+
+
+      <ol>
+	      <li>Open the <tt>AbcDataObject</tt> class and add this method:
+
+<pre class="examplecode">@Override
+protected Node createNodeDelegate() {
+    return new DataNode(this, Children.LEAF, getLookup());
+}</pre>
+
+                  <p>The method above provides a default Node for the underlying file. The default
+                  Node has no child nodes, which is evident by the "Children.LEAF" parameter
+                  that you see above.</p>
+
+                  <p>Instead of passing in "Children.LEAF", let's now use the <tt>ChildFactory</tt>
+                      class to create new child nodes of our Node class:</p>
+
+<pre class="examplecode">@Override
+protected Node createNodeDelegate() {
+    return new DataNode(
+            this,
+            <b>Children.create(new AbcChildFactory(this), true),</b>
+            getLookup());
+}</pre>
+
+              </li>
+
+          <li>Define the <tt>ChildFactory</tt> as follows:
+
+<pre class="examplecode">private static class AbcChildFactory extends ChildFactory&lt;String&gt; {
+
+    private final AbcDataObject dObj;
+
+    public AbcChildFactory(AbcDataObject dObj) {
+        this.dObj = dObj;
+    }
+
+    @Override
+    protected boolean createKeys(List list) {
+        FileObject fObj = dObj.getPrimaryFile();
+        try {
+            List&lt;String&gt; dObjContent = fObj.asLines();
+            list.addAll(dObjContent);
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+        return true;
+    }
+
+    @Override
+    protected Node createNodeForKey(String key) {
+        Node childNode = new AbstractNode(Children.LEAF);
+        childNode.setDisplayName(key);
+        return childNode;
+    }
+
+}</pre></li>
+
+          <li>In your module sources, open <tt>AbcTemplate.abc</tt> and enter the following text, or something like it,
+               i.e., add several lines of text to your template file:
+
+<pre class="examplecode">hello
+world
+how are things
+today</pre></li>
+
+
+          <li><p>Run the module again, create an Abc file from
+                  the template again, and then notice that you can expand the generated file:</p>
+
+ 	      <p><img src="../../images/tutorials/filetype/71/expanded.png" alt="Parse"/></p>
+      </li>
+
+
+       </ol>
+
+<!-- ======================================================================================= -->
+          <h3 class="tutorial"><a name="properties"></a>Extending the Properties Window</h3>
+
+<p>Our Node now has child Nodes. In this section, we also assign properties to our Node.
+ The properties are displayed in the Properties window.</p>
+
+		 <p class="tips">For background to this section and
+                     complete details on support for properties
+                  on the NetBeans Platform, see <a href="https://platform.netbeans.org/tutorials/nbm-property-editors.html">NetBeans Property Editor Tutorial</a>.</p>
+
+<p>By default, the following properties are shown in the Properties window
+     for our new file:</p>
+
+  	      <p><img src="../../images/tutorials/filetype/71/props1.png" alt="Parse"/></p>
+
+              <p>We will now change the default properties to show a custom property instead.</p>
+
+      <ol>
+	      <li>Open the <tt>AbcDataObject</tt> class and change the <tt>createNodeDelegate</tt>
+                   method so that our own <tt>AbcNode</tt> will be created instead
+                   of the generic <tt>DataNode</tt>:
+
+<pre class="examplecode">@Override
+protected Node createNodeDelegate() {
+    return new <b>AbcNode</b>(
+            this,
+            Children.create(new AbcChildFactory(this), true),
+            getLookup());
+}</pre>
+                   <p>The <tt>AbcNode</tt> does not exist yet, you will create it in the
+                       next step.</p></li>
+
+          <li>Define the <tt>AbcNode</tt> as follows:
+
+<pre class="examplecode">class AbcNode extends DataNode {
+
+    public AbcNode(AbcDataObject aThis, Children kids, Lookup lookup) {
+        super(aThis, kids, lookup);
+    }
+
+    @Override
+    protected Sheet createSheet() {
+        Sheet sheet = super.createSheet();
+        Sheet.Set set = Sheet.createPropertiesSet();
+        sheet.put(set);
+        set.put(new LineCountProperty(this));
+        return sheet;
+    }
+
+    private class LineCountProperty extends ReadOnly&lt;Integer&gt; {
+
+        private final AbcNode node;
+
+        public LineCountProperty(AbcNode node) {
+            super("lineCount", Integer.class, "Line Count", "Number of Lines");
+            this.node = node;
+        }
+
+        @Override
+        public Integer getValue() throws IllegalAccessException, InvocationTargetException {
+            int lineCount = 0;
+            DataObject abcDobj = node.getDataObject();
+            FileObject abcFo = abcDobj.getPrimaryFile();
+            try {
+                lineCount = abcFo.asLines().size();
+            } catch (IOException ex) {
+                Exceptions.printStackTrace(ex);
+            }
+            return lineCount;
+        }
+
+    }
+
+}</pre></li>
+
+
+          <li><p>Run the module again, open the Properties window, and notice
+                   your property is displayed:</p>
+
+ 	      <p><img src="../../images/tutorials/filetype/71/props2.png" alt="Parse"/></p>
+      </li>
+
+
+       </ol>
+
+              
+<!-- ======================================================================================= -->
+          <h3 class="tutorial"><a name="synchronized"></a>Creating Synchronized Views</h3>
+
+<p>Let's now illustrate via a small example how the various views can be synchronized.</p>
+
+<p class="tips">For background to this section and
+                     complete details on the Visual Library
+                  in the NetBeans Platform, see "NetBeans APIs for Visualizing Data"
+                  in the <a href="https://netbeans.org/kb/trails/platform.html">NetBeans Platform Learning Trail</a>.</p>
+
+
+      <ol>
+	      <li>Create a new Java Swing panel named "AbcVisualElementPanel".</li>
+
+          <li>Define the constructor of the panel as follows:
+
+<pre class="examplecode">public AbcVisualElementPanel(final AbcDataObject dobj) {
+    initComponents();
+    setLayout(new BorderLayout());
+    final Scene scene = new Scene();
+    final LayerWidget layer = new LayerWidget(scene);
+    refresh(scene, layer, dobj);
+    dobj.getPrimaryFile().addFileChangeListener(new FileChangeAdapter() {
+        @Override
+        public void fileChanged(FileEvent fe) {
+            layer.removeChildren();
+            refresh(scene, layer, dobj);
+            scene.validate();
+        }
+    });
+    scene.addChild(layer);
+    add(scene.createView(), BorderLayout.CENTER);
+}
+
+private void refresh(Scene scene, LayerWidget layer, AbcDataObject dobj) {
+    try {
+        List&lt;String&gt; lines = dobj.getPrimaryFile().asLines();
+        for (int i = 0; i &lt; lines.size(); i++) {
+            String line = lines.get(i);
+            LabelWidget widget = new LabelWidget(scene, line);
+            widget.getActions().addAction(ActionFactory.createMoveAction());
+            widget.setPreferredLocation(new Point(20, 90*i));
+            layer.addChild(widget);
+        }
+    } catch (Exception e) {
+    }
+}</pre></li>
+
+              <li><p>In "AbcVisualElement", return the <tt>JPanel</tt> created
+                       above, as follows:</p>
+<pre class="java">
+@Override
+public JComponent getVisualRepresentation() {
+    return new AbcVisualElementPanel(obj);
+}</pre>                  
+              </li>                 
+              
+          <li><p>Run the module again and notice that the first tab is synchronized
+                   with the second tab:</p>
+
+ 	      <p><img style="border: 1px solid #0e1b55" src="../../images/tutorials/filetype/71/synchronized1.png" alt="Parse"/></p>
+              <p class="tips">Make a change in the source view, switch to this visual view, and notice
+                   that the visual view reflects the changed source view.</p>
+      </li>
+
+
+       </ol>
+
+              
+    </div>
+
+<!-- ======================================================================================= -->
+
+<p></p>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20File%20Type%207.1%20Tutorial">Send Us Your Feedback</a></div>
+  
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Next Steps</h2>
+
+<p>For more information about creating and developing NetBeans modules, see the following resources: </p>
+  <ul>
+	  <li><a href="https://platform.netbeans.org/index.html">NetBeans Platform Homepage</a></li>
+	  <li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API List (Current Development Version)</a></li>
+  <li><a href="https://netbeans.org/kb/trails/platform.html">Other Related Tutorials</a></li></ul>
+  
+<!-- ======================================================================================== -->
+<!-- 
+<h2><a name="version"></a>Versioning </h2>
+  
+<p>
+
+<table width="76%" >
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+         25 August 2005
+      </td>
+      <td>
+	      <ul><li>Initial version.
+		      <li>To do:
+		      <ul><li>Add post-creation customizations (i.e., the "Extending Support for the New File Type" section).
+		      <li>Explain what the generated files are for (placeholders currently).
+		      <li>Explain the layer file's entries.
+		      <li>Explain the first File Type panel (placeholders currently).
+		      <li>Maybe create a separate tutorial for recognizing XML files.</ul></ul>
+      </td>
+  </tr>
+<tr>
+      <td>
+         2
+      </td>
+      <td>
+         23 September 2005
+      </td>
+      <td>
+	      <ul><li>A lot of info added from the FAQ and added the Action wizard and System Filesystem Browser.
+		      <li>To do:
+		      <ul><li>Explain <tt>LoaderBeanInfo.java</tt> and <tt>Resolver.xml</tt> (one line each)
+			      <li>Maybe create a separate tutorial for recognizing XML files.
+			      <li>Using Tomcat GIF maybe not good idea.
+			      <li>Maybe the action should do something useful.
+			      <li>Maybe direct links to FAQ not good idea.
+			      <li>Probably more needed on <tt>layer.xml</tt> file.
+			      <li>Maybe other useful apisupport functionality could be added to this scenario.
+			      <li>More info needed on MIME types.
+			      <li>The introductory paragraphs should be illustrated with a graphic. A diagram to
+			      show relationship between node, dataobject, fileobject, dataloader, etc.</ul></ul> 
+      </td>
+  </tr>
+
+<tr>
+      <td>
+         3
+      </td>
+      <td>
+         28 September 2005
+      </td>
+      <td>
+	      <ul><li>Integrated comments from Jesse Glick.
+		      <li>To do:
+		      <ul>    <li>More info needed on MIME types.
+			      <li>The introductory paragraphs should be illustrated with a graphic. A diagram to
+			      show relationship between node, dataobject, fileobject, dataloader, etc.
+			      <li>Many Javadoc links to be added (also for <tt>performAction</tt>.
+			      <li>Info on cookies, cookie actions, cookie classes needed.
+			      <li>Action ended up in text-html even though I chose my own mime type.
+			      <li>Need to explain or link to explanation for instance, shadow, etc.
+			      <li>Platform Manager needs to be mentioned in the context of installing
+			      in target platform.
+			      <li>Show how to add properties to the property sheet.</ul></ul> 
+      </td>
+  </tr>
+<tr>
+      <td>
+         4
+      </td>
+      <td>
+         4 October 2005
+      </td>
+      <td>
+	      <ul><li>Added two diagrams in the introductory paragraphs, from Tim Boudreau's JavaOne presentation.
+ <li>To do:
+		      <ul>    <li>More info needed on MIME types.
+			      <li>Many Javadoc links to be added (also for <tt>performAction</tt>).
+			      <li>Need to create section near the start: "Related FAQs":
+			      <ul><li>Info on cookies, cookie actions, cookie classes needed.
+				      <li>Need to explain or link to explanation for instance, shadow, etc.
+			      <li>DataLoader, DataObject, etc.</ul>
+			      <li>Platform Manager needs to be mentioned in the context of installing
+			      in target platform.
+			      <li>Show how to add properties to the property sheet.
+			      <li>Mention the dummy template that you get, how to modify it,
+	       			and how to set the description in the New File wizard.</ul></ul> 
+		     
+      </td>
+  </tr>
+<tr>
+      <td>
+         4
+      </td>
+      <td>
+         4 November 2005
+      </td>
+      <td>
+	      <ul><li>Added downloadable source code, new 'Installing the Sample' section, and link to
+		       Syntax Highlighting tutorial at the end.
+ <li>To do:
+ <ul>   <li>Same items as on 4 October still to be done.</ul> 
+		     
+      </td>
+  </tr>
+<tr>
+      <td>
+         5
+      </td>
+      <td>
+         29 November 2005
+      </td>
+      <td>
+	      <ul><li>Added links to brand new Component Palette tutorial.
+ <li>To do:
+ <ul>   <li>Same items as on 4 October still to be done.</ul> 
+		     
+      </td>
+  </tr>
+<tr>
+      <td>
+         6
+      </td>
+      <td>
+	      21 April 2006
+      </td>
+      <td>
+	      <ul><li>Changed the title from "DataLoader Module Tutorial" to "Recognizing a File Type Tutorial".
+ <li>To do:
+ <ul>   <li>Same items as on 4 October still to be done.</ul> 
+		     
+      </td>
+  </tr>
+  <tr>
+      <td>
+         7
+      </td>
+      <td>
+	      17 November 2007
+      </td>
+      <td>
+	      <ul><li>Updated the whole tutorial to 6.0, replaced all screenshots, and
+              now [because the 6.0 IDE already provides support for manifest files], the
+              tutorial focuses on imaginary Abc files.
+ <li>To do:
+ <ul>   <li>Need to replace the download, which is the same as before, dealing with manifest files.
+       <li>Same items as on 4 October still to be done.
+       <li>Added OpenSupport into TopComponent, with a reference to Visual Library.</ul>  
+	<li>Changed title to File Type Integration Tutorial
+        <li>Tweaked several places throughout tutorial, for 6.0
+      </td>
+  </tr>
+   <tr>
+                <td>
+                    8
+                </td>
+                <td>
+                    15 April 2008
+                </td>
+                <td>
+                    Updated the styles (badge, table of contents, required software table)
+                    to the new format.
+                </td>
+            </tr>
+   <tr>
+                <td>
+                    9
+                </td>
+                <td>
+                    16 July 2008
+                </td>
+                <td>
+                    Created new version for 6.5, because of changes to the
+                    way file type recognition is done in that release. To do:
+                    <ul>
+                        <li>6.5-specific badge
+                        <li>Required software table
+                        <li>Search for DataNode, BeanInfo, DataLoader and reword
+                        <li>Check screenshots
+                        <li>Make sure all the sections work as before
+                    </ul>
+                </td>
+            </tr>
+   <tr>
+                <td>
+                    10
+                </td>
+                <td>
+                    4 April 2009
+                </td>
+                <td>
+                    Worked through everything and added the multiview section.
+                </td>
+            </tr>
+   <tr>
+                <td>
+                    11
+                </td>
+                <td>
+                    9 Feb 2010
+                </td>
+                <td>
+                    Changed JPanel to TopComponent in multiview section.
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    12
+                </td>
+                <td>
+                    10 Feb 2010
+                </td>
+                <td>
+                    Added links to javadoc for the MultiView classes.
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    13
+                </td>
+                <td>
+                    18 Feb 2010
+                </td>
+                <td>
+                    Added style for borders and fixed action instructions.
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    14
+                </td>
+                <td>
+                    20 November 2010
+                </td>
+                <td>
+                    Going through everything for 6.9, updating, changing screenshots everywhere, Nimbus.
+                    Added the "Parsing the File" section, need to add Javadoc links and explanations.
+                    Added the "Extending the Properties Window" section, need to add Javadoc links and explanations.
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    15
+                </td>
+                <td>
+                    20 October 2011
+                </td>
+                <td>
+                    Going through everything for 7.1, updating, changing screenshots everywhere.
+                    Need to update MultiView section for 7.1.
+                </td>
+            </tr>
+  </tbody>
+</table>
+-->
+</body>
+</html>

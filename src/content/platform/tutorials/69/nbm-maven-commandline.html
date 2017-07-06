@@ -1,0 +1,527 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Creating NetBeans Platform Applications from Maven Archetypes</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+    <meta name="AUDIENCE" content="NBUSER"/>
+    <meta name="TYPE" content="ARTICLE"/>
+    <meta name="EXPIRES" content="N"/>
+    <meta name="indexed" content="y"/>
+    <meta name="description"
+          content="This tutorial demonstrates how to create a simple NetBeans Platform application and module from a command line prompt using the Maven build framework."/>
+   <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+<body>
+
+   <h1>Creating NetBeans Platform Applications from Maven Archetypes</h1>
+
+   <p>Welcome to the <a href="https://platform.netbeans.org/"><b>NetBeans Platform</b></a>!</p>
+
+    <p>This document demonstrates how to create a
+    NetBeans Platform application and module from a command line prompt using the Maven build framework.
+    To create this application you do not need to install or use the NetBeans IDE.
+    You will need to create and edit some files, but you can use a simple text editor.
+    However, an IDE can be very helpful when performing tasks such as editing the POM and managing dependencies.</p>
+
+    <p>In this tutorial you will see that after you install Maven, you can specify goals and parameters
+    and execute Maven goals from the command line prompt to create and build projects.
+    The IDE performs the same task, but provides an interface that simplifies the task of specifying
+    the parameters for creating projects.</p>
+
+
+
+ <p class="tips">If you are new to the NetBeans Platform, you might want to watch the
+ screencast series <a href="https://platform.netbeans.org/tutorials/nbm-10-top-apis.html">Top 10 NetBeans APIs</a>.</p>
+
+   <p><b>Contents</b></p>
+      <ul class="toc">
+        <li><a href="#01">Creating the NetBeans Platform Application</a></li>
+        <li><a href="#02">Installing and Running the NetBeans Platform Application</a></li>
+        <li><a href="#03">Creating a Module from an Archetype</a></li>
+        <li><a href="#04">Adding the New Module as a Dependency</a></li>
+        <li><a href="#05">Building the Application With the New Module</a></li>
+      </ul>
+
+<p><b>To follow this tutorial, you need the software and resources listed in the following table.</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Version 6</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://maven.apache.org/">Maven</a></td>
+                <td class="tbltd1">Version 2.0.9 or higher</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><strong class="notes">Notes:</strong></p>
+    <div class="indent">
+    <ul>
+        <li>You do not need to download a separate version
+        of the NetBeans Platform to develop applications for the NetBeans Platform.
+        In this tutorial you do not need to install NetBeans IDE.
+        You can use a simple text editor to create classes and modify files.</li>
+    </ul>
+    </div>
+    <p class="tips">You can download <a href="https://netbeans.org/projects/samples/downloads/download/Samples/Platform/mavenPlatformApp.zip">a zip archive of the finished project</a>.</p>
+
+    <p>Before starting this tutorial you may want to familiarize yourself with
+    the following documentation.</p>
+    <ul><li><a href="http://maven.apache.org/guides/mini/guide-configuring-maven.html">Maven - Guide to Configuring Maven</a></li>
+        <li><a href="http://maven.apache.org/guides/getting-started/maven-in-five-minutes.html">Maven in 5 Minutes</a></li>
+        <li><a href="http://www.sonatype.com/books/maven-book/reference/introduction.html">Chapter 1. Introducing Apache Maven</a>
+         (from <a href="http://www.sonatype.com/books/maven-book/reference/public-book.html">Maven: The Definitive Guide</a>)</li>
+    </ul>
+
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++ Creating the Application ++++++++++++++++++++++++++ -->
+
+
+    <h2><a name="01"></a>Creating the NetBeans Platform Application</h2>
+    <p>In this exercise you will execute the Maven goal <tt>generate</tt> from the command line to generate
+    a new NetBeans Platform application from an archetype in the codehaus.org repository.
+    In the command you will specify the parameters that will be used when Maven generates the application.</p>
+    <ol>
+        <li>Open a command line terminal.</li>
+        <li>Test your Maven installation by typing the following command.
+        <pre class="examplecode">mvn -version</pre>
+
+        <p>After you type the command you will see details about the Maven installation, including the version of Maven and the JDK.</p>
+        <pre class="examplecode">
+Apache Maven 2.2.1 (r801777; 2009-08-06 21:16:01+0200)
+Java version: 1.6.0_20
+</pre>
+        <p>You need to have Maven version 2.0.9 or newer and JDK 1.6.</p></li>
+        <li>Navigate to the directory where you want to create the NetBeans Platform application.</li>
+        <li>Type the following command in the terminal to create a project named <strong>mavenPlatformApp</strong>.
+        <pre class="examplecode">mvn -DarchetypeVersion=1.5 -Darchetype.interactive=false -DgroupId=com.mycompany -DarchetypeArtifactId=<strong>netbeans-platform-app-archetype</strong> -DarchetypeRepository=http://repository.codehaus.org/ -Dversion=1.0-SNAPSHOT -DarchetypeGroupId=org.codehaus.mojo.archetypes -Dpackage=com.mycompany.mavenplatformapp -DartifactId=mavenPlatformApp --batch-mode org.apache.maven.plugins:maven-archetype-plugin:2.0-alpha-4:generate</pre>
+        </li>
+    </ol>
+    <p>You can see that the command specifies the archetype that Maven will use to create
+    the NetBeans Platform application (<a href="http://mvnrepository.com/artifact/org.codehaus.mojo.archetypes/netbeans-platform-app-archetype"><tt>netbeans-platform-app-archetype</tt></a>).
+    The command also specifies the location of the repository for the archetype (<tt>http://repository.codehaus.org/</tt>)
+    and the version (<tt>1.5</tt>) and GroupId (<tt>org.codehaus.mojo.archetypes</tt>) of the archetype.</p>
+
+    <p>When you run the command, Maven will automatically retrieve the archetype and create the project according to
+    the details specified in the command (artifact id, version, package).</p>
+
+    <p class="notes"><strong>Note.</strong> When you use NetBeans IDE to create a NetBeans platform application,
+    the IDE essentially generates and executes the Maven goal with similar parameters.</p>
+
+    <p class="tips">For more information about the plugin that is used to generate the artifacts,
+    see the documentation on the <a href="http://mojo.codehaus.org/nbm-maven-plugin/">nbm-maven-plugin</a> at
+    <a href="http://mojo.codehaus.org/">mojo.codehaus.org</a>.</p>
+
+    <p>When you run the command, you will see output similar to the following in the terminal window.</p>
+    <pre class="examplecode">
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESSFUL
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 8 seconds
+[INFO] Finished at: Thu Sep 02 17:47:03 CEST 2010
+[INFO] Final Memory: 13M/81M
+[INFO] ------------------------------------------------------------------------
+</pre>
+    <p>If you look in the root directory <tt>mavenPlatformApp</tt> that was created,
+        you can see that the new project contains a <tt>pom.xml</tt> file and a directory for each of the default sub-modules of the archetype: application and branding. <br/>
+    <img src="../images/tutorials/maven-commandline/maven-platform-archetype-default.png" alt="Screenshot of structure of mavenPlatformApp" title="Screenshot of structure of mavenPlatformApp" class="margin-around b-all" />
+    </p>
+
+    <p>If you open <tt>pom.xml</tt> for mavenPlatformApp in an editor, you will see that the POM specifies all the details required for building the application and modules.</p>
+    <pre class="examplecode">&lt;project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
+    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+
+    &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+    &lt;artifactId&gt;mavenPlatformApp&lt;/artifactId&gt;
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+    &lt;packaging&gt;pom&lt;/packaging&gt;
+
+    &lt;name&gt;mavenPlatformApp - NetBeans Platform Application&lt;/name&gt;
+
+    &lt;repositories&gt;
+        &lt;!-- this is a remote repository hosting the netbeans api artifacts.
+         the versions of the artifacts are netbeans IDE release based, eg. RELEASE65
+         You might want to use your own repository. To create one, use the nbm:populate-repository goal.
+          --&gt;
+        &lt;repository&gt;
+            &lt;id&gt;netbeans&lt;/id&gt;
+            &lt;name&gt;repository hosting netbeans.org api artifacts&lt;/name&gt;
+            &lt;url&gt;http://bits.netbeans.org/maven2&lt;/url&gt;
+        &lt;/repository&gt;
+    &lt;/repositories&gt;
+
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;junit&lt;/groupId&gt;
+            &lt;artifactId&gt;junit&lt;/artifactId&gt;
+            &lt;version&gt;4.8.1&lt;/version&gt;
+            &lt;scope&gt;test&lt;/scope&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+
+    &lt;build&gt;
+        &lt;pluginManagement&gt;
+            &lt;plugins&gt;
+                &lt;plugin&gt;
+                    &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+                    &lt;artifactId&gt;nbm-maven-plugin&lt;/artifactId&gt;
+                    &lt;version&gt;3.2&lt;/version&gt;
+                    &lt;extensions&gt;true&lt;/extensions&gt;
+                    &lt;configuration&gt;
+                        &lt;brandingToken&gt;${brandingToken}&lt;/brandingToken&gt;
+                        &lt;cluster&gt;foobar&lt;/cluster&gt;
+                    &lt;/configuration&gt;
+                &lt;/plugin&gt;
+
+                &lt;plugin&gt;
+                    &lt;!-- netbeans modules in 6.9+ are 1.6 compatible --&gt;
+                    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                    &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+                    &lt;version&gt;2.3&lt;/version&gt;
+                    &lt;configuration&gt;
+                        &lt;source&gt;1.6&lt;/source&gt;
+                        &lt;target&gt;1.6&lt;/target&gt;
+                    &lt;/configuration&gt;
+                &lt;/plugin&gt;
+            &lt;/plugins&gt;
+        &lt;/pluginManagement&gt;
+    &lt;/build&gt;
+
+    &lt;modules&gt;
+        &lt;module&gt;branding&lt;/module&gt;
+        &lt;module&gt;application&lt;/module&gt;
+    &lt;/modules&gt;
+
+    &lt;properties&gt;
+        &lt;netbeans.version&gt;RELEASE691&lt;/netbeans.version&gt;
+        &lt;brandingToken&gt;foo&lt;/brandingToken&gt;
+    &lt;/properties&gt;
+&lt;/project&gt;</pre>
+
+        <p>If you look at the <tt>&lt;properties&gt;</tt> element, you can see that the version of the NetBeans platform is
+        specified as <tt>RELEASE691</tt>. In the POM of your sub-modules, you can specify <tt>${netbeans.version}</tt> as the version
+        and the module will use the version specified in the parent POM project.
+        The enables you to easily update the NetBeans platform version for all the project's sub-modules.
+        Later in this tutorial you will modify the default version generated in the POM by the archetype
+        to specify <tt>${netbeans.version}</tt>.
+        </p>
+
+<!-- =================================================================== -->
+<!-- ++++++++++++++++ Running the Application ++++++++++++++++++++++++++ -->
+
+
+        <h2><a name="02"></a>Installing and Running the NetBeans Platform Application</h2>
+        <p>In this exercise you will run the Maven <tt>install</tt> goal from the command line to build the application and copy
+        the artifacts in your local repository.
+        The NetBeans Platform application is a multi-module application.
+        You will use the <tt>reactor</tt> mechanism in Maven to build the application project and the project's dependencies.
+        After you build the application you will execute the <tt>run-platform</tt> goal to launch the application.</p>
+
+        <ol>
+            <li>Navigate to the <tt>mavenPlatformApp</tt> directory and type the following command to build the project.
+            <pre class="examplecode">mvn --projects com.mycompany:application --also-make install</pre>
+            </li>
+            <li>After you build the application, navigate to the <tt>application</tt> directory and type the following command to launch the application.
+            <pre class="examplecode">mvn nbm:run-platform</pre>
+            </li>
+        </ol>
+        <p>When you run the <tt>nbm-maven-plugin</tt> with the <tt>run-platform</tt> goal, Maven will
+        launch the branded NetBeans platform application.<br/>
+        <img src="../images/tutorials/maven-commandline/maven-command-platform-default.png" alt="Screenshot of default application" title="Screenshot of default application" class="margin-around b-all" />
+        </p>
+
+        <p class="tips">For more information of how to create and build multi-module projects,
+        see the <a href="http://maven.apache.org/guides/mini/guide-multiple-modules.html">Maven - Guide to Working with Multiple Modules</a>
+        at <a href="http://maven.apache.org/">maven.apache.org</a>.</p>
+
+        <p class="tips">For more information about the <tt>nbm-maven-plugin</tt>, see the documentation on the
+        <tt><a href="http://mojo.codehaus.org/nbm-maven-plugin/">nbm-maven-plugin</a></tt> and the
+        <tt><a href="http://mojo.codehaus.org/nbm-maven-plugin/run-platform-mojo.html">run-platform</a></tt> goal
+        at <a href="http://mojo.codehaus.org">mojo.codehaus.org</a>. </p>
+
+        <p>You have now successfully created and launched your NetBeans Platform application.
+        The default branding elements are located in the <tt>branding</tt> sub-module that was generated according to the archetype.
+        The NetBeans IDE provides tools and wizards that can help you to modify the branding elements.</p>
+        
+        <p>In the next section you will create a new module for the application.</p>
+
+<!-- =================================================================== -->
+<!-- ++++++++++++++++++ Creating a new Module ++++++++++++++++++++++++++ -->
+
+        <h2><a name="03"></a>Creating a Module from an Archetype</h2>
+
+        <p>You will now create a new module that is named mavenPlatformModuleA in the <tt>mavenPlatformApp</tt> directory.
+        In the same way that you created the NetBeans Platform application,
+        you will run a Maven command from the command line and use the module archetype <tt>nbm-archetype</tt>.</p>
+
+        <p>After you create the module, you will use a text editor to create a simple class in the module
+        and then modify the module's <tt>layer.xml</tt> and <tt>bundle.properties</tt> files.
+        You will then build the module to install the module in the local repository.</p>
+        <ol>
+            <li>Navigate to the <tt>mavenPlatformApp</tt> directory in the command line terminal and type and run the following command:
+
+            <pre class="examplecode">mvn -DarchetypeVersion=1.4 -Darchetype.interactive=false -DgroupId=com.mycompany -DarchetypeArtifactId=<strong>nbm-archetype</strong> -DarchetypeRepository=http://repository.codehaus.org/ -Dversion=1.0-SNAPSHOT -DarchetypeGroupId=org.codehaus.mojo.archetypes -Dpackage=com.mycompany.mavenplatformmodulea -DartifactId=mavenPlatformModuleA --batch-mode org.apache.maven.plugins:maven-archetype-plugin:2.0-alpha-4:generate</pre>
+
+                <p>You can see that the command specifies <tt>nbm-archetype</tt>.
+                The archetype will be retrieved from the codehaus remote repository.</p>
+                <p>When you run the command, you will see output similar to the following in the terminal window.</p>
+                <pre class="examplecode">
+[INFO] Scanning for projects...
+[INFO] Reactor build order:
+[INFO]   mavenPlatformApp - NetBeans Platform Application
+[INFO]   mavenPlatformApp - Platform application branding resources
+[INFO]   mavenPlatformApp - NetBeans Platform based application
+[INFO] ------------------------------------------------------------------------
+[INFO] Building mavenPlatformApp - NetBeans Platform Application
+[INFO]    task-segment: [org.apache.maven.plugins:maven-archetype-plugin:2.0-alpha-4:generate] (aggregator-style)
+[INFO] ------------------------------------------------------------------------
+[INFO] Preparing archetype:generate
+[INFO] No goals needed for project - skipping
+[INFO] Setting property: classpath.resource.loader.class => 'org.codehaus.plexus.velocity.ContextClassLoaderResourceLoader'.
+[INFO] Setting property: velocimacro.messages.on => 'false'.
+[INFO] Setting property: resource.loader => 'classpath'.
+[INFO] Setting property: resource.manager.logwhenfound => 'false'.
+[INFO] [archetype:generate {execution: default-cli}]
+[INFO] Generating project in Batch mode
+[INFO] Archetype defined by properties
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESSFUL
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 5 seconds
+[INFO] Finished at: Fri Sep 03 15:01:42 CEST 2010
+[INFO] Final Memory: 21M/81M
+[INFO] ------------------------------------------------------------------------
+            </pre>
+            <p>If you look at the contents of the <tt>mavenPlatformApp</tt> directory, you will see that the directory
+            contains a new directory that is named <tt>mavenPlatformModuleA</tt>.
+            The new directory contains a <tt>src</tt> directory and <tt>pom.xml</tt>.
+            The files <tt>layer.xml</tt> and <tt>bundle.properties</tt> were generated in the
+            <tt>resources/com/mycompany/mavenplatformmodulea</tt> directory.</p>
+            <img src="../images/tutorials/maven-commandline/maven-command-modulea.png" alt="Screenshot of structure of mavenplatformmodulea" title="Screenshot of structure of mavenplatformmodulea" class="margin-around b-all" />
+            <p>In the next step you will create a class in the
+            <tt>java/com/mycompany/mavenplatformmodulea</tt> directory.</p>
+            </li>
+            <li>Use a text editor to create the following class <tt>HelloWorldAction.java</tt>
+            in the <tt>java/com/mycompany/mavenplatformmodulea</tt> directory.
+            <pre class="examplecode">
+package com.mycompany.mavenplatformmodulea;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
+
+public class HelloWorldAction implements ActionListener {
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        NotifyDescriptor d = new NotifyDescriptor.Message("hello...");
+        DialogDisplayer.getDefault().notify(d);
+    }
+
+}</pre>
+            </li>
+            <li>Use a text editor to edit the <tt>layer.xml</tt> file in the
+            <tt>resources/com/mycompany/mavenplatformmodulea</tt> directory to modify the version of the filesystem DTD to version 1.2.
+            <pre class="examplecode">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem <strong>1.2//EN</strong>" "https://netbeans.org/dtds/<strong>filesystem-1_2.dtd</strong>"&gt;
+&lt;filesystem&gt;
+
+&lt;/filesystem&gt;</pre>
+            </li>
+            <li>Edit the <tt>layer.xml</tt> file to add the following elements (in bold).
+            <pre class="examplecode">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.2//EN" "https://netbeans.org/dtds/filesystem-1_2.dtd"&gt;
+&lt;filesystem&gt;
+    <strong>&lt;folder name="Actions"&gt;
+        &lt;folder name="Window"&gt;
+            &lt;file name="com-mycompany-mavenplatformmodulea-HelloWorldAction.instance"&gt;
+                &lt;attr name="delegate" newvalue="com.mycompany.mavenplatformmodulea.HelloWorldAction"/&gt;
+                &lt;attr name="displayName" bundlevalue="com.mycompany.mavenplatformmodulea.Bundle#CTL_HelloWorldAction"/&gt;
+                &lt;attr name="instanceCreate" methodvalue="org.openide.awt.Actions.alwaysEnabled"/&gt;
+            &lt;/file&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+    &lt;folder name="Menu"&gt;
+        &lt;folder name="Window"&gt;
+            &lt;file name="HelloWorldAction.shadow"&gt;
+                &lt;attr name="originalFile" stringvalue="Actions/Window/com-mycompany-mavenplatformmodulea-HelloWorldAction.instance"/&gt;
+            &lt;/file&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;</strong>
+&lt;/filesystem&gt;</pre>
+            <p>In this step you added a new item to the Window menu that will
+                invoke <tt>HelloWorldAction</tt>.
+            You also specify the <tt>bundle.properties</tt> file that specifies the display name for the new item.</p>
+            </li>
+            <li>Edit the <tt>bundle.properties</tt> file in the
+            <tt>resources/com/mycompany/mavenplatformmodulea</tt> directory to add the following item (in bold)
+            that specifies the name for the new Window menu item:
+                <pre class="examplecode">
+#OpenIDE-Module-Long-Description=
+#OpenIDE-Module-Short-Description=
+#OpenIDE-Module-Name=
+<strong>CTL_HelloWorldAction=Hello World</strong></pre>
+            </li>
+            <li>Edit <tt>pom.xml</tt> to make the following changes (in bold) to add a dependency on
+                <tt>org-openide-dialogs</tt> and modify the version of the <tt>org-openide-util</tt> artifact.
+                <pre class="examplecode">
+&lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.netbeans.api&lt;/groupId&gt;
+        &lt;artifactId&gt;org-openide-util&lt;/artifactId&gt;
+        <strong>&lt;version&gt;${netbeans.version}&lt;/version&gt;</strong>
+    &lt;/dependency&gt;
+    <strong>&lt;dependency&gt;
+        &lt;groupId&gt;org.netbeans.api&lt;/groupId&gt;
+        &lt;artifactId&gt;org-openide-dialogs&lt;/artifactId&gt;
+        &lt;version&gt;${netbeans.version}&lt;/version&gt;
+    &lt;/dependency&gt;</strong>
+&lt;/dependencies&gt;</pre>
+                
+            <p>You can use <tt>${netbeans.version}</tt> to ensure that the versions of artifacts are consistent
+            and can be easily updated by updating the <tt>&lt;netbeans.version&gt;</tt> element in the
+            POM of the parent project.</p>
+
+            </li>
+            <li>In the command line terminal, navigate to the <tt>mavenPlatformModuleA</tt> directory and
+                type and run the following command to build and install the module in the local repository.
+            <pre class="examplecode">mvn install</pre>
+            <p>When you run the <tt>install</tt> command, Maven builds the module and copies the JAR and NBM artifacts to the
+            local repository.</p>
+            </li>
+        </ol>
+        <p>Now that the artifact is in the local repository, you can add the artifact as a dependency of the platform application.</p>
+
+
+<!-- =================================================================== -->
+<!-- ++++++++++++++ Adding the Module as a Dependency ++++++++++++++++++ -->
+
+        <h2><a name="04"></a>Adding the New Module as a Dependency</h2>
+        <p>In this section you will add the module as a dependency of the NetBeans Platform
+        application by declaring the dependency in the POM of the application project.</p>
+        <ol>
+            <li>Open the <tt>pom.xml</tt> file in the <tt>application</tt> directory in a text editor.</li>
+            <li>Declare the mavenplatformmodulea module as a dependency of the application by making the following changes (in bold) to the POM.
+            <pre class="examplecode">
+ &lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.netbeans.cluster&lt;/groupId&gt;
+        &lt;artifactId&gt;platform&lt;/artifactId&gt;
+        &lt;version&gt;${netbeans.version}&lt;/version&gt;
+        &lt;type&gt;pom&lt;/type&gt;
+    &lt;/dependency&gt;
+
+    &lt;dependency&gt;
+        &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+        &lt;artifactId&gt;branding&lt;/artifactId&gt;
+        &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+    &lt;/dependency&gt;
+    <strong>&lt;dependency&gt;
+        &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+        &lt;artifactId&gt;mavenPlatformModuleA&lt;/artifactId&gt;
+        &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+    &lt;/dependency&gt;</strong>
+&lt;/dependencies&gt;</pre>
+            </li>
+        </ol>
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++ Building the Application ++++++++++++++++++++++++++ -->
+
+        <h2><a name="05"></a>Building the Application With the New Module</h2>
+        <p>You are now almost ready to launch the NetBeans Platform application with the new module installed.
+        You first need to make sure that the new module is specified as a module of the parent POM project.
+        You can then repeat the steps to build and launch the application.</p>
+        <ol>
+            <li>Open the <tt>pom.xml</tt> in the <tt>mavenPlatformApp</tt> directory in a text editor.</li>
+            <li>Confirm that the new module is specified in the list of modules that are included with the application.
+            <pre class="examplecode">
+&lt;modules&gt;
+    &lt;module&gt;branding&lt;/module&gt;
+    &lt;module&gt;application&lt;/module&gt;
+    <strong>&lt;module&gt;mavenPlatformModuleA&lt;/module&gt;</strong>
+&lt;/modules&gt;</pre>
+            </li>
+            <li>Navigate to the <tt>mavenPlatformApp</tt> directory in the command line terminal and
+                type the following command to build the project.
+                <pre class="examplecode">mvn --projects com.mycompany:application --also-make install</pre>
+                <p>When you run the command, you can see that the new module is included
+                in the list of modules.</p>
+                <pre class="examplecode">[INFO] Scanning for projects...
+[INFO] Reactor build order:
+[INFO]   mavenPlatformApp - NetBeans Platform Application
+[INFO]   mavenPlatformApp - Platform application branding resources
+[INFO]   mavenPlatformModuleA NetBeans Module
+[INFO]   mavenPlatformApp - NetBeans Platform based application</pre>
+            </li>
+            <li>Navigate to the <tt>application</tt> directory and type the following command to launch the application.
+            <pre class="examplecode">mvn nbm:run-platform</pre>
+            <p>When you run the command, Maven will launch the application with the new module.</p>
+            </li>
+        </ol>
+            
+        <p>You have now successfully added a new module to the application and launched the application.
+        To confirm that the module was loaded when the application launched,
+        choose Window &gt; Hello World from the main menu of the application to open the new Message dialog box.<br/>
+        <img src="../images/tutorials/maven-commandline/maven-command-hello-dialog.png" alt="Screenshot of Message Dialog" title="Screenshot of Message Dialog" class="margin-around b-all" />
+        </p>
+
+        <p class="tips">You can download an archive containing the sources of this application from the following link:</p>
+        <ul>
+            <li><a href="https://netbeans.org/projects/samples/downloads/download/Samples/Platform/mavenPlatformApp.zip">mavenPlatformApp.zip</a></li>
+        </ul>
+        <p class="notes"><strong>Note.</strong> To build and run the application from the archive,
+        expand the archive and then execute the <tt>install</tt> and <tt>run-platform</tt> goals that are described above.
+        Maven will automatically download any required artifacts to your local Maven repository.</p>
+
+
+ 
+<!-- =================================================================== -->
+
+    <p>This tutorial demonstrated how creating a NetBeans Platform application using Maven
+    is not very different from creating an application using Ant.
+    The major difference is understanding how the Maven POM controls how the application is assembled.
+    For more examples on how to build NetBeans Platform applications and modules,
+    see the tutorials listed in the <a href="https://netbeans.org/kb/trails/platform.html">NetBeans Platform Learning Trail</a>.</p>
+
+ <!-- ======================================================================================== -->
+
+<div class="feedback-box"><a name="feedback"></a>
+    <a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20NetBeans%20Platform%20Application%20from%20Maven%20Archetypes">
+        Send Us Your Feedback</a></div>
+
+ <p>&nbsp;</p>
+ <!-- ======================================================================================== -->
+    <h2><a name="nextsteps"></a>See Also</h2>
+
+    <p>This document described
+    how to use the Maven build framework to create a new NetBeans Platform application without using NetBeans IDE.
+    For more information about creating and developing applications, see the following resources.</p>
+    <ul>
+        <li><a href="https://platform.netbeans.org/tutorials/nbm-maven-quickstart.html">NetBeans Platform Quick Start Using Maven</a></li>
+        <li><a href="https://netbeans.org/kb/trails/platform.html">NetBeans Platform Learning Trail</a></li>
+        <li><a href="http://bits.netbeans.org/dev/javadoc/">NetBeans API Javadoc</a></li>
+    </ul>
+
+    <p>If you have any questions about the NetBeans Platform, feel free
+     to write to the mailing list, dev@platform.netbeans.org, or view the
+    <a href="https://netbeans.org/projects/platform/lists/dev/archive">NetBeans Platform mailing list archive</a>.</p>
+
+
+    <!-- ======================================================================================== -->
+
+
+</body>
+
+</html>

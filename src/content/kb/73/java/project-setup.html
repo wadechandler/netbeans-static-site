@@ -1,0 +1,1049 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+    <head>
+        <meta name="KEYWORDS" content="NETBEANS, TUTORIAL, GUIDE, USER, DOCUMENTATION">
+        <meta name="DESCRIPTION" content="This tutorial shows you to configure standard Java
+              and Java web projects in NetBeans IDE. Topics include setting the JDK, setting the classpath,
+              setting sub-projects, enabling/disabling incremental compilation, sharing
+              project libraries, customizing the build script, setting run configurations.">
+        <title>Creating, Importing, and Configuring Java Projects - NetBeans IDE Tutorial</title>
+        <link rel="StyleSheet" href="../../../netbeans.css" type="text/css">
+        <!--      Copyright (c) 2009 - 2011, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+    <body>
+        <h1>Creating, Importing, and Configuring Java Projects</h1>
+        <p>This guide provides an overview of the NetBeans IDE's main features
+            for setting up and configuring Java projects. In addition, it provides
+            information on how to do custom configuration of IDE-generated
+        build scripts.</p>
+        
+
+        <p><b>Contents</b></p>
+        <img src="../../../images_www/articles/71/netbeans-stamp-71-72-73.png" class="stamp" alt="Content on this page applies to NetBeans IDE 7.0, 7.1, 7.2, and 7.3" title="Content on this page applies to NetBeans IDE 7.0, 7.1, 7.2, and 7.3">
+        <ul class="toc">
+            <li><a href="#ide-concepts">Basic Project Concepts</a>
+                <ul class="toc"><li><a href="#ide-projects">Projects</a></li>
+            <li><a href="#ide-ant">Ant</a></li></ul></li>
+            <li><a href="#projects-creating">Creating a Project</a></li>
+            <li><a href="#projects-importing">Importing a Project</a>
+                <ul class="toc"><li><a href="#import-eclipse">Importing an Eclipse Workspace</a></li>
+                    <li><a href="#existing-java-sources">Setting Up a Java Project Based on Existing Sources</a></li>
+                   
+                    <li><a href="#existing-web-sources">Setting Up a Web Project Based on Existing Sources</a></li>
+                    <li><a href="#free-form">Free-Form Projects</a></li>
+            </ul>
+            </li>
+            <li><a href="#projects-configuring">Configuring the Classpath and Other Project Settings</a>
+                <ul class="toc">
+                    <li><a href="#projects-main">Setting the Main Project</a></li>
+                    <li><a href="#projects-jdk">Setting the Target JDK in a Project</a></li>
+                    <li><a href="#projects-classpath">Managing a Project's Classpath</a></li>
+                    <li><a href="#projects-dependencies">Managing Dependencies Between Projects</a></li>
+                    <li><a href="#projects-shared-libraries">Sharing Project Libraries</a></li>
+                    <li><a href="#projects-jdk-javadoc">Making the JDK's Javadoc Available in the IDE</a></li>
+                    <li><a href="#projectsjws">Enabling Java Web Start</a></li>
+                </ul>
+            </li>
+            <li><a href="#building">Building Applications</a>
+            <ul class="toc">
+                <li><a href="#building-commands">Building Projects, Packages, and Files</a></li>
+                <li><a href="#building-compile-on-save">Compile on Save</a></li>
+                <li><a href="#building-fixing">Fixing Compilation Errors</a></li>
+                <li><a href="#building-filtering">Filtering Output Files</a></li>
+            </ul>
+			</li>
+            <li><a href="#deploy">Running Applications</a>
+                <ul class="toc">
+                    <li><a href="#deploy-projects">Running Projects and Files</a></li>
+                    <li><a href="#deploy-options">Customizing Runtime Options</a></li>
+                    <li><a href="#deploy-classpath">Setting the Runtime Classpath</a></li>
+                    <li><a href="#deploy-args">Setting the Main Class and Runtime Arguments</a></li>
+                    <li><a href="#deploy-jvm">Setting JVM Arguments</a></li>
+            </ul></li>
+            <li><a href="#build-script">Customizing the Build Script</a>
+                <ul class="toc">
+                    <li><a href="#ant-editing">Editing and Running Ant Scripts</a></li>
+                    <li><a href="#ant-custom-task">Writing Custom Ant Tasks</a></li>
+            </ul></li>
+            <li><a href="#seealso">See Also</a></li>
+        </ul>
+		<p><b>To complete this tutorial, you need the following software and resources.</b></p>
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Software or Resource</th>
+                    <th class="tblheader" scope="col">Version Required</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                    <td class="tbltd1">version 7.0, 7.1, 7.2, or 7.3 </td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit (JDK)</a></td>
+                    <td class="tbltd1">version 6 or 7</td>
+                </tr>
+            </tbody>
+        </table>
+        <!-- TODO update screenshots-->
+        <a name="ide-concepts"></a><h2>Basic Project Concepts</h2>
+        <p>This section provides an overview of some background information on the
+        IDE's project system.</p>
+        <div class="indent">
+            <a name="ide-projects"></a><h3 class="tutorial">Projects</h3>
+            <p>
+                In the IDE, you always work inside of a project. In addition to source files,
+                an IDE project contains metadata about what belongs on the classpath,
+                how to build and run the project, and so on.
+                The IDE stores project information in a project folder which includes an Ant
+                build script and properties file that control the build and run settings, and
+                a <code>project.xml</code>
+            file that maps Ant targets to IDE commands.</p>
+            <p class="notes"><b>Note:</b>
+                Though the IDE puts source directories within the project folder by default,
+            your source directories do not necessarily need to be located in the project folder.</p>
+
+
+            <a name="ide-ant"></a><h3 class="tutorial">Ant</h3>
+            <p>Apache Ant is a Java-based build tool used to standardize and automate build
+                and run environments for development. The IDE's project system is based
+                directly on Ant. All of the project commands, like Clean and Build Project
+                and Debug, call targets in the project's Ant script. You can
+                therefore build and run your project outside the IDE exactly as it is built
+            and run inside the IDE.</p>
+            <p>It is not necessary to know Ant to work with the IDE. You can set all the
+                basic compilation and runtime options in the project's Project Properties
+                dialog box and the IDE automatically updates your project's Ant script.
+                If you are familiar with Ant, you can customize a standard project's Ant
+            script or write your own Ant script for a project.</p>
+        </div>
+        <a name="projects-creating"></a><h2>Creating a Project</h2>
+        <p><b>To create a new project:</b></p>
+        <ul>
+            <li>Choose <tt>File</tt> &gt; <tt>New Project (Ctrl-Shift-N on Windows/Cmd-Shift-N on OS X)</tt>.</li>
+        </ul>
+        <p>When the New Project wizard appears,  select the  right template for your
+        project and complete the remaining wizard steps. The project template icon can be displayed in gray, which means that this project type has not been activated. Proceed with creating the project and this functionality will be activated in the IDE.  </p>
+        <p>The IDE contains the following standard project templates for Java and Java Web applications:</p>
+        <ul>
+            <li><b>Java Application.</b> Creates a skeleton Java SE project with a main class.
+                See <a href="javase-intro.html">Developing and Deploying General Java Applications</a>
+                for a brief tutorial that uses this template.
+            </li>
+            <li><b>Java Class Library.</b> Creates a skeleton Java class library
+                without a main class.
+                See <a href="javase-intro.html">Developing and Deploying General Java Applications</a>
+            for a brief tutorial that uses this template.</li>
+            <li><b>Java Project with Existing Sources.</b> Creates a Java SE
+                project based on your own Java sources.
+                See <a href="#existing-java-sources">Setting Up a Java Project Based on Existing Sources</a>
+            below.</li>
+            <li><b>Web Application.</b> Creates a skeleton web application,
+                including options to add various web frameworks. See
+                <a href="../../../kb/docs/web/quickstart-webapps.html">Introduction to Developing Web Applications</a>
+            for an example that uses this template.</li>
+            <li><b>Web Application with Existing Sources.</b> Creates a web
+                project based on your own web and Java sources. See
+                <a href="#existing-web-sources">Setting Up a Web Project Based on Existing Sources</a>
+            below.</li>
+        </ul>
+        <p>In addition, the IDE also contains templates for EJB modules, enterprise applications,
+        Java ME applications, and more.</p>
+        <p>The Java and Web project categories also have
+            free-form project templates. The free-form templates
+            enable you to use an existing Ant script for a project but require
+        manual configuration. See <a href="#free-form">Free-Form Projects</a> below.</p>
+        <p>When you finish creating a project, it opens in the IDE with its logical
+            structure displayed in the Projects window and its file structure displayed
+        in the Files window:</p>
+        <ul>
+            <li>
+                The Projects window is the main entry point to your project sources.
+                It shows a logical view of important project contents such as Java
+                packages and Web pages. You can right-click any project node to access a
+                popup menu of commands for building, running, and debugging the project,
+                as well as opening the Project Properties dialog box. The Projects
+            window can be opened by choosing Window &gt; Projects (Ctrl-1 on Windows/Cmd-1 on OS X).</li>
+            <li>
+                The Files window shows a directory-based view of your projects,
+                including files and folders that are not displayed in the Projects
+                window. From the Files window, you can open and edit your project
+                configuration files, such as the project's build script and properties
+                file. You can also view build output like compiled classes, JAR files,
+                WAR files, and generated Javadoc documentation. The Files window can be
+            opened by choosing Window &gt; Files (Ctrl-2 on Windows/Cmd-2 on OS X).</li>
+        </ul>
+       	<p class="align-center"><a href="../../../images_www/articles/72/java/project-setup/files-project-window.png" rel="lytebox" title="Files and Projects windows">
+					   <img src="../../../images_www/articles/72/java/project-setup/files-project-window-small.png" alt="Files and Projects windows" border=1></a></p>
+
+        <p class="notes"><b>Note:</b>
+            If you need to access files and directories that are outside of your project
+            directories, you can use the Favorites window.
+            You open the Favorites window by choosing <tt>Window</tt> &gt; <tt>Favorites (Ctrl-3 on Windows/Cmd-3 on OS X)</tt>.
+            You add a folder or file to the Favorites window by right-clicking in the
+        Favorites window and choosing Add to Favorites.</p>
+
+        <a name="projects-importing"></a><h2 class="tutorial">Importing a Project</h2>
+        <p>This section shows you how to handle the initial importing of projects
+        into the IDE.</p>
+        <div class="indent">
+            <a name="import-eclipse"></a><h3 class="tutorials">Importing an Eclipse Workspace</h3>
+            <p>For Eclipse projects, you can use the Import Eclipse Project wizard to
+                help you create NetBeans projects from projects in an Eclipse workspace
+                and import the project classpaths and other settings. When you
+                use the Import Eclipse Project wizard, you do not need to use
+                create and configure the NetBeans project manually. Open the wizard by
+                choosing <tt>File</tt> &gt; <tt>Import Project</tt> &gt; <tt>Eclipse Project</tt>. See
+                <a href="../../../kb/docs/java/import-eclipse.html">Importing Eclipse Projects into NetBeans IDE</a>
+                for information on how the wizard works and how you can work
+            simultaneously in Eclipse and NetBeans projects.</p>
+
+            <a name="existing-java-sources"></a><h3 class="tutorials">Setting Up a Java Project Based on Existing Sources</h3>
+            <p>For other Java projects developed outside of NetBeans, you use an &quot;Existing Sources&quot; template
+            in the New Project wizard to make a NetBeans project. In the wizard,
+            you identify the location of the
+            sources and specify a location for the NetBeans project metadata. You
+            then use the Project Properties dialog box to
+            <a href="#projects-configuring">configure the project</a>.</p>
+            <p><b>To set up a NetBeans project for an existing Java application:</b></p>
+            <ol>
+                <li>Choose <tt>File</tt> &gt; <tt>New Project (Ctrl-Shift-N on Windows/Cmd-Shift-N on OS X)</tt>. </li>
+                <li>Choose <tt>Java</tt> &gt; <tt>Java Project with Existing Sources</tt>. Click Next. </li>
+                <li>In the Name and Location page of the wizard, follow these steps:
+                    <ul>
+                        <li>Type a project name.</li>
+                        <li>(Optional) Change the location of the project folder.</li>
+                        <li>(Optional) Change the name of the build script used by the IDE.
+                            This might be desirable if there is already a build script called
+                        <code>build.xml</code> that is used to build the sources.</li>
+                        <li>(Optional) Select the Use Dedicated Folder for Storing Libraries
+                            checkbox and specify the location for the libraries folder.
+                            See <a href="#projects-shared-libraries">Sharing Project Libraries</a>
+                        for more information on this option.</li>
+                        <li>(Optional) Select the Set as Main Project checkbox. When you select this option,
+                            keyboard shortcuts for commands such as Clean and Build Main Project (Shift-F11)
+                        apply to this project.</li>
+                    </ul></li>
+              <li>Click Next to advance to the Existing Sources page of the wizard.</li>
+                    <li>In the Source Packages Folder pane, click Add Folder. Then navigate to
+                        your sources and select the source roots, click Open.
+                        <p class="notes">When you add a folder containing source code, you must add the folder that
+                            contains the highest folder in your package tree. For example, for the
+                            <code>com.mycompany.myapp.ui</code> package, you add the folder that
+              contains the <code>com</code> folder. </p></li>
+                    <!-- TODO Note that source roots all have to have the same classpath-->
+                
+                <li>(Optional) In the Test Package Folders pane, click Add Folder to select the
+                folder containing the JUnit package folders. </li>
+				<li>Click Next to advance to the Includes &amp; Excludes page of the wizard.</li>
+                <li>(Optional) In the Includes &amp; Excludes page of the wizard, enter file
+                    name patterns for any files that should be included or excluded from the project.
+                By default, all files in your source roots are included.</li>
+                <li> Click Finish.
+              </li>
+            </ol>
+            
+            <p><a name="existing-web-sources"></a></p>
+            <h3 class="tutorials">Setting Up a Web Project Based on Existing Sources</h3>
+            <p>For web projects developed outside of NetBeans, you use an &quot;Existing Sources&quot; template
+            in the New Project wizard to make a NetBeans project. In the wizard,
+            you identify the location of the
+            sources and specify a location for the NetBeans project metadata. You
+            then use the Project Properties dialog box to
+            <a href="#projects-configuring">configure the project</a>.</p>
+            <p class="notes"><b>Note:</b> If the project was originally developed in
+                Eclipse, you might be able to save time by using the
+                Import Eclipse Project wizard instead of the New Project wizard.
+                The Import Eclipse Project wizard enables you to import multiple
+                projects simultaneously, including their configurations.
+            See <a href="../../../kb/docs/java/import-eclipse.html">Importing Eclipse Projects Into NetBeans IDE</a>.</p>
+
+            <p><b>To set up a NetBeans project for an existing web application:</b></p>
+            <ol>
+                <li>Choose <tt>File</tt> &gt; <tt>New Project (Ctrl-Shift-N on Windows/Cmd-Shift-N on OS X)</tt>. </li>
+                <li>Choose <tt>Java Web</tt> &gt; <tt>Web Application with Existing Sources</tt>. Click Next. </li>
+                <li>In the Name and Location page of the wizard, follow these steps:
+                    <ul>
+                        <li>In the Location field, enter the folder that contains
+                        the web application's source root folders and web page folders.</li>
+                        <li>Type a project name.</li>
+                        <li>(Optional) Change the location of the project folder.</li>
+                        <!--TODO info on the fact that the sources might live in different places-->
+                </ul></li>
+                <!--<li>(Optional) Change the name of the build script used by the IDE.
+                            This might be desirable if there is already a build script called
+                        <code>build.xml</code> that is used to build the sources.</li>-->
+                <li>(Optional) Select the Use Dedicated Folder for Storing Libraries
+                    checkbox and specify the location for the libraries folder.
+                    See <a href="#projects-shared-libraries">Sharing Project Libraries in NetBeans IDE</a>
+                for more information on this option.</li>
+                <li>(Optional) Select the Set as Main Project checkbox. When you select this option,
+                    keyboard shortcuts for commands such as Clean and Build Main Project (Shift-F11)
+                apply to this project.</li>
+                <li>Click Next to advance to the Server and Settings page of the wizard.</li>
+                <li>(Optional) Add the project to an existing enterprise application.</li>
+                <li>Select a server to which to deploy. If the server that you want
+                does not appear, click Add to register the server in the IDE.</li>
+                <li>Set the source level to the Java version on which you want the application to run.</li>
+                <li>(Optional) Adjust the context path. By default, the context path
+                is based on the project name.</li>
+                <li>Click Next to advance to the Existing Sources and Libraries page of the wizard.</li>
+                <li>Verify all of the fields on the page, such as the values for the Web Pages Folder
+                and Source Package Folders.</li>
+                <li> Click Finish.
+              </li>
+            </ol>
+
+            <a name="free-form"></a>
+            <h3 class="tutorial">Free-Form Projects</h3>
+            <p>There are also project templates available for free-form projects.
+                In free-form projects, the IDE uses targets in an existing Ant script to
+                build, run, clean, test, and debug your application. If the Ant script does
+                not contain targets for some of these functions, the functions are
+                unavailable for the project. To implement these functions you write targets either in your Ant
+            script or in a secondary Ant script. </p>
+            <p>In general,
+                it is better to use standard &quot;With Existing Sources&quot; project templates for importing projects.
+                For Eclipse projects, it is best to use the Import Project feature, which creates and
+                configures a standard project for you.
+                Standard projects are easier to maintain in the long term. However, the free-form
+                project templates can be useful if you have an existing Ant-based project with
+                a complex or idiosyncratic configuration that can not be replicated within a standard
+                project. For example, if you are importing a project with multiple source roots, each of
+                which has a different classpath, and you can not split the source roots into different projects,
+            it might be necessary to use a free-form project template.</p>
+            <p>This guide focuses on standard projects. For more information on setting up free-form projects, see
+                <a href="../../articles/freeform-config.html">Advanced Free-Form Project Configuration</a>.
+            </p>
+        </div>
+
+        <a name="projects-configuring"></a><h2>Configuring the Classpath and Other Project Settings</h2>
+        <p>This section covers the most common tasks in setting up a
+            project, such as setting the project's target JDK, setting the classpath,
+            creating dependencies between projects, and sharing libraries between
+        projects and users.</p>
+        <div class="indent">
+            <a name="projects-main"></a><h3 class="tutorial">Setting the Main Project</h3>
+            <p>When you develop a large application consisting of numerous
+                source folders, it is common to split up your code into
+                separate projects. Typically, one of these projects serves as the entry
+                point for your application. To tell the IDE which of your projects
+                is the main entry point for your application, you set one project to
+                be the main project. The IDE provides commands that act on the main project.
+                For example, running the Clean and Build Main Project command builds both the
+            main project and all of its required projects. </p>
+            <p><b>To set a project as the main project:</b></p>
+            <ul>
+                <li>Right-click the project node in the Projects window, and
+                choose Set as Main Project. </li>
+            </ul>
+            <p>Only one project can be the main project at a time.</p>
+            <a name="projects-jdk"></a>
+            <h3 class="tutorial">Setting the Target JDK in a Project</h3>
+            <p>In the IDE, you can register multiple Java platforms and attach Javadoc
+                and source code to each platform. Switching the target JDK for a
+            standard project does the following:</p>
+            <ul>
+                <li>Offers the new target JDK's classes for code completion.</li>
+                <li>If available, displays the target JDK's source code and Javadoc documentation.</li>
+                <li>Uses the target JDK's executables (<code>javac</code>
+                and <code>java</code>) to compile and execute your application.</li>
+                <li>Compiles your source code against the target JDK's libraries.</li>
+            </ul>
+            <p>By default, the IDE uses the version of the Java SE platform (JDK)
+                on which the IDE runs as the default Java platform for IDE projects.
+                You can view your IDE's JDK version by choosing <tt>Help</tt> &gt; <tt>About</tt>. The JDK version is listed in the Java field.</p>
+            <p><b>To run the IDE with a different JDK version:</b></p>
+            <ul>
+                <li>Start the IDE with the following switch from the command line.
+                    <pre>--jdkhome jdk-home-dir</pre>
+                    <p>Alternatively, set the JDK in the <code>/etc/netbeans.conf</code>
+                    file that is located in the IDE's installation folder. </p>
+                </li>
+            </ul>
+
+
+            <p><b>To register a new Java platform:</b></p>
+            <ol>
+                <li>Choose <tt>Tools</tt> &gt; <tt>Java Platforms</tt>
+                from the main menu.</li>
+                <li>Specify the folder that contains the Java platform
+                as well as the sources and Javadoc needed for debugging.</li>
+            </ol>
+
+          	<p class="align-center"><a href="../../../images_www/articles/72/java/project-setup/setup-platformmgr.png" rel="lytebox" title="Java Platform Manager">
+					   <img src="../../../images_www/articles/72/java/project-setup/setup-platformmgr-small.png" alt="Java Platform Manager" border=1></a></p>
+            <p><b>To switch the target JDK of a standard project:</b></p>
+            <ol>
+                <li>Right-click the project's node and choose Properties.</li>
+                <li>Select the Libraries panel.</li>
+                <li>Change the Java Platform property.</li>
+            </ol>
+            <a name="projects-classpath"></a><h3 class="tutorial">Managing a Project's Classpath</h3>
+            <p>
+                Adding a group of class files to a project's classpath tells the IDE which
+                classes the project should have access to during compilation and
+                execution. The IDE also uses classpath settings to enable code
+                completion, automatic highlighting of compilation errors, and
+                refactoring. You can edit the classpath declarations for an existing
+            project in the Project Properties dialog box.</p>
+            <p>
+                In standard Java projects, the IDE maintains separate classpaths for compiling
+                and running your project, as well as compiling and running
+                JUnit tests (for Java SE applications). The IDE automatically adds
+                everything on your project's compilation classpath to the project's
+                runtime classpath.
+            </p>
+            <p><b>You can modify your project's classpath in either of the following ways:</b></p>
+            <ul>
+                <li>Right-click the project's node, choose Properties,
+                    select the Libraries category, and modify the listed
+                classpath entries.</li>
+                <li>Right-click the Libraries node in the Projects window
+                and choose Add Project, Add Library, or Add JAR/Folder.</li>
+            </ul>
+            <p>
+                If you have attached Javadoc and source files to a JAR file in the
+                Library Manager, the IDE automatically adds the Javadoc and
+                source files to the project when you register the JAR file on a
+                project's classpath. You can step into classes and look up Javadoc
+            pages for the classes without configuring anything else.</p>
+			<p class="align-center"><a href="../../../images_www/articles/72/java/project-setup/projprops-libcompile.png" rel="lytebox" title="Project Properties dialog box">
+					   <img src="../../../images_www/articles/72/java/project-setup/projprops-libcompile-small.png" alt="Project Properties dialog box" border=1></a></p>
+			
+
+            <a name="projects-dependencies"></a>
+            <h3 class="tutorial">Managing Dependencies Between Projects</h3>
+            <p>
+                If your application consists of multiple projects, you
+                have to set up the classpath dependencies between the projects.
+                Typically you set up one main project containing the project main
+                class (in Java SE projects), and several required projects. A required
+                project is a project that has been added to another project's classpath.
+                When you clean and build a project, the IDE also cleans and builds its
+                required projects. The required project's Javadoc and sources are also
+            made available to the receiving project. </p>
+            <p>
+                You can add any required projects to your project by right-clicking
+                the Libraries node in the Projects window, or you can add them by
+                specifying them in the Libraries tab in the Project Properties dialog box.
+                When you want to add a required project, select the project folder whose
+                JAR files you want to add to the classpath (the file chooser displays the
+                icon for IDE project folders
+                (<img src="../../../images_www/articles/72/java/project-setup/projectfolder.png" ALIGN="bottom" alt="Project Folder icon">
+                ). When adding projects in the Project Properties dialog box, make
+            sure that the Build Projects on Classpath checkbox is selected.</p>
+            <p>
+                If you want to add a free-form project to the classpath of a standard project,
+                you have to add the free-form project's JAR file to the standard project's
+                classpath. To do this, you must first declare all of the free-form project's
+                output files in the Output panel of the free-form project's Project Properties
+            dialog box.</p>
+
+            <a name="projects-shared-libraries"></a><h3 class="tutorial">Sharing Project Libraries</h3>
+
+            <p>As the NetBeans IDE project system is Ant-based, NetBeans
+                projects are already generally portable between different users, whether or not
+                they use the IDE. However, by default, the project build script's way of
+                referring to libraries is dependent on factors specific to each user,
+            particularly in the case of libraries defined in the Library Manager dialog box.</p>
+
+            <p>For example, normally you can put a project in a zip file and give it to another
+                user to unpack and run. But if the project depends on a custom library that
+                you have specified in the Libraries Manager dialog box, others might
+                initially have problems building the project because of unresolved references
+            to the custom library.</p>
+
+            <p>Another potential inconvenience is that libraries are stored in a variety of locations,
+                based on where they originate. Libraries that come with the IDE are stored in
+                various different folders within the IDE's installation. Examples of these
+                include the libraries for the Swing Layout Extensions, beans binding, and
+            database drivers.</p>
+
+            <p>To solve these problems, you can specify a dedicated folder for project libraries.
+                Furthermore, you have control over whether to use an relative path or an
+            absolute path when referring to these libraries. </p>
+            <p>This flexibility makes it easier for you to handle the following situations:</p>
+            <ul>
+                <li>You create a project and need to make it available and buildable to
+                    other users, whether they use the IDE or not. They should be able to access
+                    the project through a version control checkout or by unpacking a zip file
+                    that you have provided them. Then they should be able build the application
+                without extra configuration.</li>
+                <li>You must start working on an existing project and adhere to a strict
+                    set of conventions concerning where project libraries are stored
+                    (and whether your build script accesses them with a relative reference
+                or absolute reference). </li>
+            </ul>
+
+            <p>You can set a dedicated libraries folder for standard Java SE, Web, and
+                Enterprise projects. You can set the libraries folder when you create the project
+                (in the New Project wizard) or afterwards in the Libraries tab of the
+            Project Properties dialog box.</p>
+
+            <!--TODO:  info on descriptor/definition file-->
+            <p><b>To make a general Java project's libraries sharable upon project creation:</b></p>
+            <ol>
+                <li>Choose <tt>File</tt> &gt; <tt>New Project</tt>.</li>
+                <li>In the Java category of the wizard, select one of the standard templates.
+                Then click Next.</li>
+                <li>In the Name and Location page of the wizard, select the
+                Use Dedicated Folder for Sharing Libraries checkbox.</li>
+                <li>In the Libraries Folder field, select the location for the
+                    libraries to be stored.
+                    <p>If the libraries are already included in the IDE, those libraries will be
+                    copied to the folder that you have designated.</p>
+                <!-- TODO : what about other types of libraries? --></li>
+            </ol>
+
+            <p><b>To make a web or Java EE project's libraries sharable upon project creation:</b></p>
+            <ol>
+                <li>Choose <tt>File</tt> &gt; <tt>New Project</tt>.</li>
+                <li>In the Web category of the wizard, select one of the standard templates.
+                Then click Next.</li>
+                <li>In the Name and Location page of the wizard, select the
+                Use Dedicated Folder for Sharing Libraries checkbox.</li>
+                <li>In the Libraries Folder field, select the location for the
+                    libraries to be stored.
+                    <p>If the libraries are already included in the IDE, those libraries will be
+                copied to the folder that you have designated.</p></li>
+                </ol>
+
+            <p><b>To make an existing project's libraries sharable:</b></p>
+            <ol>
+                <li>Right-click the project's node and choose Properties.</li>
+                <li>In the Project Properties dialog box, select the Libraries node.</li>
+                <li>In the Libraries panel, click Browse to open the New Libraries Folder wizard.</li>
+                <li>In the Library Folder page of the wizard, enter a location
+                    for the libraries and click Next.
+                <br>You can enter the location as a relative reference or an absolute reference. </li>
+                <li>In the Actions panel of the wizard, verify the selected action for each
+                    listed library. In most cases, the IDE detects the most appropriate action for
+                    that library.
+                    <p>The  following actions are available:</p>
+                    <ul>
+                        <li><b>Copy Library JAR Files to New Libraries Folder.</b>
+                            Use this option if the library is not in the
+                        folder that you have selected and you want to have the library JAR files placed there. </li>
+                        <li><b>Use Relative Path to Library JAR Files.</b>
+                            Use this option if the library is not in the libraries
+                            folder and you need to access the library in its existing location using
+                            a relative path. An entry with a relative reference is added
+                        for the library in the libraries folder's <tt>nblibraries.properties</tt> file.</li>
+                        <li><b>Use Absolute Path to Library JAR Files.</b>
+                            Use this option if the library is not in the libraries
+                            folder and you need to access the library in its existing location using
+                            an absolute path. An entry with an absolute reference is added
+                        for the library in the libraries folder's <tt>nblibraries.properties</tt> file.</li>
+                        <li><b>Use Existing Library in Libraries Folder.</b>
+                            Use this option if there is already a copy of the library in
+                            the libraries folder and you want to use that copy of the
+                        library.</li>
+                </ul></li>
+                <li>Click Finish to exit the Make Project Sharable wizard.</li>
+                <li>Click OK to exit the Project Properties dialog box.</li>
+
+            </ol>
+            <p><b class="notes">Note:</b> You can also use the Libraries node of the Project Properties
+                dialog box to change the location of the libraries folder. If you
+                have already specified a libraries folder, clicking Browse opens
+                a file chooser instead of the New Libraries Folder wizard.
+            </p>
+
+            <h3><a name="projects-jdk-javadoc"></a>Making the Javadoc Available in the IDE
+            </h3>
+            <p>To view the Java SE API documentation in the NetBeans IDE, use the <tt>Source</tt> &gt; <tt>Show Documentation</tt> command or choose <tt>Window</tt> &gt; <tt>Other</tt> &gt; <tt>Javadoc</tt> from the main menu to view API documentation in a separate window.</p>
+            <p>However, for some third-party libraries, API documentation is not available. In these cases, the Javadoc resources must be manually associated with the IDE.</p>
+            <p><b>To make the Javadoc API documentation available for the Show Javadoc command:</b></p>
+            <ol>
+              <li>Download the Javadoc API documentation source.</li>
+              <li>Choose <tt>Tools</tt> &gt; <tt>Libraries</tt>.</li>
+              <li>In the Libraries list, select the library that your project is using.</li>
+              <li>Click the Javadoc tab.</li>
+              <li>Click the Add ZIP/Folder button and navigate to the zip file or the
+                folder that contains the Javadoc API documentation on your system. Select the zip file
+                or the folder and click the Add ZIP/Folder button.</li>
+              <li>Click OK.</li>
+            </ol>
+            <h3 class="tutorial"><a name="projectsjws"></a>Enabling Java Web Start for the Application </h3>
+            <p>You can configure your application to run through Java Web Start in the IDE. For this, use the Java Web Start category in the Project Properties window. For detailed information on how to enable Java Web Start, refer to the tutorial <a href="../../../kb/73/java/javase-jws.html">Enabling Java Web Start in the NetBeans IDE</a>.</p>
+            <p><b>To configure Java Web Start for the application:</b></p>
+            <ol>
+              <li>Right-click the project's node and choose Properties.</li>
+              <li>In the Project Properties dialog box, select the <tt>Application</tt> &gt; <tt>Web Start</tt> node.</li>
+              <li>Select the Enable Web Start checkbox and configure Java Web Start settings as explained in <a href="../../../kb/73/java/javase-jws.html">Enabling Java Web Start in the NetBeans IDE</a>.</li>
+            </ol>
+            
+        </div>
+
+
+        <a name="building"></a><h2>Building Applications</h2>
+        <p>
+            This section explains how to build standard projects in the IDE,
+            how to do basic customizations to the build process, and how to
+        handle compilation errors. </p>
+        
+        <div class="indent">
+            <a name="building-commands"></a><h3 class="tutorial">Building Projects, Packages, and Files</h3>
+            <p>Compilation in the IDE is simple. Assuming that your
+                project's compilation classpath is set correctly, you need only
+                select the project, package, or file that you want to compile and choose
+            the appropriate Build or Compile command from the Run menu. The IDE then compiles the files.</p>
+            <p>If the Compile on Save feature is enabled for a Java project
+                (or the Deploy on Save feature
+                is enabled for a Java web or enterprise project), the IDE compiles
+                your files automatically when you
+                save them. See
+            <a href="#building-compile-on-save">Compile on Save</a> below for more information.</p>
+            <p><b>To build your application for deployment:</b></p>
+            <ul>
+                <li>Choose <tt>Run</tt> &gt; <tt>Clean and Build Project</tt>.
+                    <p>Any previously compiled files and distributable outputs
+                        such as JAR files are deleted. Then the files are recompiled
+                        and new outputs are produced. A <code>build</code> folder is
+                        created to hold the compiled classes. A <code>dist</code>
+                        is generated to contain distributable outputs such as JAR files
+                        and Javadoc documentation. You can see the build outputs
+                by opening the Files window.</p></li>
+            </ul>
+            <p>Whenever you invoke compile commands, the IDE displays the output including
+                any compilation errors encountered in the Output window, as described in
+            <a href="#building-fixing">Fixing Compilation Errors</a> below.</p>
+
+            <a name="building-compile-on-save"></a><h3 class="tutorial">Compile on Save</h3>
+            <p>The IDE's Compile on Save feature enables you to save time when you are running
+                and debugging projects in the IDE. When the Compile on Save feature is enabled for
+                a project, files are compiled when you save them. The compiled files are stored in
+                a cache that the IDE uses when you run, test, debug, and profile the
+                project in the IDE. This enables you to test and debug your application without having
+            to wait for the application to be built first.</p>
+
+            <p>When enabled, the Compile on Save feature has the following effects:</p>
+            <ul>
+                <li>The IDE
+                    compiles your files as you save them so that your project is always
+                ready to run or debug in the IDE.</li>
+                <li>The Build command is disabled. If you want to rebuild the JAR file
+                    without having to use the Clean and Build command, you need to disable
+                the Save on Compile feature.</li>
+                <li>The project's Ant script is not used when you use Run, Debug, Profile,
+                    or Test commands. If you have customized your build script for any of
+                these commands, those customizations will be disregarded.</li>
+                <li>The JAR file that is built from the project is <i>not</i> kept
+                    up to date when you save changes to your files. If you want to build or rebuild the JAR file, you
+                    need to use the Clean and Build command. The Clean and Build command
+                    always uses your project's Ant script, whether or not Compile on
+                Save is enabled.</li>
+            </ul>
+
+            <p>By default, Compile on Save is enabled for new projects that you create. For
+            existing projects, Compile on Save is turned off.</p>
+
+            <p><b>To enable or disable Compile on Save for a Java project:</b></p>
+            <ol>
+                <li>Right-click the project's node and choose Properties.</li>
+                <li>Select the Compiling node and set the Compile on Save property.</li>
+            </ol>
+            <p>Similarly, the IDE has a Deploy on Save feature for Java web and
+                enterprise applications. When the Deploy on Save feature is enabled for a
+                project and a project has been deployed to a server through the IDE,
+                changed files are redeployed to the server immediately. For Deploy on Save
+                to work on GlassFish V2, the Glassfish instance must have the
+            Directory Deployment Enabled option selected. </p>
+            <p><b>To enable or disable Deploy on Save for a Java web or enterprise project:</b></p>
+            <ol>
+                <li>Right-click the project's node and choose Properties.</li>
+                <li>Select the Run node and set the Deploy on Save property.</li>
+            </ol>
+            <p><b>To enable directory deployment Glassfish V2:</b></p>
+            <ol>
+                <li>Choose <tt>Tools</tt> &gt; <tt>Servers</tt>.</li>
+                <li>Select the server.</li>
+                <li>Select the Options tab.</li>
+                <li>Select the Directory Deployment Enabled option.</li>
+            </ol>
+
+
+
+            <a name="building-fixing"></a><h3 class="tutorial">Fixing Compilation Errors</h3>
+
+            <!--TODO add info here about task list, etc.-->
+            <p>
+                The IDE displays output messages and any compilation errors in the
+                Output Window. This multi-tabbed window is displayed automatically
+                whenever you generate compilation errors, debug your program, generate
+                Javadoc documentation, and so on. You can also open this window manually
+            by choosing Window &gt; Output (Ctrl-4 on Windows/Cmd-4 on OS X).</p>
+            <p>In addition, compilation errors are shown in the Tasks window and
+            marked in the Source Editor.</p>
+            <p>
+                One important function of the Output window is to notify you of errors
+                found while compiling your program. The error message is displayed in
+                blue underlined text and is linked to the line in the source code that
+                caused the error, as illustrated in the image below. The Output window
+                also provides links to errors found when running Ant build scripts.
+                Whenever you click an error link in the Output window, the Source Editor
+                jumps to the line containing the error automatically.</p>
+           	<p class="align-center"><a href="../../../images_www/articles/72/java/project-setup/output-window.png" rel="lytebox" title="Output window showing compilation errors">
+					   <img src="../../../images_www/articles/72/java/project-setup/output-window-small.png" alt="Output window showing compilation errors" border=1></a></p>
+
+            <p>Every action that is run by an Ant script, such as
+                compiling, running, and debugging files, sends its output
+                to the same Output window tab. If you need to save the
+                messages displayed in the Output window, you can copy and
+                paste it to a separate file. You can also set Ant to print the command
+                output for each new target to a new Output window tab by choosing
+                Tools &gt; Options, selecting the
+                Miscellaneous category, clicking the Ant tab, and deselecting the checkbox for the
+            Reuse Output Tabs from Finished Processes property.</p>
+            <a name="building-filtering"></a><h3 class="tutorial">Filtering Output Files</h3>
+            <p>
+                When you create a JAR file or a WAR file, you usually want to include
+                just the compiled <code>.class</code> files and any other
+                resource files located in your source directory, such as
+                resource bundles or XML documents. The default filter does
+                this for you by excluding all <code>.java</code>, <code>.nbattrs</code>,
+                and <code>.form</code>
+            files from your output file.</p>
+            <p>
+                You can create additional filters using regular expressions to
+                control the Output files. To specify which files to exclude,
+                right-click your project in the Projects window and choose
+                Properties to open the Project Properties dialog box.
+                In the left pane, click on Packaging. In the right pane,
+                enter regular expressions in the text box to specify the files
+                to exclude when packaging the JAR or WAR files. In addition to the
+            default expressions, here are some additional regular expressions you can use:</p>
+            <table>
+                <tr>
+                    <th class="tblheader" scope="col">Regular Expression</th>
+                    <th class="tblheader" scope="col">Description</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><code>&#92;.html$ </code></td>
+                    <td class="tbltd1">Exclude all HTML files</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><code>&#92;.java$ </code></td>
+                    <td class="tbltd1">Exclude all Java files</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><code>(&#92;.html$)|(&#92;.java$) </code></td>
+                    <td class="tbltd1">Exclude all HTML and Java files</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><code>(Key)|(&#92;.gif$) </code></td>
+                    <td class="tbltd1">Exclude all GIF files and any files with <code>Key</code>
+                    in their name</td>
+                </tr>
+            </table>
+            <p>
+                For a guide to regular expression syntax, see
+            <a href="http://jakarta.apache.org">jakarta.apache.org</a>.</p>
+        </div>
+        <a name="deploy"></a><h2>Running Applications</h2>
+        <p>This section shows you how to run projects in the IDE and how to configure
+            the project's main class, runtime arguments,
+        VM arguments, and the working directory.</p>
+        <div class="indent">
+            <a name="deploy-projects"></a><h3 class="tutorial`">Running Projects and Files</h3>
+            <p>For Java projects, you typically set the project that contains
+                the program's main class as the main project. For web projects,
+                the main project is the project that is first deployed. To run a
+            project, package, or file, choose one of the following:</p>
+            <ul>
+                <li>In the main menu, choose <tt>Run</tt> &gt; <tt>Run Main Project (F6)</tt>
+                to run the main project. Alternatively, you can use the Run Main Project button in the toolbar.</li>
+                <li>In the Projects window, right-click the project and choose Run 
+                to run a project. Note that for Java projects, the project must have a main class.</li>
+                <li>In the Projects window, right-click the file and choose Run File (Shift+F6)
+                    to run a file. Alternatively, choose <tt>Run</tt> &gt; <tt>Run File</tt>  &gt; <tt>Run filename (Shift+F6)</tt>
+                in the main menu to run a runnable class. </li>
+            </ul>
+            <p>When you run the project the IDE displays any compilation
+                errors and output in the Output window. For more, see
+            <a href="#building-fixing">Fixing Compilation Errors</a>.</p>
+            <p class="notes"><b>Note:</b> If Compile on Save
+                is enabled for a project, the Run Project command operates on class files
+                that have been created when you have saved those files. The Ant
+                build script is not used. If you have defined custom steps
+                in the build script, those steps are not followed. If you would like
+                the full build process to occur when you use Run Project, Debug Project,
+                and Profile Project, disable <a href="#building-compile-on-save">Compile on Save</a>.
+            </p>
+
+            <a name="deploy-options"></a><h3 class="tutorial">Customizing Runtime Options</h3>
+            <p>By default, the IDE does not specify a main class, runtime arguments,
+                or JVM arguments. The runtime classpath of each standard project
+                contains the project's compiled classes and everything in the
+                project's compilation classpath. You can view the project's compilation
+                classpath by opening the Project Properties dialog box and selecting the
+                Libraries node in the Categories pane and then clicking the Compile
+            tab in the right pane.</p>
+            <p>To change project runtime options, open the Project Properties
+                dialog box by right-clicking the project node in the Projects
+                window and choosing Properties. Next, select the Libraries node in
+                the Categories pane and click the Run tab in the right pane of the
+                dialog box. Note that to access settings for the main class,
+                program arguments, the working directory for program execution and
+                VM options, you have to select the Run node. In the next section
+            we'll take a closer look at how to configure the runtime classpath.</p>
+			<p class="align-center"><a href="../../../images_www/articles/72/java/project-setup/proj_props-libraries.png" rel="lytebox" title="Specifying the runtime settings in the Project Properties dialog box"><img src="../../../images_www/articles/72/java/project-setup/proj_props-libraries-small.png" alt="Specifying the runtime settings in the Project Properties dialog box" border=1></a></p>
+            <!-- TODO Run configurations-->
+            <a name="deploy-classpath"></a><h3 class="tutorial">Setting the Runtime Classpath</h3>
+            <p>To add projects, libraries, JAR files, and folders to the
+                project's runtime classpath, use the buttons on the right side
+            of the Run-time Libraries list in the Project Properties dialog box.</p>
+            <p>If your project uses special libraries dynamically at
+                runtime through an indirect interface or reflection
+                (like JDBC drivers or JAXP implementations), you have to add
+                these libraries to the runtime classpath. You also have to
+                adjust your runtime classpath if the runtime dependencies
+                between your projects do not match the compilation dependencies
+                between the projects. For example, imagine that project A compiles
+                against project B, and project B compiles against project C, but
+                project A does not compile against project C. This means that
+                project A only has project B on its runtime classpath. If
+                project A requires both project B and project C during execution,
+            you have to add project C to project A's runtime classpath.</p>
+
+            <a name="deploy-args"></a><h3 class="tutorial">Setting the Main Class and Runtime Arguments</h3>
+            <p>To set the project's main class, select the Run node in the Categories
+                pane of the Project Properties dialog box and type the fully-qualified
+                name in the Main Class field (for example,
+                <code>org.myCompany.myLib.MyLibClass</code>). The main class must
+                exist in the project or in one of the JAR files or libraries in
+                the project's runtime classpath. Afterwards, type any necessary
+            runtime arguments in the Arguments field.</p>
+            <p>If you use the Browse button to choose the project main class,
+                the file chooser only shows classes in your project source
+                directory. If you want to specify a class in one the libraries
+                on the classpath, you have to type the fully-qualified name of
+            the class in the Main Class field.</p>
+            <a name="deploy-jvm"></a><h3 class="tutorial">Setting JVM Arguments</h3>
+            <p>You can specify JVM arguments for the project in the
+                Project Properties dialog box. Open the Project Properties
+                dialog box and click Run in the Categories pane and then type
+            a space-separated list of JVM arguments in the VM Options field.</p>
+            <p>You can set system properties by typing the following in the VM Options field:</p>
+            <pre class="examplecode">-Dname=value</pre>
+        </div>
+
+        <a name="build-script"></a><h2>Customizing the Build Script</h2>
+        <p>In standard projects the IDE generates the build script based on the options you
+            enter in the New Project wizard and the project's Project Properties dialog box.
+            You can set all the basic compilation and runtime options in the project's
+            Project Properties dialog box and the IDE automatically updates your project's
+            Ant script. If you have additional requirements for the build process
+            that can not be handled in the Project Properties dialog box, you can
+        modify the build script directly.</p>
+        <p>The main Ant script for a standard project is <code>build.xml</code>.
+            The IDE calls targets in <code>build.xml</code> whenever you run
+            IDE commands. This file contains an
+            import statement that imports <code>nbproject/build-impl.xml</code>,
+            which contains build targets that are generated by the IDE.
+            In <code>build.xml</code>, you can override any of the targets from <code>nbproject/build-impl.xml</code>
+            or write new targets. Do <i>not</i> edit <code>nbproject/build-impl.xml</code> directly,
+            because that file is regenerated based on changes that you make in
+        the Project Properties dialog box.</p>
+        <p>In addition, the build script uses the <code>nbproject/project.properties</code>
+        which you can edit manually.</p>
+        <p>With standard projects, you can customize the build process by doing
+        any of the following:</p>
+        <ul>
+            <li>Entering basic options, like classpath settings and JAR filters,
+                in the New Project wizard when you create a project, or afterwards
+            in the Project Properties dialog box.</li>
+            <li>Editing properties in <code>nbproject/project.properties</code>. This file
+                stores Ant properties with important information about your project,
+                such as the location of your source and output folders. You can override
+                the properties in this file. Be careful when editing this file. For
+                example, the output folder is deleted every time you clean your project.
+                You should therefore never set the output folder to the same location as
+                your source folder without first configuring the clean target to not
+            delete the output folder.</li>
+            <li>Customizing existing or creating new Ant targets by doing any
+                of the following:<ul>
+                    <li>Add instructions to be processed before or after an Ant
+                        target is run. Each of the main targets in <code>nbproject/build-impl.xml</code>
+                        also has a <code>-pre</code> and <code>-post</code> target that you
+                        can override in <code>build.xml</code>. For example, to get RMI
+                        working with regular projects, type the following in <code>build.xml</code>:
+                        <pre class="examplecode">&lt;target name=&quot;-post-compile&quot;&gt;
+  &lt;rmic base=&quot;${build.classes.dir}&quot; includes=&quot;**/Remote*.class&quot;/&gt;
+                    &lt;/target&gt;</pre></li>
+                    <li>Change the instructions in an Ant target. Copy the target from <code>nbproject/build-impl.xml</code>
+                        to <code>build.xml</code>
+                    and make any changes to the target.</li>
+                    <li>Create new targets in <code>build.xml</code>. You can also add
+                        the new target to the dependencies of any of the IDE's
+                        existing targets. Override the existing target in <code>build.xml</code>
+                        and
+                        then add the new target to the existing target's <code>depends</code> property.
+                        For example, the following adds the <code>new-target</code>
+                        target to the run target's dependencies:
+                        <pre class="examplecode">&lt;target name=&quot;new-target&quot;&gt;
+    &lt;!-- target body... --&gt;
+&lt;/new-target&gt;
+&nbsp;
+                        &lt;target name=&quot;run&quot; depends=&quot;new-target,myprojname-impl.run&quot;/&gt;</pre>
+                        <p>You do not need to copy the body of the run target into <code>build.xml</code>.</p>
+        </li></ul></li></ul>
+        <p>The following table lists some common tasks for redefining
+        a JAR file that you may find useful:</p>
+
+ <table>
+            <tr>
+                <th class="tblheader" scope="col">To perform this task</th>
+                <th class="tblheader" scope="col">Follow these steps</th>
+            </tr>
+            <tr>
+                <td class="tbltd1">Specify which files are added to a JAR file.</td>
+                <td class="tbltd1">Right-click the project node in the Projects window and choose Properties.
+                    Click the Packaging subnode (under Build) and configure the filter and
+                    compression settings using the Exclude from JAR File field. For more, see
+                <a href="#building-filtering">Filtering Output Files</a></td>
+            </tr>
+            <tr>
+                <td class="tbltd1">Change a JAR file's name and location. </td>
+                <td class="tbltd1">In the Files window, double-click the project's
+                    <code>nbproject/project.properties</code> file to open it
+                    in the Source Editor. Enter the full path to the JAR file in the 
+                    <code>dist.jar</code> property.
+                </td>
+            </tr>
+            <tr>
+                <td class="tbltd1">Specify the manifest file for a JAR file. </td>
+                <td class="tbltd1">In <code>project.properties</code>, type the name of the manifest file in
+                    the <code>manifest.file</code> property. The file name must be
+                    specified relative to the project's <code>build.xml</code> file.
+                    Note that if you are using the Java Application template,
+                    the IDE creates a manifest file for you.
+                </td>
+            </tr>
+            <tr>
+                <td class="tbltd1">Disable the generation of a JAR file for a project. </td>
+                <td class="tbltd1">In the Files window, open your project folder and open <code>build.xml</code>.
+                    Override the <code>jar</code> target to have no contents
+                    and no dependencies. For example, add the following to <code>build.xml</code>:
+                    <pre>&lt;target name=&quot;jar&quot; /&gt;</pre>
+                </td>
+            </tr>
+    </table>
+
+        <p>If you are looking for resources on learning Ant, see
+            <a href="http://ant.apache.org/resources.html">http://ant.apache.org/resources.html</a>.
+            You can also install the Ant
+            manual into the IDE help system by using the Plugins Manager. Choose Tools &gt; Plugins
+        and install the Ant Documentation module. </p>
+        <div class="indent">
+            <a name="ant-editing"></a><h3 class="tutorial">Editing and Running Ant Scripts</h3>
+            <p>The IDE automatically recognizes Ant scripts and displays them as Ant script nodes
+                (<img src="../../../images_www/articles/72/java/project-setup/anticon.png" align="bottom" alt="Ant script node icon">
+                ) rather than as normal XML files. You can right-click Ant scripts
+                in the Projects window, Files window, or Favorites window to access a
+                pop-up menu of commands. You can also expand the Ant script node to see an
+                alphabetical list of subnodes representing the Ant script's targets. Each of
+            these subnodes also has a popup menu of commands.</p>
+            <p>In the Projects, Files, and Favorites windows, an Ant script's
+            subnodes are flagged in the following ways:</p>
+            <table>
+                <tr>
+                    <th class="tblheader" scope="col">Icon</th>
+                    <th class="tblheader" scope="col">Meaning</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1">
+                            <img src="../../../images_www/articles/72/java/project-setup/setup-targeticon-emph.png" align="bottom" alt="Emphasized Ant target icon">
+                    </td>
+                    <td class="tbltd1">
+                        <p><b>Emphasized Ant target.</b>
+                        These targets include a description attribute, which is displayed as a tooltip. You define the target's description attribute in the Source Editor.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="tbltd1">
+
+                            <img src="../../../images_www/articles/72/java/project-setup/setup-targeticon.png" alt="Normal Ant target icon">
+                    </td>
+                    <td class="tbltd1">
+                            <b>Normal Ant target.</b>
+                        A target without a description attribute.
+                    </td>
+                </tr>
+            </table>
+            <p>Double-click any of the
+                Ant script's subnodes to jump to that target's location in the Source Editor. All of
+                the normal XML search tools, selection tools, and keyboard shortcuts are
+                available for editing Ant scripts, and the IDE provides
+            code completion for all standard Ant tasks.</p>
+            <p>
+                When you create a target that you want to run from the command line,
+                give the target a description attribute. Then, if you forget the names
+                of the targets or what they do, you can run the ant <code>-projecthelp &lt;script&gt;</code>
+                command from the command line. With this command, Ant lists only
+                those targets that have a description attribute, together with their
+                descriptions. Especially when there are many targets in your Ant build script,
+                emphasizing some and de-emphasizing others can be a useful way to
+            distinguish between those that you use a lot and those that you use less often.</p>
+            <p>The font style of a subnode's label in the Projects, Files, and Favorites
+            windows indicates the following:</p>
+            <ul>
+                <li><b>Normal.</b> A target that is defined within the current Ant script.</li>
+                <li><b>Italics.</b> A target that is imported from another Ant script.</li>
+                <li><b>Greyed out.</b> An internal target that cannot be run
+                directly. Internal targets have names beginning with '-'.</li>
+                <li><b>Bold.</b> The default target for the script, if there is one.
+                    The default target is
+                    declared as an attribute of the project, together with other project attributes,
+                such as its name. You define the project's default attribute in the Source Editor.</li>
+            </ul>
+            <p>Targets that are imported from another script but are overridden in the
+            importing script are not listed. Only the overriding target is listed.</p>
+            <p>You can run targets in an Ant script from the Ant script's node in the
+                Projects window, Files window, or Favorites window. To do so,
+                right-click the Ant script node and choose a target from the Run Target
+                submenu. Targets are sorted alphabetically. Only emphasized targets are listed.
+                Choose Other Targets to run a target that has not been emphasized with a
+                description attribute. Internal targets are excluded from these lists
+            because they cannot be run independently.</p>
+            <p>Instead of running a target by using the Ant script node's popup menu,
+            you can simply right-click the target's node and choose Run Target.</p>
+			<p class="align-center"><a href="../../../images_www/articles/72/java/project-setup/setup-run.png" rel="lytebox" title="Running an Ant target"><img src="../../../images_www/articles/72/java/project-setup/setup-run-small.png" alt="Running an Ant target" border=1></a></p>
+            <a name="ant-custom-task"></a><h3 class="tutorial">Writing Custom Ant Tasks</h3>
+            <p>You can use custom Ant tasks to expand on the functionality provided by
+                Ant's built-in tasks. Custom tasks are often used to define properties,
+                create nested elements, or write text directly between tags using the <code>addText</code>
+            method.</p>
+            <p><b>To create a custom Ant task in the IDE:</b></p>
+            <ol>
+                <li>Right-click the package where you would like to place the task
+                and choose <tt>New</tt> &gt; <tt>Other</tt>.</li>
+                <li>Select the Other category and the Custom Ant Task file type.</li>
+                <li>Complete the wizard.</li>
+            </ol>
+            <p>When you create the
+                custom Ant task file, the template opens in the Source Editor. The template
+                contains sample code for many of the common operations performed by Ant tasks.
+            After each section of code, the template also shows you how to use the task in an Ant script.</p>
+
+        </div>
+
+
+        <br>
+        <div class="feedback-box">
+            <a href="/about/contact_form.html?to=3&subject=Creating,%20Importing,%20and%20Configuring%20Java%20Projects">Send Feedback on This Tutorial</a>        </div>
+        <br style="clear:both;" >
+
+        <h2><a name="seealso">See Also</a></h2>
+        <ul>
+            <li><a href="../../../kb/docs/java/junit-intro.html">Writing JUnit Tests</a>.</li>
+            <li><a href="../../../kb/docs/java/debug-multithreaded.html">Debugging Multithreaded Applications in NetBeans IDE</a></li>
+
+            <li><a href="../../../kb/73/java/javase-jws.html">Enabling Java Web Start in the NetBeans IDE</a></li>
+        </ul>
+
+        <hr>
+
+    </body>
+</html>

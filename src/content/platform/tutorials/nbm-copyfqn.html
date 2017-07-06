@@ -1,0 +1,691 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <!-- -*- xhtml -*- -->
+        <title>Java Language Infrastructure Tutorial for the NetBeans Platform</title>
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+        <meta name="AUDIENCE" content="NBUSER"/>
+        <meta name="TYPE" content="ARTICLE"/>
+        <meta name="EXPIRES" content="N"/>
+        <meta name="developer" content="geertjan.wielenga@oracle.com"/>
+        <meta name="indexed" content="y"/>
+        <meta name="description"
+              content="A walk-through of the Retouche approach."/>
+        <!--     Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+    <body>
+        <h1>NetBeans Java Language Infrastructure Tutorial</h1>
+
+        <p>In this tutorial, you will be introduced to aspects of the NetBeans "Retouche" APIs,
+            which give you access to the NetBeans Java editor.</p>
+
+        <p><strong class="notes">Note: </strong>This document uses 
+            NetBeans Platform 8.0 and NetBeans IDE 8.0. If you
+            are using an earlier version, see <a href="74/nbm-copyfqn.html">the previous version
+                of this document</a>.</p>
+
+        <p><b>Contents</b></p>
+
+        <p><img src="../images/articles/81/netbeans-stamp.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 8.0" title="Content on this page applies to NetBeans IDE 8.0"/></p>
+        <ul class="toc">
+            <li><a href="#intro">Introduction to the Java Language Infrastructure</a></li>
+            <li><a href="#setting-up-the-module">Setting Up the Module</a></li>
+            <li><a href="#creating-a-context-sensitive-toolbar-button">Creating a Context-Sensitive Toolbar Button</a></li>
+            <li><a href="#identifying-java-source-files">Identifying Java Source Files</a></li>
+            <li><a href="#determining-open-state">Determining Open State</a></li>
+            <li><a href="#detecting-the-element-under-the-caret">Detecting the Element Under the Caret</a></li>
+            <li><a href="#doing-something-useful">Doing Something Useful</a></li>
+        </ul>
+
+        <p><b>To follow this tutorial, you need the software and resources listed in the following 
+                table.</b></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Software or Resource</th>
+                    <th class="tblheader" scope="col">Version Required</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                    <td class="tbltd1">version 8.0 or above</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                    <td class="tbltd1">version 7 or above</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="tips">For troubleshooting purposes, you are welcome to download the <a href="http://java.net/projects/nb-api-samples/sources/api-samples/show/versions/8.0/tutorials/CopyFQN">completed tutorial source code</a>.</p>
+
+<!--        <p class="tips">Optionally, for troubleshooting purposes, you can <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=2753">download the
+                completed sample</a> and inspect the sources.</p>-->
+
+        <h2><a name="intro"></a>Introduction to the Java Language Infrastructure</h2>
+
+        <p>Prior to NetBeans IDE 6,
+            the Java language infrastructure that supported the Java editor, including Java code generation and
+            Java refactoring, was based on something called "JMI for Java" (also known as "MDR").  JMI for Java 
+            had a few architectural issues such as single-read lock. In other words, a lock had to be acquired just to read
+            information from its model, while this is normally required when doing write actions only. Over a period of a
+            few years, JMI was debugged and improved in terms of performance. But another issue was that it used its own internal
+            copy of the Java parser, which meant it had its own approach to interpreting Java source, which differed from 
+            the JDK's Java compiler. With the introduction of generics in JDK 5, which introduced a lot more complicated 
+            and subtle Java constructs, that divergence became harder to manage. Therefore, because of JMI's performance issues
+            and because a formal language model was developed to make the JDK Java compiler a programmatically accessible tool,
+            the JMI for Java was replaced with a new approach, based on the JDK Java compiler. </p>
+
+        <p>That is when Retouche, a French word
+            meaning "touch up", was born. Retouche is the new and fast Java language infrastructure in NetBeans IDE, capable of
+            supporting all the cool Java editor features that have been realised in NetBeans 6.0. At the heart of it, Retouche
+            wraps an instance of the JDK Java compiler and consumes its artifacts, such as the abstract syntax tree (also known as "AST")
+            and the symbolic resolutions that are emitted in various phases of parsing. When working with Retouche, you need to deal
+            with some of these artifacts. The <a href="http://java.sun.com/javase/6/docs/jdk/api/javac/tree/index.html">Compiler Tree API</a> is one of these, for example. The package naming of 
+            classes in the Compiler Tree API is <tt>com.sun.*</tt>. Therefore, technically, this is a non-JDK API, but it does come from the JDK Java compiler. 
+            Another example of the JDK Java compiler's artifacts that you work with in relation to Retouche is the formal language model
+            in the JDK APIs, provided by the <tt>javax.language.model.*</tt> packages.</p>
+
+
+        <h2><a name="setting-up-the-module"></a>Setting Up the Module</h2>
+
+        <p>In this section, we use wizards and dialogs
+            in NetBeans IDE to create a module project and
+            to set dependencies on relevant NetBeans modules. </p>
+
+        <div class="indent">
+
+            <ol>
+
+                <li>Choose File &gt; New Project. In the New Project wizard,
+                    choose NetBeans Modules under Categories and Module
+                    under Projects. Click Next. </li>
+
+                <li>Type <tt>CopyFQN</tt> in Project Name
+                    and set Project Location to an appropriate folder on your disk. Click Next.</li>
+
+                <li>Type <tt>org.netbeans.modules.copyfqn</tt> in Code Name Base
+                    and <tt>CopyFQN</tt> in Module Display Name. Click Finish.</li>
+
+                <li>Right-click the project's Libraries node, choose Add Module Dependency,
+                    and declare dependencies on the following APIs:
+                    <br/>
+                    <br/>
+                    <ul>
+                        <li>Datasystems API</li>
+                        <li>Editor Library 2</li>
+                        <li>File System API</li>
+                        <li>Javac API Wrapper</li>
+                        <li>Java Source</li>
+                        <li>Lookup API</li>
+                        <li>Nodes API</li>
+                        <li>Text API</li>
+                        <li>UI Utilities API</li>
+                        <li>Utilities API</li>
+                        <li>Window System API</li>
+                    </ul>
+
+                    <p>You should now see this:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/copyfqn/72/pic1.png" alt="copy fqn"/></p>
+
+                    <p>Click OK.</p></li>
+
+            </ol>
+
+        </div>
+
+        <h2><a name="creating-a-context-sensitive-toolbar-button"></a>Creating a Context-Sensitive Toolbar Button</h2>
+
+        <p>In this section, we create a context-aware button
+            in the toolbar. This has nothing to do with the 
+            Retouche APIs discussed in the introduction of this
+            tutorial, but gives us a user interface element
+            for interacting with our implementation of the Retouche APIs, later in this
+            tutorial.</p>
+
+        <div class="indent">
+
+            <ol>
+                <li>Right-click the CopyFQN module project, choose
+                    New &gt; Other and choose Action from the
+                    Module Development category.
+                    <br/>
+                    <br/>
+                    <p><img src="../images/tutorials/copyfqn/72/pic2.png" alt="cookie action"/></p>
+                    <br/>
+                    <p>Click Next. </p>
+                </li>
+
+                <li><p>Choose Conditionally Enabled, choose DataObject, and keep
+                        all the defaults, as shown below, so that
+                        the action will be sensitive to <tt>DataObjects</tt>
+                        and so that it will only be enabled when one <tt>DataObject</tt>
+                        is selected.</p>
+                    <br/>
+                    <p><img src="../images/tutorials/copyfqn/72/pic3.png" alt="cookie action"/></p>
+                    <br/>
+                    <p>Click Next. </p>
+                </li>
+
+                <li><p>Choose "File" in Category and "File" in Toolbar. You should now see the following:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/copyfqn/72/pic4.png" alt="gui registration"/></p>
+                    <br/>
+                    <p>Click Next.</p> 
+                </li>
+
+                <li><p>Type <tt>CopyFQNAction</tt> in Class Name
+                        and <tt>CopyFQN</tt> in Display Name. Browse to an icon that will
+                        be displayed in the toolbar button. For example, use the one that
+                        will be used throughout this tutorial:</p>
+                    <p><img src="../images/tutorials/copyfqn/icon.png" alt="icon"/></p>
+                    <p>You should now see the following:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/copyfqn/72/pic5.png" alt="gui registration"/></p>
+                    <br/>
+                </li>
+
+                <li>
+                    <p>Click Finish. You should now see the following code in your new
+                        <tt>CopyFQNAction.java</tt> class:</p>
+
+                    <pre class="examplecode">package org.netbeans.modules.copyfqn;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionRegistration;
+import org.openide.loaders.DataObject;
+import org.openide.util.NbBundle.Messages;
+
+@ActionID(
+        category = "File",
+        id = "org.netbeans.modules.copyfqn.CopyFQNAction")
+@ActionRegistration(
+        iconBase = "org/netbeans/modules/copyfqn/icon.png",
+displayName = "#CTL_CopyFQNAction")
+@ActionReference(
+        path = "Toolbars/File", 
+        position = 0)
+@Messages("CTL_CopyFQNAction=CopyFQN")
+public final class CopyFQNAction implements ActionListener {
+
+    private final DataObject context;
+
+    public CopyFQNAction(DataObject context) {
+        this.context = context;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent ev) {
+        // TODO use context
+    }
+    
+}</pre>     
+
+                    <p><b class="notes">Note:</b> All the work we will do in the remainder
+                        of this tutorial will focus on the <tt>actionPerformed</tt>
+                        method above.</p>
+                    <br/>
+                    <p>You have now created an action that is sensitive to data objects. Let's see what that means right away.</p></li>
+
+                <li><p>Right-click the module and choose Run. Once the new instance of the IDE is started up
+                        and the module is installed, you should see a new button in the toolbar:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/copyfqn/72/first1.png" alt="icon"/></p>
+                    <br/>
+                </li>
+
+                <li><p>Select a node in the Projects window and then look at the button in the toolbar. If you select
+                        a node representing a file or folder (including a package) the button is enabled, as shown here:</p>
+                    <br/>
+                    <p><img style="border:1px solid black" src="../images/tutorials/copyfqn/72/first2.png" alt="icon"/></p>
+                    <br/>
+                    <p>However, if you select a node representing a project,
+                        the button is disabled, as shown below:</p>
+                    <br/>
+                    <p><img style="border:1px solid black" src="../images/tutorials/copyfqn/72/first3.png" alt="icon"/></p>
+                </li>
+
+            </ol>
+
+        </div>
+
+        <p>In the next section, we will go further than distinguishing between project nodes and file/folder nodes, which is
+            what we're able to do so far&#8212;we will
+            distinguish between file nodes for Java classes versus all other kinds of file nodes.</p>
+
+        <h2><a name="identifying-java-source-files"></a>Identifying Java Source Files</h2>
+
+        <p>In this section, we begin using one of the
+            new "Retouche" APIs, called <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-java-source/overview-summary.html">Java Source</a>.
+            Here we use the <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/JavaSource.html">JavaSource</a></tt> class,
+            which represents a Java source file. We return an instance of
+            this class for the file object associated with our data object.
+            If null is returned, the file object is not a Java source file.
+            We display the result in the status bar, when the button
+            is clicked while a file is selected.</p>
+
+        <div class="indent">
+
+            <ol>
+
+                <li>Fill out the <tt>actionPerformed</tt> method by
+                    adding the lines highlighted below:
+
+                    <pre class="examplecode">public void actionPerformed(ActionEvent ev) {
+
+    <b>FileObject fileObject = context.getPrimaryFile();
+
+    <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/JavaSource.html">JavaSource</a> javaSource = <a href="http://www.netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/JavaSource.html#forFileObject(org.openide.filesystems.FileObject)">JavaSource.forFileObject(fileObject)</a>;
+    if (javaSource == null) {
+        StatusDisplayer.getDefault().setStatusText("Not a Java file: " + fileObject.getPath());
+    } else {
+        StatusDisplayer.getDefault().setStatusText("Hurray! A Java file: " + fileObject.getPath());
+    }</b>
+
+}</pre>
+
+                    Check that your import statements are as follows:
+                    <pre class="examplecode">import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import org.netbeans.api.java.source.JavaSource;
+import org.openide.awt.*;
+import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.util.NbBundle.Messages;</pre></li>
+
+                <li><p>Run the module again. Select a file node and press the button. Notice that the "Hurray!" message only appears when
+                        you select a Java file, as shown below:</p>
+                    <br/>
+                    <p><img style="border:1px solid black" src="../images/tutorials/copyfqn/72/second1.png" alt="message-java-file-60"/></p>
+                    <br/>
+                    <p><img style="border:1px solid black" src="../images/tutorials/copyfqn/72/second2.png" alt="message-java-file-60"/></p>
+                </li>
+
+            </ol>
+
+        </div>
+
+        <h2><a name="determining-open-state"></a>Determining Open State</h2>
+
+        <p>In this section, we are introduced to our first explicitly invoked "Retouche" task.
+            Such a task is provided by the JavaSource class's <tt>runUserActionTask</tt> method.
+            A task of this kind lets you control the phases of a parsing process, which is applicable
+            when you want to respond immediately to the user's input. Everything done within the
+            task is done as a single unit. In our case, we want the invocation of our action, represented
+            by a button in the toolbar, to be immediately followed by the display of a text in
+            the status bar.</p>
+
+        <div class="indent">
+
+            <ol>
+
+                <li>Replace the "Hurray!" message in the <tt>actionPerformed</tt> method with
+                    this line:
+
+                    <pre class="examplecode"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/JavaSource.html#runUserActionTask(org.netbeans.api.java.source.Task,%20boolean)">javaSource.runUserActionTask</a>(new <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/Task.html">Task</a>&lt;<a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/CompilationController.html">CompilationController</a>&gt;());</pre>       
+
+                    <p>You should now see a lightbulb in the editor's left sidebar, as shown here:</p>
+
+                    <p><img src="../images/tutorials/copyfqn/71/runuserasactiontask.png" alt="icon"/></p>
+                    <br/>
+                    <p>Press Ctrl-Shift-I to import the necessary classes, choose <tt>org.netbeans.api.java.source.Task</tt>, shown
+                        below, and
+                        click OK in the dialog box.
+                    </p>
+                    <br/>
+                    <p><img src="../images/tutorials/copyfqn/72/second3.png" alt="message-java-file-60"/></p>
+                    <br/>
+
+                    <p>Click the lightbulb in the editor. 
+                        Alternatively, put the caret in the line and press Alt-Enter.
+                        Then let the IDE implement the method.
+                    </p>
+
+                </li>
+
+                <li>Tweak the generated method slightly, by adding a <tt>true</tt> boolean to the end of the
+                    method, and letting the IDE wrap the snippet in a try/catch block. At the end, the result should be as follows:
+
+                    <pre class="examplecode">public void actionPerformed(ActionEvent ev) {
+
+    FileObject fileObject = context.getPrimaryFile();
+
+    JavaSource javaSource = JavaSource.forFileObject(fileObject);
+    if (javaSource == null) {
+        StatusDisplayer.getDefault().setStatusText("Not a Java file: " + fileObject.getPath());
+     } else {
+     
+            <b>try {
+                javaSource.runUserActionTask(new Task&lt;CompilationController&gt;() {
+                    public void run(CompilationController arg0) throws Exception {
+                        throw new UnsupportedOperationException("Not supported yet.");
+                    }
+                }, true);
+            } catch (IOException ex) {
+                Exceptions.printStackTrace(ex);
+            }</b>
+            
+     }
+
+}</pre></li>
+
+                <li>Implement the <tt>run()</tt> method as follows:
+
+                    <pre class="examplecode">@Override
+public void run(CompilationController compilationController) throws Exception {
+     
+      <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/CompilationController.html#toPhase(org.netbeans.api.java.source.JavaSource.Phase)">compilationController.toPhase(Phase.ELEMENTS_RESOLVED)</a>;
+      
+      <a href="http://java.sun.com/j2se/1.5.0/docs/api/javax/swing/text/Document.html">Document</a> document = <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/CompilationController.html#getDocument()">compilationController.getDocument()</a>;
+      if (document != null) {
+         StatusDisplayer.getDefault().setStatusText("Hurray, the Java file is open!");
+      } else {
+         StatusDisplayer.getDefault().setStatusText("The Java file is closed!");
+      }
+      
+}</pre>
+
+                    Make sure that your import statements are as follows:
+
+                    <pre class="examplecode">import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import javax.swing.text.Document;
+import org.netbeans.api.java.source.CompilationController;
+import org.netbeans.api.java.source.JavaSource;
+import org.netbeans.api.java.source.JavaSource.Phase;
+import org.netbeans.api.java.source.Task;
+import org.openide.awt.*;
+import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.util.Exceptions;
+import org.openide.util.NbBundle.Messages;</pre></li>
+
+                <li><p>Run the module again. Select a file node and press the button. Notice that the "Hurray!" message only appears when
+                        you select a Java file that is open in the Java editor, as shown here:</p>
+                    <br/>
+                    <p><img style="border:1px solid black" src="../images/tutorials/copyfqn/72/third1.png" alt="message-java-file-open-60"/></p>
+                    <br/>
+                    <p><img style="border:1px solid black" src="../images/tutorials/copyfqn/72/third2.png" alt="message-java-file-open-60"/></p>
+                </li>
+
+            </ol>
+
+        </div>
+
+        <h2><a name="detecting-the-element-under-the-caret"></a>Detecting the Element Under the Caret</h2>
+
+        <p>In this section, now that we know that we are dealing with a Java file and that it is
+            open, we can begin detecting the type of element that is under the caret at any given
+            time.</p>
+
+        <div class="indent">
+
+            <ol>
+
+                <li>Begin by declaring a dependency on the I/O APIs, so
+                    that we can print our results to the Output window.</li>
+
+                <li>Replace the "Hurray!" message in the <tt>run()</tt> method with
+                    the lines highlighted below:
+
+                    <pre class="examplecode">public void run(CompilationController compilationController) throws Exception {
+    
+    compilationController.toPhase(Phase.ELEMENTS_RESOLVED);
+    Document document = compilationController.getDocument();
+    
+    if (document != null) {
+        <b>new MemberVisitor(compilationController).scan(compilationController.getCompilationUnit(), null);</b>
+    } else {
+        StatusDisplayer.getDefault().setStatusText("The Java file is closed!");
+    }
+    
+}</pre>   </li>
+
+
+                <li>And here is the <tt>MemberVisitor</tt> class, which
+                    is defined as an inner class of our <tt>CopyFQNAction</tt> class:
+
+
+                    <pre class="examplecode">private class MemberVisitor extends TreePathScanner&lt;Void, Void&gt; {
+
+    private CompilationInfo info;
+
+    public MemberVisitor(CompilationInfo info) {
+        this.info = info;
+    }
+
+    @Override
+    public Void visitClass(ClassTree t, Void v) {
+        Element el = info.getTrees().getElement(getCurrentPath());
+        if (el == null) {
+            StatusDisplayer.getDefault().setStatusText("Cannot resolve class!");
+        } else {
+            TypeElement te = (TypeElement) el;
+            List&lt;? extends Element&gt; enclosedElements = te.getEnclosedElements();
+            InputOutput io = IOProvider.getDefault().getIO("Analysis of "  
+                        + info.getFileObject().getName(), true);
+            for (int i = 0; i < enclosedElements.size(); i++) {
+            Element enclosedElement = (Element) enclosedElements.get(i);
+                if (enclosedElement.getKind() == ElementKind.CONSTRUCTOR) {
+                    io.getOut().println("Constructor: " 
+                        + enclosedElement.getSimpleName());
+                } else if (enclosedElement.getKind() == ElementKind.METHOD) {
+                    io.getOut().println("Method: " 
+                        + enclosedElement.getSimpleName());
+                } else if (enclosedElement.getKind() == ElementKind.FIELD) {
+                    io.getOut().println("Field: " 
+                        + enclosedElement.getSimpleName());
+                } else {
+                    io.getOut().println("Other: " 
+                        + enclosedElement.getSimpleName());
+                }
+            }
+            io.getOut().close();
+        }
+        return null;
+    }
+
+}</pre>
+                    <p><b class="notes">Note:</b> To use the "InputOutput" class above, you need
+                        a new dependency, on the "I/O APIs".</p>
+                </li>
+
+                <li><p>Run the module again, and open a Java class.
+                        Then click the button and notice that the
+                        constructors, methods, and fields are written
+                        to the Output window, as shown below:</p>
+                    <br/>
+                    <p><img style="border:1px solid black" src="../images/tutorials/copyfqn/72/four1.png" alt="message-constructor-60"/></p></li>
+
+                <li>Next, instead of printing all the elements
+                    to the Output window, we will only print
+                    the element under the caret. Only replace the
+                    <tt>visitClass</tt> method, with the code highlighted below:
+
+                    <pre class="examplecode">private class MemberVisitor extends TreePathScanner&lt;Void, Void&gt; {
+
+    private CompilationInfo info;
+
+    public MemberVisitor(CompilationInfo info) {
+        this.info = info;
+    }
+
+    <b>@Override
+    public Void visitClass(ClassTree t, Void v) {
+        try {
+            JTextComponent editor = EditorRegistry.lastFocusedComponent();
+            if (editor.getDocument() == info.getDocument()) {
+                int dot = editor.getCaret().getDot();
+                TreePath tp = info.getTreeUtilities().pathFor(dot);
+                Element el = info.getTrees().getElement(tp);
+                if (el == null) {
+                    StatusDisplayer.getDefault().setStatusText("Cannot resolve class!");
+                } else {
+                    InputOutput io = IOProvider.getDefault().getIO("Analysis of " 
+                            + info.getFileObject().getName(), true);
+                    if (el.getKind() == ElementKind.CONSTRUCTOR) {
+                        io.getOut().println("Hurray, this is a constructor: " 
+                            + el.getSimpleName());
+                    } else if (el.getKind() == ElementKind.METHOD) {
+                        io.getOut().println("Hurray, this is a method: " 
+                            + el.getSimpleName());
+                    } else if (el.getKind() == ElementKind.FIELD) {
+                        io.getOut().println("Hurray, this is a field: " 
+                            + el.getSimpleName());
+                    } else {
+                        io.getOut().println("Hurray, this is something else: " 
+                            + el.getSimpleName());
+                    }
+                    io.getOut().close();
+                }
+            }
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+        return null;
+    }</b>
+
+}</pre>  </li>
+
+                <li><p>Run the module. Put the caret somewhere within your Java code and press the button. The Output window
+                        displays information about the code under the caret, if applicable. For example, if you
+                        press the button after you put the caret in a method, as shown below, the Output window
+                        tells you that the caret is in a method:</p> 
+                    <br/>
+                    <p><img style="border:1px solid black" src="../images/tutorials/copyfqn/72/four2.png" alt="message-constructor-60"/></p>
+                </li>
+
+                <li>But we can detect a lot more than just the name
+                    of the element under the caret. In the <tt>visitClass</tt>
+                    method, replace the lines in bold below:
+
+                    <pre class="examplecode">@Override
+public Void visitClass(ClassTree t, Void v) {
+    try {
+        JTextComponent editor = EditorRegistry.lastFocusedComponent();
+        if (editor.getDocument() == info.getDocument()) {
+            int dot = editor.getCaret().getDot();
+            TreePath tp = info.getTreeUtilities().pathFor(dot);
+            Element el = info.getTrees().getElement(tp);
+            if (el == null) {
+                StatusDisplayer.getDefault().setStatusText("Cannot resolve class!");
+            } else {
+                InputOutput io = IOProvider.getDefault().getIO("Analysis of " 
+                    + info.getFileObject().getName(), true);
+                <b>String te = null;
+                if (el.getKind() == ElementKind.CONSTRUCTOR) {
+                    te = ((TypeElement) ((ExecutableElement) el).getEnclosingElement()).getQualifiedName().toString();
+                    io.getOut().println("Hurray, this is a constructor's qualified name: " + te);
+                } else if (el.getKind() == ElementKind.METHOD) {
+                    te = ((ExecutableElement) el).getReturnType().toString();
+                    io.getOut().println("Hurray, this is a method's return type: " + te);
+                } else if (el.getKind() == ElementKind.FIELD) {
+                    te = ((VariableElement) el).asType().toString();
+                    io.getOut().println("Hurray, this is a field's type: " + te);
+                }</b> else {
+                    io.getOut().println("Hurray, this is something else: " 
+                        + el.getSimpleName());
+                }
+                io.getOut().close();
+            }
+        }
+    } catch (IOException ex) {
+        Exceptions.printStackTrace(ex);
+    }
+    return null;
+}</pre></li>
+
+                <li>Run the module again. This time, when you click
+                    the button while the caret is over a constructor, method,
+                    or field, more detailed information about the element
+                    is printed to the Output window.
+                    <br/>
+                    <br/>
+                    <p><img style="border:1px solid black" src="../images/tutorials/copyfqn/72/four3.png" alt="next"/></p>
+                </li>
+
+            </ol>
+
+        </div>
+
+        <p>At this stage, we are able to detect whether we are dealing with a Java file, whether the
+            document is open, and the type of element that is under the caret. But what can we do with
+            this information? In the next section, a simple scenario is presented where our newly acquired
+            knowledge will prove useful.</p>
+
+
+        <h2><a name="doing-something-useful"></a>Doing Something Useful</h2>
+
+        <p>In this section, we set the contents of the clipboard, provided by <tt>java.awt.datatransfer.Clipboard</tt>,
+            based on the element under the caret. When you press the button, the element under the caret will
+            be put in the clipboard, so that you can paste the content elsewhere in your code. </p>
+
+        <div class="indent">
+
+            <ol>
+
+                <li>Begin by changing the constructor to declare the clipboard:
+
+                    <pre class="examplecode">private Clipboard clipboard;
+
+public CopyFQNAction(DataObject context) {
+    this.context = context;
+    clipboard = Lookup.getDefault().lookup(ExClipboard.class);
+    if (clipboard == null) {
+        clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+    }
+}</pre></li>
+
+                <li>Next, replace each "Hurray!" line in your code, with a line that sends the element as a string
+                    to a method that we will define in the next step. We will call our method <tt>setClipboardContents</tt>.
+                    Therefore, for example, replace the first "Hurray!" line with the following:
+
+                    <pre class="examplecode">setClipboardContents(te);</pre>
+
+                    <p>Do the same for the other "Hurray!" lines, making sure to pass the correct string to the method.</p>
+                    <br/>
+                    <p><b class="notes">Note:</b> Because you have not defined the <tt>setClipboardContents</tt> method yet, each of the
+                        lines you add in this step is underlined in red. In the next step, we add the new method.</p></li>
+
+                <li>Finally, add the following to the end of the class. This method receives the
+                    string and puts it in the clipboard:
+
+                    <pre class="examplecode">private void setClipboardContents(String content) {
+    if (clipboard != null) {
+        if (content == null) {
+            StatusDisplayer.getDefault().setStatusText("");
+            clipboard.setContents(null, null);
+        } else {
+            StatusDisplayer.getDefault().setStatusText("Clipboard: " + content);
+            clipboard.setContents(new StringSelection(content), null);
+        }
+    }
+}</pre></li>
+
+            </ol>
+
+        </div>
+
+        <div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Java%20Language%20Infrastructure%20Tutorial%208.0">Send Us Your Feedback</a></div>
+
+        <!-- ======================================================================================== -->
+
+        <h2><a name="nextsteps"></a>See Also</h2>
+
+        <p>For more information about creating and developing NetBeans Module, see the following resources: </p>
+        <ul>
+            <li><a href="http://wiki.netbeans.org/Java_DevelopersGuide">Java Developer's Guide</a></li>
+            <li><a href="http://wiki.netbeans.org/RetoucheDeveloperFAQ">Retouche Developer FAQ</a></li>
+            <li><a href="https://netbeans.org/kb/trails/platform.html">Other Related Tutorials</a></li>
+            <li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API Javadoc</a></li>
+        </ul>
+
+        <!-- ======================================================================================== -->
+
+    </body>
+</html>

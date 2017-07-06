@@ -1,0 +1,390 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+
+<HTML>
+<HEAD>
+<TITLE>モバイルクライアントから Web アプリケーションへの接続ウィザード: クライアントサーバーアプリケーションの作成 - NetBeans Java ME チュートリアル</TITLE>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+<link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+
+</HEAD>
+<BODY>
+<a name="top"></a>
+<H1>モバイルクライアントから Web アプリケーションへの接続ウィザード: クライアントサーバーアプリケーションの作成 </H1>
+<p>NetBeans IDE では、ミドルウェア Web アプリケーションを介して Web サービスに接続できるクライアント MIDlet を作成できます。</p>
+<P>このチュートリアルでは、Java ME プラットフォーム用の <a href="http://jcp.org/en/jsr/summary?id=172">JSR-172 仕様</a>をデバイスがサポートしない場合に、モバイルクライアントから Web アプリケーションへの接続ウィザードを使用して、Web サービスへの接続を作成する方法を示します。このウィザードは、Web サービスクライアントを含み、指定された数値を合計するメソッドを含む Web アプリケーションに接続する、2 つの数値を計算するサーブレットを生成します。</p> 
+
+
+<p>NetBeans Mobility または J2EE に習熟していない場合、次に進む前に「<A HREF="../../docs/javame/quickstart.html">NetBeans Java ME MIDP 開発のクイックスタートガイド</A>」から始めることをお勧めします。</p>
+ 
+ <p><b>目次</b></p>
+ <img  src="../../../images_www/articles/71/netbeans-stamp.gif" class="stamp" width="114" height="114" alt="このページの内容は NetBeans IDE 7.0 が対象です" title="このページの内容は NetBeans IDE 7.0 が対象です" >
+  <ul class="class">
+  
+   <li><a href="#create-web">Web プロジェクトの作成</a>
+<ul>
+	<LI><A HREF="#create">Web アプリケーションプロジェクトの準備と作成</A> 
+	</LI>
+	<LI><A HREF="#add">ビジネスロジックの追加</A> 
+	</LI>
+	
+	<LI><A HREF="#comp">プロジェクトの構築</A> 
+	</LI>
+</ul></li>
+   <li><a href="#create-mob">モバイルプロジェクトの作成</a>
+   
+<ul>
+	<LI><A HREF="#create-prj">プロジェクトの作成</A> 
+	</LI>
+	<LI><A HREF="#add-pkg">プロジェクトへのパッケージとビジュアル MIDlet の追加</A> 
+	</LI>
+	<li><A href="#add-component">プロジェクトへのコンポーネントの追加</a></li>
+	<li><A HREF="#add-command">プロジェクトへのコマンドの追加</a></li>
+	<li><A HREF="#connect-component">コンポーネントを接続してアプリケーションフローを作成する</a></li>
+	<li><A HREF="#wizard">Java ME クライアントから Web アプリケーションへの接続ウィザード</A></li>
+	<li><A HREF="#wizCode">Java ME クライアントへのソースコードの追加</A></li>
+	</ul></li>
+	<LI><A HREF="#deploy">Web プロジェクトの配備</A> 
+	</LI>
+	<LI><A HREF="#run">モバイルプロジェクトの実行</A> 
+	</LI>
+	<LI><A HREF="#check">機能の確認</A> 
+	</LI>
+   <li><a href="#see-also">関連項目</a></li>
+  </ul>
+ <p><b>このチュートリアルに従うには、次に示すソフトウェアとリソースが必要です。</b></p>
+
+
+<table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                <th class="tblheader" scope="col">必須バージョン</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE と Java ME</a></td>
+              <td class="tbltd1">version 7.0 以降 </td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit</a> (JDK)</td>
+                <td class="tbltd1">version 6</td>
+            </tr>      
+            <tr>
+                <td class="tbltd1">GlassFish または Tomcat</td>
+                <td class="tbltd1">IDE の「<b>Java EE</b>」および「<b>すべて</b>」のインストールに含まれています</td>
+            </tr>      
+
+        </tbody>
+</table>
+
+<!--<a name="sample-app"></a>
+<H2>Installing and Running the Sample Application</H2>
+
+<P>Before we begin you might want to see final result of the tutorial.</P>
+<p>Placeholder</p>
+
+<P>Take the following steps to install the <tt>LoginScreenExample</tt> application:</P>
+<OL>
+	<LI>Download <A HREF="https://netbeans.org/projects/samples/downloads/download/Samples/Mobile/WebToMobile.zip">WebToMobileExample.zip</A>. This download contains the completed NetBeans Mobility and Web projects.</LI>
+	<LI>Unzip the file.</LI>
+	<LI>In the IDE, choose <tt>File</tt> &gt; <tt>Open Project</tt> and browse to the folder that contains the unzipped files with the <tt>WebToMobileExample</tt> project.</LI>
+	<li>Click Open Project.</li>
+	<LI>The Projects view should look like the following:</li>
+	<p class="align-center"> 
+	<IMG SRC="../../../images_www/articles/71/mobility/webtomobile/.png" NAME="graphics1" ALT="Project window with sample projects opened"  BORDER=1>  </p>
+	
+	<LI>In the Projects window,
+	right-click the project <tt>AAA</tt> node and choose
+	Run Project (or press F6 key).</li>
+	<li>Right-click the
+	project <tt>AAA</tt> node and choose Run Project. As the
+	application runs, an emulator window opens and displays the
+	application running in the default device emulator.	</LI>
+	<LI>In the Emulator window, click the button underneath
+	&quot;Launch&quot;.<BR>The emulator displays BBB, as shown:</li> <p class="align-center"><IMG SRC="../../../images_www/articles/71/mobility/webtomobile/.png" NAME="graphics3" ALT="placeholder" BORDER=1>  </p>
+</OL>
+<UL>
+	<LI>Moving the cursor up and down allows you to
+	navigate between the Login and Password fields. 
+	</LI>
+	<li>Click on the central button enables the selected text field for editing.</li>
+	<LI>Click the button underneath &quot;Login&quot; to finish. 
+	</LI>
+	<LI>If the application  connects to the server, you'll
+	see the <code>alert1</code> component displayed on the screen  with a &quot;Login
+	Successful&quot; message. 
+	</LI>
+</UL>
+ <p class="align-center"><a href="#top">top</a></p>-->
+<a name="create-web"></a>
+<H2>Web プロジェクトの作成</H2>
+<p>「モバイルクライアントから Web アプリケーションへの接続」ウィザードを使用する場合は、Web サービスクライアントを含む Web プロジェクトが必要です。</p>
+<P><!--Now that you have seen the AAA in action,--> ここで、
+<!--go back to the beginning and-->
+ Java サーブレット用の新規 Web アプリケーションプロジェクトを一から作成します。Java Web アプリケーションを IDE で作成するには、次を実行します。</P>
+<OL>
+	
+	<LI><A HREF="#create">Web アプリケーションプロジェクトの準備と作成</A> 
+	</LI>
+	<LI><A HREF="#add">ビジネスロジックの追加</A> 
+	</LI>
+	
+	<LI><A HREF="#comp">プロジェクトのコンパイル</A> 
+	</LI>
+
+</OL>
+<H3><A NAME="create"></A>Web アプリケーションプロジェクトの準備と作成</H3>
+<OL>
+	<LI>「<tt>ファイル</tt>」&gt;「<tt>新規プロジェクト</tt>」(Ctrl-Shift-N) を選択します。「カテゴリ」から「Java Web」を選択します。「プロジェクト」で「Web アプリケーション」を選択して、「次へ」をクリックします。 
+	</LI>
+	<LI>「プロジェクト名」フィールドに「<CODE>WebApplication</CODE>」と入力します。「プロジェクトの場所」を使用コンピュータ上の任意のディレクトリにします。このチュートリアルでは、このディレクトリを <tt>NetBeansProjects</tt> と表します。 
+	</LI>
+	<li>(任意) 「ライブラリの格納用に専用フォルダを使用」チェックボックスを選択し、ライブラリフォルダの場所を指定します。</li>
+	<li>「主プロジェクトとして設定」チェックボックスをオフにし、「次へ」をクリックします。 </li>
+	<li>「サーバーと設定」パネルで、モバイルアプリケーションをあとで配備するサーバーは「GlassFish Server 3.1」のままとし、アプリケーションで使用するバージョンは「J2EE 1.4」のままとします。</li>
+	<li>「ソースレベルを 1.4 に設定」を選択したままにします。
+	  <p class="notes"><b>注:</b> 「コンテキストパス」(サーバー上など) は <tt>/WebApplication</tt> になります。これは、前の手順でプロジェクトに付けた名前に基づいています。</p>
+  </li>
+	<li>「次へ」をクリックします。「フレームワーク」パネルで「完了」をクリックしてプロジェクトを作成します。<br>
+      IDE によって、<tt>NetBeansProjects/WebApplication</tt> プロジェクトフォルダが作成されます。このプロジェクトフォルダには、ソースおよび、プロジェクトの Ant 構築スクリプトなどのプロジェクトメタデータのすべてが含まれます。IDE で WebApplication プロジェクトが開きます。開始ページである index.jsp が、メインウィンドウ内のソースエディタで開きます。 </li>
+</ol>
+<p class="align-center">
+		 <a href="../../../images_www/articles/71/mobility/webtomobile/projects-window.png" rel="lytebox"
+                       title="WebApplication プロジェクトおよび index.jsp"> <img src="../../../images_www/articles/71/mobility/webtomobile/projects-window-reduced.png"
+                     alt="WebApplication プロジェクトおよび index.jsp" border=1></a></p>
+
+
+<H3><A NAME="add"></A>ビジネスロジックの追加</H3>
+<p>アプリケーションのビジネスロジックを表現する public メソッドを持つ Java クラスを Web プロジェクト内に作成するには、次の手順を実行します。 </p>
+<ol>
+<li>「プロジェクト」ウィンドウで「<tt>ソースパッケージ</tt>」ノードを右クリックし、「新規」&gt;「Java パッケージ」を選択します。「パッケージ名」テキストボックスに「<tt>MyPackage</tt>」と入力し、「完了」をクリックします。</li>
+<li>作成された「<tt>MyPackage</tt>」ノードを右クリックし、「新規」&gt;「Java クラス」を選択します。「クラス名」テキストボックスに「<tt>Calculator</tt>」と入力し、「完了」をクリックします。 </li>
+<li>「ソースエディタ」ウィンドウで開いた <tt>Calculator.java</tt> ファイルに、次のメソッドを挿入します。 
+<pre> public int calcSum(int a, int b) {
+        return a + b;
+    } </pre>
+	</li>
+<li>Ctrl+S キーを押して編集を保存します。</li>
+</ol>
+<H3><A NAME="comp"></A>プロジェクトの構築</H3>
+<p>「プロジェクト」ウィンドウで「<tt>WebApplication</tt>」プロジェクトノードを右クリックし、「構築」(F11) を選択します。<br>数値を合計するための Web アプリケーションの準備ができました。</p>
+<p class="notes"><b>注:</b> プロジェクトはデフォルトで「保存時にコンパイル」機能が有効になっている状態で構築されているので、先にコードをコンパイルする必要はありません。</p>
+<p class="align-center">
+		 <a href="../../../images_www/articles/71/mobility/webtomobile/calculator.png" rel="lytebox"
+                       title="Calculator.java"> <img src="../../../images_www/articles/71/mobility/webtomobile/calculator-reduced.png"
+                     alt="Calculator.java" border=1></a></p>
+
+
+
+
+<a name="create-mob"></a>
+<h2>モバイルプロジェクトの作成</h2>
+<p>IDE では、今作成した Web アプリケーションに接続し、2 つの数値をそれに提供し、それらの合計を表示できるクライアント MIDlet を作成できます。 </p>
+<p> Java ME クライアントアプリケーションを作成するには、次を実行します。</P>
+<OL>
+	
+	<LI><A HREF="#create-prj">プロジェクトの作成</A> 
+	</LI>
+	<LI><A HREF="#add-pkg">プロジェクトへのパッケージとビジュアル MIDlet の追加</A> 
+	</LI>
+	
+	<LI><A HREF="#add-component">プロジェクトにコンポーネントを追加する</A> 
+	</LI>
+	<li><A HREF="#add-command">プロジェクトにコマンドを追加する</a></li>
+	<li><A HREF="#connect-component">コンポーネントを接続してアプリケーションフローを作成する</a></li>
+	<li><a href="#wizard">Java ME クライアントから Web アプリケーションへの接続ウィザード</a></li>
+</ol>
+<H3><A NAME="create-prj"></A>プロジェクトの作成</H3>
+<p>NetBeans IDE には、MIDP プロジェクトを簡単に作成できるウィザードがあります。</p>
+<OL>
+	<LI>「<tt>ファイル</tt>」&gt;「<tt>新規プロジェクト</tt>」(Ctrl-Shift-N) を選択します。「カテゴリ」から「Java ME」を選択します。「プロジェクト」で「モバイルアプリケーション」を選択して、「次へ」をクリックします。	</LI>
+	<LI>「プロジェクト名」フィールドに「<tt>MobileApplication</tt>」と入力します。「プロジェクトの場所」をシステム上の任意のディレクトリに変更します。このチュートリアルでは、このディレクトリを <tt>NetBeansProjects</tt> とします。</LI>
+	<LI>「Hello MIDlet を作成」チェックボックスをオフにします (デフォルトでオンになっています)。「次へ」をクリックします。	</LI>
+	<LI>「エミュレータプラットフォーム」は、「Java (TM) Platform Micro Edition SDK 3.0」を選択したままにしておきます。「次へ」をクリックして、「完了」をクリックします。<br>
+	IDE によって、<tt>NetBeansProjects/MobileApplication</tt> プロジェクトフォルダが作成されます。<br>このプロジェクトフォルダには、ソースおよび、プロジェクトの Ant スクリプトなどのプロジェクトメタデータのすべてが含まれます。
+	<p class="align-center"> 
+	<IMG SRC="../../../images_www/articles/71/mobility/webtomobile/mobile-prj-created.png" NAME="graphics1" ALT="作成された MobileApplication プロジェクト"  BORDER=1>  </p>
+	</LI>
+</OL>
+
+<h3><A NAME="add-pkg"></A>プロジェクトへのパッケージとビジュアル MIDlet の追加</h3>
+
+
+<OL>
+	<LI>「プロジェクト」ウィンドウで <CODE>MobileApplication</CODE> プロジェクトを選択し、「<tt>ファイル</tt>」&gt;「<tt>新規ファイル</tt>」(Ctrl-N) を選択します。「カテゴリ」にある「MIDP」を選択します。「ファイルの種類」として「ビジュアル MIDIlet」を選択します。「次へ」をクリックします。</LI>
+
+  <LI>「MIDlet 名」フィールドと「MIDP クラス名」フィールドに「<CODE>Calculator</CODE>」と入力し、「パッケージ」テキストフィールドに「<tt>CalculatorPackage</tt>」と入力します。「完了」をクリックします。<br>
+  アプリケーションはビジュアルモバイルデザイナの「フローデザイン」ウィンドウに表示されます。 
+	
+<p class="align-center">
+		 <a href="../../../images_www/articles/71/mobility/webtomobile/midlet-added.png" rel="lytebox"
+                       title="追加されたパッケージおよびビジュアル MIDlet"> <img src="../../../images_www/articles/71/mobility/webtomobile/midlet-added-reduced.png"
+                     alt="追加されたパッケージおよびビジュアル MIDlet" border=1></a></p>
+					  </LI>
+	
+</OL>
+<h3><A NAME="add-component"></A>プロジェクトへのコンポーネントの追加</h3>
+
+<OL>
+
+	<LI>「フロー」ビューで、パレットの「表示可能項目」セクションから次のコンポーネントをドラッグ＆ドロップします。
+	<UL>
+		<LI>待機画面</LI>
+		<LI>フォーム (x2)</LI>
+		<li>警告
+		<p class="align-center">
+		 <a href="../../../images_www/articles/71/mobility/webtomobile/components-added.png" rel="lytebox"
+                       title="追加されたコンポーネント"> <img src="../../../images_www/articles/71/mobility/webtomobile/components-added-reduced.png"
+                     alt="追加されたコンポーネント" border=1></a></p></li>
+	</UL> </LI>
+	<li>「画面」をクリックして「画面」ビューに切り替え、「アナライザ」ボタンの右側にあるドロップダウンリストから <tt>form</tt> を選択します。</li>
+<li><tt>form</tt> コンポーネントを右クリックし、ポップアップメニューから「<tt>新規または追加</tt>」&gt;「<tt>テキストフィールド</tt>」を選択します。</li>
+<li>手順 3 を繰り返し、別のテキストフィールドをフォームに追加します。</li>
+  <li><tt>textField</tt> コンポーネントを選択し、「プロパティー」ウィンドウ (パレットの下) で「<tt>ラベル</tt>」値として「<tt>A</tt>」と入力します。</li>
+  <li><tt>A</tt> コンポーネントを右クリックし、ポップアップメニューから「名前を変更」を選択します。</li>
+ 
+  <li>「名前を変更」ダイアログボックスで、「新しい名前」フィールドに「<tt>fieldA</tt>」と入力して「了解」をクリックします。</li>
+  <li><tt>textField1</tt> コンポーネントを選択し、「プロパティー」ウィンドウで「<tt>ラベル</tt>」値として「<tt>B</tt>」と入力します。</li>
+  <li><tt>B</tt> コンポーネントを右クリックし、ポップアップメニューから「名前を変更」を選択します。</li>
+  <li>「名前を変更」ダイアログボックスで、「新しい名前」フィールドに「<tt>fieldB</tt>」と入力して「了解」をクリックします。<br>
+  名前を変更したフィールドは、<tt>calcSum</tt> メソッド引数を表します。
+  <p class="align-center">
+		 <a href="../../../images_www/articles/71/mobility/webtomobile/fields.png" rel="lytebox"
+                       title="フィールド A と B"> <img src="../../../images_www/articles/71/mobility/webtomobile/fields-reduced.png"
+                     alt="フィールド A と B" border=1></a></p></li>
+  <li>「アナライザ」ボタンの右側にあるドロップダウンリストから「<tt>form1</tt>」を選択します。</li>
+  <li><tt>form1</tt> コンポーネントを右クリックし、ポップアップメニューから「<tt>新規または追加</tt>」&gt;「<tt>テキストフィールド</tt>」を選択します。</li>
+  <li><tt>textField</tt> コンポーネントを選択し、「プロパティー」ウィンドウで「<tt>ラベル</tt>」値として「<tt>Result</tt>」と入力します。</li>
+  <li><tt>Result</tt> コンポーネントを右クリックし、ポップアップメニューから「名前を変更」を選択します。</li>
+  <li>「名前を変更」ダイアログボックスで、「新しい名前」フィールドに「<tt>resultField</tt>」と入力して「了解」をクリックします。<br>名前を変更したフィールドは、<tt>calcSum</tt> メソッドの出力を表示するためのものです。
+  <p class="align-center">
+		 <a href="../../../images_www/articles/71/mobility/webtomobile/resultfield.png" rel="lytebox"
+                       title="Result フィールド"> <img src="../../../images_www/articles/71/mobility/webtomobile/resultfield-reduced.png"
+                     alt="Result フィールド" border=1></a></p></li>
+
+<li>「アナライザ」ボタンの右側にあるドロップダウンリストから「<tt>alert</tt>」を選択します。</li>
+<li> 「プロパティー」ウィンドウで、「<tt>タイトル</tt>」プロパティーを「<tt>Alert</tt>」に変更し、「<tt>文字列</tt>」プロパティーを「<tt>Error while getting results from the web application</tt>」に変更します。<br>Web アプリケーションが結果を何も返さない場合、警告が表示されます。
+<p class="align-center">
+		 <a href="../../../images_www/articles/71/mobility/webtomobile/alert.png" rel="lytebox"
+                       title="Alert フィールド"> <img src="../../../images_www/articles/71/mobility/webtomobile/alert-reduced.png"
+                     alt="Alert フィールド" border=1></a></p>	</li>				 
+</ol>
+
+
+<h3><A NAME="add-command"></A>プロジェクトへのコマンドの追加</h3>
+<ol>
+<li>「画面」ビューで <tt>form1</tt> が選択されているとき、「デバイス画面」の内側を右クリックし、ポップアップメニューから「<tt>新規または追加</tt>」&gt;「<tt>終了コマンド</tt>」を選択します。
+
+<p class="align-center">
+		 <a href="../../../images_www/articles/71/mobility/webtomobile/second-form.png" rel="lytebox"
+                       title="Form1: exitCommand の追加"> <img src="../../../images_www/articles/71/mobility/webtomobile/second-form-reduced.png"
+                     alt="Form1: exitCommand の追加" border=1></a></p> </li>
+<li>「画面」ビューで、「アナライザ」ボタンの右側にあるドロップダウンリストから「<tt>form</tt>」を選択します。</li>
+<li>「デバイス画面」の内側を右クリックし、ポップアップメニューから「<tt>新規または追加</tt>」&gt;「<tt>了解コマンド</tt>」を選択します。</li>
+<li>手順 4 を繰り返し、ポップアップメニューから「<tt>取消しコマンド</tt>」を追加します。
+
+<p class="align-center">
+		 <a href="../../../images_www/articles/71/mobility/webtomobile/first-form.png" rel="lytebox"
+                       title="Form: okCommand および cancelCommand を追加"> <img src="../../../images_www/articles/71/mobility/webtomobile/first-form-reduced.png"
+                     alt="Form: okCommand および cancelCommand を追加" border=1></a></p></li>
+
+<li>Ctrl+S キーを押して編集を保存します。</li>
+</ol>
+<h3><A NAME="connect-component"></A>コンポーネントを接続してアプリケーションフローを作成する</h3>
+<p>「フロー」ビューで、モバイルデバイスの「<tt>起動</tt>」テキストをクリックし、それを <tt>form</tt> コンポーネントまでドラッグします。同様に、次の図に示すようにコンポーネントを接続します。</p>
+
+<p class="align-center">
+		 <a href="../../../images_www/articles/71/mobility/webtomobile/app-flow.png" rel="lytebox"
+                       title="アプリケーションフロー"> <img src="../../../images_www/articles/71/mobility/webtomobile/app-flow-reduced.png"
+                     alt="アプリケーションフロー" border=1></a></p>
+<h3><A NAME="wizard"></A>Java ME クライアントから Web アプリケーションへの接続ウィザード</h3>
+<p>ここで「Java ME クライアントから Web アプリケーションへの接続」ウィザードを使用して、<tt>calcSum</tt> メソッド選択によって、モバイルプロジェクト内部にモバイルクライアントを作成します。</p>
+<OL>
+	<LI><tt>MobileApplication</tt> を展開し、「<tt>ソースパッケージ</tt>」を右クリックして、「<tt>新規</tt>」&gt;「<tt>Java ME クライアントから Web アプリケーションへの接続</tt>」を選択します。</LI>
+	<li>「サーブレットとクライアントの種類」パネルで、MIDlet が対話する Web アプリケーションの種類を選択します。「サーブレット名」として「<tt>WebToMobileServlet</tt>」と入力し、「Web アプリケーション内のメソッド」オプションが選択されていることを確認して (モバイルクライアントは Web アプリケーションに直接接続するため)、「次へ」をクリックします。
+	
+	
+	<p class="align-center">
+		 <a href="../../../images_www/articles/71/mobility/webtomobile/wizard.png" rel="lytebox"
+                       title="ウィザード"> <img src="../../../images_www/articles/71/mobility/webtomobile/wizard-reduced.png"
+                     alt="ウィザード" border=1></a></p></li>
+	<li>「Web プロジェクト内のメソッド」パネルで、<tt>int calcSum (int a, int b)</tt> をオンにして、「次へ」をクリックします。</li>
+	<li>「クライアントオプション」パネルで、生成されるクライアントクラスの名前とパッケージをそのままにし、「スタブを生成」と「浮動小数点を許可」オプションがオンになっていることを確認して、「完了」をクリックします。<br>
+	Java ME クライアントとマッピングファイルは、Java ME プロジェクトの下に生成されます。<br>
+	サーブレットとサポートするクラスは、Web プロジェクトの下に生成されます。
+	<p class="align-center">
+		 <a href="../../../images_www/articles/71/mobility/webtomobile/client-generated.png" rel="lytebox"
+                       title="生成された Java ME クライアント"> <img src="../../../images_www/articles/71/mobility/webtomobile/client-generated-reduced.png"
+                     alt="生成された Java ME クライアント" border=1></a></p></li>
+</ol>
+<h3><A NAME="wizCode"></A>Java ME クライアントへのソースコードの追加</h3>
+<ol>
+<li><tt>Calculator.java</tt> タブをクリックします。</li>
+ <li>「画面」ビューで、「アナライザ」ボタンの右側にあるドロップダウンリストから「<tt>waitScreen</tt>」を選択します。</li>
+ <li>「リソース」の下の <tt>task [SimpleCancellableTask]</tt> を右クリックし、ポップアップメニューで「ソースへ移動」を選択します。</li>
+ <li>ソースエディタで、<tt>// write task-execution user code here</tt> というセクションを探し、次のコードに置き換えます。
+<pre>    WebToMobileClient wc = new WebToMobileClient();
+    int a = Integer.valueOf(getFieldA().getString()).intValue();
+    int b = Integer.valueOf(getFieldB().getString()).intValue();
+    int result = wc.calcSum(a, b);
+    System.out.println(result);
+    getResultField().setString(String.valueOf(result));</pre></li> 
+<li>Ctrl+S キーを押して編集を保存します。</li>	
+</ol>
+
+
+<a name="deploy"></a><H2>Web プロジェクトの配備</H2>
+<p>Web アプリケーションを配備するには、「プロジェクト」ウィンドウで <tt>WebApplication</tt> ノードを右クリックし、ポップアップメニューから「配備」を選択します。<br>「出力」ウィンドウは次のように表示されます。</p>
+<p class="align-center">
+		 <a href="../../../images_www/articles/71/mobility/webtomobile/web-deploy.png" rel="lytebox"
+                       title="配備された WebApplication"> <img src="../../../images_www/articles/71/mobility/webtomobile/web-deploy-reduced.png"
+                     alt="配備された WebApplication" border=1></a></p>
+
+
+ <p class="align-center"><a href="#top">ページの先頭へ</a></p>
+ <H2><A NAME="run"></A>クライアントプロジェクトの実行</H2>
+
+
+	<p> モバイルクライアントアプリケーションを実行するには、「<tt>実行</tt>」&gt;「<tt>主プロジェクトを実行</tt>」を選択するか、F6 キーを押して主プロジェクトを実行します。</p>
+    <p class="notes"><b>注:</b> クライアントアプリケーションを実行する前に、サーバー側アプリケーションが配備され、実行中であることを確認します。</p>
+<p><tt>MobileApplication</tt> が実行されると、エミュレータウィンドウが開き、デフォルトのデバイスエミュレータでアプリケーションが実行されるところが表示されます。</p>
+<p class="align-center">
+		 <a href="../../../images_www/articles/71/mobility/webtomobile/client-run.png" rel="lytebox"
+                       title="エミュレータでのクライアントアプリケーション"> <img src="../../../images_www/articles/71/mobility/webtomobile/client-run-reduced.png"
+                     alt="エミュレータでのクライアントアプリケーション" border=1></a></p>
+
+
+<a name="check"></a><H2>機能の確認</H2>
+<ol>
+<li>「エミュレータ」ウィンドウで、A フィールドに任意の数値を入力し、中央のボタンの下矢印をクリックして B フィールドに切り替え、B フィールドに別の数値を入力します。
+<p class="align-center"><img src="../../../images_www/articles/71/mobility/webtomobile/ab.png"
+                     alt="A および B の設定" border=1></p></li>
+<li>「Menu」の下にあるボタンをクリックして、ポップアップメニューで「OK」を選択し、エミュレータの中央のボタンをクリックして確認します。<br>
+ 
+  
+入力した数値の合計を WebApplication が計算したあと、結果を含む <tt>form1</tt> が表示されます。
+<p class="align-center"><img src="../../../images_www/articles/71/mobility/webtomobile/abresult.png"
+                     alt="計算された結果" border=1></p>
+<p class="notes"><b>注:</b> チュートリアルの最終結果を確認するには、<A HREF="https://netbeans.org/project_downloads/samples/Samples/Mobile/MobileClientToWebApplicationSample.zip">MobileCientToWebApplicationSample.zip</A> をダウンロードします。</p>	</li>				 
+</ol>
+ <p class="align-center"><a href="#top">ページの先頭へ</a></p>
+<div class="feedback-box"><a href="/about/contact_form.html?to=6&subject=Creating%20a%20Client-Server%20Application">ご意見をお寄せください</a><br style="clear:both;" ></div>
+<br style="clear:both;" >  
+
+ <a name="see-also"></a>
+<H2>関連項目</H2>
+<UL>
+ <li><a href="smscomposer.html">ビジュアルモバイルデザイナのカスタムコンポーネント: SMS コンポーザアプリケーション</a></li>
+ <li><a href="filebrowser.html">ビジュアルモバイルデザイナのカスタムコンポーネント: モバイルデバイスのファイルブラウザの作成</a></li>
+ <li><a href="pimbrowser.html">ビジュアルモバイルデザイナのカスタムコンポーネント: PIM (Personal Information Manager) アプリケーションの作成</a></li>
+ <li><a href="splashscreen.html">ビジュアルモバイルデザイナのカスタムコンポーネント: Java ME アプリケーションでのスプラッシュ画面の使用</a></li>
+ <li><a href="waitscreen.html">ビジュアルモバイルデザイナのカスタムコンポーネント: モバイルアプリケーション用の待機画面の作成</a></li>
+ <li><a href="tableitem.html">ビジュアルモバイルデザイナのカスタムコンポーネント: Java ME アプリケーションでの表項目の使用</a></li>
+ <li><a href="http://wiki.netbeans.org/VisualMobileDesignerPalatteReference">参照: ビジュアルモバイルデザイナのパレットのガイド</a></li>
+</UL>
+ <p class="align-center"><a href="#top">ページの先頭へ</a></p>
+</BODY>
+</HTML>

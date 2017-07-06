@@ -1,0 +1,293 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <!-- -*- xhtml -*- -->
+    <title>Руководство по началу работы с подключаемыми модулями для платформы NetBeans 6.0 и 6.1</title>
+    <meta name="AUDIENCE" content="NBUSER">
+    <meta name="TYPE" content="ARTICLE">
+    <meta name="EXPIRES" content="N">
+    <meta name="developer" content="gwielenga@netbeans.org">
+    <meta name="indexed" content="y">
+       
+    <meta name="description"
+          content="A guide describing how to implement a Google Toolbar Module into NetBeans IDE.">
+    <link rel="stylesheet" type="text/css" href="../../../netbeans.css"> 
+</head>
+
+<!-- Copyright (c) 2005 Sun Microsystems, Inc. All rights reserved. -->
+               <!-- Use is subject to license terms. -->
+
+<body>
+<h1><a name="top"></a>Начало работы с подключаемыми модулями в среде NetBeans</h1>
+
+    <p>Добро пожаловать в руководство по разработке подключаемых модулей в среде NetBeans!
+
+  </p><p>В этом документе представлена простая процедура быстрого знакомства с процессом разработки подключаемого модуля NetBeans на примере создания новой панели инструментов в среде IDE NetBeans. После прочтения этого руководства читатель получит общее представление о создании, сборке и установке подключаемых модулей в среде IDE NetBeans.
+   
+   </p><p>После изучения этого руководства можно перейти к другой <a href="https://netbeans.org/kb/trails/platform.html"> учебной карте по платформе NetBeans</a>. Учебная карта содержит подробные руководства, в которых рассматривается широкий спектр интерфейсов API среды NetBeans для разнообразных приложений. Если процедура создания простейшего приложения &quot;Hello World&quot; читателю уже знакома, можно пропустить этот документ и перейти сразу к учебной карте.
+   
+   </p><p><b>Содержание</b></p>
+         
+      <img  src="../../images/articles/60/netbeans-stamp60-61.gif" class="stamp" width="114" height="114" alt="Содержимое на этой странице относится к среде IDE NetBeans 6.1" title="Содержимое на этой странице относится к среде IDE NetBeans 6.1"> </p>
+      <ul class="toc">
+        <li><a href="#creating-module-project">Создание проекта модуля</a></li>
+        <li><a href="#coding-module">Написание кода модуля</a>
+        <ul>
+            <li><a href="#creating-action">Создание действия</a></li>
+            <li><a href="#creating-panel">Создание формы панели JPanel</a></li>
+            <li><a href="#resolving-errors">Поиск и устранение ошибок</a></li>
+            <li><a href="#overriding">Переопределение getToolbarPresenter()</a></li>
+        </ul>
+        </li>
+        <li><a href="#compiling">Компиляция, установка и использование модуля</a>
+        </li><li><a href="#sharing-plugin">Разрешение совместного использования модуля</a></li>
+      </ul>
+         
+<p><b>Для работы с этим руководством требуется программное обеспечение и ресурсы, перечисленные в следующей таблице. </b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Программное обеспечение или ресурс</th>
+                <th class="tblheader" scope="col">Требуемая версия</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1">Среда IDE NetBeans</td>
+                <td class="tbltd1">версия <a href="http://download.netbeans.org/netbeans/6.1/final/">версия 6.1</a> или<br>
+                версия 6.0</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">Комплект для разработчика на языке Java (JDK)</td>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">версия 6</a> или<br>
+                версия 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+   <p class="tips">Дополнительно, в целях поиска и устранения ошибок, можно <a href="https://netbeans.org/files/documents/4/570/GoogleToolbar.zip">загрузить готовые примеры</a> и изучить исходный код.
+    
+    </p><p>Панель инструментов, создаваемая в этом руководстве, выглядит следующим образом:</p>
+
+    <img src="../../images/tutorials/google/60/googlebar-2.png" border="1"
+            alt="Панель инструментов Google c примером строки поиска">
+        
+    <p></p><p>При нажатии пользователем клавиши &quot;Enter&quot; на панели инструментов открывается обозреватель по умолчанию среды IDE. Текст из поля на панели инструментов будет передан в поисковую систему Google, а результаты будут представлены в открытом обозревателе. Для создания панели инструментов будут использоваться <a href="https://netbeans.org/download/dev/javadoc/">интерфейсы API среды NetBeans</a>, позволяющие расширить возможности среды IDE. В частности, будет создано действие, вызываемое кнопкой на панели инструментов. Затем будет создана панель JPanel платформы Swing, содержащая элементы графического интерфейса <tt>JLabel</tt> и <tt>JTextField</tt>. После этого мы переопределим метод <tt><a href="http://www.netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/actions/CallableSystemAction.html#getToolbarPresenter()">getToolbarPresenter()</a></tt> действия так, чтобы панель JPanel отображалась на панели инструментов, а не как кнопка. 
+    
+<!-- ===================================================================================== -->  
+
+<br>
+</p><h2 class="tutorial"><a name="creating-module-project"></a>Создание проекта модуля</h2>
+
+<p>При разработке модуля необходимо убедиться в правильной настройке структуры проекта. В среде IDE NetBeans предусмотрен мастер создания проектов модулей, при помощи которого можно определить все базовые файлы, необходимые для модуля.</p>
+    
+<ol>
+    <li>Выберите &quot;File &gt; New Project&quot; (Ctrl+Shift+N). В области &quot;Categories&quot; выберите &quot;NetBeans Modules&quot;. В области &quot;Projects&quot; выберите &quot;Module&quot;. Нажмите кнопку &quot;Next&quot;.</li>
+    <li>На экране &quot;Name and Location&quot; введите <tt>GoogleToolbar</tt> в поле &quot;Project Name&quot;. В поле &quot;Project Location&quot; укажите любой каталог на компьютере. Установите переключатель &quot;Standalone Module&quot; и флажок &quot;Set as Main Project&quot;. Нажмите кнопку &quot;Next&quot;.</li>
+    <li>На экране &quot;Basic Module Configuration&quot; замените <tt>yourorghere</tt> в поле &quot;Code Name Base&quot; на <tt>myorg</tt>; чтобы основа названия кода выглядела как <tt>org.myorg.googletoolbar</tt>. 
+    </li><li>Укажите местоположение пакета локализации и файла layer.xml, которые должны находиться в пакете с именем <tt>org/myorg/googletoolbar</tt>. Например, введите в поле &quot;XML layer&quot; строку <tt>org/myorg/googletoolbar/layer.xml</tt>. Нажмите кнопку &quot;Finish&quot;.</li>
+</ol>
+    
+<p>Средой IDE будет создан проект <tt>GoogleToolbar</tt>. Проект содержит все исходные файлы и метаданные проекта, например, сценарий сборки Ant. Проект открывается в среде IDE. Логическую структуру проекта можно просмотреть в окне &quot;Projects&quot; (Ctrl+1), а структуру файлов &ndash; в окне &quot;Files&quot; (Ctrl+2).
+    
+<br>
+
+
+<!-- ===================================================================================== -->
+
+<br>
+</p><h2><a name="coding-module"></a>Написание кода модуля</h2>
+
+<p>Для создания кода модуля необходимо выполнить следующее:</p>
+
+<ul>
+    <li><a href="#creating-action">Создание действия</a></li>
+    <li><a href="#creating-panel">Создание панели JPanel</a></li>
+    <li><a href="#resolving-errors">Поиск и устранение ошибок</a></li>
+    <li><a href="#overriding">Переопределение getToolbarPresenter()</a></li>
+</ul>
+
+<div class="indent">
+    <h3 class="tutorial"><a name="creating-action"></a>Создание действия</h3>
+    
+    <ol>
+        <li>Щелкните правой кнопкой мыши узел проекта и выберите &quot;New &gt; Action&quot; (если пункт &quot;Action&quot; отсутствует, выберите &quot;Other&quot;, а затем в мастере создания файлов в поле &quot;Categories&quot; выберите &quot;NetBeans Module Development&quot;). Нажмите кнопку &quot;Next&quot;.</li>
+        <li>На экране &quot;Action Type&quot; не изменяйте значения по умолчанию, в соответствии с которыми средой IDE будет создано действие, обеспечиваемое подклассом <tt>CallableSystemAction</tt>, как показано ниже:
+        
+            <br><br>
+            <img boder="1" src="../../images/tutorials/google/60/action-wiz-1.png" alt="Мастер создания действий: первый экран">
+            
+            <br><br>
+            Нажмите кнопку &quot;Next&quot;.
+        
+        </li><li>На экране &quot;GUI Registration&quot; выберите &quot;Edit&quot; в раскрывающемся списке &quot;Category&quot;. Раскрывающийся список &quot;Category&quot; позволяет указать место отображения действия в редакторе сочетаний клавиш в среде IDE. Затем снимите флажок &quot;Global Menu Item&quot; и установите флажок &quot;Global Toolbar Button&quot;. В раскрывающемся списке &quot;Toolbar&quot; выберите &quot;Edit&quot;, а затем в раскрывающемся списке &quot;Position&quot; выберите &quot;Find... - HERE&quot;, как показано ниже:
+        
+            <br><br>
+            <a href="../../images/tutorials/google/60/action-wiz-2.png" title=" Щелкните для УВЕЛИЧЕНИЯ "> <img src="../../images/tutorials/google/60/action-wiz-2-small.png" border="1" 
+                alt="Мастер создания действий: второй экран"></a>
+            
+            <br><br>       
+            Нажмите кнопку &quot;Next&quot;.
+        
+        </li><li><p>На экране &quot;Name and Location&quot; введите <tt>GoogleAction</tt> в поле &quot;Class Name&quot; и <tt>Google Action</tt> в поле &quot;Display Name&quot;. Найдите значок размером 16x16 пикселей. В принципе, этот значок использоваться не будет, поскольку вместо него будет отображаться форма панели JPanel, которая будет создана в следующем разделе. Тем не менее, мастер создания действий требует выбора какого-либо значка. При этом значок может иметь любой размер, так как фактически он использоваться не будет. Нажмите кнопку &quot;Finish&quot;.</p> 
+            <p><b class="notes">Примечание:</b> К пакету <tt>org.myorg.googletoolbar</tt> в окне &quot;Projects&quot; добавляется <tt>GoogleAction.java</tt>.</p></li>
+    </ol>
+    
+    <h3 class="tutorial"><a name="creating-panel"></a>Создание панели JPanel</h3>
+    
+    <ol>
+        <li>Щелкните правой кнопкой мыши узел проекта и выберите &quot;New &gt; Other&quot;. В области &quot;Categories&quot; выберите &quot;Java GUI Forms&quot;. В области &quot;Projects&quot; выберите &quot;JPanel Form&quot;. Нажмите кнопку &quot;Next&quot;.</li>
+        <li>На экране &quot;Name and Location&quot; введите <tt>GooglePanel</tt> в поле &quot;Class Name&quot; и выберите пакет из раскрывающегося списка. Нажмите кнопку &quot;Finish&quot;. <tt>GooglePanel.java</tt> добавляется к пакету и открывается в режиме проектирования в редакторе исходного кода.</li>
+        <li>Переместите курсор в правый нижний угол панели JPanel, выделите панель и переместите курсор для изменения размера панели, ширина и длина которой должны напоминать панель инструментов (см. ниже).
+        
+            <br><br>
+            <img src="../../images/tutorials/google/60/jpanel-2.png" border="1" alt="Панель JPanel после изменения размеров"></li>
+        
+        <li>Перетащите элементы &quot;JTextField&quot; и &quot;JLabel&quot; из окна &quot;Palette&quot; (Ctrl+Shift+8) непосредственно на панель JPanel, а затем измените размеры этого элемента и элементов так, чтобы они соответствовали друг другу. Наконец, щелкните элемент &quot;JLabel&quot; и измените его текст <tt>Google:</tt>, затем удалите текст по умолчанию, установленный в элементе &quot;JTextField&quot;. Теперь панель JPanel должна выглядеть следующим образом:
+        
+            <br><br>
+            <img src="../../images/tutorials/google/60/jpanel-3.png" border="1" 
+                alt="Панель JPanel с элементами &quot;JTextField&quot; и &quot;JLabel&quot;"></li>
+        
+        <li>Проверьте, что открыто окно &quot;Property Inspector&quot; (выберите &quot;Window &gt; Navigating &gt; Inspector&quot;), затем щелкните правой кнопкой мыши элемент &quot;JTextField&quot; и выберите &quot;Events &gt; Key &gt; keyTyped&quot;. После этого метод в исходном коде <tt>GooglePanel.java</tt> будет создан метод <tt>jTextField1KeyTyped()</tt>, отображаемый в редакторе исходного кода, как показано ниже:
+        
+            <br><br>
+            <img src="../../images/tutorials/google/60/jpanel-4.png" border="1" 
+                alt="Созданный метод JTextField1KeyTyped() в исходном коде"></li>
+        
+        <li>В окне &quot;Source&quot; редактора исходного кода c <tt>GooglePanel.java</tt> заполните метод <tt>jTextField1KeyTyped()</tt> следующим образом (добавляемый текст представлен <strong>полужирным шрифтом</strong>):
+        
+        <pre class="examplecode">    
+private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {
+    <strong>int i = evt.getKeyChar();
+    if (i==10){//The ENTER KEY
+        // Вывод на экран URL-адреса Google.
+        try{
+            URLDisplayer.getDefault().showURL
+                    (new URL(&quot;http://www.google.com/search?hl=en&amp;q=&quot;+jTextField1.getText()+&quot;&amp;btnG=Google+Search&quot;));
+        } catch (Exception eee){
+            return;//Все не так уж сложно!
+        }
+    }</strong>
+}</pre>
+        </li>
+    </ol>
+        
+    <p>При необходимости щелкните правой кнопкой мыши в редакторе исходного кода и выберите &quot;Format&quot; (Alt+Shift+F).</p>
+           
+    <h3 class="tutorial"><a name="resolving-errors"></a>Поиск и устранение ошибок</h3>
+            
+    <p>Обратите внимание, что несколько строк кода подчеркнуты красным, что указывает на ошибки. Это вызвано тем, что требуемые пакеты еще не были импортированы. Установите курсор на значок лампочки в столбце, расположенном непосредственно слева от красной линии <tt>URLDisplayer</tt>. Появится всплывающая подсказка с пояснением причины ошибки:
+        
+        <br><br>
+        <img src="../../images/tutorials/google/60/tooltip.png" border="1" 
+            alt="Всплывающая подсказка с описанием ошибки в URLDisplayer в редакторе исходного кода"></p>
+                        
+    <p>Для устранения ошибки необходимо создать класс <tt>HtmlBrowser.URLDisplayer</tt>, содержащийся в доступном из проекта пакете <a href="https://netbeans.org/download/dev/javadoc/org-openide-awt/org/openide/awt/package-summary.html"> <tt>org.openide.awt</tt></a>. Для этого выполните следующие действия:</p>
+        
+    <ol>
+        <li>Щелкните правой кнопкой мыши узел проекта в окне &quot;Projects&quot; и выберите &quot;Properties&quot;. В появившемся диалоговом окне &quot;Project Properties&quot; выберите &quot;Libraries&quot; в области &quot;Categories&quot;. Затем нажмите кнопку &quot;Add&quot; в разделе &quot;Module Dependencies&quot;. Появится диалоговое окно &quot;Add Module Dependency&quot;.</li>
+        <li>В текстовом поле &quot;Filter&quot; в верхней части диалогового окна &quot;Add Module Dependency&quot; постепенно вводите название <tt>URLDisplayer</tt>, обращая при этом внимание на то, как сокращается список возвращаемых модулей, до тех пор, пока в нем не останется только <a href="https://netbeans.org/download/dev/javadoc/org-openide-awt/overview-summary.html">UI Utilities API</a>:
+ 
+            <br><br>
+            <img src="../../images/tutorials/google/60/add-module-dependency.png"
+                alt="Диалоговое окно &quot;Add Module Dependency&quot; с выбором &quot;UI Utilities API&quot;">                 
+                
+            <br><br>
+            Нажмите кнопку &quot;OK&quot; и затем еще раз нажмите кнопку &quot;OK&quot; для закрытия диалогового окна &quot;Project Properties&quot;.</li>
+        <li>Щелкните правой кнопкой мыши в редакторе исходного кода и выберите &quot;Fix Imports&quot; (Alt+Shift+F). В появившемся диалоговом окне &quot;Fix All Imports&quot; будут представлены предполагаемые пути к нераспознанным классам:
+            
+            <br><br>
+            <img src="../../images/tutorials/google/60/fix-all-imports.png"
+                alt="Диалоговое окно &quot;Fix All Imports&quot; с предполагаемыми путями к нераспознанным классам">                
+            
+            <br><br>
+            Нажмите кнопку &quot;OK&quot;. Средой IDE будут созданы следующие операторы импорта для <tt>GooglePanel.java</tt>:
+            
+            <pre>
+import java.net.URL;
+import org.openide.awt.HtmlBrowser.URLDisplayer;               
+            </pre>
+            
+            Также обратите внимание на то, что в редакторе исходного кода исчезли все указания на наличие ошибок.</li>
+    </ol>
+        
+    <h3 class="tutorial"><a name="overriding"></a>Переопределение getToolbarPresenter()</h3>
+    
+    <p>Поскольку только что созданная панель JPanel фактически будет использоваться для отображения панели инструментов Google, необходимо переопределить метод <a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/actions/CallableSystemAction.html#getToolbarPresenter()"> <tt>getToolbarPresenter()</tt></a> в классе действия. Для этого в коде <tt>GoogleAction.java</tt> выполните следующее:</p>
+        
+    <ol>
+        <li>Под объявлением класса объявите и установите следующую переменную:
+            <pre class="examplecode">
+GooglePanel retValue = new GooglePanel();
+            </pre></li>
+        <li>Определите метод <tt>getToolbarPresenter()</tt> для возврата переменной <tt>retValue</tt>:
+        
+            <pre class="examplecode">
+public java.awt.Component getToolbarPresenter() {
+    return retValue;
+}
+            </pre>
+        </li>
+    </ol>
+</div>
+
+<!-- ======================================================================================= -->
+
+<br>
+<h2><a name="compiling"></a>Компиляция, установка и использование модуля</h2>
+
+<p>Для компиляции и установки модуля в среде&nbsp;IDE NetBeans используется сценарий сборки Ant. Сценарий сборки был создан автоматически при создании проекта модуля в разделе <a href="#creating-module-project">Создание проекта модуля</a> выше. Поскольку модуль теперь готов к компиляции и добавлению в среду IDE, можно воспользоваться поддержкой Ant в среде IDE NetBeans для выполнения этих действий:</p>
+    
+<ol>
+    <li>В окне &quot;Projects&quot; щелкните правой кнопкой мыши узел проекта <tt>GoogleToolbar</tt> и выберите &quot;Install/Reload&quot; в поле &quot;Target Platform&quot;. Модуль компонуется и устанавливается в новом экземпляре среды IDE (целевой платформе). При стандартной настройке целевая платформа по умолчанию соответствует версии текущей среды IDE. После открытия целевой платформы новый модуль можно протестировать.</li>
+    <li>После успешной установки модуль добавляет новую кнопку на панель инструментов &quot;Edit&quot; в среде IDE. 
+    
+    <p><b class="notes">Примечание:</b> Эта кнопка панели инструментов не отображается в виде значка. Вместо этого на экран выводится панель JPanel, созданная ранее в разделе <a href="#creating-panel">Создание панели JРanel</a>:
+        
+        <br><br>
+        <img src="../../images/tutorials/google/60/googlebar.png" border="1"
+            alt="Панель инструментов Google, встроена в панель инструментов &quot;Edit&quot; среды IDE"></p></li>
+
+    <li>Введите строку поиска в текстовом поле:
+    
+        <br><br>
+        <img src="../../images/tutorials/google/60/googlebar-2.png" border="1"
+            alt="Панель инструментов Google c примером строки поиска"></li>
+            
+    <li>Нажмите &quot;Enter&quot;. Запускается обозреватель IDE по умолчанию. URL-адрес Google и строка поиска передаются в обозреватель, и осуществляется поиск. После получения результатов поиска они будут представлены в обозревателе.</li>
+</ol>
+
+<br>
+<h2 class="tutorial"><a name="sharing-plugin"></a>Разрешение совместного использования модуля</h2>
+
+<p>После создания работоспособного модуля, расширяющего возможности среды IDE, его можно предоставить и другим разработчикам. В среде IDE NetBeans можно быстро создать двоичный файл модуля NetBeans (.nbm), который является универсальным средством, позволяющим другим разработчикам экспериментировать с собственными версиями среды IDE (фактически эти действия уже выполнялись в разделе <a href="#installing-sample">Установка примера</a>. Для создания двоичного файла модуля выполните следующие действия:</p>
+    
+В окне &quot;Projects&quot; щелкните правой кнопкой мыши узел проекта <tt>GoogleToolbar</tt> и выберите &quot;Create NBM&quot;. Будет создан новый файл NBM, который можно просмотреть в окне &quot;Files&quot; (Ctrl+2):
+        
+        <br><br>
+        <img src="../../images/tutorials/google/60/create-nbm.png" border="1"
+            alt="Новый файл NBM в окне &quot;Files&quot;"></li>
+
+
+<br>
+<div class="feedback-box"><a name="feedback"></a> <a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Google%20Toolbar%20Module%20Tutorial"> Мы ждем ваших отзывов</a></div>
+   <br style="clear:both;" />
+    <!-- ======================================================================================== -->
+    
+    <h2><a name="nextsteps"></a>Дополнительная информация</h2>
+    
+    <p>Руководство по быстрому началу работы с подключаемыми модулями в среде NetBeans завершено. В этом документе была рассмотрена процедура создания подключаемого модуля, добавляющего панель поиска Google к среде IDE. Для получения дополнительной информации о создании и разработке подключаемых модулей см. следующие материалы: 
+    </p><ul>
+        <p></p><li><a href="https://netbeans.org/kb/trails/platform.html">Другие связанные руководства</a></li>
+        <p></p><li><a href="https://netbeans.org/download/dev/javadoc/">Документация Javadoc по интерфейсам API в среде NetBeans</a></li>
+    </ul>
+    
+    <hr>
+    <!-- ======================================================================================== -->
+    
+    
+</body>
+</html>

@@ -1,0 +1,601 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+<title>NetBeans Visual Database Explorer Tutorial for NetBeans Platform 6.5</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+  <meta name="AUDIENCE" content="NBUSER"/>
+  <meta name="TYPE" content="ARTICLE"/>
+  <meta name="EXPIRES" content="N"/>
+  <meta name="developer" content="geertjan.wielenga@sun.com"/>
+  <meta name="indexed" content="y"/>
+  <meta name="description"
+ content="A walk-through of the basic features of the Visual Library API."/>
+   <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>NetBeans Visual Database Explorer Tutorial</h1>
+
+<p>In this tutorial, you will learn how to create a visualizer
+    on top of the content of a database. You will create
+    an action, attach it to a connection node, and then
+    use it to connect to the database, visualizing its
+    content in a Visual Library scene, as shown below:</p>
+
+<p><img alt="main image" src="../images/tutorials/db/69-db-1.png"/></p>
+
+     <p><b>Contents</b></p>
+   
+   <p><img  src="../images/articles/69/netbeans-stamp69.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.9" title="Content on this page applies to NetBeans IDE 6.9"/></p>
+      <ul class="toc">
+<li><a href="#getting-started">Setting Up the Module</a></li>
+<li><a href="#creating-the-action">Creating the Action</a></li>
+<li><a href="#creating-the-window">Creating the Window</a></li>
+<li><a href="#creating-the-scene">Creating the Scene</a></li>
+<li><a href="#connect_database_to_scene">Connect the Database to the Scene</a></li>
+       </ul>
+         
+<p><b>To follow this tutorial, you need the software and resources listed in the following 
+table.</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.9 or above</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Version 6</td>
+            </tr>
+        </tbody>
+    </table>
+
+<p>All the information you need to know for working with the Visual Library API,
+ as well as with the Database Explorer API, is collected at the following locations:</p>
+  
+ <ul>
+     <li><a href="http://graph.netbeans.org/">Visual Library Project Page</a></li>
+     <li><a href="http://graph.netbeans.org/documentation.html">Visual Library 2.0 - Documentation</a></li>
+     <li><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-api-visual/overview-summary.html">Visual Library API Javadoc</a></li>
+     <li><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-db/overview-summary.html">Database Explorer API Javadoc</a></li>
+ </ul>
+ 
+ <p>Also, see <a href="http://www.javalobby.org/eps/netbeans_visual_library/">Roman Strobl's Visual Library
+Screencast</a> on Javalobby.</p>
+
+<p>Before continuing, you are assumed to have read
+ the <a href="https://platform.netbeans.org/tutorials/nbm-visual_library.html">NetBeans Visual Library Tutorial</a>, which gives you the basics for
+ working with the Visual Library. The basics discussed
+ in that tutorial will not be repeated here.</p>
+ 
+<!-- ===================================================================================== -->
+
+<h2><a name="getting-started"></a>Setting Up the Module</h2>
+
+<p>In this section, we use wizards to create a module project and
+ a custom window component.</p>
+
+<ol>
+    <li>Choose File &gt; New Project (Ctrl+Shift+N). Under Categories, select NetBeans Modules.
+        Under Projects, select Module. Click Next.</li>
+    <li>In the Name and Location panel, type <tt>DatabaseExplorerDemo</tt> in the Project Name field.
+        Change the Project Location to any directory on your computer. Leave the Standalone Module option
+        and Set as Main Project checkbox selected. Click Next.</li>
+    <li>In the Basic Module Configuration panel, type <tt>org.demo</tt>
+        in Code Name Base.</li>
+    <li><p>Select "Generate XML Layer". Leave the
+        locations of both the localizing bundle and the XML layer file
+        so that they will be stored in a package with
+        the name <tt>org/demo</tt>. Click Finish.</p>
+        
+<p>The IDE creates the <tt>DatabaseExplorerDemo</tt> project. The project contains all of your sources and project
+    metadata, such as the project's Ant build script. The project opens in the IDE. You can view its logical
+    structure in the Projects window (Ctrl+1) and its file structure in the Files window (Ctrl+2).
+</p></li>
+    
+<li>Right-click the project, choose Properties, click Libraries 
+in the Project Properties dialog box and declare a dependency on the following APIs:
+ 
+<ul>
+    <li><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-db/overview-summary.html">Database Explorer</a></li>
+    <li><a href="http://bits.netbeans.org/dev/javadoc/org-openide-nodes/overview-summary.html">Nodes API</a></li>
+    <li><a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/overview-summary.html">UI Utilities API</a></li>
+    <li><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/overview-summary.html">Utilities API</a></li>
+    <li><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-api-visual/overview-summary.html">Visual Library API</a></li>
+    <li><a href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/overview-summary.html">Window System API</a></li>
+</ul>
+
+<p><strong class="notes">Note: </strong> You need to set an
+    implementation
+ dependency on the Database Explorer API. Do so by selecting
+ the Database Explorer
+ item in the Libraries panel of the Project Properties dialog,
+ clicking Edit,
+ and then clicking 'Implementation Version'. By doing this,
+ you are setting
+ a dependency on internal classes that will change in
+ future releases. Currently
+ there is no other way of completing the scenario
+ in this tutorial than to set
+ an implementation dependency.
+</p>
+
+
+</li>
+        <li>Click OK to close the Project Properties dialog.
+        </li>
+    
+    <li>Create a package named "org.demo.resources" and put the following images into it:
+        
+  <p><img alt="cancelGlyph" src="../images/tutorials/db/cancelGlyph.png"/> 
+      <img alt="command" src="../images/tutorials/db/command_16.png"/>
+      <img alt="displayable" src="../images/tutorials/db/custom_displayable_16.png"/>
+      <img alt="item" src="../images/tutorials/db/item_16.png"/>
+      <img alt="list" src="../images/tutorials/db/list_16.png"/>
+      <img alt="post code" src="../images/tutorials/db/postCodeGlyph.png"/>
+      <img alt="pre code" src="../images/tutorials/db/preCodeGlyph.png"/>
+  </p></li>
+</ol>
+
+<h2><a name="creating-the-action"></a>Creating the Action</h2>
+
+<p>We will create an action that will only be enabled
+ if the activated node has the <tt>ConnectionNode</tt> from
+ the Database Explorer API in its Lookup. </p>
+
+<ol>
+
+<li><p>Right-click the module project, and create a new
+         class extending the <tt>BaseAction</tt>
+         class from the Database Explorer API:</p>
+
+<pre class="examplecode">import java.sql.Connection;
+import org.netbeans.api.db.explorer.ConnectionManager;
+import org.netbeans.api.db.explorer.DatabaseConnection;
+import org.netbeans.modules.db.explorer.action.BaseAction;
+import org.openide.nodes.Node;
+import org.openide.util.HelpCtx;
+
+public final class ShowDatabaseStructureAction extends BaseAction {
+
+    @Override
+    protected void performAction(Node[] nodes) {
+
+    }
+
+    @Override
+    protected boolean enable(Node[] activatedNodes) {
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return "Show Database Structure";
+    }
+
+    @Override
+    public HelpCtx getHelpCtx() {
+        return HelpCtx.DEFAULT_HELP;
+    }
+
+}</pre> </li>
+
+    <li>Register the Action class as follows:
+
+<pre class="examplecode">&lt;folder name="Databases"&gt;
+    &lt;folder name="Explorer"&gt;
+        &lt;folder name="Connection"&gt;
+            &lt;folder name="Actions"&gt;
+                &lt;file name="org-demo-ShowDatabaseStructureAction.instance"/&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre> </li>
+
+
+</ol>
+
+<p>You have now registered an Action such that it will
+     be attached to the connection node in the Services
+     window:</p>
+
+<p><img alt="" style="border: 1px solid" src="../images/tutorials/db/69-db-3.png"/></p>
+
+
+<h2><a name="creating-the-window"></a>Creating the Window</h2>
+
+<p>In this section, we create a new window component that
+    will hold our scene.</p>
+
+<ol>
+
+ <li>Right-click the module project, choose
+ New &gt; Other and choose Window from the
+ Module Development category. Click Next. </li>
+
+    <li>Choose <tt>editor</tt>
+ in the drop-down list. Do not select Open on Application Start. Click Next.</li>
+
+ <li>Type <tt>Demo</tt> in Class Name Prefix. Optionally,
+ add an icon with a dimension of 16x16 pixels. Click Finish.</li>
+
+ <li>Right-click in the <tt>DemoTopComponent</tt> in Design mode, choose Set Layout,
+  and select BorderLayout.</li>
+
+ <li>Switch to Source mode and change the <tt>getPersistenceType</tt> method
+ to return <tt>TopComponent.PERSISTENCE_NEVER</tt>.</li>
+
+</ol>
+
+<h2><a name="creating-the-scene"></a>Creating the Scene</h2>
+
+<p>Programming with the Visual Library API is similar to programming in Swing. You build
+  and modify a tree of visual elements that are called "widgets". The root of the tree is 
+ represented by a Scene class which holds all the visual data of the scene. The scene is a widget. 
+ You have to create a scene view, which is a JComponent. You must then add
+ the JComponent to a JScrollPane.</p>
+
+ <p>In this section,
+ we add a JScrollPane to our TopComponent. Then we create a new
+  Visual Library scene in a separate Java source file. Next, we pass the
+  scene to the TopComponent, so that it can be displayed in
+ the TopComponent's JScrollPane. We then install the module project and display
+   our first scene.</p>
+
+<ol>
+  
+<li>Use the Palette (Ctrl-Shift-8) to drop a 
+    <tt>JScrollPane</tt> on the TopComponent.</li>
+ 
+  <li><p>In the <tt>org.demo</tt> package, create a Java class called <tt>DBGraphScene</tt>.
+  Let the class extend <tt>VMDGraphScene</tt>.</p>
+
+      <p>A red error underline and a lightbulb appears. Let the IDE generate the import statement.</p>
+
+      <p>A red error underline and a lightbulb appears again. Let the IDE generate the class's abstract methods.</p></li>
+
+<li>Replace the content of the class with the following:
+  
+<pre class="examplecode">import java.awt.Image;
+import java.awt.Point;
+import java.util.Arrays;
+import java.util.List;
+import org.netbeans.api.visual.vmd.VMDGraphScene;
+import org.netbeans.api.visual.vmd.VMDNodeWidget;
+import org.netbeans.api.visual.vmd.VMDPinWidget;
+import org.openide.util.ImageUtilities;
+
+public class DBGraphScene extends VMDGraphScene{
+
+    private static final Image IMAGE_LIST = ImageUtilities.loadImage("org/demo/resources/list_16.png"); // NOI18N
+    private static final Image IMAGE_CANVAS = ImageUtilities.loadImage("org/demo/resources/custom_displayable_16.png"); // NOI18N
+    private static final Image IMAGE_COMMAND = ImageUtilities.loadImage("org/demo/resources/command_16.png"); // NOI18N
+    private static final Image IMAGE_ITEM = ImageUtilities.loadImage("org/demo/resources/item_16.png"); // NOI18N
+    private static final Image GLYPH_PRE_CODE = ImageUtilities.loadImage("org/demo/resources/preCodeGlyph.png"); // NOI18N
+    private static final Image GLYPH_POST_CODE = ImageUtilities.loadImage("org/demo/resources/postCodeGlyph.png"); // NOI18N
+    private static final Image GLYPH_CANCEL = ImageUtilities.loadImage("org/demo/resources/cancelGlyph.png"); // NOI18N
+    private static int nodeID = 1;
+    private static int edgeID = 1;
+
+    public DBGraphScene() {
+        String mobile = createNode (this, 100, 100, IMAGE_LIST, "menu", "List", null);
+        createPin (this, mobile, "start", IMAGE_ITEM, "Start", "Element");
+        String game = createNode (this, 600, 100, IMAGE_CANVAS, "gameCanvas", "MyCanvas", Arrays.asList (GLYPH_PRE_CODE, GLYPH_CANCEL, GLYPH_POST_CODE));
+        createPin (this, game, "ok", IMAGE_COMMAND, "okCommand1", "Command");
+        createEdge (this, "start", game);
+        createEdge (this, "ok", mobile);
+    }
+
+    private static String createNode (VMDGraphScene scene, int x, int y, Image image, String name, String type, List&lt;Image&gt; glyphs) {
+        String nodeID = "node" + DBGraphScene.nodeID ++;
+        VMDNodeWidget widget = (VMDNodeWidget) scene.addNode (nodeID);
+        widget.setPreferredLocation (new Point (x, y));
+        widget.setNodeProperties (image, name, type, glyphs);
+        scene.addPin (nodeID, nodeID + VMDGraphScene.PIN_ID_DEFAULT_SUFFIX);
+        return nodeID;
+    }
+
+
+    private static void createPin (VMDGraphScene scene, String nodeID, String pinID, Image image, String name, String type) {
+        ((VMDPinWidget) scene.addPin (nodeID, pinID)).setProperties (name, null);
+    }
+
+
+    private static void createEdge (VMDGraphScene scene, String sourcePinID, String targetNodeID) {
+        String edgeID = "edge" + DBGraphScene.edgeID ++;
+        scene.addEdge (edgeID);
+        scene.setEdgeSource (edgeID, sourcePinID);
+        scene.setEdgeTarget (edgeID, targetNodeID + VMDGraphScene.PIN_ID_DEFAULT_SUFFIX);
+    }
+    
+}</pre></li>
+
+<li>Add an instance variable for the scene to the top of the TopComponent's source code:
+
+<pre class="examplecode">private DBGraphScene scene = new DBGraphScene();</pre>
+
+<p>Add the scene to the JScrollPane's ViewportView, at the end of the TopComponent's
+ constructor:</p>
+
+<pre class="examplecode">jScrollPane1.setViewportView( scene.createView() );</pre>
+</li>
+    
+    <li>Before continuining, check that the content of the
+        filesystem tags in your layer.xml file is as follows:
+        
+<pre class="examplecode">&lt;filesystem&gt;
+    &lt;folder name="Actions"&gt;
+        &lt;folder name="Window"&gt;
+            &lt;file name="org-demo-DemoAction.instance"&gt;
+                &lt;attr name="component" methodvalue="org.demo.DemoTopComponent.findInstance"/&gt;
+                &lt;attr name="displayName" bundlevalue="org.demo.Bundle#CTL_DemoAction"/&gt;
+                &lt;attr name="instanceCreate" methodvalue="org.openide.windows.TopComponent.openAction"/&gt;
+            &lt;/file&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+    &lt;folder name="Menu"&gt;
+        &lt;folder name="Window"&gt;
+            &lt;file name="DemoAction.shadow"&gt;
+                &lt;attr name="originalFile" stringvalue="Actions/Window/org-demo-DemoAction.instance"/&gt;
+            &lt;/file&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+    &lt;folder name="Windows2"&gt;
+        &lt;folder name="Components"&gt;
+            &lt;file name="DemoTopComponent.settings" url="DemoTopComponentSettings.xml"/&gt;
+        &lt;/folder&gt;
+        &lt;folder name="Modes"&gt;
+            &lt;folder name="editor"&gt;
+                &lt;file name="DemoTopComponent.wstcref" url="DemoTopComponentWstcref.xml"/&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+    &lt;folder name="Databases"&gt;
+        &lt;folder name="Explorer"&gt;
+            &lt;folder name="Connection"&gt;
+                &lt;folder name="Actions"&gt;
+                    &lt;file name="org-demo-ShowDatabaseStructureAction.instance"/&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/filesystem&gt;</pre>        
+    </li>
+<li><p>Right-click the module and choose Run. Select "Demo" from
+ the Window menu. The window component should open and show you
+ the following:</p>
+
+    <p><img alt="" src="../images/tutorials/db/69-db-2.png"/></p></li>
+ 
+</ol>
+ 
+<!-- ===================================================================================== -->
+<h2><a name="connect_database_to_scene"></a>Connect the Database to the Scene</h2>
+
+<p>In this section, we connect to a selected database by using the Database Explorer API.
+ We then pass the connection to the scene. In the scene, we parse the connection,
+ extract the data, and visually display the data in the scene.</p>
+
+   <ol>
+
+<li>In your action class, you need to make a connection to a selected
+ database and pass it to your window:
+
+<pre class="examplecode">import java.sql.Connection;
+import org.netbeans.api.db.explorer.ConnectionManager;
+import org.netbeans.api.db.explorer.DatabaseConnection;
+import org.netbeans.modules.db.explorer.action.BaseAction;
+import org.openide.nodes.Node;
+import org.openide.util.HelpCtx;
+
+public final class ShowDatabaseStructureAction extends BaseAction {
+
+    @Override
+    protected void performAction(Node[] nodes) {
+        DatabaseConnection dbconn = nodes[0].getLookup().lookup(DatabaseConnection.class);
+        if (dbconn.getJDBCConnection() == null) {
+            ConnectionManager.getDefault().showConnectionDialog(dbconn);
+        }
+        Connection connection = dbconn.getJDBCConnection();
+        DemoTopComponent win = DemoTopComponent.findInstance();
+        win.open();
+        win.requestActive();
+        win.setConnection(connection);
+    }
+
+    @Override
+    protected boolean enable(Node[] activatedNodes) {
+        if (activatedNodes == null || activatedNodes.length != 1) {
+            return false;
+        }
+        boolean enabled = false;
+        DatabaseConnection dbconn = activatedNodes[0].getLookup().lookup(DatabaseConnection.class);
+        if (dbconn != null) {
+            enabled = true;
+        }
+        return enabled;
+    }
+
+    @Override
+    public String getName() {
+        return "Show Database Structure";
+    }
+
+    @Override
+    public HelpCtx getHelpCtx() {
+        return HelpCtx.DEFAULT_HELP;
+    }
+
+}</pre>
+
+<p>A red error underline will appear below the last line
+    in the <tt>performAction</tt>, because it refers
+    to a statement that we have not defined yet. We will
+    do so in the next step.</p>
+</li>
+
+<li>Back in your window component, you need to receive the connection and
+ call the scene, as shown below:
+
+<pre class="examplecode">...
+import java.sql.Connection;
+...
+
+final class DemoTopComponent extends TopComponent {
+
+    private static DemoTopComponent instance;
+
+    private static final String PREFERRED_ID = "DemoTopComponent";
+
+    private DBGraphScene scene;
+
+    private DemoTopComponent() {
+        initComponents();
+        setName(NbBundle.getMessage(DemoTopComponent.class, "CTL_DemoTopComponent"));
+        setToolTipText(NbBundle.getMessage(DemoTopComponent.class, "HINT_DemoTopComponent"));
+    }
+
+    public void setConnection(Connection connection){
+        scene = new DBGraphScene(connection);
+        jScrollPane1.setViewportView( scene.createView() );
+    }
+
+    ...
+    ...
+    ...
+</pre>
+
+<p>In the scene, the constructor that receives the connection
+    does not
+exist yet. We will create it in the next step. Until then, reference to
+that constructor, above, is underlined in red.</p></li>
+
+<li>In the <tt>DBGraphScene</tt> class, extend the code as follows:
+   
+<pre class="examplecode">public class DBGraphScene extends VMDGraphScene {
+
+    private static final Image IMAGE_LIST = ImageUtilities.loadImage("org/demo/resources/list_16.png"); // NOI18N
+    private static final Image IMAGE_ITEM = ImageUtilities.loadImage("org/demo/resources/item_16.png"); // NOI18N
+
+    private static int edgeID = 1;
+
+    public DBGraphScene(Connection connection) {
+        try {
+            createSceneFromConnection(connection);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void createSceneFromConnection(Connection jdbcConnection) throws SQLException {
+        ArrayList&lt;String&gt; tables = new ArrayList&lt;String&gt;();
+        DatabaseMetaData databaseMetaData = jdbcConnection.getMetaData();
+        String[] names = {"TABLE"};
+        ResultSet resultSet = databaseMetaData.getTables(null, "%", "%", names);
+        while (resultSet.next()) {
+            String table = resultSet.getString("TABLE_NAME");
+            tables.add(table);
+            createNode(this, (int) (Math.random() * 800), (int) (Math.random() * 800), IMAGE_LIST, table, "Table", null);
+            ResultSet columns = jdbcConnection.getMetaData().getColumns(null, null, table.toUpperCase(), "%");
+            while (columns.next()) {
+                String columnName = columns.getString("COLUMN_NAME");
+                createPin(this, table, table + ":" + columnName, IMAGE_ITEM, columnName, columnName);
+            }
+        }
+        for (String string : tables) {
+            ResultSet resultSet1 = databaseMetaData.getExportedKeys(null, null, string);
+            while (resultSet1.next()) {
+                String pkTable = resultSet1.getString("PKTABLE_NAME");
+                String pkColumn = resultSet1.getString("PKCOLUMN_NAME");
+                String fkTable = resultSet1.getString("FKTABLE_NAME");
+                String fkColumn = resultSet1.getString("FKCOLUMN_NAME");
+                createEdge(this, fkTable + ":" + fkColumn, pkTable + ":" + pkColumn);
+            }
+        }
+        this.moveTo(null);
+    }
+
+    private static String createNode(VMDGraphScene scene, int x, int y, Image image, String name, String type, java.util.List&lt;Image&gt; glyphs) {
+        String node = name;
+        VMDNodeWidget widget = (VMDNodeWidget) scene.addNode(node);
+        widget.setPreferredLocation(new Point(x, y));
+        widget.setNodeProperties(image, name, type, glyphs);
+        return node;
+    }
+
+    private static void createPin(VMDGraphScene scene, String nodeID, String pinID, Image image, String name, String type) {
+        ((VMDPinWidget) scene.addPin(nodeID, pinID)).setProperties(name, null);
+    }
+
+    private static void createEdge(VMDGraphScene scene, String sourcePinID, String targetPinID) {
+        String edge = "edge" + DBGraphScene.edgeID++;
+        scene.addEdge(edge);
+        scene.setEdgeSource(edge, sourcePinID);
+        scene.setEdgeTarget(edge, targetPinID);
+    }
+
+    private void moveTo(Point point) {
+        int index = 0;
+        for (String node : getNodes()) {
+            getSceneAnimator().animatePreferredLocation(findWidget(node), point != null ? point : new Point(++index * 100, index * 100));
+        }
+    }
+
+}
+</pre>
+
+
+<p>The <tt>createSceneFromConnection</tt> method gets the
+ <tt>DatabaseMetadata ( jdbcConnection.getMetaData() )</tt> from the <tt>Connection</tt>.
+ With the subsequent calls to <tt>getTables</tt>, the table structure is retrieved and
+ the nodes of the graph are created. For every table, <tt>getColumns</tt> is called and
+ a Pin is added for every column to the table node. These pins can be used in
+ a subsequent step to create a connection between two tables. Now we
+ iterate through the tables and call <tt>getExportedKeys</tt> to get hold of
+ the <tt>ForeignKeys</tt>. For every exported key, an edge is created between the
+ pins of the related columns. The <tt>moveTo</tt> method does the animation
+ when the window is opened.</p></li>
+
+ <li><p>Run the module again. Open the Services window. Expand the Databases
+ node. Select one of the connection nodes. The "Show Database Structure" menu
+ item, under the File menu,
+ should now be enabled. Select it and now your scene should open
+ and look as follows:</p>
+
+     <p><img alt="main image" src="../images/tutorials/db/69-db-1.png"/></p></li>
+
+</ol>
+
+<!-- ===================================================================================== -->
+
+<p>Congratulations, you have completed a Visual Library scene that connects to a database
+ and visually displays its content.</p>
+
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Visual%20Database%20Explorer%20API%20Tutorial%20NetBeans">Send Us Your Feedback</a></div>
+<br style="clear:both;" />
+      
+        <a name="next_steps"><h2>Next Steps</h2></a>
+        <p>For more information
+        on working with the Visual Library API, see:</p>
+        
+ <ul>
+      <li><a href="http://www.javalobby.org/eps/netbeans_visual_library/">Roman Strobl's Visual Library
+              Screencast</a> on Javalobby.</li>
+     <li><a href="http://graph.netbeans.org/">Visual Library Project Page</a></li>
+     <li><a href="http://graph.netbeans.org/documentation.html">Visual Library 2.0 - Documentation</a></li>
+     <li><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-api-visual/overview-summary.html">Visual Library API Javadoc</a></li>
+     <li><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-db/overview-summary.html">Database Explorer API Javadoc</a></li>
+ </ul>
+
+ <p>With thanks to Toni Epple, who wrote the first version
+     of this tutorial, <a href="http://wiki.netbeans.org/VisualDatabaseExplorer">A Visual Database Explorer for NetBeans</a>.</p>
+
+    </body>
+
+</html>

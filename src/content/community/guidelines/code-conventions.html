@@ -1,0 +1,219 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<META NAME="description" CONTENT="Some coding conventions for developers working on NetBeans sources">
+<title>NetBeans Code Conventions</title>
+<link rel="stylesheet" type="text/css" href="../../netbeans.css">
+
+<META NAME="NAV_LINK" content="Code Conventions">
+<META NAME="NAV_PRIORITY" content="5">
+
+<META NAME="AUDIENCE" CONTENT="NBDEVELOPER">
+<META NAME="TYPE" CONTENT="ARTICLE">
+<META NAME="TOPIC" CONTENT="NB_ORG">
+</HEAD>
+<body>
+<h1>NetBeans Code Conventions</h1>
+<BR>
+<!--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-->
+
+All NetBeans Java source code follows the &quot;Code Conventions for the Java
+Programming Language&quot; as published by Sun.  This document is available
+online at
+
+<blockquote>
+<a href="http://java.sun.com/docs/codeconv/html/CodeConvTOC.doc.html">
+http://java.sun.com/docs/codeconv/html/CodeConvTOC.doc.html</a>
+</blockquote>
+
+Here we list those rules from the <i>Code Conventions</i> which are most
+important, plus some programming practices specific to NetBeans
+
+<h2>Formatting</h2>
+<ul>
+  <li>Files longer than 2000 lines are cumbersome and should be avoided.
+  <li>Each source file must include the license text in a comment at the very beginning.
+      (XML files may precede this by an XML declaration.)
+  <li>Avoid lines longer than 80 characters; long lines often force users to
+      scroll horizontally when they are concentrating on something else
+      (debugging, for example).
+  <li>Each top-level class should be kept in a separate file.
+      (It is fine to use nested classes, though generally discouraged when visible in an API.)
+  <li>When wrapping code lines, break after a comma or before an operator.
+  <li>Four spaces should be used as the unit of indentation.  Tabs should be
+      avoided and if are used then must be set exactly every 8 spaces.
+  <li>An open brace <samp>{</samp> appears at the end of the same line that begins the
+      statement.
+  <li>A closing brace <samp>}</samp> starts a line by itself indented to match its
+      corresponding opening statement.
+      However null statements may be written as <samp>{}</samp> on one line.
+  <li>A blank space should appear after commas in argument lists.
+  <li>All binary
+      operators except <samp>.</samp> <i>(dot)</i> should be separated from their operands
+      by spaces.  Blank spaces should never separate unary operators from their
+      operands.
+</ul>
+
+<h2>Programming Practices</h2>
+
+<ul>
+  <li>Public classes and interfaces as well as public or protected methods and fields must
+      have documentation comments.  See
+      <blockquote>
+      "How to Write Doc Comments for Javadoc"
+      <br><A HREF="http://java.sun.com/j2se/javadoc/writingdoccomments/index.html">http://java.sun.com/j2se/javadoc/writingdoccomments/index.html</A>
+      </blockquote>
+      for details on writing good doc comments.
+      <em>However</em> if a method simply overrides a superclass method, and does
+      not add any contractually significant behavior to it beyond what is obvious
+      from the class Javadoc, then the documentation comment should be omitted -
+      since JDK 1.3, the javadoc tool will automatically copy the documentation
+      from the superclass, which is more maintainable.
+  <li>All class and instance variables should be private except for constants
+      that are declared as <code>static final</code>.
+  <li>Throwing an unchecked exception without mentioning it in the Javadoc is
+      forbidden. <code>IllegalStateException</code> or JDK 1.4 assertions may be used when the
+      code is in an inconsistent state that it should be impossible to enter.
+  <li>If a method accepts <code>null</code> as an argument value, say so in the
+      method Javadocl otherwise callers must not pass <code>null</code> to method
+      calls.
+  <li>If a method returns <code>null</code>, document its meaning in the Javadoc;
+      otherwise it is safe for callers to assume the return value is
+      not <code>null</code>.
+  <li>Unless otherwise specified, all arrays passed into or out of
+      methods or constructors are assumed to be immutable, i.e. the contents
+      of the array must be fixed when it is constructed and never changed by
+      any party afterwards. Similarly, all collections (<code>List</code>,
+      etc.) are assumed to be immutable unless otherwise specified in the
+      Javadoc comments. To be sure, Javadoc ought to explicitly qualify
+      descriptions of array and collection parameters and return values as
+      "mutable" or "immutable". When they are mutable, some indication
+      should be given of who is permitted to mutate the array or collection
+      (e.g. creator of object only, receiver only, any party), and when
+      (e.g. required thread, lock, or mutex).
+  <li>All fields, parameters, and return values of collection types
+      (e.g. <code>Map</code> or <code>Enumeration</code>) must
+      specify what the intended element type is, as if generics were
+      in use. For code readability and ease of future transition to 1.5 source,
+      the source code should put generic markings in comments, for example:
+<pre>
+<span class="keyword">private</span> <span class="keyword">final</span> <span class="type">Map</span><span class="comment">/*&lt;String,List&lt;String&gt;&gt;*/</span> stuff = <span class="keyword">new</span> <span class="type">HashMap</span>();
+</pre>
+  <li>If an exception is caught and ignored, there must be comments saying why;
+      if in doubt, notify with <code>ErrorManager</code> at <code>INFORMATIONAL</code>
+      level.
+  <li>Catch <code>Exception</code> only when a checked exception might be thrown;
+      if only unchecked exceptions are possible, catch
+      <code>RuntimeException</code>.
+  <li>If a <code>Throwable</code> is caught the handling code must
+      check whether it is an instance of <code>ThreadDeath</code> and in
+      this case rethrow it, unless it is expected that the thread might
+      be stopped (e.g. an executed subprocess). Generally catching
+      <code>Error</code> or <code>Throwable</code> should be
+      considered carefully, as conditions such as
+      <code>OutOfMemoryError</code> are not usually recoverable. Code
+      loading or deserializing <em>foreign</em> classes may catch
+      <code>LinkageError</code> in addition to <code>Exception</code>
+      to handle problematic code.
+  <li>Never throw a subclass of <code>Error</code> (unless rethrowing). In case
+      your method is called from an inappropriate place, or internal data structures
+      are in an inconsistent state and further processing would only compound the
+      problem, throw <code>IllegalStateException</code>; use <code>ErrorManager</code>
+      to annotate localized messages or other throwables as needed.
+  <li>String literals which are not intended to be localized should be marked
+      by putting a comment containing <samp>NOI18N</samp> in the same line. See <a
+      href="https://netbeans.org/download/dev/javadoc/org-openide-modules/org/openide/modules/doc-files/i18n-branding.html">Internationalization, Localization, and Branding of NetBeans</a>
+      for details.
+  <li>Careful with <code>string.toUpperCase()</code> and
+      <code>string.toLowerCase()</code>. In Turkish locale, <samp>I</samp>
+      and <samp>i</samp> are <em>not</em> case variants, they are
+      different letters. Unless you know
+      what you are doing, use <code>string.toUpperCase(Locale.US)</code> or
+      <code>string.toLowerCase(Locale.US)</code>.</li>
+  <li>Be friendly to the version control system: Do not reformat code without semantic/syntactic
+      changes, even in case existing code breaks formatting conventions.
+  <li>Prefer explicit imports to wildcards for clarity; if using NetBeans to edit code,
+      the <b>Fix Imports</b> command makes it easy to maintain them. Keep imports sorted.
+</ul>
+
+<h2>Code Example</h2>
+
+    <pre>
+<span class="comment">/*
+/* The contents of this file are subject to the terms of the Common 
+Development and Distribution License (the License). You may not use this 
+file except in compliance with the License.  You can obtain a copy of the 
+License at https://netbeans.org/cddl.html
+
+When distributing Covered Code, include this CDDL Header Notice in each
+file and include the License. If applicable, add the following below the
+CDDL Header, with the fields enclosed by brackets [] replaced by your own
+identifying information:
+"Portions Copyrighted [year] [name of copyright owner]"
+
+Copyright 2005 Sun Microsystems Inc. All Rights Reserved
+*/
+</span>
+
+<span class="keyword">package</span> <span class="constant">org</span>.<span class="constant">netbeans</span>.<span class="constant">modules</span>.<span class="constant">nosuchpackage</span>;
+
+<span class="keyword">import</span> <span class="constant">java</span>.<span class="constant">util</span>.<span class="constant">ArrayList</span>;
+<span class="keyword">import</span> <span class="constant">java</span>.<span class="constant">util</span>.<span class="constant">List</span>;
+<span class="keyword">import</span> <span class="constant">org</span>.<span class="constant">openide</span>.<span class="constant">nodes</span>.<span class="constant">Node</span>;
+
+<span class="comment">/**
+ * This is a totally useless class with a summary sentence ending with a period.
+ * Its only purpose is to demonstrate the NetBeans code conventions.
+ */</span>
+<span class="builtin">public</span> <span class="keyword">class</span> <span class="type">NoSuchClass</span> <span class="keyword">extends</span> <span class="type">SomeClass</span> {
+
+    <span class="comment">/** the default capacity */</span>
+    <span class="builtin">public</span> <span class="builtin">static</span> <span class="builtin">final</span> <span class="type">int</span> <span class="constant">DEFAULT_CAPACITY</span> = <span class="extra-java-font-lock-number">32</span>;
+
+    <span class="comment">/** the objects being stored, of type &lt;code&gt;NoSuchElement&lt;/code&gt; */</span>
+    <span class="builtin">private</span> <span class="builtin">final</span> <span class="type">List</span><span class="comment">/*&lt;NoSuchElement&gt;*/</span> <span class="variable-name">storage</span> = <span class="builtin">new</span> <span class="type">ArrayList</span>(50);
+
+    <span class="comment">/**
+     * Creates a new instance of &lt;code&gt;NoSuchClass&lt;/code&gt; with default capacity.
+     */</span>
+    <span class="builtin">public</span> <span class="type">NoSuchClass</span>() {
+        <span class="keyword">this</span>(<span class="constant">DEFAULT_CAPACITY</span>);
+    }
+
+    <span class="comment">/**
+     * Creates a new instance of &lt;code&gt;NoSuchClass&lt;/code&gt; with a given capacity.
+     * @</span><span class="constant">param</span><span class="comment"> </span><span class="variable-name">capacity</span><span class="comment"> number of slots to be preallocated
+     */</span>
+    <span class="builtin">public</span> <span class="type">NoSuchClass</span>(<span class="type">int</span> <span class="variable-name">capacity</span>) {
+        <span class="comment">// ... implementation goes here
+</span>    }
+
+    <span class="comment">/**
+     * Finds an entry with a given name.
+     * @</span><span class="constant">param</span><span class="comment"> </span><span class="variable-name">name</span><span class="comment"> name to look for
+     * @</span><span class="constant">return</span><span class="comment"> an entry with a specified name or &lt;code&gt;null&lt;/code&gt; if
+     *         no such entry is found
+     */</span>
+    <span class="builtin">public</span> <span class="type">Entry</span> <span class="function-name">findEntry</span>(<span class="type">String</span> <span class="variable-name">name</span>) {
+        <span class="comment">// ... boring code deleted ...
+</span>
+        <span class="keyword">if</span> (<span class="string">&quot;nef&quot;</span>.equals(name)) { <span class="comment">// NOI18N, backdoor :-)
+</span>            <span class="comment">// ...
+</span>        } <span class="keyword">else</span> {
+            <span class="comment">// ...
+        }
+
+        <span class="comment">// ... boring code deleted ...
+</span>    }
+}
+</pre>
+
+<!--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-->
+<hr>
+Edited by Trung Duc Tran &lt;<a href="mailto:trung.duc.tran@sun.com">trung.duc.tran@sun.com</a>&gt;
+and Jesse Glick &lt;<a href="mailto:jglick@netbeans.org">jglick@netbeans.org</a>&gt;
+<br><!-- hhmts start -->July 14, 2005<!-- hhmts end -->
+<!--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-->
+</body>
+</html>

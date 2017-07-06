@@ -1,0 +1,511 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<!--
+Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+<head>
+<title>Importing a 3rd Party Project as a NetBeans Free-Form Project</title>
+<meta name="description" content="Tutorial on how to import 3rd party project as NetBeans Free-form project">
+<link rel="stylesheet" href="../..//netbeans.css">
+<meta name="author" content="Milan Kubec">
+</head>
+<body>
+<h1>Importing a 3rd Party Project as a NetBeans Free-Form Project</h1>
+<div class="articledate" style="margin-left: 0px;">Contributed and maintained 
+  by <a href="mailto:mkubec@netbeans.org"><i>Milan Kubec</i></a></div>
+
+<p class="notes"><strong>Note.</strong> This document is for reference purposes only.
+The version of the PMD project that is used in this document is no longer available
+and some of the UI of the IDE that is described has changed.
+However, many of the principles and steps for importing a project 
+are still applicable in the current version of the IDE.</p>
+
+<p>This document shows you how to import a real 3rd party project built with the 
+  <a href="http://ant.apache.org">Ant</a> tool into NetBeans IDE as a free-form 
+  project. The project that has been selected to demonstrate free-form project 
+  functionality is the <a href="http://pmd.sourceforge.net">PMD</a> tool. This 
+  tutorial will show not only how to import the project but also how to change 
+  the build script to better utilize what NetBeans project infrastructure can 
+  offer. This tutorial uses information available in <a href="https://netbeans.org/kb/articles/freeform-config.html">Advanced 
+  Free-Form Project Configuration</a> and if you are familiar with this document 
+  it will be easier for you to finish the tutorial. </p>
+<div class="indent"> 
+  <h3 class="tutorial">Prerequisites</h3>
+  <p>This tutorial assumes you have some basic knowledge of Ant and XML, and that 
+    you know basics about how projects in NetBeans IDE work. </p>
+  <h3 class="tutorial">Software Needed for the Tutorial</h3>
+  <p>Before you begin, you need to install the following software on your computer:</p>
+  <ul>
+    <li>NetBeans IDE 5.5 (<a href="http://www.netbeans.info/downloads/index.php">download</a>).</li>
+    <li>Java Standard Development Kit (JDK&trade;) version 5.0 (<a href="http://java.sun.com/j2se/1.5.0/download.jsp">download</a>).</li>
+  </ul>
+  <h3 class="tutorial">Tutorial Exercises</h3>
+  <p>The following topics are covered in this document: </p>
+  <ul>
+    <li><a href="#Chapter1">Getting the PMD Project</a></li>
+    <li><a href="#Chapter2">Creating a Java Application with an Existing Ant Script</a> 
+      <ul>
+        <li><a href="#Chapter2.1">Importing a Project Using the Wizard</a></li>
+        <li><a href="#Chapter2.2">Setting Up the Classpath</a></li>
+        <li><a href="#Chapter2.3">Configuring IDE Actions</a></li>
+        <li><a href="#Chapter2.4">Setting Project Outputs</a></li>
+      </ul>
+    </li>
+    <li><a href="#Chapter3">Configuring JUnit Output</a></li>
+    <li><a href="#Chapter4">Mapping Non-Standard Targets to IDE Actions</a></li>
+    <li><a href="#Chapter5">Special NetBeans Actions</a>
+    <ul>
+      <li><a href="#Chapter5.1">Compile File</a></li>
+      <li><a href="#Chapter5.2">Run File</a></li>
+      <li><a href="#Chapter5.3">Debug File</a></li>
+    </ul></li>
+    <li><a href="#Chapter6">Conclusion</a></li>
+  </ul>
+</div>
+<br />
+<!--
+================================================================================
+-->
+<h2><a name="Chapter1"></a>Getting the PMD Project</h2>
+<p> PMD is a handy tool for programmers that detects potential problems in Java 
+  source code. You can download PMD from <a href="http://pmd.sourceforge.net/">pmd.sourceforge.net</a> 
+  as <a href="http://prdownloads.sourceforge.net/pmd/pmd-src-3.5.zip?download">a 
+  Zip source distribution</a> or check it out from anonymous CVS. This tutorial 
+  assumes that you are using zipped sources distribution of PMD 3.5. If you want 
+  to use sources checked out from PMD source repository then follow <a href="http://sourceforge.net/cvs/?group_id=56262">instructions</a> 
+  on sourceforge.net to get the PMD sources. </p>
+<p>It's really easy using CVS support in NetBeans 5.0. Described instructions 
+  can be used for 3.5 sources and for trunk sources as well. This tutorial uses 
+  the 3.5 version because there were compilation errors and execution errors in 
+  trunk sources at the time the tutorial was written.</p>
+<h2><a name="Chapter2"></a>Creating a Java Application with an Existing Ant Script</h2>
+<p> The goal of this exercise is to perform the initial import of the project's 
+  build script to the IDE and set up all required settings for basic IDE operations. 
+</p>
+<div class="indent"> <a name="Chapter2.1"></a> 
+  <h3 class="tutorial">Importing the Project Using the Wizard</h3>
+  <ol>
+    <li>Open the New Project wizard by selecting New Java Project with Existing 
+      Ant Script, click Next.</li>
+    <li>Specify the location of the <tt>pmd</tt> folder where you extracted the 
+      PMD sources. Click Browse button next to the Build Script field and find 
+      <tt>build.xml</tt> file under <tt>pmd/bin</tt> folder. Then click Next.</li>
+    <li>The Build and Run Actions page contains mapping of targets found in the 
+      build script to IDE actions based on simple heuristics. So far we don't 
+      know if those targets are correct, so leave is as it is for now. Of course 
+      if you already know which targets map to which action you can select the 
+      correct targets now. Click Next.</li>
+    <li>On this wizard page you can point the IDE to the folders that contain 
+      the project sources and test sources. Click Add Folder next to the Source 
+      Package Folders table and select <tt>pmd/src</tt>. Then click Browse next 
+      to the Test Package Folders table and select the <tt>pmd/regress/test</tt> 
+      folder. The Source Level for the project can be also changed here - it won't 
+      change the actual compilation task setting but it will provide correct hints 
+      for error annotations in the editor. We will leave it as it is, it can be 
+      changed anytime. Click Next.</li>
+    <li>On this wizard page you can setup classpath for source roots, but to do 
+      this you need some knowledge of the build script, hence we will do it later. 
+      Click Finish.</li>
+  </ol>
+  <p> Now that you have created the project, let's examine it. </p>
+  <p class="align-center"><img src="../../images_www/articles/freeform-import/pmd_projects.png" width="431" height="350" alt="imported project in Projects and Files windows"></p>
+  <p>The project node contains both source roots and also the build script. The 
+    names of the nodes are a little strange - <tt>src</tt> and <tt>regress/test</tt>. 
+    We should change them to something nicer. Open Project Properties from project's 
+    contextual menu. You will see two tables with source roots location and labels. 
+    You can change the label to whatever you want. Double click the label and 
+    change <tt>src</tt> to Source Packages and <tt>regress/test</tt> to Test Packages. 
+  </p>
+  <!--
+--------------------------------------------------------------------------------
+-->
+  <a name="Chapter2.2"></a> 
+  <h3 class="tutorial">Setting Up the Classpath</h3>
+  <p> To set the classpath correctly we will need to look what is in the build 
+    script - by basic observation we find out that compilation is done with following 
+    classpath definition: </p>
+  <pre class="examplecode">
+  &lt;property name="dir.lib" value="lib\"/&gt;
+  ...
+  &lt;path id="dependencies.path"&gt;
+      &lt;pathelement location="${dir.build}"/&gt;
+      &lt;fileset dir="${dir.lib}"&gt;
+          &lt;include name="jaxen-1.1-beta-7.jar" /&gt;
+          &lt;include name="jakarta-oro-2.0.8.jar" /&gt;
+          &lt;include name="xercesImpl-2.6.2.jar" /&gt;
+          &lt;include name="xmlParserAPIs-2.6.2.jar" /&gt;
+      &lt;/fileset&gt;
+  &lt;/path&gt;
+</pre>
+  <p> The same classpath is used for compilation of tests, because everything 
+    is compiled together. </p>
+  <ol>
+    <li>Open Project Properties dialog and select Java Sources Classpath - the 
+      panel on the right allows you to set up the classpath for all source roots.</li>
+    <li>Select Source Packages [src] in the drop-down, click Add JAR/Folder and 
+      browse to the <tt>pmd/lib</tt> folder. Select all of the JAR files that 
+      are included in the above mentioned fileset.</li>
+    <li>Fix order of classpath elements to be the same as in build script by Move 
+      Up and Move Down buttons.</li>
+    <li>Select Test Packages [regress/test] in the drop-down, click Add JAR/Folder 
+      and select the same JAR files as in previous steps, fix the order of files 
+      as well.</li>
+  </ol>
+  <p> The classpath set up in this step is used for IDE features such as code 
+    completion and by no means affects the classpath used for compilation of the 
+    project. </p>
+  <!--
+--------------------------------------------------------------------------------
+-->
+  <a name="Chapter2.3"></a> 
+  <h3 class="tutorial">Configuring IDE Actions</h3>
+  <p> When examining the project build script you will actually realize that some 
+    targets that you mapped to IDE actions when creating the project are not correct. 
+    The Build action target is not <tt>compile</tt> but in fact <tt>jar</tt>. 
+    The Clean action should not be mapped to the <tt>clean</tt> target but <tt>delete</tt>. 
+    And the Run Project target is in fact called <tt>pmd</tt>. This can be easily 
+    fixed: </p>
+  <ol>
+    <li>Open Project Properties and select Build and Run.</li>
+    <li>Select the following targets for IDE actions in the drop-downs: <br/>
+      <table border="1" cellpadding="2" cellspacing="0">
+        <tr> 
+          <td class="align-center"><b>Action</b></td>
+          <td class="align-center">&nbsp;&nbsp;&nbsp;<b>Target</b>&nbsp;&nbsp;&nbsp;</td>
+        </tr>
+        <tr> 
+          <td class="align-center">Build Project</td>
+          <td class="align-center">jar</td>
+        </tr>
+        <tr> 
+          <td class="align-center">&nbsp;&nbsp;Clean Project&nbsp;&nbsp;</td>
+          <td class="align-center">delete</td>
+        </tr>
+        <tr> 
+          <td class="align-center">Run Project</td>
+          <td class="align-center">pmd</td>
+        </tr>
+      </table>
+    </li>
+    <li>Close Project Properties dialog.</li>
+  </ol>
+  <p>Now you should be able to run all project actions. Well, except Run Project. 
+  The <tt>pmd</tt> target contains a <tt>taskdef</tt> without an explicit classpath 
+  attribute, meaning that it counts on having the correct JAR file on the classpath 
+  implicitly. How do we fix this? One way is by adding <tt>classpathref="dependencies.path"</tt> 
+  attribute to taskdef for the <tt>pmd</tt> task, so the <tt>taskdef</tt> will 
+  look like this: </p>
+  <pre class="examplecode">
+  &lt;taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="dependencies.path"/&gt;
+</pre>
+  <p> Another method is to add <tt>pmd-3.5.jar</tt> to the additional classpath 
+    entries for Ant. Choose Tools &gt; Options, then select Miscellaneous &gt; 
+    Ant, click the Manage Classpath button, and add <tt>pmd/lib/pmd-3.5.jar</tt>. 
+    The JAR file is only available after the project is built, of course. </p>
+  <p> The better method is to use explicit classpath when defining the task, because 
+    then the build script is more portable. And in this particular case it's also 
+    better because if you add <tt>pmd-3.5.jar</tt> to Ant classpath on Windows 
+    then it's not possible to run Clean Project since the JAR file is be locked 
+    by the OS. </p>
+  <p> But there is still one minor problem with Run Project action. The build 
+    script points to the absolute location of some not existing source file in 
+    the <tt>bin</tt> folder. A simple fix is to replace the absolute path in <tt>pmd 
+    </tt>task with <tt>bin</tt>. The fileset inside the <tt>pmd</tt> task then 
+    should look like this: </p>
+  <p> 
+  <pre class="examplecode">
+  &lt;fileset dir="bin"&gt;
+      &lt;include name="Foo.java"/&gt;
+  &lt;/fileset&gt;
+</pre>
+  <p> And you also need to create missing class in <tt>pmd/bin</tt> folder: </p>
+  <pre class="examplecode">
+  public class Foo {
+      private static int FOO = 2; // Unused
+      private int i = 5; // Unused
+      private int j = 6;
+      public int addOne() {
+          return j++;
+      }
+      public void doSomething() {
+          int i = 5; // Unused
+      }
+      private void foo() {} // unused
+      private void bar(String howdy) {
+          // howdy is not used
+      }
+  }
+</pre>
+  <p> <i><b>Note:</b> The Foo class is based on comments in <tt>rulesets/unusedcode.xml</tt>.</i> 
+  </p>
+  <p> Usually, it's useful to make the run target depend on the build target. 
+    It's not the case in PMD's build script, so if you want run target to be executable 
+    even when project is not built, add <tt>depends="jar"</tt> to the <tt>pmd</tt> 
+    target definition. </p>
+  <p> Now you can finally run the project and you will get the <tt>pmd-3.5/rpt.html</tt> 
+    file in the project folder showing problematic parts of the Foo class: </p>
+  <p> <img src="../../images_www/articles/freeform-import/pmd_report.png" align="middle" alt="PMD Report" vspace="5" hspace="5" width="521" height="275" class="b-none"/> 
+    <br/>
+  </p>
+  <p> Now your project is set up and you can execute all basic project related 
+    actions: Build Project, Clean Project, Generate Javadoc for Project, Run Project, 
+    Test Project and Clean and Build Project. </p>
+  <!--
+--------------------------------------------------------------------------------
+-->
+  <a name="Chapter2.4"></a> 
+  <h3 class="tutorial">Setting Project Outputs</h3>
+  <p> Having correctly set up project outputs is a very important part of free-form 
+    project configuration. It's important for debugging tasks, for fast background 
+    classpath scanning, and for using project products as libraries for other 
+    projects. </p>
+  <p> Each source root should have its own build product(s), either a folder or 
+    JAR file. From observation of the <tt>compile</tt> and <tt>jar</tt> targets 
+    in the PMD build script you can find out that the Source Packages are built 
+    into the <tt>build</tt> folder along with test classes and the final JAR file 
+    is <tt>lib/pmd-3.5.jar</tt>. In order to view Javadoc in projects that depends 
+    on the PMD free-form project you also need to set the Javadoc output. PMD 
+    build script produces Javadoc documentation into folder <tt>docs/apidocs</tt> 
+    - according to the <tt>javadoc</tt> target. </p>
+  <ol>
+    <li>Open Project Properties, select Output node under Categories.</li>
+    <li>Select Source Packages [src] in Source Package Folder.</li>
+    <li>Click Add JAR/Folder button and specify both the <tt>build</tt> folder 
+      and <tt>lib/pmd-3.5.jar</tt>. Click the Browse button next to Javadoc Output 
+      text field and select the <tt>docs/apidocs</tt> folder.</li>
+    <li>Select Test Packages [regress/test] in Source Package Folder.</li>
+    <li>Click Add JAR/Folder button and locate the <tt>build</tt> folder, then 
+      close the Properties dialog.</li>
+  </ol>
+</div>
+<p> Now the project is set up and ready to be used in IDE. In following chapters 
+  I will show how to get even more from the IDE. </p>
+<br/>
+<!--
+================================================================================
+-->
+<h2><a name="Chapter3"></a>Configuring JUnit Output</h2>
+<p> Each good project should have tests and the PMD project has a number of tests 
+  that can be executed with the Test Project command. But if you run this command 
+  you will see that output doesn't look as nice as it looks when running standard 
+  NetBeans projects. </p>
+<p>This can be fixed too. First, you need to modify target names to comply with 
+  simple convention - the name must start with <tt>test</tt>, which can be followed 
+  by a dash or period and then anything you want (e.g. <tt>test-server</tt> or 
+  <tt>test.server</tt>). Alternatively, you can name the target <tt>run-tests</tt>. 
+  The other thing is that JUnit tasks use various formatters to print various 
+  types of output and the NetBeans JUnit module requires a particular combination 
+  of formatters to show nice output. The JUnit tasks in PMD build script use the 
+  following formatter: </p>
+<pre class="examplecode">
+  &lt;formatter type="plain"/&gt;
+</pre>
+but if you want to have nice output, you have to replace the previous formatter 
+with the following two in all JUnit tasks: 
+<pre class="examplecode">
+  &lt;formatter type="xml"/&gt;
+  &lt;formatter type="brief" usefile="false"/&gt;
+</pre>
+<p> And you will get very nice display of JUnit test execution that updates itself 
+  when tests are running, as in the following image: </p>
+<p> <img src="../../images_www/articles/freeform-import/pmd_junit.png" align="middle" alt="PMD Junit Output Window" vspace="5" 
+hspace="5" width="596" height="318" class="b-none"/> <br/>
+</p>
+<!--
+================================================================================
+-->
+<h2><a name="Chapter4"></a>Mapping Non-Standard Targets to IDE Actions</h2>
+<p> 3rd party projects have also special targets that are project-specific and 
+  there can be no mapping to standard IDE commands. But that's not a problem for 
+  a free-form project - you can map any target to a command which is then available 
+  in project context menu. </p>
+<p> The PMD project contains a couple of such targets that might be candidates 
+  for adding them to the context menu, for example targets for uploading build 
+  products to a web server or targets for running partial test suites. </p>
+<ol>
+  <li>Open Project Properties and select Build and Run.</li>
+  <li>Click the Add button next to the Custom Menu Items table. A new row appears.</li>
+  <li>Double click the empty cell in the Ant Target column and select the target 
+    you want to map to a command, (e.g. the <tt>tomserver</tt> target,) and press 
+    Enter. Double click the cell in the Label column and enter a command name, 
+    e.g. Upload Project. Repeat the same for any additional targets. </li>
+</ol>
+<p> The context menu for the PMD free-form project then might look like this: 
+</p>
+<p> <img src="../../images_www/articles/freeform-import/pmd_popup.png" align="middle" alt="PMD Project context menu" vspace="5" 
+hspace="5" width="277" height="259" class="b-none"/> </p>
+<p> <i><b>Note:</b> Upload actions are just an example, they require external 
+  executable files and appropriate write access.</i> </p>
+<br/>
+<!--
+================================================================================
+-->
+<h2><a name="Chapter5"></a>Special NetBeans Actions</h2>
+<p> When developing a larger project you might want to be able to run compilation 
+  only for a selected file or group of files, execute a single file, or debug 
+  a project or even a single file. All this is possible, although it requires 
+  some Ant knowledge. The PMD project is not a good example to show all of the 
+  commands that I just mentioned but I can show how to set up at least some of 
+  them. </p>
+<p> There is support in the IDE for generating additional build scripts the for 
+  Compile File action and for the Debug Project action. All details about setting 
+  up NetBeans-specific actions are in the document <a href="https://netbeans.org/kb/archive/index.html">Advanced 
+  Free-Form Project Configuration</a>. </p>
+<!--
+--------------------------------------------------------------------------------
+-->
+<div class="indent"> <a name="Chapter5.1"></a> 
+  <h3 class="tutorial">Compile File</h3>
+  <ol>
+    <li>Select a single Java source file under Source Packages source root</li>
+    <li>Right-click the file and choose Compile File from file's context menu. 
+      You are asked whether you want to generate special target. Click Generate. 
+      The newly generated Ant build script along with the <tt>project.xml</tt> 
+      file are opened in editor.</li>
+  </ol>
+  <p> The target in the generated build script is called when you invoke the Compile 
+    File command on one or more files from a single source root folder. If you 
+    have already correctly setup everything the script does not require any modifications. 
+    Just to check - the compilation target should look like this: </p>
+  <pre class="examplecode">
+  &lt;target name="compile-selected-files-in-src"&gt;
+      &lt;fail unless="files"&gt;Must set property 'files'&lt;/fail&gt;
+      &lt;mkdir dir="build"/&gt;
+      &lt;javac destdir="build" includes="${files}" source="1.5" srcdir="src"&gt;
+          &lt;classpath path="lib/jakarta-oro-2.0.8.jar;lib/jaxen-1.1-beta-7.jar;lib/xercesImpl-2.6.2.jar;lib/xmlParserAPIs-2.6.2.jar"/&gt;
+      &lt;/javac&gt;
+  &lt;/target&gt;
+</pre>
+  <p> The destination <tt>build</tt> directory must be created in case the target 
+    is called after a clean. The source dir must point to the <tt>src</tt> folder, 
+    the <tt>includes</tt> attribute of the <tt>javac</tt> task must contain the 
+    property <tt>${files}</tt>, and the classpath must be the same as the classpath 
+    for compilation in main build script. </p>
+  <p> The other file that has been modified and is opened in the editor is <tt>project.xml</tt>. 
+    It contains the actual mapping of the Compile File action to the appropriate 
+    Ant target. </p>
+  <!--
+--------------------------------------------------------------------------------
+-->
+  <a name="Chapter5.2"></a> 
+  <h3 class="tutorial">Run File</h3>
+  <p>There is no support for generating an Ant target for the Run File command. 
+    It must be created by hand. </p>
+  <ol>
+    <li>Open <tt>pmd/nbproject/project.xml</tt>, find the <tt>action</tt> element 
+      whose <tt>name</tt> attribute has a value of <tt>compile.single</tt> and 
+      paste the following XML snippet after the element: 
+      <pre class="examplecode">
+  &lt;action name="run.single"&gt;
+      &lt;script&gt;nbproject/ide-file-targets.xml&lt;/script&gt;
+      &lt;target&gt;run-selected-file&lt;/target&gt;
+      &lt;context&gt;
+          &lt;property&gt;runclass&lt;/property&gt;
+          &lt;folder&gt;src&lt;/folder&gt;
+          &lt;pattern&gt;\.java$&lt;/pattern&gt;
+          &lt;format&gt;java-name&lt;/format&gt;
+          &lt;arity&gt;
+              &lt;one-file-only/&gt;
+          &lt;/arity&gt;
+      &lt;/context&gt;
+  &lt;/action&gt;
+</pre>
+    </li>
+    <li>Open file <tt>pmd/nbproject/ide-file-targets.xml</tt> and add following 
+      XML code snippet to the project: 
+      <pre class="examplecode">
+  &lt;target name="run-selected-file" depends="jar"&gt;
+      &lt;fail unless="runclass"&gt;Must set property 'runclass'&lt;/fail&gt;
+      &lt;java classname="${runclass}" classpathref="dependencies.path" fork="true"/&gt;
+  &lt;/target&gt;
+</pre>
+    </li>
+    <li>Add following import task to the top of the file <tt>nbproject/ide-file-targets.xml</tt>, 
+      right after the property definition: 
+      <pre class="examplecode">
+  &lt;import file="../${ant.script}"/&gt;
+</pre>
+      The import is required because the Run single file target must depend on 
+      the <tt>jar</tt> target from the main build script. Save both files. </li>
+  </ol>
+  <p> The Run File command is now enabled on any file under the Source Packages 
+    folder. Of course, it makes sense to run this command only on classes with 
+    a main method. </p>
+  <!--
+--------------------------------------------------------------------------------
+-->
+  <a name="Chapter5.3"></a> 
+  <h3 class="tutorial">Debug File</h3>
+  <p>The Debug Project command is normally pre-generated when invoked for first 
+      time, but it requires a correctly configured run target in the main script 
+      using the <tt>java</tt> task. This is not the case in the PMD project. Hence, 
+      we have to create a Debug File action that is enabled on single files and 
+    not on the project itself.</p> 
+  <ol>
+    <li>Open <tt>pmd/nbproject/project.xml</tt> and insert following XML snippet 
+      after the action element inserted in previous step: 
+      <pre class="examplecode">
+  &lt;action name="debug.single"&gt;
+      &lt;script&gt;nbproject/ide-file-targets.xml&lt;/script&gt;
+      &lt;target&gt;debug-selected-file&lt;/target&gt;
+      &lt;context&gt;
+          &lt;property&gt;debugclass&lt;/property&gt;
+          &lt;folder&gt;src&lt;/folder&gt;
+          &lt;pattern&gt;\.java$&lt;/pattern&gt;
+          &lt;format&gt;java-name&lt;/format&gt;
+          &lt;arity&gt;
+              &lt;one-file-only/&gt;
+          &lt;/arity&gt;
+      &lt;/context&gt;
+  &lt;/action&gt;
+</pre>
+    </li>
+    <li>Open file <tt>pmd/nbproject/ide-file-targets.xml</tt> and add following 
+      XML code snippet to the project: 
+      <pre class="examplecode">
+&lt;target name="debug-selected-file" depends="jar" if="netbeans.home"&gt;
+      &lt;fail unless="debugclass"&gt;Must set property 'debugclass'&lt;/fail&gt;
+      &lt;nbjpdastart name="debugclass" addressproperty="jpda.address" transport="dt_socket"&gt;
+          &lt;classpath refid="dependencies.path"/&gt;
+      &lt;/nbjpdastart&gt;
+      &lt;java classname="${debugclass}" fork="true"&gt;
+          &lt;jvmarg value="-Xdebug"/&gt;
+          &lt;jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/&gt;
+          &lt;classpath refid="dependencies.path"/&gt;
+      &lt;/java&gt;
+  &lt;/target&gt;
+</pre>
+      Save both files. </li>
+  </ol>
+  <p> The Debug File command is also enabled on all files under the Source Packages 
+    folder and it makes sense to invoke it only on executable classes. </p>
+</div>
+<!-- ======================================================================================== -->
+<h2><a name="Chapter6"></a>Conclusion</h2>
+<p> The PMD project is now fully integrated in IDE and the user can utilize almost 
+  all actions that are available for NetBeans native projects. </p>
+<p> There are some general rules and good practices that, if followed, make it 
+  easier to integrate 3rd party projects into the IDE as free-form projects: </p>
+<ul>
+  <li>Compilation of sources should be separate from compilation of tests</li>
+  <li>Each compilation unit should have its own compilation classpath and destination 
+    folder</li>
+  <li>Execution should be achieved with a forked <tt>java</tt> task</li>
+  <li>Libraries should be packaged with the project, if possible of course</li>
+  <li>Separate targets for all parts of the build process should be provided</li>
+  <li>A clean target for all build products should be provided</li>
+  <li>taskdefs should have explicit relative classpaths</li>
+  <li>Relative paths should be used for referring to parts of the project</li>
+  <li>Each source root should be in its own folder</li>
+</ul>
+<div class="feedback-box">
+    <a href="/about/contact_form.html?to=3&amp;subject=Feedback: Importing a 3rd Party Project as a NetBeans Free-Form Project">Send Feedback on This Tutorial</a>
+</div>
+<br style="clear:both;" />
+<!-- ======================================================================================== -->
+<h2><a name="nextsteps"></a>Next Steps</h2>
+<p>To send comments and suggestions, get support, and keep informed on the latest 
+  developments on the NetBeans IDE J2EE development features, join the <a href="mailto:nbusers@netbeans.org">nbusers@netbeans.org</a> 
+  mailing list. 
+</body>
+</html>

@@ -1,0 +1,1205 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Creating NetBeans Platform CRUD Application Using Maven</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+    <meta name="AUDIENCE" content="NBUSER"/>
+    <meta name="TYPE" content="ARTICLE"/>
+    <meta name="EXPIRES" content="N"/>
+    <meta name="indexed" content="y"/>
+    <meta name="description"
+          content="This tutorial demonstrates how to use the the Maven build framework to create a simple
+    NetBeans Platform application that can read and write to a database."/>
+   <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+<body>
+
+   <h1>Creating NetBeans Platform CRUD Application Using Maven</h1>
+
+   <p>Welcome to the <a href="https://platform.netbeans.org/"><b>NetBeans Platform</b></a>!</p>
+
+    <p>This document demonstrates how to use the Maven build framework to create a simple
+    NetBeans Platform application that can read and write to a database.
+    In this document you will use Maven archetypes to create the NetBeans Platform application and module,
+    and the Swing UI toolkit and "Matisse" GUI Builder to create window components.
+    </p>
+
+   <p>This document is based on the Ant-based <a href="nbm-crud.html">NetBeans CRUD Application Tutorial for NetBeans Platform</a>
+       and illustrates some of the differences between using Ant and Maven to develop NetBeans Platform applications.
+   After you understand how Maven is different from Ant, you can easily proceed through other
+   tutorials on the <a href="https://netbeans.org/kb/trails/platform.html">NetBeans Platform Learning Trail</a>.
+   </p>
+
+   <p class="tips">The CRUD Sample Application is one of the Maven samples available in the New Project wizard.</p>
+
+ <p class="tips">If you are new to the NetBeans Platform, you might want to watch the
+ screencast series <a href="https://platform.netbeans.org/tutorials/nbm-10-top-apis.html">Top 10 NetBeans APIs</a>.</p>
+
+   <p><b>Contents</b></p>
+   <p><img src="../images/articles/69/netbeans-stamp69.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.5, 6.7, 6.8" title="Content on this page applies to NetBeans IDE 6.5, 6.7, 6.8"/></p>
+      <ul class="toc">
+        <li><a href="#config">Configuring Maven</a></li>
+        <li><a href="#01">Creating the NetBeans Platform Application Project</a>
+            <ul>
+            <li><a href="#01b">Creating a Module</a></li>
+            <li><a href="#01c">Making the Module a Dependency</a></li>
+            <li><a href="#01d">Branding the Application</a></li>
+            </ul>
+        </li>
+        <li><a href="#02">Creating the Entity Classes</a>
+            <ul>
+            <li><a href="#02a">Adding the DerbyClient as a Runtime Dependency</a></li>
+            <li><a href="#02b">Generating Entity Classes From the Database</a></li>
+            </ul>
+        </li>
+        <li><a href="#03">READ: Reading and Displaying a Record</a>
+            <ul>
+            <li><a href="#03b">Adding a Tree View to the Window</a></li>
+            <li><a href="#03c">Creating a Factory Class</a></li>
+            <li><a href="#03d">Modifying the Dependencies</a></li>
+            </ul>
+        </li>
+        <li><a href="#04">UPDATE: Editing a Record</a>
+            <ul>
+            <li><a href="#04b">Using a LookupListener</a></li>
+            <li><a href="#04c">Adding the Undo and Redo Functions</a></li>
+            <li><a href="#04d">Adding the Save Function</a></li>
+            <li><a href="#04e">Persisting Changes</a></li>
+            <li><a href="#04f">Adding a Refresh Function</a></li>
+            </ul>
+        </li>
+        <li><a href="#05">CREATE: Adding a New Record</a>
+            <ul>
+            <li><a href="#05b">Creating and Saving a New Object</a></li>
+            </ul>
+        </li>
+        <li><a href="#06">Running the Application</a></li>
+      </ul>
+         
+<p><b>To follow this tutorial, you need the software and resources listed in the following table.</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="http://download.netbeans.org/netbeans/6.9/beta/">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.9 (Java)</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Version 6</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://maven.apache.org/">Maven</a></td>
+                <td class="tbltd1">Version 2.0.9 or higher</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">JavaDB or other database server and database</td>
+                <td class="tbltd1">&nbsp;</td>
+            </tr>
+        </tbody>
+    </table>
+ 
+    <p><strong class="notes">Note:</strong></p>
+    <ul>
+        <li>The JavaDB database server and a sample database is included with the bundled GlassFish Server Open Source Edition 3.0.1.</li>
+        <li>You do not need to download a separate version
+    of the NetBeans Platform to develop applications for the NetBeans Platform.
+    Typically, you develop the applications and modules in the NetBeans IDE and
+    then only include the modules that are necessary to run the NetBeans Platform and your application.</li>
+</ul>
+    <p>Before starting this tutorial you may want to familiarize yourself with
+    the following documentation.</p>
+    <ul>
+        <li><a href="http://wiki.netbeans.org/MavenBestPractices">Best Practices for Apache Maven in NetBeans 6.x</a></li>
+        <li><a href="http://www.sonatype.com/books/maven-book/reference/introduction.html">Chapter 1. Introducing Apache Maven</a>
+         (from <a href="http://www.sonatype.com/books/maven-book/reference/public-book.html">Maven: The Definitive Guide</a>)</li>
+        <li><a href="https://netbeans.org/kb/docs/java/gui-functionality.html">Introduction to GUI Building</a></li>
+    </ul>
+    
+ 
+<!-- =================================================================== -->
+<!-- +++++++++++++++ Configuring Maven +++++++++++++++++++++++++++++++++ -->
+
+<h2><a name="config"></a>Configuring Maven</h2>
+    <p>If this is your first Maven project you will want to check the Maven configuration settings in the Options window.
+    To complete this tutorial you must have Maven installed on your local system.
+    You can download the installer from the <a href="http://maven.apache.org/">Maven site</a>.</p>
+
+    <ol>
+        <li>Select the Miscellaneous category in the Options window and click the Maven tab.</li>
+        <li>Specify the location of your local Maven installation (requires 2.0.9 or newer).</li>
+        <li>Check that the location of the local Maven repository is correct.</li>
+        <li>Click OK.</li>
+    </ol>
+    <p>In most cases, if your Maven configuration is typical the information in the Options window should already be correct.</p>
+
+    <p>The IDE uses Maven SCM to checkout Maven artifacts.
+    You might want to check that any clients necessary for checking out sources are installed on your local machine and configured correctly.</p>
+    <p class="tips">For details on Maven SCM, see the
+    <a href="http://maven.apache.org/scm/index.html">Maven SCM page</a>.</p>
+
+    <div class="indent">
+        <h3><a name="config1"></a>Viewing the Maven Repositories</h3>
+        <p>The artifacts that are used by Maven to build all your projects are stored in your local Maven repository.
+        When an artifact is declared as a project dependency, the artifact is downloaded to your local repository
+        from one of the registered remote repositories.</p>
+
+        <p>The NetBeans repository and several well-known indexed Maven repositories are registered and listed in the Repository Browser window by default.
+        The NetBeans repository contains most of the public artifacts necessary for you to build your project.
+        You can use the Maven Repository Browser to view the contents of your local and remote repositories.
+        You can expand the Local Repository node to see the artifacts that are present locally.
+        The artifacts listed under the NetBeans repository nodes can be added as project dependencies, but not all of
+        them are present locally. They are only added to the Local Repository when they are declared as project
+        dependencies.</p>
+
+        <p>To open the Maven Repository Browser:</p>
+        <ul>
+            <li>Choose Window &gt; Other &gt; Maven Repository Browser from the main menu.<br/>
+            <img src="../images/tutorials/maven-quickstart68/maven-nbm-netbeans-repo.png" alt="Screenshot of Maven Repository Browser" title="Screenshot of Maven Repository Browser" class="margin-around b-all" />
+            </li>
+        </ul>
+
+
+        <p>When your cursor is over an artifact, the IDE displays a tooltip with the artifact's coordinates.
+            You can view additional details about an artifact by double-clicking the artifact's JAR file in the browser.</p>
+
+        <p class="tips">You can search for an artifact by clicking the Find button in the toolbar of the Maven Repository Browser
+        or by using the Quicksearch textfield in the main toolbar.</p>
+        <p class="tips">For more about managing Maven classpath dependencies and working with Maven repositories in the IDE,
+        see the <a href="http://wiki.netbeans.org/MavenBestPractices#Dependency_management">Dependency Management</a>
+        section of <a href="http://wiki.netbeans.org/MavenBestPractices">Best Practices for Apache Maven in NetBeans 6.x</a>.
+        </p>
+        <p class="tips">To see a demonstration of using the Artifact Viewer, see the <a href="https://netbeans.org/kb/docs/java/maven-dependencies-screencast.html"> Working with Maven Dependencies</a> screencast.</p>
+
+</div>
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++ Creating the Platform Application +++++++++++++++++ -->
+
+<h2><a name="01"></a>Creating the NetBeans Platform Application Project</h2>
+
+    <p>In this section you use the New Project wizard to create a NetBeans Platform Application from a Maven archetype.
+    The wizard will create the Maven module projects that you need to develop a NetBeans Platform application.
+    You will also use the New Project wizard to create the NetBeans module.
+    </p>
+
+    <div class="indent">
+        <h3><a name="01a"></a>Creating the Project</h3>
+
+        <p>Perform the following steps to create the NetBeans Platform application using the New Project wizard.
+        </p>
+        <ol>
+            <li>Choose File &gt; New Project (Ctrl-Shift-N) to open the New Project wizard.</li>
+            <li>Select Maven NetBeans Application from the Maven category. Click Next.</li>
+            <li>Type <strong>MavenPlatformCRUDApp</strong> for the Project Name and set the Project Location. Click Finish.</li>
+        </ol>
+
+        <p class="notes"><strong>Note.</strong> You can click Next and create a module project in the wizard when you create the platform application,
+        but for demonstration purposes in this tutorial you will create the application and module separately.</p>
+
+        <img src="../images/tutorials/maven-crud/mavencrud-new-project.png" alt="Screenshot of New Project wizard" title="Screenshot of New Project wizard" class="margin-around b-all" />
+        
+        <p>When you click Finish, by default the IDE creates the following Maven project types.</p>
+        <ul>
+            <li><strong>NetBeans Platform Application.</strong>
+            This project is a container project for the Platform application and lists the modules to include and the location of the project's repositories. This project does not contain any sources.
+            The IDE generates the modules containing the sources and resources in sub-directories of this project.</li>
+            <li><strong>NetBeans Platform based application.</strong>
+            This project specifies the artifacts (sources) needed for compiling the application.
+            The required dependencies (IDE artifacts, module artifacts) are specified in the <tt>pom.xml</tt> file
+            of the project.</li>
+            <li><strong>Platform application branding resources.</strong>
+            This project contains the resources used for branding the application. </li>
+        </ul>
+        <img src="../images/tutorials/maven-crud/mavencrud-projects-window1.png" alt="Screenshot of project structure in Projects window" title="Project structure in Projects window" class="margin-around b-all" />
+
+        <p class="notes"><strong>Notes.</strong></p>
+        <ul>
+            <li>If this is your first NetBeans Platform application using Maven,
+            it can take some time to create the projects because the IDE needs to download any necessary artifacts
+            from the NetBeans repository.</li>
+            <li>When you create the project, you will see that some of the projects
+            (for example, the NetBeans Platform based application project) are badged
+            because some dependencies declared in the <tt>pom.xml</tt> file (POM) are unavailable.</li>
+        </ul>
+
+
+
+        <h3><a name="01b"></a>Creating a Module</h3>
+        <p>In this exercise you will use the New Project wizard to create a NetBeans module.
+        </p>
+
+        <ol>
+            <li>Choose File &gt; New Project (Ctrl-Shift-N) to open the New Project wizard.</li>
+            <li>Select Maven NetBeans Module from the Maven category. Click Next.</li>
+            <li>Type <strong>MavenPlatformCRUDApp-dbaccess</strong> for the Project Name.</li>
+            <li>Specify the Project Location by clicking Browse and locating the directory <strong>MavenPlatformCRUDApp</strong>. Click Open.<br/>
+            <img src="../images/tutorials/maven-crud/mavencrud-select-location.png" alt="Screenshot of Select Location dialog showing location" title="Select Project Location dialog showing project directory" class="margin-around b-all" />
+            </li>
+            <li>Click Finish. </li>
+        </ol>
+
+        <p>When you click Finish, the wizard creates a NetBeans module project named <strong>MavenPlatformCRUDApp-dbaccess</strong>.
+        The module is automatically configured to be included in the application when you save it in a sub-directory.
+        If you open the POM for the project, you can see that the MavenPlatformCRUDApp is declared as the parent project.
+        </p>
+        <pre class="examplecode">&lt;parent&gt;
+    &lt;artifactId&gt;MavenPlatformCRUDApp&lt;/artifactId&gt;
+    &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+&lt;/parent&gt;
+&lt;artifactId&gt;MavenPlatformCRUDApp-dbaccess&lt;/artifactId&gt;
+&lt;packaging&gt;nbm&lt;/packaging&gt;
+&lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+&lt;name&gt;MavenPlatformCRUDApp - dbaccess NetBeans Module&lt;/name&gt;
+</pre>
+
+        <p class="tips">You can change the display name for the module by editing the <tt>&lt;name&gt;</tt> element in
+        the POM or by modifying the name in the project's Properties window.
+        The default display name is the project's artifactId <tt>MavenPlatformCRUDApp-dbaccess</tt>.</p>
+
+        <p>If you look at the POM for the NetBeans Platform Application under the Project Files node in the Projects window,
+        you can see that three modules are listed as modules in the application.</p>
+<pre class="examplecode">
+&lt;modules&gt;
+   &lt;module&gt;branding&lt;/module&gt;
+   &lt;module&gt;application&lt;/module&gt;
+   &lt;module&gt;MavenPlatformCRUDApp-dbaccess&lt;/module&gt;
+&lt;/modules&gt;
+</pre>
+        
+
+        <h3><a name="01c"></a>Making the Module a Dependency</h3>
+        <p>You now need to add the module as a dependency of the NetBeans Platform based application.
+        You can add the dependency by editing <tt>pom.xml</tt> in the editor or by using the Add Dependency dialog box.</p>
+        <ol>
+            <li>Expand the <strong>NetBeans Platform based application</strong> node in the Projects window.</li>
+            <li>Right-click the Libraries node and choose Add Dependency.</li>
+            <li>Click the Open Projects tab and select <strong>MavenPlatformCRUDApp - dbaccess</strong>. Click OK.<br/>
+            <img src="../images/tutorials/maven-crud/mavencrud-add-dependency1.png" alt="Screenshot of Add Dependency dialog" title="Open Projects tab in Add Dependency dialog" class="margin-around b-all" />
+            </li>
+        </ol>
+
+
+        <p>If you expand the Libraries node of the NetBeans Platform based application in the Projects window,
+        you can see that MavenPlatformCRUDApp-dbaccess is now listed as a dependency.</p>
+
+        <p>If you look at the POM of the NetBeans Platform based application,
+        you can see that the module artifact <tt>MavenPlatformCRUDApp-dbaccess</tt>
+        is listed as a required dependency for compiling the application.
+        The artifact will be available after you build the module project and install the artifact
+        in your local repository.</p>
+
+    <pre class="examplecode">&lt;dependency&gt;
+    &lt;groupId&gt;${project.groupId}&lt;/groupId&gt;
+    &lt;artifactId&gt;<strong>MavenPlatformCRUDApp-dbaccess</strong>&lt;/artifactId&gt;
+    &lt;version&gt;${project.version}&lt;/version&gt;
+&lt;/dependency&gt;</pre>
+
+
+
+        <h3><a name="01d"></a>Branding the Application</h3>
+        <p>The branding module specifies the branding resources that are used when building the Platform application.
+        The branding dialog enables you to easily specify the name of the application, the splash screen and the
+        application icon and to modify the values of text elements.</p>
+
+        <p>In this exercise you will replace the default splash image.
+        By default the branding module generated by the IDE contains an image that is displayed when the platform application starts.
+        You can replace this with a different image by performing the following steps.</p>
+        <ol>
+            <li>Right-click the <strong>Platform application branding resources</strong> module in the Projects window and choose Branding.</li>
+            <li>In the Splash Screen tab, specify an image to use as the splash screen by clicking the Browse
+            button next to the default splash screen image and locating the image you want to use. Click OK.</li>
+        </ol>
+
+        <p>For example, you can copy the image below to your local system and specify the image in the Branding dialog.</p>
+        <img src="../images/tutorials/maven-crud/splash-crud.gif" alt="Example of default splash image" title="Example of default splash image" class="margin-around b-all" />
+
+        <p>When you launch the application, the new image will appear during startup.</p>
+    </div>
+
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++++++++++ Creating the Entity Classes +++++++++++++++++++ -->
+
+
+    <h2><a name="02"></a>Creating the Entity Classes</h2>
+
+    <p>In this section you will generate some entity classes from tables in the Java DB database.
+    To create the entity classes and to use the Java Persistence API (JPA) in your application,
+    you need to have access to a database server and the JPA persistence provider libraries.
+    This tutorial uses the JavaDB database server, but you can configure the application to use other database servers.</p>
+
+    <p>The easiest way to make the resources available is to register an instance of GlassFish Server Open Source Edition 3.0.1
+    that is bundled with the IDE.
+    The Java DB database server, a sample database and the JPA persistence provider are included with the GlassFish server.
+    Before you create the entity classes, start the Java DB by performing the following steps.</p>
+
+    <ol>
+        <li>In the Services window, expand the Servers node and check that a GlassFish instance is registered.</li>
+        <li>Expand the Database node, right-click the database connection node for the <strong>app</strong> database
+        on Java DB (<tt>jdbc:derby://localhost:1527/sample [app on APP]</tt>) and choose Connect. </li>
+    </ol>
+
+    <p>When you choose Connect, the IDE will start the database if not already started.</p>
+    <div class="indent">
+        <h3><a name="02a"></a>Adding the DerbyClient as a Runtime Dependency</h3>
+
+        <p>In this section you will add the derbyclient-10.5.3.0_1 library as a dependency.</p>
+
+        <ol>
+            <li>Right-click the Libraries node of the <strong>dbaccess</strong> module and choose Add Dependency.</li>
+            <li>Add the library by typing <strong>org.apache.derby</strong> for the GroupId,
+                <strong>derbyclient</strong> for the ArtifactId and
+                <strong>10.5.3.0_1</strong> for the Version.</li>
+            <li>Select <strong>Runtime</strong> from the Scope dropdown list. Click OK.<br/>
+            <img src="../images/tutorials/maven-crud/mavencrud-add-dependency-derby.png" alt="Example of Add Dependency dialog" title="Adding derbyclient JAR in Add Dependency dialog" class="margin-around b-all" />
+            </li>
+        </ol>
+
+        <p>If you expand the Runtime Libraries node in the Projects window, you can see that the <tt>derbyclient</tt> library is listed as a dependency.</p>
+        <p class="tips">You can also modify the POM in the editor to specify the value of the <tt>&lt;scope&gt;</tt> element of a dependency.</p>
+
+        <pre class="examplecode">&lt;dependency&gt;
+            &lt;groupId&gt;org.apache.derby&lt;/groupId&gt;
+            &lt;artifactId&gt;derbyclient&lt;/artifactId&gt;
+            &lt;version&gt;10.5.3.0_1&lt;/version&gt;
+            &lt;scope&gt;runtime&lt;/scope&gt;
+        &lt;/dependency&gt;</pre>
+
+        <h3><a name="02b"></a>Generating Entity Classes From the Database</h3>
+        <p>In this section you will use a wizard to generate entity classes in the <strong>dbaccess</strong> module.
+        </p>
+
+        <ol>
+            <li>Right-click the Source Packages of the <strong>dbaccess</strong> module and choose New &gt; Other.</li>
+            <li>Select Entity Classes from Database in the Persistence category. Click Next.</li>
+            <li>Select the Java DB sample database from the Database Connection dropdown list.</li>
+            <li>Select the Customer table from the Available Tables list and click Add.
+            When you click Add, the related table DiscountCode is also added to the list of Selected Tables list. Click Next.</li>
+            <li>Type <strong>com.mycompany.mavenplatformcrudapp.dbaccess</strong> for the Package name. 
+            Make sure that Create Perisistence Unit and Generate Named Query Annotations are selected. Click Finish.</li>
+        </ol>
+        <p>When you click Finish, the IDE generates the Customer and DiscountCode entity classes.
+        The IDE also generates the <tt>persistence.xml</tt> file in the <tt>META-INF</tt> package under the Other Sources node in the <tt>src/main/resources</tt> directory.</p>
+
+
+        
+
+
+        
+
+
+    </div>
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++++++ Implementing CRUD : READ ++++++++++++++++++++++ -->
+
+
+    <h2><a name="03"></a>READ: Reading and Displaying a Record</h2>
+    <p>In this section you will use a wizard to add a Window Component to the <strong>dbaccess</strong> module.
+    You will enable a tree view in the window component to display
+    the objects as nodes. You can view the data for each record in the node's properties window.</p>
+    
+    <div class="indent">
+
+        <h3><a name="03a"></a>Adding a Window Component</h3>
+        <p>In this exercise you will create the window component.</p>
+        <ol>
+            <li>Right-click the project node in the Projects window and choose New &gt; Window.</li>
+            <li>Select <strong>editor</strong> in the Window Position dropdown list and select <strong>Open on application startup</strong>. Click Next.<br/>
+            <img src="../images/tutorials/maven-crud/mavencrud-new-window-customer.png" alt="Screenshot of New Window wizard" title="Basic Setting page of New Window wizard" class="margin-around b-all" />
+            </li>
+            <li>Type <strong>Customer</strong> as the Class Name Prefix.</li>
+            <li>Type <strong>com.mycompany.mavenplatformcrudapp.viewer</strong> for the Package. Click Finish.
+            <p>The wizard displays a list of the files that will be created and the files that will be modified.</p></li>
+        </ol>
+        <p>When you click Finish, in the Projects window you can see that the IDE generated the class
+        <tt>CustomerTopComponent.java</tt> in <tt>com.mycompany.mavenplatformcrudapp.viewer</tt> under Source Packages.
+        You can view the structure of the project in the Files window.
+        To compile a Maven project, only source files can be located under Source Packages
+        (<tt>src/main/java</tt> directory in the Files window).
+        Resource files (e.g., XML files) need to be located under Other Sources
+        (<tt>src/main/resources</tt> directory in the Files window).</p>
+
+
+        <h3><a name="03b"></a>Adding a Tree View</h3>
+
+        <p>You will now modify the window component to display the database records in a tree view.
+        You will add the entity manager to the constructor and enable a bean tree view.</p>
+        <ol>
+            <li>Click the Source tab of <tt>CustomerTopComponent.java</tt> to view the source code in the editor.</li>
+            <li>Modify the constructor to add the following.
+        <pre class="examplecode">public CustomerTopComponent() {
+    initComponents();
+    setName(NbBundle.getMessage(CustomerTopComponent.class, "CTL_CustomerTopComponent"));
+    setToolTipText(NbBundle.getMessage(CustomerTopComponent.class, "HINT_CustomerTopComponent"));
+//        setIcon(ImageUtilities.loadImage(ICON_PATH, true));
+
+    <strong>EntityManager entityManager = Persistence.createEntityManagerFactory("com.mycompany_MavenPlatformCRUDApp-dbaccess_nbm_1.0-SNAPSHOTPU").createEntityManager();
+    Query query = entityManager.createQuery("SELECT c FROM Customer c");
+    List&lt;Customer&gt; resultList = query.getResultList();</strong>
+}</pre>
+            
+            <p class="tips">Check that the name of the persistence unit in the code is correct by comparing it to
+        the name specified in <tt>persistence.xml</tt>.</p>
+            </li>
+            <li>Modify the class signature to implement <tt>ExplorerManager.Provider.</tt>
+            <pre class="examplecode">public final class CustomerTopComponent extends TopComponent <strong>implements ExplorerManager.Provider</strong></pre>
+            </li>
+            <li>Fix your imports to import <tt><strong>javax.persistence.Query</strong></tt> and <tt><strong>javax.util.List</strong></tt>.</li>
+            <li>Declare and initialize the ExplorerManager:
+            <pre class="examplecode">private static ExplorerManager em = new ExplorerManager();</pre>
+            </li>
+            <li>Implement the abstract methods and modify the <tt>getExplorerManager</tt> method to return <tt>em</tt>.
+            <pre class="examplecode">@Override
+public ExplorerManager getExplorerManager() {
+  return em;
+}</pre>
+            <p class="tips">You can put the insert cursor in the class signature and press Alt+Enter to implement the abstract methods.</p>
+            </li>
+            <li>Add the following to the constructor to enable the tree view.
+            <pre class="examplecode">BeanTreeView beanTreeView = new BeanTreeView();
+add(beanTreeView, BorderLayout.CENTER);</pre>
+            </li>
+            
+            <li>In Design view, right-click the component and select Set Layout &gt; Border Layout. Save your changes.</li>
+
+       </ol>
+
+        <h3><a name="03c"></a>Creating a Factory Class</h3>
+
+        <p>You will now create a new class <strong>CustomerChildFactory</strong> in the <tt>com.mycompany.mavenplatformcrudapp.viewer</tt> package
+        that creates a new BeanNode for each customer in your database.</p>
+        <ol>
+
+            <li>Right-click the <tt><strong>com.mycompany.mavenplatformcrudapp.viewer</strong></tt> package and choose New &gt; Java Class.</li>
+            <li>Type <strong>CustomerChildFactory</strong> for the Class Name. Click Finish.</li>
+            <li>Modify the signature to extend <tt>ChildFactory&lt;Customer&gt;</tt>.</li>
+            <li>Declare the field <tt>resultList</tt> for the list of items in the table and add the <tt>CustomerChildFactory</tt> method.
+                <pre class="examplecode">private List&lt;Customer&gt; resultList;
+
+public CustomerChildFactory(List&lt;Customer&gt; resultList) {
+    this.resultList = resultList;
+}</pre>
+            </li>
+            <li>Implement and then modify the <tt>createKeys</tt> abstract method.
+                <pre class="examplecode">@Override
+    protected boolean createKeys(List&lt;Customer&gt; list) {
+      for (Customer customer : resultList) {
+          list.add(customer);
+      }
+      return true;
+    }</pre></li>
+            <li>Add a method to create the nodes.
+                <pre class="examplecode">@Override
+protected Node createNodeForKey(Customer c) {
+    try {
+        return new BeanNode(c);
+    } catch (IntrospectionException ex) {
+        Exceptions.printStackTrace(ex);
+        return null;
+    }
+}</pre>
+            </li>
+            <li>Fix your imports to import <tt>org.openide.nodes.Node</tt> and <tt>java.beans.InstrospectionException</tt>. Save your changes.</li>
+        </ol>
+
+
+        <p>The class will look like the following:</p>
+
+        <pre class="examplecode">package com.mycompany.mavenplatformcrudapp.viewer;
+
+import com.mycompany.mavenplatformcrudapp.dbaccess.Customer;
+import java.beans.IntrospectionException;
+import java.util.List;
+import org.openide.nodes.BeanNode;
+import org.openide.nodes.ChildFactory;
+import org.openide.nodes.Node;
+import org.openide.util.Exceptions;
+
+public class CustomerChildFactory extends ChildFactory&lt;Customer&gt; {
+
+    private List&lt;Customer&gt; resultList;
+
+    public CustomerChildFactory(List&lt;Customer&gt; resultList) {
+        this.resultList = resultList;
+    }
+
+    @Override
+    protected boolean createKeys(List&lt;Customer&gt; list) {
+        for (Customer customer : resultList) {
+            list.add(customer);
+        }
+        return true;
+    }
+
+    @Override
+    protected Node createNodeForKey(Customer c) {
+        try {
+            return new BeanNode(c);
+        } catch (IntrospectionException ex) {
+            Exceptions.printStackTrace(ex);
+            return null;
+        }
+    }
+
+}</pre>
+
+        <p>You now need to modify the <strong>CustomerTopComponent</strong> to use the ExplorerManager to pass the result list from the JPA query to the Node.</p>
+        <ol>
+            <li>Add the following lines to the CustomerTopComponent constructor to set the root context for the
+                nodes and to add the TopComponent's ActionMap and ExplorerManager to the Lookup of the TopComponent.
+
+            <pre class="examplecode">
+    EntityManager entityManager =  Persistence.createEntityManagerFactory("com.mycompany_MavenPlatformCRUDApp-dbaccess_nbm_1.0-SNAPSHOTPU").createEntityManager();
+    Query query = entityManager.createQuery("SELECT c FROM Customer c");
+    List&lt;Customer&gt; resultList = query.getResultList();
+    <strong>em.setRootContext(new AbstractNode(Children.create(new CustomerChildFactory(resultList), true)));
+    associateLookup(ExplorerUtils.createLookup(em, getActionMap()));</strong></pre>
+ <!--           <li>Expand the Libraries node and change the dependency on <tt>org-openide-nodes</tt> and <tt>org-openide-explorer</tt> from transitive to direct.-->
+
+            <p>This will synchronize properties window and tooltip text for each selected Node.</p>
+            </li>
+            <li>Fix your imports and save your changes.</li>
+        </ol>
+
+
+
+        <h3><a name="03d"></a>Running the Application</h3>
+        <p>In this exercise you will test the application to confirm that the application is able to access and read the database tables correctly.
+        Before you can build and run the application, you need to modify the POM because 
+        the application requires a direct dependency on the <tt>org-openide-nodes</tt> and <tt>org-openide-explorer</tt> JARs.
+        You can modify the dependency in the Projects window.</p>
+
+        <ol>
+            <li>Expand the Libraries node of the <strong>dbaccess</strong> module.</li>
+            <li>Right-click the <tt>org-openide-nodes</tt> JAR and choose Declare as Direct Dependency.</li>
+            <li>Right-click the <tt>org-openide-explorer</tt> JAR and choose Declare as Direct Dependency.</li>
+            <li>Right-click the <strong>MavenPlatformCRUDApp NetBeans Platform based application</strong> and choose Build with Dependencies.
+            <p>The Output window displays the modules that will be included.</p>
+            <img src="../images/tutorials/maven-crud/mavencrud-build-output1.png" alt="Screenshot of Output window - top half" title="Output window showing build order" class="margin-around b-all" />
+            <p>The Output window also displays the build status.</p>
+            <img src="../images/tutorials/maven-crud/mavencrud-build-output2.png" alt="Screenshot of Output window - bottom half" title="Output window showing build was successfull" class="margin-around b-all" />
+            </li>
+            <li>Right-click the application and choose Run.</li>
+        </ol>
+        <p>When the application launches, the Customer window will appear with a node for each of the records in the database table.</p>
+            
+        <img src="../images/tutorials/maven-crud/mavencrud-customer-window1.png" alt="Screenshot of Customer window in application" title="Customer window in application" class="margin-around b-all" />
+        <p>You can right-click a node in the Customer window tree and choose Properties to view additional details about the item.</p>
+
+
+        <img src="../images/tutorials/maven-crud/mavencrud-read-properties.png" alt="Screenshot of Properties window in application" title="Properties window showing details of selected node" class="margin-around b-all" />
+
+    </div>
+
+
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++++++ Implementing CRUD : UPDATE ++++++++++++++++++++ -->
+
+    <h2><a name="04"></a>UPDATE: Editing a Record</h2>
+    
+
+    <p>In this section you will add a window component for editing the details of a record.</p>
+    <div class="indent">
+    <h3><a name="04a"></a>Creating the Editor Window</h3>
+    <p>In this exercise you will create a new window MyEditor that will contain two text fields for editing the name and city fields
+        of the selected node. You will then modify the <tt>layer.xml</tt> file so that the Customer window opens in the
+    explorer mode instead of the editor mode.</p>
+    <ol>
+        <li>Right-click the <strong>dbaccess</strong> module and choose New &gt; Window.</li>
+        <li>Select <strong>editor</strong> in the dropdown list and select <strong>Open on application startup</strong>. Click Next.</li>
+        <li>Type <strong>MyEditor</strong> as the Class Name Prefix.</li>
+        <li>Type <strong>com.mycompany.mavenplatformcrudapp.editor</strong> as the package. Click Finish.</li>
+        <li>Add two JLabels and two JTextFields in the Design view of <tt>MyEditorTopComponent</tt>. </li>
+        <li>Set the texts of the labels to "Name" and "City" and set the variable names of the two JTextFields to
+            <tt><strong>jTextField1</strong></tt> and <tt><strong>jTextField2</strong></tt>.
+        Save your changes.<br/>
+        <img src="../images/tutorials/maven-crud/mavencrud-myeditor-window.png" alt="Screenshot of Window component in Design view" title="Window component in Design view" class="margin-around b-all" />
+        </li>
+        <li>Expand the Important Files node in the Projects window and double-click <strong>XML Layer</strong> to open the <tt>layer.xml</tt> file in the editor.</li>
+        <li>Modify <tt>layer.xml</tt> to specify that the CustomerTopComponent window will appear in the explorer mode. Save your changes.
+            <pre class="examplecode">
+&lt;folder name="Modes"&gt;
+    &lt;folder name="editor"&gt;
+        &lt;file name="MyEditorTopComponent.wstcref" url="MyEditorTopComponentWstcref.xml"/&gt;
+    &lt;/folder&gt;
+    <strong>&lt;folder name="explorer"&gt;
+        &lt;file name="CustomerTopComponent.wstcref" url="CustomerTopComponentWstcref.xml"/&gt;
+    &lt;/folder&gt;</strong>
+&lt;/folder&gt;
+            </pre>
+        </li>
+    </ol>
+
+
+    <p>You can now test the application to check that the windows open and that they are in the correct location.</p>
+    <p class="tips">Remember to Clean the application before you Build with Dependencies.</p>
+
+    <p>You can now start adding code so that when you select a node in the Customer window,
+        the name and city fields of the object are displayed in the editor.</p>
+
+
+    <h3><a name="04b"></a>Using a LookupListener</h3>
+    <p>In this exercise you will modify the Customer window so that a when a node is selected
+    a new <tt>Customer</tt> object is added to the Lookup of the Node.
+    You will then modify MyEditor so that the window will implement 
+    <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util-lookup/org/openide/util/LookupListener.html">LookupListener</a></tt>
+    to listen for <tt>Customer</tt> objects that are added to the Lookup.</p>
+
+    <ol>
+        <li>Modify the <tt>createNodeForKey</tt> method in <strong>CustomerChildFactory</strong> 
+            to create an <tt>AbstractNode</tt> instead of a <tt>BeanNode</tt>.
+            <!--Do this by creating an AbstractNode, instead of a BeanNode, in the CustomerChildFactory class.
+            That enables you to add the current Customer object to the Lookup of the Node, as follows (note the part in bold):-->
+            <pre class="examplecode">
+@Override
+protected Node createNodeForKey(Customer c) {
+  <strong>Node node = new AbstractNode(Children.LEAF, Lookups.singleton(c));
+  node.setDisplayName(c.getName());
+  node.setShortDescription(c.getCity());
+  return node;</strong>
+//        try {
+//            return new BeanNode(c);
+//        } catch (IntrospectionException ex) {
+//            Exceptions.printStackTrace(ex);
+//            return null;
+//        }
+}</pre>
+        <p>When you select a new node in the Customer window, the selected <tt>Customer</tt> object is added to the window's Lookup.</p>
+        </li>
+        <!--    First, set a dependency in the editor module on the module that provides the entity class,
+                as well as the module that provides the persistence JARs.
+-->
+        <li>Click the Source tab of <strong>MyEditorTopComponent</strong> and modify the class signature to implement <tt>LookupListener</tt>.
+            <pre class="examplecode">public final class MyEditorTopComponent extends TopComponent <strong>implements LookupListener</strong></pre>
+        </li>
+        <li>Add a variable for storing the results.
+            <pre class="examplecode">private Lookup.Result result = null;</pre>
+        </li>
+        <li>Implement the required abstract methods to add the <tt>resultChanged</tt> method.</li>
+        <li>Modify the <tt>resultChanged</tt> method to update the jTextFields each time a new <tt>Customer</tt>
+            object is introduced into the Lookup.
+            <pre class="examplecode">
+      @Override
+      public void resultChanged(LookupEvent le) {
+          Lookup.Result r = (Lookup.Result) le.getSource();
+          Collection&lt;Customer&gt; coll = r.allInstances();
+          if (!coll.isEmpty()) {
+              for (Customer cust : coll) {
+                  jTextField1.setText(cust.getName());
+                  jTextField2.setText(cust.getCity());
+              }
+          } else {
+              jTextField1.setText("[no name]");
+              jTextField2.setText("[no city]");
+          }
+      }
+</pre>
+        
+
+        <p>After defining the LookupListener, you can add it to the <tt>Lookup.Result</tt> obtained from the global context.
+        The global context proxies the context of the selected Node.
+        For example, if "Ford Motor Co" is selected in the tree hierarchy,
+        the <tt>Customer</tt> object for "Ford Motor Co" is added to the Lookup of the Node.
+        Because it is the currently selected Node,  the <tt>Customer</tt> object for
+        "Ford Motor Co" is now available in the global context.
+        That is what is then passed to the <tt>resultChanged</tt>, causing the text fields to be populated.</p>
+        </li>
+        <li>Modify the <tt>componentOpened</tt> and <tt>componentClosed</tt> methods to make
+            LookupListener active when the editor window is opened.
+            <pre class="examplecode">
+      @Override
+      public void componentOpened() {
+          result = WindowManager.getDefault().findTopComponent("CustomerTopComponent").getLookup().lookupResult(Customer.class);
+          result.addLookupListener(this);
+          resultChanged(new LookupEvent(result));
+      }
+
+      @Override
+      public void componentClosed() {
+          result.removeLookupListener(this);
+          result = null;
+      }</pre>
+    <p>Because the editor window is set to open when the application starts,
+    the LookupListener will also be available at the time that the application starts up.</p>
+    
+    <p>In this example you are using the local Lookup provided by the Customer window.
+    The window is identified explicitly in this case by the string "<tt>CustomerTopComponent</tt>".
+    The string is specified in the source code of <tt>CustomerTopComponent</tt> as the ID of the CustomerTopComponent.
+    This approach only works if the MyEditorTopComponent can find a TopComponent with the ID "CustomerTopComponent".
+    </p>
+
+    <p class="tips">A more flexible approach that involves rewriting the selection model is described in this
+    <a href="http://weblogs.java.net/blog/timboudreau/archive/2007/01/how_to_replace.html">blog entry by Tim Boudreau</a>.</p>
+        </li>
+    </ol>
+
+    <p>You can run the application again after performing Clean and Build with Dependencies.
+    The editor window is now updated when you select a new Node in the Customer window.
+    No properties are displayed in a node's Properties window because you are now using <tt>AbstractNode</tt> instead of <tt>BeanNode</tt>.</p>
+
+
+
+
+    <h3><a name="04c"></a>Adding Undo and Redo</h3>
+    <p>In this exercise you will enable the Undo and Redo functions by implementing the 
+        <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/UndoRedo.html">UndoRedo</a></tt> manager.
+    The Undo and Redo buttons in the toolbar and the Undo and Redo menu items will be enabled when
+    a user makes a change to one of the fields in the Editor window.</p>
+
+    <ol>
+        <li>Declare and instantiate a new UndoRedoManager at the top of the MyEditorTopComponent.
+            <pre class="examplecode">private UndoRedo.Manager manager = new UndoRedo.Manager();</pre>
+        </li>
+        <li>Create a <tt>getUndoRedo()</tt> method in the MyEditorTopComponent:
+        <pre class="examplecode">
+@Override
+public UndoRedo getUndoRedo() {
+  return manager;
+}</pre>
+        </li>
+        <li>Add the following to the constructor.
+            <!--In the constructor of MyEditorTopComponent, add a KeyListener to the jTextFields and,
+within the related methods that you need to implement, add the UndoRedoListeners:
+            
+            what is happening here?
+            
+            
+            -->
+<pre class="examplecode">
+jTextField1.getDocument().addUndoableEditListener(manager);
+jTextField2.getDocument().addUndoableEditListener(manager);</pre>
+        </li>
+    </ol>
+    <p>You can run the application to test that the buttons and menu items for the Undo and Redo functionality are working.</p>
+
+
+    <h3><a name="04d"></a>Adding the Save Function</h3>
+
+    <p>In this exercise you will integrate the NetBeans Platform's Save functionality.
+        You will modify the <tt>layer.xml</tt> file to hide the "Save All" button in the toolbar
+    and to add the "Save" button.
+    You will then add listeners to detect changes in the textfields and a <tt>fire</tt> method that is triggered when a change is detected.
+    
+    </p>
+    <ol>
+        <li>Open and modify the <tt>layer.xml</tt> file of the <strong>dbaccess</strong> module to add a Toolbar element.
+            <pre class="examplecode">
+    <strong>&lt;folder name="Toolbars"&gt;
+      &lt;folder name="File"&gt;
+          &lt;file name="org-openide-actions-SaveAction.shadow"&gt;
+              &lt;attr name="originalFile" stringvalue="Actions/System/org-openide-actions-SaveAction.instance"/&gt;
+              &lt;attr name="position" intvalue="444"/&gt;
+          &lt;/file&gt;
+          &lt;file name="org-openide-actions-SaveAllAction.shadow_hidden"/&gt;
+      &lt;/folder&gt;
+    &lt;/folder&gt;</strong>
+&lt;/filesystem&gt;</pre>
+        </li>
+        <li>In the <strong>MyEditorTopComponent</strong> constructor, add the following call to fire a method when a change is detected
+            in the text fields.
+            <pre class="examplecode">
+public MyEditorTopComponent() {
+
+          ...
+    jTextField1.getDocument().addUndoableEditListener(manager);
+    jTextField2.getDocument().addUndoableEditListener(manager);
+
+    <strong>jTextField1.getDocument().addDocumentListener(new DocumentListener() {
+        public void insertUpdate(DocumentEvent arg0) {
+          fire(true);
+        }
+        public void removeUpdate(DocumentEvent arg0) {
+          fire(true);
+        }
+        public void changedUpdate(DocumentEvent arg0) {
+          fire(true);
+        }
+    });
+
+    jTextField2.getDocument().addDocumentListener(new DocumentListener() {
+        public void insertUpdate(DocumentEvent arg0) {
+          fire(true);
+        }
+        public void removeUpdate(DocumentEvent arg0) {
+          fire(true);
+        }
+        public void changedUpdate(DocumentEvent arg0) {
+          fire(true);
+        }
+    });
+
+    //Create a new instance of our SaveCookie implementation:
+    impl = new SaveCookieImpl();
+
+    //Create a new instance of our dynamic object:
+    content = new InstanceContent();
+
+    //Add the dynamic object to the TopComponent Lookup:
+    associateLookup(new AbstractLookup(content));</strong>
+
+    ...
+}</pre>
+            </li>
+            <li>Add the <tt>fire</tt> method that is called whenever a change is detected.
+                
+            <pre class="examplecode">
+public void fire(boolean modified) {
+  if (modified) {
+      //If the text is modified,
+      //we add SaveCookie impl to Lookup:
+      content.add(impl);
+  } else {
+      //Otherwise, we remove the SaveCookie impl from the lookup:
+      content.remove(impl);
+  }
+}</pre>
+            </li>
+            <li>Add the following implementation of 
+                <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-nodes/org/openide/cookies/SaveCookie.html">SaveCookie</a></tt>
+                that is added to the <tt>InstanceContent</tt> by the <tt>fire</tt> method.
+<pre class="examplecode">
+private class SaveCookieImpl implements SaveCookie {
+
+  @Override
+  public void save() throws IOException {
+
+     Confirmation message = new NotifyDescriptor.Confirmation("Do you want to save \""
+              + jTextField1.getText() + " (" + jTextField2.getText() + ")\"?",
+              NotifyDescriptor.OK_CANCEL_OPTION,
+              NotifyDescriptor.QUESTION_MESSAGE);
+
+      Object result = DialogDisplayer.getDefault().notify(message);
+      //When user clicks "Yes", indicating they really want to save,
+      //we need to disable the Save action,
+      //so that it will only be usable when the next change is made
+      //to the JTextArea:
+      if (NotifyDescriptor.YES_OPTION.equals(result)) {
+          fire(false);
+          //Implement your save functionality here.
+      }
+  }
+}</pre>
+            </li>
+            <li>Add the following fields to MyEditorTopComponent.
+            <pre class="examplecode">
+private final SaveCookieImpl impl;
+private final InstanceContent content;
+</pre>
+            </li>
+            <li>Fix your imports and save your changes.</li>
+            <li>Right-click the <tt>org-openide-dialogs</tt> JAR under the Libraries node in the
+            Projects window and choose Declare as Direct Dependency.</li>
+        </ol>
+        <p>You can now clean, build with dependencies and run the application to confirm that the Save button
+            is enabled when you modify a text field.</p>
+
+
+        <h3><a name="04e"></a>Persisting Changes</h3>
+
+        <p>In the next exercise you will add code to persist the changes.
+        At the moment, the application correctly recognizes when a change is made to a field
+        and enables the option to save the changes.
+        When you click Save, a dialog appears prompting you to confirm that you want to save the changes.
+        However, the changes are not persisted when you click OK in the dialog.
+        To persist the changes, you need to add some JPA code to handle persistence to the database.</p>
+
+        <ol>
+            <li>Add the following field to <strong>MyEditorTopComponent</strong>.
+                <pre class="examplecode">private Customer customer;</pre>
+            </li>
+            <li>Add the JPA code for persisting changes by modifying the <tt>save</tt> method to replace the comment
+                <tt>"//Implement your save functionality here." </tt> with the following code.
+            <pre class="examplecode">@Override
+public void save() throws IOException {
+...
+    if (NotifyDescriptor.YES_OPTION.equals(result)) {
+        fire(false);
+        <strong>EntityManager entityManager = Persistence.createEntityManagerFactory("com.mycompany_MavenPlatformCRUDApp-dbaccess_nbm_1.0-SNAPSHOTPU").createEntityManager();
+        entityManager.getTransaction().begin();
+        Customer c = entityManager.find(Customer.class, customer.getCustomerId());
+        c.setName(jTextField1.getText());
+        c.setCity(jTextField2.getText());
+        entityManager.getTransaction().commit();</strong>
+    }
+}</pre>
+            <p class="tips">Check that the name of the peristence unit is correct.</p>
+            <p>The "customer" in <tt>customer.getCustomerId()</tt> is currently undefined.
+            In the next step you set <tt>customer</tt> to the current <tt>Customer</tt> object used to get the the Customer ID.</p>
+            </li>
+            <li>Add the following line in bold to the <tt>resultChanged</tt> method.
+            <pre class="examplecode">
+@Override
+public void resultChanged(LookupEvent le) {
+    Lookup.Result r = (Lookup.Result) le.getSource();
+    Collection&lt;Customer&gt; coll = r.allInstances();
+    if (!coll.isEmpty()) {
+      for (Customer cust : coll) {
+          <strong>customer = cust;</strong>
+          jTextField1.setText(cust.getName());
+          jTextField2.setText(cust.getCity());
+      }
+    } else {
+      jTextField1.setText("[no name]");
+      jTextField2.setText("[no city]");
+    }
+}</pre>
+            </li>
+            <li>Fix your imports and save your changes.</li>
+        </ol>
+        <p>You can run the application and change some data to test if the save function is working correctly and persists the changes.
+        At the moment, the editor does not update the fields to reflect the changed data.
+        To check if the data is persisted you will need to restart the application.</p>
+        
+        <p>In the next exercise you will add a "Refresh" function that will reload the data from the
+        database and enable you to see the changes in the editor.</p>
+
+        
+
+        <h3><a name="04f"></a>Adding a Refresh Function</h3>
+        <p>In this exercise you will add functionality for updating the Customer viewer by adding a "Refresh" menu item to the root node
+        in the Customer window.</p>
+
+        <ol>
+            <li>Right-click the <tt><strong>com.mycompany.mavenplatformcrudapp.viewer</strong></tt> package and choose New &gt; Java Class
+            and create a class named <strong>CustomerRootNode</strong>.</li>
+            <li>Modify the class to extend <tt>AbstractNode</tt> and add the following methods.
+            <pre class="examplecode">
+public class CustomerRootNode extends AbstractNode {
+
+    <strong>public CustomerRootNode(Children kids) {
+      super(kids);
+      setDisplayName("Root");
+    }
+
+    @Override
+    public Action[] getActions(boolean context) {
+      Action[] result = new Action[]{
+          new RefreshAction()};
+      return result;
+    }
+
+    private final class RefreshAction extends AbstractAction {
+
+      public RefreshAction() {
+          putValue(Action.NAME, "Refresh");
+      }
+
+      public void actionPerformed(ActionEvent e) {
+          CustomerTopComponent.refreshNode();
+      }
+    }</strong>
+
+}</pre>
+            <p class="tips">Note that a "Refresh" action is bound to the new Root node.</p>
+            </li>
+            <li>Fix your imports to import <strong><tt>javax.swing.Action</tt></strong>. Save your changes.</li>
+            <li>Modify <strong>CustomerTopComponent</strong> to add the following method for refreshing the view:
+            <pre class="examplecode">
+public static void refreshNode() {
+    EntityManager entityManager = Persistence.createEntityManagerFactory("com.mycompany_MavenPlatformCRUDApp-dbaccess_nbm_1.0-SNAPSHOTPU").createEntityManager();
+    Query query = entityManager.createQuery("SELECT c FROM Customer c");
+    List&lt;Customer&gt; resultList = query.getResultList();
+    em.setRootContext(new <strong>CustomerRootNode</strong>(Children.create(new CustomerChildFactory(resultList), true)));
+}</pre>
+                <p>Notice that the method uses <strong>CustomerRootNode</strong> for setting the root context.</p>
+                <p class="tips">In the <tt>CustomerRootNode</tt> class, you can press Alt+Enter in the line
+                containing <tt>refreshNode</tt> if you want the IDE to generate the method skeleton for you.</p>
+            </li>
+            <li>Modify the code in the constructor of the CustomerTopComponent with a call to <strong>CustomerRootNode</strong>
+            instead of <strong>AbstractNode</strong>.
+            <p>Calling <tt>CustomerRootNode</tt> automatically calls the <tt>refreshNode</tt> method and invokes a "Refresh".</p>
+            </li>
+
+            <li>Fix your imports and save your changes.</li>
+        </ol>
+                
+        <p>If you run the application you will see that there is a new root node with a "Refresh" action
+        available in the popup menu.</p>
+
+
+        <p class="tips">You can reuse the <tt>refreshNode</tt> method and implement an automatic refresh by calling the <tt>refreshNode</tt> method
+            from the <tt>save</tt> method.
+            Alternatively, you could create a separate module containing the refresh action
+            and the module could be shared between the modules.</p>
+</div>
+
+
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++++++ Implementing CRUD : CREATE ++++++++++++++++++++ -->
+
+    <h2><a name="05"></a>CREATE: Adding a New Record</h2>
+
+    <p>In this section, you allow the user to create a new entry in the database.</p>
+    <div class="indent">
+        <h3><a name="05a"></a>Adding the Create Action</h3>
+        <ol>
+            <li>Right-click the <strong>dbaccess</strong> module and choose New &gt; Action.</li>
+            <li>Select Always Enabled. Click Next.</li>
+            <li>Select <strong>File</strong> in the Category dropdown list.</li>
+            <li>Select Global Toolbar Button. Click Next.<br/>
+            <img src="../images/tutorials/maven-crud/mavencrud-new-action.png" alt="Screenshot of New Action wizard" title="GUI Registration in New Action wizard" class="margin-around b-all" />
+
+            </li>
+            <li>Type <strong>NewAction</strong> for the Class Name.</li>
+            <li>Type <strong>My New Action</strong> for the Display Name.</li>
+            <li>Click Browse and select an image that will be used in the toolbar.
+                <p>You can copy the following image <tt>abc16.png</tt> to your desktop and specify the image in the wizard.
+             (&nbsp;<img src="../images/tutorials/maven-crud/abc16.png" alt="Sample 16 x 16 icon" title="Sample 16 x 16 icon" />&nbsp;)
+            </p>
+            </li>
+            <li>Select the <strong>com.mycompany.mavenplatformcrudapp.editor</strong> package. Click Finish.</li>
+            <li>Modify the <tt>NewAction</tt> class to open the MyEditorTopComponent and clear the fields.
+            <pre class="examplecode">
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public final class NewAction implements ActionListener {
+
+    public void actionPerformed(ActionEvent e) {
+        MyEditorTopComponent tc = MyEditorTopComponent.getDefault();
+        tc.resetFields();
+        tc.open();
+        tc.requestActive();
+    }
+
+}</pre>
+
+            <p>The action implements the ActionListener class, which is bound to the application
+            via entries in the layer file, put there by the New Action wizard.</p>
+            </li>
+        </ol>
+
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+<!-- I am still hitting issue 186876 in the RC2 build   -->
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+
+        <h3><a name="05b"></a>Creating and Saving a New Object</h3>
+        <ol>
+            <li>In the <strong>MyEditorTopComponent</strong>, add the following method for resetting
+                the JTextFields and creating a new <tt>Customer</tt> object.
+            <pre class="examplecode">
+public void resetFields() {
+    customer = new Customer();
+    jTextField1.setText("");
+    jTextField2.setText("");
+}</pre>
+                <p class="tips">In the <tt>NewAction</tt> class you can press Alt+Enter in the call to <tt>resetFields</tt>
+                if you want the IDE to generate a method skeleton in MyEditorTopComponent.</p>
+            </li>
+            <li>In the SaveCookie, ensure that a return of null indicates that a new entry is saved, instead of an existing entry being updated:
+            <pre class="examplecode">
+public void save() throws IOException {
+
+    Confirmation message = new NotifyDescriptor.Confirmation("Do you want to save \""
+                  + jTextField1.getText() + " (" + jTextField2.getText() + ")\"?",
+                  NotifyDescriptor.OK_CANCEL_OPTION,
+                  NotifyDescriptor.QUESTION_MESSAGE);
+
+    Object result = DialogDisplayer.getDefault().notify(msg);
+
+    //When user clicks "Yes", indicating they really want to save,
+    //we need to disable the Save button and Save menu item,
+    //so that it will only be usable when the next change is made
+    //to the text field:
+    if (NotifyDescriptor.YES_OPTION.equals(result)) {
+        fire(false);
+        EntityManager entityManager = Persistence.createEntityManagerFactory("CustomerLibraryPU").createEntityManager();
+        entityManager.getTransaction().begin();
+        <strong>if (customer.getCustomerId() != null) {</strong>
+            Customer c = entityManager.find(Customer.class, cude.getCustomerId());
+            c.setName(jTextField1.getText());
+            c.setCity(jTextField2.getText());
+            entityManager.getTransaction().commit();
+        <strong>} else {
+            Query query = entityManager.createQuery("SELECT c FROM Customer c");
+            List&lt;Customer&gt; resultList = query.getResultList();
+            customer.setCustomerId(resultList.size()+1);
+            customer.setName(jTextField1.getText());
+            customer.setCity(jTextField2.getText());
+            //adds more fields that will populate the zip and discountCode columns
+            customer.setZip("12345");
+            customer.setDiscountCode(entityManager.find(DiscountCode.class, 'H'));
+
+            entityManager.persist(customer);
+            entityManager.getTransaction().commit();
+        }</strong>
+    }
+
+}</pre>
+                <p>The code also writes some arbitrary data to DiscountCode because the field cannot be empty.</p>
+            </li>
+            <li>Fix your imports to import <tt><strong>javax.persistence.Query</strong></tt>. Save your changes.</li>
+        </ol>
+
+</div>
+
+
+<!-- =================================================================== -->
+<!-- ++++++++++++++++++++ Running the Application ++++++++++++++++++++++ -->
+
+    <h2><a name="06"></a>Building and Running the Application</h2>
+    <p>The application now performs three of the CRUD functions: Create, Read and Update.
+    You can now build and run the application to check that all the functions are performing correctly.</p>
+    <ol>
+        <li>Right-click the project node of the <strong>MavenPlatformCRUDApp NetBeans Platform based application</strong> and choose Clean.</li>
+        <li>Right-click the project node of the <strong>MavenPlatformCRUDApp NetBeans Platform based application</strong> and choose Build with Dependencies.</li>
+        <li>Right-click the project node of the <strong>MavenPlatformCRUDApp NetBeans Platform based application</strong> and choose Run.</li>
+    </ol>
+
+    <p>When you click Run, the IDE launches the platform application.
+    The application populates the tree in the Customer window with the names of the customers in the database.
+    When you select a node in the Customer window, the My Editor window displays the name and city of the selected customer.
+    You can modify and save the data in the Name and City fields.
+    To create a new customer, click the My Action button in the toolbar and enter a name in city in the empty text fields in the
+    My Editor window and then click Save.</p>
+    <p>
+    <img src="../images/tutorials/maven-crud/mavencrud-finished-app.png" alt="Screenshot of Finished application" title="Finished application showing Customer and MyEditor windows" class="margin-around b-all" />
+    </p>
+    <p class="tips">After you create or modify a customer, you will need to refresh the Root node in the Customer window
+    if you did not implement the Refresh action on Save.</p>
+
+    <p>This tutorial demonstrated how creating a NetBeans Platform application using Maven
+    is not very different from creating an application using Ant.
+    The major difference is understanding how the Maven POM controls how the application is assembled.
+    For more examples on how to build NetBeans Platform applications and modules,
+    see the tutorials listed in the <a href="https://netbeans.org/kb/trails/platform.html">NetBeans Platform Learning Trail</a>.</p>
+
+ <!-- ======================================================================================== -->
+
+<div class="feedback-box"><a name="feedback"></a>
+    <a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20NetBeans%20Platform%20CRUD%20Application%20Using%20Maven">
+        Send Us Your Feedback</a></div>
+
+ <p>&nbsp;</p>
+ <!-- ======================================================================================== -->
+    <h2><a name="nextsteps"></a>See Also</h2>
+
+    <p>This concludes the CRUD Tutorial. This document has described
+    how to use the Maven build framework to create a new NetBeans Platform application with CRUD functionality.
+    For more information about creating and developing applications, see the following resources.</p>
+    <ul>
+        <li><a href="https://netbeans.org/kb/trails/platform.html">NetBeans Platform Learning Trail</a></li>
+        <li><a href="http://bits.netbeans.org/dev/javadoc/">NetBeans API Javadoc</a></li>
+    </ul>
+
+    <p>If you have any questions about the NetBeans Platform, feel free
+     to write to the mailing list, dev@platform.netbeans.org, or view the
+    <a href="https://netbeans.org/projects/platform/lists/dev/archive">NetBeans Platform mailing list archive</a>.</p>
+
+
+    <!-- ======================================================================================== -->
+
+
+</body>
+
+</html>

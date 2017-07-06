@@ -1,0 +1,499 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+<title>NetBeans Hyperlink Navigation Tutorial for NetBeans Platform 6.0</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="tboudreau@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A hyperlink in/to HTML files.">
+<!--      Copyright (c) 2006 Sun Microsystems, Inc. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>NetBeans Hyperlink Navigation Tutorial</h1>
+
+<p>In this tutorial, you learn how to create hyperlinks in HTML files, programmatically. 
+
+  <p><b>Contents</b></p>
+   
+      <img  src="../../images/articles/60/netbeans-stamp60-61.gif" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.1" title="Content on this page applies to NetBeans IDE 6.1"> </p>
+      <ul class="toc">
+  <li><a href="#intro">Introduction to Hyperlinks</a></li>
+  <li><a href="#creating">Creating the Module Project</a></li>
+  <li><a href="#hyperlinkprovider">Implementing the HyperlinkProvider Class</a></li>
+  <li><a href="#opening">Opening the Referenced HTML File</a></li>
+  <li><a href="#registering">Registering the HyperlinkProvider Implementation Class</a></li>
+       </ul>
+         
+<p><b>To follow this tutorial, you need the software and resources listed in the following 
+table.</b></p>
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1">NetBeans IDE</td>
+                <td class="tbltd1">version 
+                <a href="http://download.netbeans.org/netbeans/6.1/final/">version 6.1</a> or<br>
+                version 6.0</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">Java Developer Kit (JDK)</td>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">version 6</a> or<br>
+                version 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+     <p class="tips">Optionally, for troubleshooting purposes, you can <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=3797">download the
+   completed sample</a> and inspect the sources.
+    
+
+<h2 class="tutorial"><a name="intro"></a>Introduction to Hyperlinks</h2>
+
+<p>Hyperlinks in the IDE are created
+ when you implement the NetBeans API <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/lib/editor/hyperlink/spi/HyperlinkProvider.html">HyperlinkProvider</a> class.
+ In this case, the hyperlink will let the user navigate from an HREF attribute in an HTML link to the referenced
+  HTML file.
+
+
+<p>The new hyperlink will appear when the user holds down the Ctrl
+  key and moves the mouse over the value of the HREF attribute, as shown here:
+
+<p><img border="1" src="../../images/tutorials/hyperlink/hyperlink.png"/>
+
+<p>When the hyperlink is clicked, the referenced file opens and the cursor
+ lands on the first BODY tag, if one exists.</p>
+
+<p>This is what the completed project will look like in the Projects window:
+
+
+<p><img border="1" src="../../images/tutorials/hyperlink/61-hyperlink2.png"/>
+
+<p>Though the focus of this tutorial is on hyperlinking from one HTML file to another,
+ the principles shown here could equally be applied to other types of files,
+  such as to Java source files, XML files, and JSP files.
+
+
+
+<!-- ===================================================================================== -->
+
+<p><h2><a name="creating"></a>Creating the Module Project</h2>
+
+<p>In this section, we use a wizard to create a module project.
+  We declare dependencies on modules that provide the NetBeans API classes
+ needed by our hyperlink module.
+
+<ol>
+
+<li>Choose File &gt; New Project. In the New Project wizard,
+ choose NetBeans Modules under Categories and Module Project
+ under Projects. Click Next. Type <tt>AHrefHyperlink</tt> in Project Name
+  and set Project Location to an appropriate folder on your disk. If they
+ are not selected, select
+   Standalone Module and Set as Main Project. Click Next.
+  
+   <li>Type <tt>org.netbeans.modules.ahrefhyperlink</tt> in Code Name Base.
+   Type <tt>org/netbeans/modules/ahrefhyperlink/layer.xml</tt>
+   in XML Layer. Click Finish.
+
+    
+ <li>Right-click the project, choose Properties, click Libraries 
+in the Project Properties dialog box and declare a dependency on the following APIs:
+ 
+<p><ul>
+<li>Datasystems API
+<li>Editor
+<li>Editor Library
+<li>Editor Library 2
+<li>File System API
+<li>HTML Lexer
+<li>Lexer
+<li>Nodes API
+<li>Text API
+<li>Utilities API
+</ul>
+    
+
+</ol>
+
+      <br />
+
+<!-- ===================================================================================== -->
+<p><h2><a name="hyperlinkprovider"></a>Implementing the HyperlinkProvider Class</h2>
+
+<p>The <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/lib/editor/hyperlink/spi/HyperlinkProvider.html">HyperlinkProvider</a> class
+  implements three methods, each of which is discussed in detail below, accompanied by a
+ practical example in the context of our module. First we set up the class and then
+  we implement each of the three methods in turn.
+    
+<br />
+<div class="indent">
+  <p><h3 class="tutorial"><a name="method1"></a>Setting Up the HyperlinkProvider Class</h3>
+
+<p>Setting up our class means implementing <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/lib/editor/hyperlink/spi/HyperlinkProvider.html">HyperlinkProvider</a>
+ and initializing some values that we will need in our implementation.
+
+ <ol>
+     
+     <li>Create a Java class in <tt>org.netbeans.modules.ahrefhyperlink</tt>,
+ and call it AHrefHyperlinkProvider.
+     
+     <li>Change the signature so that HyperlinkProvider is implemented.
+     
+     <li>Note that the following import statements will be needed:
+     
+<p><pre class="examplecode">import org.openide.util.RequestProcessor;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
+import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.StyledDocument;
+import org.netbeans.api.editor.EditorRegistry;
+import org.netbeans.api.html.lexer.HTMLTokenId;
+import org.netbeans.api.lexer.Token;
+import org.netbeans.api.lexer.TokenHierarchy;
+import org.netbeans.api.lexer.TokenSequence;
+import org.netbeans.lib.editor.hyperlink.spi.HyperlinkProvider;</pre>
+     
+     <li>Add the following initial values at the top of the class:
+ 
+<p><pre class="examplecode">private static String AHREF_IDENTIFIER = "href";
+private Reference&lt;Document&gt; lastDocument;
+private int startOffset;
+private int endOffset;
+private String identifier;</pre>
+
+<li>Define the Constructor as follows:
+
+<p><pre class="examplecode">public AHrefHyperlinkProvider() {
+        
+  lastDocument = null;
+        
+}</pre>
+
+<li>Add accessors for the document:
+
+<p><pre>private Document getLastDocument() {
+    return lastDocument == null ? null : lastDocument.get();
+}
+
+private void setLastDocument(Document doc) {
+    lastDocument = new WeakReference&lt;Document&gt;(doc);
+}</pre>
+
+ </ol>
+
+
+</div>
+      <br />
+      
+      <br />
+<div class="indent">
+  <p><h3 class="tutorial"><a name="method1"></a>isHyperlinkPoint(Document doc, int offset)</h3>
+
+<p><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/lib/editor/hyperlink/spi/HyperlinkProvider.html#isHyperlinkPoint(javax.swing.text.Document,%20int)">isHyperlinkPoint(Document doc, int offset)</a>
+ determines whether there should be a hyperlink at the given offset within the given document. The inline
+  comments in the method below, as well as in the code in the remainder of this tutorial,
+   serve to explain the purpose of the code.
+
+<p><pre class="examplecode">public boolean isHyperlinkPoint(Document doc, int offset) {
+
+        JTextComponent target = EditorRegistry.lastFocusedComponent();
+        final StyledDocument styledDoc = (StyledDocument) target.getDocument();
+        if (styledDoc == null) {
+            return false;
+        }
+
+        <b>// Work only with the open editor 
+        //and the editor has to be the active component:</b>
+        if ((target == null) || (target.getDocument() != doc)) {
+            return false;
+        }
+
+        TokenHierarchy hi = TokenHierarchy.get(doc);
+        TokenSequence&lt;HTMLTokenId&gt; ts = hi.tokenSequence(HTMLTokenId.language());
+        ts.move(offset);
+        ts.moveNext();
+        Token&lt;HTMLTokenId&gt; tok = ts.token();
+        if (tok != null) {
+            int tokOffset = ts.offset();
+            switch (tok.id()) {
+                case VALUE:
+                    while (ts.movePrevious()) {
+                        Token&lt;HTMLTokenId&gt; prev = ts.token();
+                        switch (prev.id()) {
+                            case ARGUMENT:
+                                if (AHREF_IDENTIFIER.equals(prev.text().toString())) {
+                                    identifier = tok.text().toString();
+                                    setLastDocument(doc);
+                                    startOffset = tokOffset;
+                                    endOffset = startOffset + tok.text().length();
+                                    return true;
+                                }
+                            case OPERATOR:
+                                continue;
+                            case EOL:
+                            case ERROR:
+                            case WS:
+                                continue;
+                            default:
+                                return false;
+                        }
+                    }
+                    return false;
+            }
+            return false;
+        }
+        return false;
+}</pre>
+
+
+</div>
+      <br />
+
+<div class="indent">
+  <p><h3 class="tutorial"><a name="method2"></a>getHyperlinkSpan(Document doc, int offset)</h3>
+
+<p><tt><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/lib/editor/hyperlink/spi/HyperlinkProvider.html#getHyperlinkSpan(javax.swing.text.Document,%20int)">getHyperlinkSpan(Document doc, int offset)</a></tt> determines the length of the hyperlink.
+
+
+<p><pre class="examplecode">public int[] getHyperlinkSpan(Document doc, int offset) {
+
+    JTextComponent target = EditorRegistry.lastFocusedComponent();
+    final StyledDocument styledDoc = (StyledDocument) target.getDocument();
+    if (styledDoc == null) {
+        return null;
+    }
+    
+    <b>// Return the position, which was set in the isHyperlink method:</b>
+    return new int[]{startOffset, endOffset};
+}</pre>
+
+
+</div>
+      <br />
+      
+      
+      <div class="indent">
+  <h3 class="tutorial"><a name="method3"></a>performClickAction(Document doc, int offset)</h3>
+
+
+<p><a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-editor-lib/org/netbeans/lib/editor/hyperlink/spi/HyperlinkProvider.html#performClickAction(javax.swing.text.Document,%20int)">performClickAction(Document doc, int offset)</a>
+ determines what happens when the hyperlink is clicked. In general, a document
+ should open, the cursor should move to a certain place in a document, or both.
+
+<p><pre class="examplecode">public void performClickAction(Document doc, int offset) {
+
+    JTextComponent target = EditorRegistry.lastFocusedComponent();
+    final StyledDocument styledDocdoc = (StyledDocument) target.getDocument();
+    if (styledDocdoc == null) {
+        return;
+    }
+
+    <b>//Start a new thread for opening the HTML document:</b>
+    OpenHTMLThread run = new OpenHTMLThread(styledDocdoc, identifier);
+    RequestProcessor.getDefault().post(run);
+
+}</pre>
+
+
+</div>
+      <br />
+
+     
+
+
+ <!-- ===================================================================================== -->
+<p><h2><a name="opening"></a>Opening the Referenced HTML File</h2>
+
+<p>Next, you need to create a class that opens an HTML file in a separate thread.
+ Here, the class is called <tt>OpenHTMLThread</tt>. 
+
+<p>The token identified in the <tt>isHyperlinkPoint</tt> method is
+ received by this class. Then the token is analyzed to see whether
+  it contains a slash, which indicates that it is a relative link. In
+   that case, the file object is extrapolated from the URL to the file.
+   Otherwise, the file object is created from the token itself. Next, the
+    document with the name of the file object is opened and the cursor
+     is positioned at the BODY tag, if found.
+
+<pre class="examplecode">public class OpenHTMLThread implements Runnable {
+
+    private StyledDocument doc;
+    private String identifier;
+
+    public OpenHTMLThread(StyledDocument doc, String identifier) {
+
+        super();
+        this.doc = doc;
+        this.identifier = identifier;
+    }
+
+    public void run() {
+        try {
+
+            String cleanedIdentifier = identifier.replaceAll("\"", "");
+
+            FileObject fo = NbEditorUtilities.getFileObject(doc);
+            FileObject foHtml = null;
+
+            <b>// Here we're working out whether we're dealing with a relative link or not:</b>
+            if (cleanedIdentifier.contains("/")) {
+                String fullPath = fo.getPath();
+                try {
+                    URL f = new File(fullPath).toURI().resolve(cleanedIdentifier).toURL();
+                    foHtml = URLMapper.findFileObject(f);
+                } catch (MalformedURLException ex) {
+                    ex.printStackTrace();
+                }
+            } else {
+                foHtml = fo.getParent().getFileObject(cleanedIdentifier);
+            }
+
+            <b>// Here we're finding our HTML file:</b>
+            DataObject dObject;
+            dObject = DataObject.find(foHtml);
+            final EditorCookie.Observable ec = (EditorCookie.Observable) dObject.getCookie(EditorCookie.Observable.class);
+            if (ec != null) {
+                org.netbeans.editor.Utilities.runInEventDispatchThread(new Runnable() {
+
+                    public void run() {
+                        final JEditorPane[] panes = ec.getOpenedPanes();
+
+                        <b>//Here we're positioning the cursor,
+                        //if the document isn't open, we need to open it first:</b>
+                        
+                        if ((panes != null) && (panes.length > 0)) {
+                            setPosition(panes[0], identifier);
+                        } else {
+                            ec.addPropertyChangeListener(new PropertyChangeListener() {
+
+                                public void propertyChange(PropertyChangeEvent evt) {
+                                    if (EditorCookie.Observable.PROP_OPENED_PANES.equals(evt.getPropertyName())) {
+                                        final JEditorPane[] panes = ec.getOpenedPanes();
+                                        if ((panes != null) && (panes.length > 0)) {
+                                            setPosition(panes[0], identifier);
+                                        }
+                                        ec.removePropertyChangeListener(this);
+                                    }
+                                }
+                            });
+                            ec.open();
+                        }
+                    }
+
+                    <b>//Here we specify where the cursor will land:</b>
+                    private void setPosition(JEditorPane pane, String identifier) {
+
+                        try {
+                            <b>//The whole text:</b>
+                            String text = pane.getDocument().getText(0, pane.getDocument().getLength() - 1);
+                            <b>//The place where we want the cursor to be:</b>
+                            int index = text.indexOf("&lt;body&gt;");
+                            /<b>/If we can find it, we place the cursor there:</b>
+                            if (index > 0) {
+                                pane.setCaretPosition(index);
+                            }
+                        } catch (BadLocationException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                });
+            }
+        } catch (DataObjectNotFoundException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+    }
+}</pre>
+
+<p>Make very sure that the following import statements
+ are declared:
+ 
+<pre>import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import javax.swing.JEditorPane;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.StyledDocument;
+import org.netbeans.modules.editor.NbEditorUtilities;
+import org.openide.cookies.EditorCookie;
+import org.openide.filesystems.FileObject;
+import org.openide.filesystems.URLMapper;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
+import org.openide.util.Exceptions;</pre>
+     
+
+
+ <!-- ===================================================================================== -->
+<p><h2><a name="registering"></a>Registering the HyperlinkProvider Implementation Class</h2>
+
+<p>Finally, you need to register the hyperlink provider implementation class
+  in the module's <tt>layer.xml</tt> file. Do this as follows, while making sure
+   that the line in bold below is the fully qualified class name of the class that
+   implements HyperlinkProvider:
+
+<pre class="examplecode">&lt;folder name="Editors"&gt;
+    &lt;folder name="text"&gt;
+        &lt;folder name="html"&gt;
+            &lt;folder name="HyperlinkProviders"&gt;
+            
+                &lt;file name="AHrefHyperlinkProvider.instance"&gt;
+                    &lt;attr name="instanceClass" 
+                          stringvalue="<b>org.netbeans.modules.ahrefhyperlink.AHrefHyperlinkProvider</b>"/&gt;
+                    &lt;attr name="instanceOf" 
+                          stringvalue="org.netbeans.lib.editor.hyperlink.spi.HyperlinkProvider"/&gt;
+                &lt;/file&gt;
+                
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+
+<p>If you create a hyperlink for a different MIME type, you need to change the
+ <tt>text/html</tt> folders above to the appropriate MIME type.</p>
+
+ <p>Now that the HyperlinkProvider is registered, you can install the module and
+  try out your new hyperlinks. Hold down the Ctrl key, move the mouse over an HREF
+   attribute as shown at the start of this tutorial:
+ 
+<p><img border="1" src="../../images/tutorials/hyperlink/hyperlink.png"/>
+
+   
+<p>When the hyperlink appears,
+    you can click it and let the IDE navigate to the referenced HTML file.
+ 
+  <br />
+
+  <br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Hyperlink%20Module%20Tutorial">Send Us Your Feedback</a></div>
+<br style="clear:both;" />
+  
+ <!-- ===================================================================================== -->
+<p><h2><a name="gettingtoknowthesample"></a>Next Steps</h2>
+
+<ul>
+    
+    <li>Utility method for finding and opening Java source files.
+    <li>Working with JSP and XML documents. (Same principle as above.)
+    <li>Need to provide for the situation where the referenced HTML file doesn't exist.
+    <li>Show hyperlink within same document.
+    <li>Implement external links, i.e., http links should go to external browser.
+    <li>Provide links to NetBeans sources, such as StrutsHyperlinkProvider, etc.
+</ul>
+
+<hr><p>
+ 
+</body>
+</html>

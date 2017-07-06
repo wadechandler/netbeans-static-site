@@ -1,0 +1,593 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<!-- -*- xhtml -*- -->
+  <title>针对 NetBeans 平�?� 6.5 的文件类型集�?教程</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="gwielenga@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A short guide to using the Nodes API.">
+<!--      Copyright (c) 2005 Sun Microsystems, Inc. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+	<h1>文件类型集�?教程</h1>
+
+<p>本教程将�?�您演示如何编写一个模�?�，以便使 IDE 或构建于 NetBeans 平�?�之上的任何其他应用程�?能够识别新的文件类型。 
+
+   </p><p><b class="notes">注�?：</b>本文档针对的是 NetBeans IDE 6.5 �?�行版。如果使用的是 NetBeans IDE 6.x，请�?��?<a href="60/nbm-filetype.html">本文档的 6.1 版</a>。
+
+   </p><p><b>目录</b></p>
+   
+   <img  src="../images/articles/65/netbeans-stamp65.gif" class="stamp" width="114" height="114" alt="本页上的内容适用 NetBeans IDE 6.5" title="本页上的内容适用 NetBeans IDE 6.5"> </p>
+      <ul class="toc">
+  <li><a href="#intro">文件类型集�?简介</a></li>
+  <li><a href="#creating">创建模�?�项目</a></li>
+  <li><a href="#recognizing">识别 Abc 文件</a></li>
+  <li><a href="#install">安装和试用功能</a></li>
+  <li><a href="#adding">为 Abc 文件创建功能</a></li>
+  <ul>
+      <li><a href="#action">添加�?作</a>
+      </li><li><a href="#topcomponent">在窗�?�中打开文件</a>    
+  </li></ul>
+  <li><a href="#share">创建�?�共享的二进制文件</a></li>
+       </ul>
+         
+<p><b>�?学习本教程，您需�?具备下表中列出的软件和资�?。</b></p>
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">软件或资�?</th>
+                <th class="tblheader" scope="col">�?求的版本</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">版本 6.5</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">版本 6 或<br/>版本 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+
+
+
+<h2 class="tutorial"><a name="intro"></a>文件类型集�?简介</h2>
+
+<p>在 IDE 中�?�识别的文件类型有它们自己的图标�?�?��?�项以�?�行为。所显示的“文件�?是 <tt>FileObject</tt>，�?� <tt>java.io.File</tt> 的包装器；对于�?置文件，则为以�?�?其他方�?存储（例如存储在模�?�的 XML 文件内）的数�?�的包装器。您实际<i>看到</i>的是 <tt>Node</tt>，它们�?�诸如文件之类的对象�??供�?作和本地化�??称等功能。�?于 <tt>Node</tt> 和 <tt>FileObject</tt> 之间的是 <tt>DataObject</tt>。<tt>DataObject</tt> 与 <tt>FileObject</tt> 类似，�?�?�之处在于它了解显示的是哪�?类型的文件，并且对于具有�?�?�扩展�??的文件以�?�具有�?�?��??称空间的 XML 文件，通常存在�?�?�类型的 <tt>DataObject</tt>。�?个 <tt>DataObject</tt> 都是由一个�?�?�的模�?��??供的，�?个模�?�支�?一�?或多�?文件类型，例如，通过图�?模�?��?�以识别和打开 <tt>.gif</tt> 和 <tt>.png</tt> 文件。
+
+</p><p>用于识别文件类型的模�?�会安装一个 <tt>DataLoader</tt>，这是特定于文件类型的 <tt>DataObject</tt> 工厂。当展开�?个文件夹时，IDE 会询问�?个已知的 <tt>DataLoader</tt> 是�?�了解此文件夹的内容。第一个回答“是�?的 DataLoader 将为其中的文件创建 <tt>DataObject</tt>。为了实际显示�?个文件的�?些内容，系统会对�?个 <tt>DataObject</tt> 调用 <tt>DataObject.getNodeDelegate()</tt>，而 <tt>Node</tt> 便是您在 IDE 中实际看到的内容。 
+
+</p><p>下图（居左）显示了上�?��??到的�?一项所�??供的内容：
+
+</p><p></p><p align="left"><img  src="../images/tutorials/filetype/diagram-dataobject2.png" alt="图。">
+
+</p><p>在本教程中，您将创建一个模�?�，用于为�?�定的 &quot;Abc&quot; 文件（扩展�??为 <tt>.abc</tt>）安装 <tt>DataLoader</tt>。缺�?情况下，扩展�??为 &quot;abc&quot; 的文件会被视为 IDE 无法识别的任何其他文件；在本教程中，我们将其视为文本文件，因此，IDE 应为 Abc 文件�??供与文本文件相�?�的功能。创建此模�?��?�，我们将�?�您演示如何用仅供 Abc 文件使用的功能�?�增强此模�?�。开�?�周期完�?�?�，您�?�以通过以下方法轻�?�地让其他人使用您的模�?�：在 IDE 中创建一个二进制文件并将此文件�?��?给其他人，�?�者�?�以通过更新中心�?�安装此文件。
+
+<!-- ===================================================================================== -->
+
+</p><h2 class="tutorial"><a name="creating"></a>创建模�?�项目</h2>
+      
+<p>在本节中，我们将利用�?�导创建�?个 NetBeans 模�?�所需的�?代�?结构。�?代�?结构包�?��?于特定�?置的�?些文件夹以�?�一组始终需�?的文件。例如，�?个 NetBeans 模�?�都需�?一个 <tt>nbproject</tt> 文件夹和一个 <tt>layer.xml</tt> 文件，�?者用于存放项目的 meta 数�?�，�?�者用于工具�?按钮和窗�?�等项的声明性注册。
+
+</p><ol>
+          
+	      <li>选择“文件�?&gt;“新建项目�?(Ctrl-Shift-N)。在“类别�?下选择“NetBeans 模�?��?。在“项目�?下选择“模�?��?，然�?��?�击“下一步�?。</li>
+	<li>在“�??称和�?置�?�?��?�的“项目�??称�?中键入 <tt>AbcFileType</tt>。将项目�?置更改为计算机上的任�?目录，例如 <tt>c:\mymodules</tt>。将“独立模�?��?�?�选按钮�?留为选中状�?。此�?��?�现在应如下所示：
+
+<p></p><p align="left"><img  src="../images/tutorials/filetype/65-projectwizard1.png" alt="“新建项目�?�?�导的第 1 步。">
+ </p><p>�?�击“下一步�?。
+
+</p></li><li>在“基本模�?��?置�?�?��?�的“代�?�??称基�?中键入 <tt>org.myorg.abcfiletype</tt>。在建议的模�?�显示�??称中添加空格，以将其更改为 <tt>Abc File Type</tt>。选中“生�? XML 层�?�?选框并�?留本地化包和 XML 层的�?置，以将其存储在�??为 <tt>org/myorg/abcfiletype</tt> 的包中。此�?��?�现在应如下所示：
+
+<p></p><p align="left"><img  src="../images/tutorials/filetype/65-projectwizard2.png" alt="“新建项目�?�?�导的第 2 步。">
+
+</p></li><li>�?�击“完�?�?。</li></ol>
+
+<p> IDE 将创建 <tt>Abc File Type</tt> 项目。此项目包�?�所有�?代�?和项目 meta 数�?�，例如项目的 Ant 生�?脚本。此项目将会在 IDE 中打开。您�?�以在“项目�?窗�?� (Ctrl-1) 中查看其逻辑结构，在“文件�?窗�?� (Ctrl-2) 中查看其文件结构。例如，“项目�?窗�?�现在应如下所示：
+
+</p><p></p><p align="left"><img  src="../images/tutorials/filetype/65-projectswindow1.png" alt="最�?的“项目�?窗�?�。">
+
+
+      <br />
+
+<!-- ===================================================================================== -->
+</p><h2><a name="recognizing"></a>识别 Abc 文件</h2>
+
+<p>在本节中，我们将利用�?�导创建区分 Abc 文件和所有其他文件所需的类。在本教程的开头已�??到，�?实现此目的，我们需�?一个数�?�对象�?一个数�?�加载器�?一个 MIME 类型解�?器以�?� <tt>layer.xml</tt> 文件中的注册�?�目。“新建文件类型�?�?�导将自动为我们创建所有这些内容。
+
+  
+ </p><ol>
+	
+	 <li>�?�键�?�击项目节点，然�?�选择“新建�?&gt;“文件类型�?。</li>
+	      <li>在“文件识别�?�?��?�中，执行以下�?作：
+<p></p><ul><li>在“MIME 类型�?编辑框中键入 <tt>text/x-abc</tt>。
+</li><li>在“按文件扩展�??�?编辑框中键入 <tt>.abc .ABC</tt>。</li></ul>
+<p>“文件识别�?�?��?�现在应如下所示：
+
+	       </p><p></p><p align="left"><img border="1"  src="../images/tutorials/filetype/60-filewizard1.png" alt="“新建文件�?�?�导的第 1 步。">
+
+	       </p><p>请注�?下�?��??供的有关“文件识别�?�?��?�中的字段的说明：
+	       </p><ul>
+		       <li><b>MIME 类型。</b>指定数�?�对象的唯一 MIME 类型。
+		       </li><li>按
+			       <ul><li><b>文件扩展�??。</b>指定一个或多个文件扩展�??，IDE 将这些扩展�??识别为属于指定的 MIME 类型。�?�以选择在文件扩展�??�?�?�加一个圆点。分隔符为逗�?�和/或空格。因此，所有以下内容都是有效的：
+		       <p></p><ul><li><tt>.abc,.def</tt>
+			       </li><li><tt>.abc .def</tt>
+			       </li><li><tt>abc def</tt>
+			       </li><li><tt>abc,.def ghi, .wow</tt></li></ul>
+			<p>我们�?�定 Abc 文件区分大�?写。为此，在本教程中指定了<i>两�?</i> MIME 类型：<tt>.abc</tt> 和 <tt>.ABC</tt>。		      
+		       </p></li><li><b>XML 根元素。</b>指定唯一的�??称空间，以将该 XML 文件类型与所有其他 XML 文件类型区分开。由于许多 XML 文件具有相�?�的扩展�?? (<tt>xml</tt>)，因此 IDE 通过 XML 根元素�?�区分�?�个 XML 文件。更确切地说，就是 IDE �?�以区分�??称空间以�?� XML 文件中的第一个 XML 元素。例如，您�?�以利用这一点�?�区分 JBoss 部署�??述符和 WebLogic 部署�??述符。区分开这两�?部署�??述符�?�，便�?�以确�?添加到 JBoss 部署�??述符上下文�?��?�中的�?��?�项对于 WebLogic 部署�??述符�?�?�用。有关示例，请�?��? <a href="nbm-palette-api2.html">NetBeans 组件�?��?�模�?�教程</a>。
+	</li></ul></li></ul>
+	      
+	      <p>�?�击“下一步�?。
+
+	      </p></li><li>在“�??称和�?置�?�?��?�的“类�??�?缀�?中键入 <tt>Abc</tt>，然�?��?览到任�? 16x16 �?素的图�?文件作为新文件类型的图标，如下所示。
+	      
+<p align="left"></p><p></p><p align="left"><img  src="../images/tutorials/filetype/65-filewizard2.png" alt="“新建文件�?�?�导的第 2 步。">
+
+
+              </p><p><b>注�?：</b>�?�以使用任�?图标。如果愿�?，�?�以�?�击以下图标并将其�?存在本地，然�?�在上�?�的�?�导步骤中指定该图标：<img  src="../images/tutorials/filetype/Datasource.gif" alt="Datasource.gif">
+
+</p></li><li>�?�击“完�?�?。
+
+<p></p><p>“项目�?窗�?�现在应如下所示：
+
+</p><p></p><p align="left"><img  src="../images/tutorials/filetype/65-projectswindow2.png" alt="最终的“项目�?窗�?�。"></p></li>
+
+<p>下�?�简�?介�?了�?个新生�?的文件：
+ </p><ul>
+	<li><b>AbcDataObject.java。</b>包装 <tt>FileObject</tt>。DataObject 是由 DataLoader 生�?的。有关详细信�?�，请�?��? <a href="http://wiki.netbeans.org/wiki/view/DevFaqDataObject">What is a DataObject?</a>（什么是 DataObject？）。
+ </li><li><b>AbcResolver.xml。</b>将 <tt>.abc</tt> 和 <tt>.ABC</tt> 扩展�??映射到 MIME 类型。<tt>AbcDataLoader</tt> 仅识别 MIME 类型，而�?了解有关文件扩展�??的信�?�。
+	 </li><li><b>AbcTemplate.abc。</b>为 <tt>layer.xml</tt> 中注册的文件模�?��??供了基础，以便将其作为新模�?�安装在“新建文件�?对�?框中。
+         </li><li><b>AbcDataObjectTest.java。</b><tt>DataObject</tt> 的 JUnit 测试类。
+</li></ul>
+      </p>
+     </ol> 
+      <p>在 <tt>layer.xml</tt> 文件中，将会看到以下内容：
+      
+</p><pre>&lt;folder name=&quot;Loaders&quot;&gt;
+    &lt;folder name=&quot;text&quot;&gt;
+        &lt;folder name=&quot;x-abc&quot;&gt;
+            &lt;folder name=&quot;Actions&quot;&gt;
+                &lt;file name=&quot;org-myorg-abcfiletype-MyAction.shadow&quot;&gt;
+                    &lt;attr name=&quot;originalFile&quot; stringvalue=&quot;Actions/Edit/org-myorg-abcfiletype-MyAction.instance&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;600&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-CopyAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;100&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-CutAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;200&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-DeleteAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;300&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-FileSystemAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;400&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-OpenAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;500&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-PropertiesAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;700&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-RenameAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;800&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-SaveAsTemplateAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;900&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-ToolsAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1000&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;sep-1.instance&quot;&gt;
+                    &lt;attr name=&quot;instanceClass&quot; stringvalue=&quot;javax.swing.JSeparator&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1100&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;sep-2.instance&quot;&gt;
+                    &lt;attr name=&quot;instanceClass&quot; stringvalue=&quot;javax.swing.JSeparator&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1200&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;sep-3.instance&quot;&gt;
+                    &lt;attr name=&quot;instanceClass&quot; stringvalue=&quot;javax.swing.JSeparator&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1300&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;sep-4.instance&quot;&gt;
+                    &lt;attr name=&quot;instanceClass&quot; stringvalue=&quot;javax.swing.JSeparator&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1400&quot;/&gt;
+                &lt;/file&gt;
+            &lt;/folder&gt;
+            &lt;folder name=&quot;Factories&quot;&gt;
+                &lt;file name=&quot;AbcDataLoader.instance&quot;&gt;
+                    &lt;attr name=&quot;SystemFileSystem.icon&quot; urlvalue=&quot;nbresloc:/org/myorg/abcfiletype/Datasource.gif&quot;/&gt;
+                    &lt;attr name=&quot;dataObjectClass&quot; stringvalue=&quot;org.myorg.abcfiletype.AbcDataObject&quot;/&gt;
+                    &lt;attr name=&quot;instanceCreate&quot; methodvalue=&quot;org.openide.loaders.DataLoaderPool.factory&quot;/&gt;
+                    &lt;attr name=&quot;mimeType&quot; stringvalue=&quot;text/x-abc&quot;/&gt;
+                &lt;/file&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>      
+
+
+      <br />
+      
+    <!-- ======================================================================================= -->
+
+<h2><a name="install"></a>安装和试用功能</h2>
+<p>现在，让我们安装该模�?�，然�?�使用此�?创建的基本功能。IDE 使用 Ant 生�?脚本�?�生�?和安装模�?�。此生�?脚本是在创建项目时创建的。</p>
+<div class="indent">
+
+
+      <ol>
+	      <li>在“项目�?窗�?�中，�?�键�?�击 <tt>Abc File Type</tt> 项目，然�?�选择“在开�?� IDE 中安装/�?新装入�?。
+	      <p></p><p>将在当�?�?行的 IDE 中生�?并安装该模�?�。 
+	       </p></li><li>在 IDE 中创建任何类型的应用程�?。
+               </li><li>�?�键�?�击该应用程�?节点，然�?�选择“新建�?&gt;“其他�?。在“其他�?类别中，有一个用于创建新文件类型的虚拟模�?�：
+		 <p></p><p align="left"><img border="1"  src="../images/tutorials/filetype/60-action4.png" alt="虚拟模�?�。">
+		 </p></li><li>如果�?通过该虚拟模�?��??供缺�?代�?，请将这些代�?添加到“新建文件类型�?�?�导所创建的 <tt>AbcTemplate.abc</tt> 文件中。
+       </li></ol>          
+   </div>
+      <br />
+
+<!-- ===================================================================================== -->
+<h2><a name="adding"></a>为 Abc 文件创建功能</h2>
+<p>现在 NetBeans 平�?�能够将 Abc 文件与所有其他类型的文件区分开，接下�?�应添加特定于该文件类型的功能。在本节中，我们将在从资�?管�?�器窗�?�（例如，“项目�?窗�?�）�?�键�?�击该文件节点所显示的上下文�?��?�中添加一个�?��?�项，并使该文件能够在一个窗�?�中打开，而�?是在编辑器中打开。
+
+      </p><div class="indent">
+          
+          <h3 class="tutorial"><a name="action"></a>添加�?作</h3>
+          
+          <p>在本�?节中，我们将使用“新建�?作�?�?�导创建一个 Java 类，用于为我们的文件类型执行�?作。此�?�导还将在 <tt>layer.xml</tt> 文件中注册该类，以使用户能够在从资�?管�?�器窗�?��?�键�?�击该文件类型节点所显示的上下文�?��?�中调用此�?作。
+          
+          </p><ol>
+              
+              <li>�?�键�?�击项目节点，然�?�选择“新建�?&gt;“�?作�?。</li>
+              <li>在“�?作类型�?�?��?�中，�?�击“有�?�件地�?�用�?。键入 <tt>AbcDataObject</tt>，这是之�?由“新建文件类型�?�?�导生�?的数�?�对象的�??称，如下所示：
+              
+              <p></p><p align="left"><img border="1"  src="../images/tutorials/filetype/60-action1.png" alt="“新建�?作�?�?�导的第 1 步。">
+              
+              
+              
+              </p><p>�?�击“下一步�?。
+              
+              </p></li><li>在“GUI 注册�?�?��?�中，从“类别�?下拉列表中选择“编辑�?类别。“类别�?下拉列表用于控制�?作在 IDE 的快�?�键编辑器中的显示�?置。
+              <p></p><p>接下�?�，�?�消选中“全局�?��?�项�?，然�?�选中“文件类型上下文�?��?�项�?。在“内容类型�?下拉列表中，选择您之�?在“新建文件类型�?�?�导中指定的 MIME 类型，如下所示：
+              
+              </p><p align="left"></p><p></p><p align="left"><img border="1"  src="../images/tutorials/filetype/60-action2.png" alt="“新建�?作�?�?�导的第 2 步。">
+              
+              </p><p>请注�?，您�?�以设置�?��?�项的�?置，并将此�?��?�项与其�?�?�和�?��?�的�?��?�项隔开。�?�击“下一步�?。
+              
+              </p></li><li>在“�??称和�?置�?�?��?�的“类�??�?中键入 <tt>MyAction</tt>，在“显示�??称�?中键入 <tt>My Action</tt>。上下文�?��?��??供的�?��?�项�?显示图标。因此，请�?�击“完�?�?，此时 <tt>MyAction.java</tt> 将被添加到 <tt>org.myorg.abcfiletype</tt> 包中。
+              
+              </li><li>在�?代�?编辑器中，将下�?�的代�?添加到此�?作的 <tt>performAction</tt> 方法中：
+              
+<pre class="examplecode">protected void performAction(Node[] activatedNodes) {
+	AbcDataObject d = (AbcDataObject) activatedNodes[0].getCookie(AbcDataObject.class);
+	FileObject f = d.getPrimaryFile();
+	String displayName = FileUtil.getFileDisplayName(f);
+	String msg = &quot;I am &quot; + displayName + &quot;. Hear me roar!&quot;; 
+        NotifyDescriptor nd = new NotifyDescriptor.Message(msg);
+        DialogDisplayer.getDefault().notify(nd);
+}</pre>
+              <p>按 Ctrl-Shift-I 组�?�键。IDE 会自动将 import 语�?�添加到该类的顶部。�?些代�?�?带有红色下划线，这表示类路径中并未包括所有需�?的包。�?�键�?�击项目节点，选择“属性�?，然�?��?�击“项目属性�?对�?框中的“库�?。�?�击“库�?窗格顶部的“添加�?�?�添加“对�?框 API�?。 
+              </p><p>在 <tt>MyAction.java</tt> 类中�?次按 Ctrl-Shift-I 组�?�键。红色下划线将会消失，因为 IDE 在对�?框 API 中找到了所需的包。
+              
+              </p></li><li>在“�?�?文件�?节点中，展开“XML 层�?。&quot;&lt;此层&gt;&quot;<tt></tt> 和 &quot;&lt;上下文中的此层&gt;&quot;<tt></tt> 这两个节点以�?�它们的�?节点共�?�组�?了<a href="https://platform.netbeans.org/tutorials/nbm-glossary.html">系统 Filesystem</a> �?览器。展开 &quot;&lt;此层&gt;&quot;<tt></tt>，�?展开 &quot;Loaders&quot;<tt></tt>，继续展开节点，直到显示您之�?所创建的�?作<tt></tt>。
+              
+              </li><li>将 <tt>My Action</tt> 拖放到“打开�?<tt></tt>�?作下方，如下所示：
+              <p align="left"></p><p></p><p align="left"><img border="1"  src="../images/tutorials/filetype/60-action3.png" alt="系统 Filesystem �?览器。">
+              
+              </p><p>从最�?�两步�?�以看出，系统 Filesystem �?览器�?�用于快速�?组在系统 Filesystem 中注册的�?�项的顺�?。
+              
+              </p></li><li>与上一节一样，�?次安装该模�?�。
+              </li><li>创建一个 ABC 文件，然�?�在�?个资�?管�?�器视图中�?�键�?�击该文件的节点，如“项目�?窗�?�或“收�?夹�?窗�?�。
+	       <p></p><p>请注�?，Abc 文件具有您在其模�?�中所指定的图标，并且�?�以从�?�键�?�击�?作所显示的上下文�?��?�中使用在其 <tt>layer.xml</tt> 文件中定义的一系列�?作：
+		</p><p></p><p align="left"><img  border="1" src="../images/tutorials/filetype/60-dummytemplate.png" alt="最终的“项目�?窗�?�。">
+		</p></li><li>选择新�?��?�项，将显示 Abc 文件的�??称和�?置：
+		<p></p><p align="left"><img border="1" src="../images/tutorials/filetype/60-information.png" alt="信�?�。">
+		
+              
+          </p></li>
+          
+          <h3 class="tutorial"><a name="topcomponent"></a>在窗�?�中打开文件</h3>
+          <p>缺�?情况下，当用户打开在本教程中定义的类型的文件时，该文件将在基本编辑器中打开。但是，有时您�?�能需�?创建文件的�?�视表示，以使用户能够将�?部件拖放到该�?�视表示上。创建此类用户界�?�的第一步是，使用户�?�以在窗�?�中打开文件。本�?节将�?�您演示如何执行此�?作。
+          </p><ol>
+              <li>�?�键�?�击项目节点，然�?�选择“新建�?&gt;“窗�?�组件�?。请使用以下设置：
+              
+ <p></p><p></p><p align="left"><img  src="../images/tutorials/filetype/65-topc-1.png" alt="“新建�?作�?�?�导的第 1 步。">
+</p></li><li>�?�击“下一步�?，然�?�在“类�??�?缀�?中键入 &quot;Abc&quot;：
+ <p></p><p></p><p align="left"><img  src="../images/tutorials/filetype/65-topc-2.png" alt="“新建�?作�?�?�导的第 1 步。">
+              </p></li>
+              <li>按如下所�?更改 <tt>DataObject</tt> 的构造函数，以将 <tt>DataObject</tt> 更改为使用 OpenSupport 而�?是 DataEditorSupport：
+
+<p></p><pre>public AbcDataObject(FileObject pf, AbcDataLoader loader) 
+        throws DataObjectExistsException, IOException {
+
+    super(pf, loader);
+    CookieSet cookies = getCookieSet();
+    //cookies.add((Node.Cookie) DataEditorSupport.create(this, getPrimaryEntry(), cookies));
+    cookies.add((Node.Cookie) new AbcOpenSupport(getPrimaryEntry()));
+              
+}</pre>
+              
+              
+              </li><li>创建 <tt>OpenSupport</tt> 类：
+              
+<p></p><pre>class AbcOpenSupport extends OpenSupport implements OpenCookie, CloseCookie {
+
+    public AbcOpenSupport(AbcDataObject.Entry entry) {
+        super(entry);
+    }
+
+    protected CloneableTopComponent createCloneableTopComponent() {
+        AbcDataObject dobj = (AbcDataObject) entry.getDataObject();
+        AbcTopComponent tc = new AbcTopComponent();
+        tc.setDisplayName(dobj.getName());
+        return tc;
+    }
+ 
+}</pre>              
+              
+              </li><li>调整 TopComponent 以扩展 CloneableTopComponent，而�?是 TopComponent。将 TopComponent 的类修饰符�?�其构造函数的修饰符设置为 public 而�?是 private。
+          </li></ol>	
+<p>�?次安装该模�?�，当打开 Abc 文件时，OpenSupport 类便会处�?�此打开�?作，以便在 TopComponent 中打开该文件，而�?是在 DataEditorSupport 所�??供的基本编辑器中打开：
+ 
+  </p><p></p><p align="left"><img  src="../images/tutorials/filetype/65-topc-3.png" alt="“新建�?作�?�?�导的第 1 步。">
+
+     </p><p><a href="https://platform.netbeans.org/tutorials/60/nbm-visual_library.html">NetBeans �?�视库 6.0 教程</a>�??供了一个进一步开�?� TopComponent 的示例，以便以�?�视方�?显示文件内容（与本教程中定义的文件类型对应）。
+          
+      </p></ol></div>
+      <br />
+
+<!-- ======================================================================================= -->
+
+<h2><a name="share"></a>创建�?�共享的模�?�二进制文件</h2>
+
+<p>该模�?�现已完�?，您�?�以将其交给其他用户使用了。为此，您需�?创建并分�?�一个二进制 &quot;NBM&quot;（NetBeans 模�?�）文件。 
+
+</p><div class="indent">
+  
+      <ol>
+	      <li>在“项目�?窗�?�中，�?�键�?�击 &quot;Abc File Type&quot;<tt></tt> 项目，然�?�选择“创建 NBM�?。
+
+	      <p></p><p>将创建 NBM 文件，您�?�以在“文件�?窗�?� (Ctrl-2) 中查看它：
+	      </p><p></p><p align="left"><img border="1" src="../images/tutorials/filetype/60-shareable-nbm.png" alt="�?�共享的 NBM。">
+	      </p></li><li>例如，通过 <a href="http://plugins.netbeans.org/PluginPortal/">NetBeans �?�件门户</a>�?�其他人�??供该文件。接收者应使用�?�件管�?�器（“工具�?&gt;“�?�件�?）�?�安装它。
+       </li></ol>
+ 
+    </div>
+
+
+<!-- ======================================================================================== -->
+
+
+  <br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20File%20Type%20Module%20Tutorial">请将您的�?�?和建议�?��?给我们</a></div>
+<br style="clear:both;" />
+  
+  
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>�?�续步骤</h2>
+
+<p>有关创建和开�?� NetBeans 模�?�的详细信�?�，请�?��?以下资�?： 
+  </p><ul>
+	  <li><a href="https://platform.netbeans.org/index.html">NetBeans 平�?�主页</a></li>
+	  <li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API 列表（当�?开�?�版本）</a></li>
+  <li><a href="https://platform.netbeans.org/tutorials">其他相关教程</a></li></ul>
+  </p>
+  
+  <hr><p></p><p>
+<!-- ======================================================================================== -->
+<!-- 
+<h2><a name="version"></a>Versioning </h2>
+  
+<p>
+
+<table width="76%" >
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+         25 August 2005
+      </td>
+      <td>
+	      <ul><li>Initial version.
+		      <li>To do:
+		      <ul><li>Add post-creation customizations (i.e., the "Extending Support for the New File Type" section).
+		      <li>Explain what the generated files are for (placeholders currently).
+		      <li>Explain the layer file's entries.
+		      <li>Explain the first File Type panel (placeholders currently).
+		      <li>Maybe create a separate tutorial for recognizing XML files.</ul></ul>
+      </td>
+  </tr>
+<tr>
+      <td>
+         2
+      </td>
+      <td>
+         23 September 2005
+      </td>
+      <td>
+	      <ul><li>A lot of info added from the FAQ and added the Action wizard and System Filesystem Browser.
+		      <li>To do:
+		      <ul><li>Explain <tt>LoaderBeanInfo.java</tt> and <tt>Resolver.xml</tt> (one line each)
+			      <li>Maybe create a separate tutorial for recognizing XML files.
+			      <li>Using Tomcat GIF maybe not good idea.
+			      <li>Maybe the action should do something useful.
+			      <li>Maybe direct links to FAQ not good idea.
+			      <li>Probably more needed on <tt>layer.xml</tt> file.
+			      <li>Maybe other useful apisupport functionality could be added to this scenario.
+			      <li>More info needed on MIME types.
+			      <li>The introductory paragraphs should be illustrated with a graphic. A diagram to
+			      show relationship between node, dataobject, fileobject, dataloader, etc.</ul></ul> 
+      </td>
+  </tr>
+
+<tr>
+      <td>
+         3
+      </td>
+      <td>
+         28 September 2005
+      </td>
+      <td>
+	      <ul><li>Integrated comments from Jesse Glick.
+		      <li>To do:
+		      <ul>    <li>More info needed on MIME types.
+			      <li>The introductory paragraphs should be illustrated with a graphic. A diagram to
+			      show relationship between node, dataobject, fileobject, dataloader, etc.
+			      <li>Many Javadoc links to be added (also for <tt>performAction</tt>.
+			      <li>Info on cookies, cookie actions, cookie classes needed.
+			      <li>Action ended up in text-html even though I chose my own mime type.
+			      <li>Need to explain or link to explanation for instance, shadow, etc.
+			      <li>Platform Manager needs to be mentioned in the context of installing
+			      in target platform.
+			      <li>Show how to add properties to the property sheet.</ul></ul> 
+      </td>
+  </tr>
+<tr>
+      <td>
+         4
+      </td>
+      <td>
+         4 October 2005
+      </td>
+      <td>
+	      <ul><li>Added two diagrams in the introductory paragraphs, from Tim Boudreau's JavaOne presentation.
+ <li>To do:
+		      <ul>    <li>More info needed on MIME types.
+			      <li>Many Javadoc links to be added (also for <tt>performAction</tt>).
+			      <li>Need to create section near the start: "Related FAQs":
+			      <ul><li>Info on cookies, cookie actions, cookie classes needed.
+				      <li>Need to explain or link to explanation for instance, shadow, etc.
+			      <li>DataLoader, DataObject, etc.</ul>
+			      <li>Platform Manager needs to be mentioned in the context of installing
+			      in target platform.
+			      <li>Show how to add properties to the property sheet.
+			      <li>Mention the dummy template that you get, how to modify it,
+	       			and how to set the description in the New File wizard.</ul></ul> 
+		     
+      </td>
+  </tr>
+<tr>
+      <td>
+         4
+      </td>
+      <td>
+         4 November 2005
+      </td>
+      <td>
+	      <ul><li>Added downloadable source code, new 'Installing the Sample' section, and link to
+		       Syntax Highlighting tutorial at the end.
+ <li>To do:
+ <ul>   <li>Same items as on 4 October still to be done.</ul> 
+		     
+      </td>
+  </tr>
+<tr>
+      <td>
+         5
+      </td>
+      <td>
+         29 November 2005
+      </td>
+      <td>
+	      <ul><li>Added links to brand new Component Palette tutorial.
+ <li>To do:
+ <ul>   <li>Same items as on 4 October still to be done.</ul> 
+		     
+      </td>
+  </tr>
+<tr>
+      <td>
+         6
+      </td>
+      <td>
+	      21 April 2006
+      </td>
+      <td>
+	      <ul><li>Changed the title from "DataLoader Module Tutorial" to "Recognizing a File Type Tutorial".
+ <li>To do:
+ <ul>   <li>Same items as on 4 October still to be done.</ul> 
+		     
+      </td>
+  </tr>
+  <tr>
+      <td>
+         7
+      </td>
+      <td>
+	      17 November 2007
+      </td>
+      <td>
+	      <ul><li>Updated the whole tutorial to 6.0, replaced all screenshots, and
+              now [because the 6.0 IDE already provides support for manifest files], the
+              tutorial focuses on imaginary Abc files.
+ <li>To do:
+ <ul>   <li>Need to replace the download, which is the same as before, dealing with manifest files.
+       <li>Same items as on 4 October still to be done.
+       <li>Added OpenSupport into TopComponent, with a reference to Visual Library.</ul>  
+	<li>Changed title to File Type Integration Tutorial
+        <li>Tweaked several places throughout tutorial, for 6.0
+      </td>
+  </tr>
+   <tr>
+                <td>
+                    8
+                </td>
+                <td>
+                    15 April 2008
+                </td>
+                <td>
+                    Updated the styles (badge, table of contents, required software table)
+                    to the new format.
+                </td>
+            </tr>
+   <tr>
+                <td>
+                    9
+                </td>
+                <td>
+                    16 July 2008
+                </td>
+                <td>
+                    Created new version for 6.5, because of changes to the
+                    way file type recognition is done in that release. To do:
+                    <ul>
+                        <li>6.5-specific badge
+                        <li>Required software table
+                        <li>Search for DataNode, BeanInfo, DataLoader and reword
+                        <li>Check screenshots
+                        <li>Make sure all the sections work as before
+                    </ul>
+                </td>
+            </tr>
+  </tbody>
+</table>
+-->
+</p></body>
+</html>

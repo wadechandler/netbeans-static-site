@@ -1,0 +1,201 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head><link rel="stylesheet" href="../../../print.css" type="text/css" media="print">
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+    <title>在 NetBeans 模块中创建 REST 风格的服务客户端 - NetBeans IDE 教程</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="KEYWORDS" content="NETBEANS, TUTORIAL, GUIDE, USER, DOCUMENTATION, WEB SERVICE, WEB SERVICES, REST, RESTFUL">
+    <meta name="description"
+          content="Use NetBeans IDE's built-in Jersey RESTful webservice support to create a RESTful 
+          service client inside a NetBeans module or Java application.">
+<link rel="stylesheet" href="../../../netbeans.css"></head>
+<body>
+    <h1>在 NetBeans 模块中创建 REST 风格的服务客户端</h1>
+    
+    <p>从 NetBeans IDE 6.9 开始，在 NetBeans 模块项目中提供了本机 REST 支持。现在可以直接在 NetBeans 模块中生成 REST 风格的客户端代码。还可以在 Java 或应用程序中插入 Jersey REST 风格的客户端代码。 </p>
+<p>在本教程中，将创建一个 NetBeans 平台应用程序，该应用程序使用 Twitter "What Are You Doing" 服务，显示 Twitter 好友的状态消息列表。首先，创建平台应用程序。选择应用程序中所需的库。然后创建一个 NetBeans 模块。最后，向模块中添加一个 REST 风格的客户端和一些基本显示元素。客户端使用 OAuth 授权。</p>
+<p><b>目录</b></p>
+    <img alt="此页上的内容适用于 NetBeans IDE 6.9-7.1" class="stamp" height="114" src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" title="此页上的内容适用于 NetBeans IDE 6.9-7.1" width="114">
+    <ul>
+        <!--    <li><a href="#Exercise_0">Exercise 0: Install and configure the tutorial environment</a></li>-->
+        <li><a href="#create-platform-app">创建平台应用程序</a></li>
+        <li><a href="#create-module">创建客户端模块</a></li>
+        <li><a href="#design-window">设计窗口</a></li>
+        <li><a href="#more-exercises">更多练习</a></li>
+        <li><a href="#seealso">另请参见</a></li>
+    </ul>
+    
+    
+    
+<p><b>要学习本教程，您需要具备以下软件和资源。</b></p>
+    
+    <table>
+  <tbody>
+            <tr>
+                <th class="tblheader" scope="col">软件或资源</th>
+                <th class="tblheader" scope="col">要求的版本</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html" target="_blank">NetBeans IDE</a></td>
+                <td class="tbltd1">Java EE 下载包</td>
+          </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html" target="_blank">Java 开发工具包 (JDK)</a></td>
+                <td class="tbltd1">版本 6 或版本 7</td>
+          </tr>               
+            
+            
+      </tbody>
+    </table>
+<h2><a name="create-platform-app"></a>创建平台应用程序</h2>
+    <p>可以将 NetBeans IDE 库添加到 NetBeans 平台应用程序中。在此部分，将创建平台应用程序并添加需要的库。</p>
+    <p>&nbsp;</p>
+    <p><strong>创建模块套件：</strong></p>
+    <ol>
+      <li>单击 "New Project"（新建项目）（在 Linux 和 Windows 上为 Ctrl-Shift-N，在 MacOS 中按 ⌘-Shift-N）。此时将打开新建项目向导。</li>
+      <li>选择 "NetBeans Modules"（NetBeans 模块）类别。然后选择 "NetBeans Platform Application"（NetBeans 平台应用程序）项目。单击 "Next"（下一步）。</li>
+      <li>将该项目命名为 RestfulClientPlatformApp。为该项目选择一个位置。接受其他默认设置，然后单击 "Finish"（完成）。RestfulClientPlatformApp 项目出现在 "Projects"（项目）窗口中。</li>
+      <li>在 "Projects"（项目）窗口中，右键单击 "RestfulClientPlatformApp" 项目节点，然后选择 "Properties"（属性）。"Properties"（属性）对话框打开。</li>
+      <li>在 "Properties"（属性）对话框中，选择 "Libraries"（库）类别。请注意，仅包括 "Platform" 库。</li>
+      <li>展开 "Enterprise" 库的节点。勾选与 "RESTful Web Service Libraries"（REST 风格的 Web 服务库”）对应的 " Included"（包含）框。<br> <img alt="套件属性，其中显示选定要包含的 REST 的风格的 WS 库" class="margin-around" height="421" src="../../../images_www/articles/73/websvc/jersey-rcp-client/suite-rest-libraries.png" width="600"></li>
+      <li>"Resolve"（解决）按钮以红色突出显示，因为 REST 风格的 Web 服务库依赖于其他未包含在套件中的库。单击 "Resolve"（解决）按钮以包含这些库。</li>
+      <li>单击 "OK"（确定）。平台应用程序已准备就绪，可以创建客户端模块了。</li>
+</ol>
+    <h2><a name="create-module"></a>创建客户端模块</h2>
+<p>仅需几个步骤，就可创建一个用作 Twitter "What Are You Doing" 服务客户端的模块。Twitter 服务是 NetBeans IDE Web 服务管理器中已注册的即用型服务。您可以添加其他</p>
+<p><strong>创建模块和客户端功能：</strong></p>
+<ol>
+  <li>在 "Projects"（项目）窗口中，右键单击 RestfulClientPlatformApp 的 "Modules"（模块）子节点，然后选择 "Add New..."（添加新模块...）。此时将打开新建模块项目向导打开。</li>
+  <li>将该模块命名为 TwitterClientModule。接受其他字段中的默认设置，然后单击 "Next"（下一步）。此时打开 "Basic Module Configuration"（基本模块配置）面板。</li>
+  <li>给代码名称基取一个任意的名称，例如 <tt>org.my.twitter.friends</tt>。接受其他字段中的默认设置，然后单击 "Finish"（完成）。TwitterClientModule 现在出现在 "Projects"（项目）窗口中平台应用程序的 "Modules"（模块）节点下面。</li>
+  <li>右键单击 "TwitterClientModule" 节点，然后选择 "Open Project"（打开项目）。此时 "TwitterClientModule" 节点出现在 "Projects"（项目）窗口的根级别处。<br> <img alt="显示 TwitterClientModule 根节点的 "Projects"（项目）窗口" class="margin-around" height="205" src="../../../images_www/articles/73/websvc/jersey-rcp-client/module-root-node.png" width="254"></li>
+  <li>选择新的根级别的 "TwitterClientModule" 节点。启动新建文件向导（通过 Ctrl-N/⌘-N 快捷键，或 "New File"（新建文件）图标，或节点的上下文菜单）。 </li>
+  <li>在新建文件向导中，选择 "Web Services"（Web 服务）类别和 "RESTful Java Client"（REST 风格的 Java 客户端）文件类型。单击 "Next"（下一步）。"New RESTful Java Client"（新建 REST 风格的 Java 客户端）面板打开。</li>
+  <li>将该类命名为 TwitterClient，然后给它取一个任意的包名称，或选择之前创建的代码名称基。 <br> <img alt="显示类和包名的新建 REST 风格的客户端向导" class="margin-around" height="429" src="../../../images_www/articles/73/websvc/jersey-rcp-client/new-rest-client-wiz-noresource.png" width="600"></li>
+  <li>在 "Select the REST resource"（选择 REST 资源）的下面，选择 "IDE Registered"（IDE 中的已注册服务）。单击 "Browse"（浏览），然后浏览 "Twitter" &gt; "Twitter OAuth" &gt; "[statuses]" &gt; "[friends_timeline.{format}]"。选择该资源，然后单击 "OK"（确定）。<br> <img alt="在 "Available REST Resources"（可用的 REST 资源）对话框中选择了 friends_timeline rest 资源" class="margin-around" height="512" src="../../../images_www/articles/73/websvc/jersey-rcp-client/browse-rest-resources.png" width="430">
+  <p class="notes"><strong>注：</strong>可在 IDE 中注册其他 Web 服务。转到 "Services"（服务）窗口，右键单击 "Web Services"（Web 服务）节点，然后选择 "Add Web Service"（添加 Web 服务）。您可以添加本地文件或 REST 风格的 URL。<br> <img alt="Web 服务管理器 "Services"（服务）窗口的 "Add Web Service"（添加 Web 服务）选项" class="margin-around b-right b-bottom" height="120" src="../../../images_www/articles/73/websvc/jersey-rcp-client/register-ws.png" width="215"></p></li>
+  <li>此时会自动选择 OAuth 作为验证类型。接受所有默认值，然后单击 "Finish"（完成）。<br> <img alt="已完成的新建 REST 风格的客户端向导" class="margin-around" height="475" src="../../../images_www/articles/73/websvc/jersey-rcp-client/new-rest-client-wiz-complete.png" width="585"></li>
+  <li>此时打开一个警告对话框。该对话框询问是否希望通过 WADL 文件中的 XML 方案引用来生成 Java 工件。单击 "Yes"（是）。</li>
+  <li>可能会出现另一个警告，询问您是否将模块添加到类路径中。单击 "OK"（确定）。<br><img alt="关于缺少依赖关系的 "Warning"（警告）对话框" class="margin-around" height="213" src="../../../images_www/articles/73/websvc/jersey-rcp-client/dependencies-warning.png" width="538"></li>
+  <li>如果您需要将模块添加到类路径中，则右键单击 "TwitterClientModule" 节点，然后打开其 "Project Properties"（项目属性）。转至 "Libraries"（库）部分，然后使用 "Add Dependency"（添加依赖关系）按钮添加模块。此按钮会打开模块依赖关系的列表以便于浏览。<br> <img alt=""Twitter Client Module"（Twitter 客户端模块）属性窗口，"Libraries"（库）部分" class="margin-around" height="452" src="../../../images_www/articles/73/websvc/jersey-rcp-client/add-dependencies.png" width="596"></li>
+</ol>
+<p>此时会生成 TwitterClient 类，并且该类会在编辑器中打开。TwitterClient 类很复杂，其中包含以下字段、方法和内部类：</p>
+<ul>
+  <li><tt>CONSUMER_KEY</tt>：使用者键值字符串</li>
+  <li><tt>CONSUMER_SECRET</tt>：使用者密钥字符串</li>
+  <li><tt>initOAuth()</tt>：用于 OAuh 初始化的方法</li>
+  <li><tt>getFriendsTimeline()</tt>：对应于 HTTP 方法 getFriendsTimeline（来自 REST 资源）的方法</li>
+  <li><tt>makeOAuthRequestUnique()</tt>：对于一个会话中的多个 API 调用非常有用</li>
+  <li><tt>login</tt>：用于登录 Twitter 应用程序（强制授权）。此方法会调用另外两个生成的方法：<tt>getOAuthAccessToken</tt> 和 <tt>getOAuthRequestToken</tt>。</li>
+</ul>
+<p> 接下来您会从 Twitter 获取 OAuth 键值，并将它们添加到 TwitterClient 中。</p>
+<h2>从 Twitter 获取 OAuth 键值</h2>
+<p>为了使 NetBeans 平台应用程序能够访问 Twitter 数据，需要从 Twitter 获取 CUSTOMER 和 CUSTOMER_SECRET 键值，以及验证字符串。Twitter 使用 OAuth 授权，而 OAuth 授权需要这些键值。但是，预计 OAuth 将设置为可由服务器上的 Web 应用程序调用。为了获取授权码，您要注册“伪”Web 应用程序。</p>
+
+  <p><b>从 Twitter 获取 OAuth 键值：</b></p>
+  <ol>
+  <li>打开浏览器。转至 <a href="http://twitter.com/apps" target="_blank">"Twitter" &gt; "Applications"（应用程序）</a>页面，然后单击 <a href="http://twitter.com/apps/new" target="_blank">Register a new application</a>（注册新应用程序）。您需要登录 Twitter 帐户。如果您具有多个帐户，请确保您登录到正确的帐户。</li>
+  
+  <li>在 <strong>Application Name</strong>（应用程序名称）文本字段中键入 <tt>NB Platform Friends Application</tt>。</li>
+  
+  <li>在 <strong>Description</strong>（描述）字段中键入描述。此字段为必填字段。可以键入类似于 "NetBeans Platform application calling the friends_timeline operation" 的内容。</li>
+  <li>在 <strong>Application Website</strong>（应用程序网站）字段中键入任意 URL。</li>
+  <li>在 <strong>Application Type</strong>（应用程序类型）选项中，选择 "Client"（客户端）单选按钮。</li>
+
+  <li>在 <strong>Default Access Type</strong>（默认访问类型）选项中，选择 "Read and Write"（读和写）单选按钮。 </li>
+  <li>将其他选项保留为默认设置，然后按 "Save"（保存）。此时会打开浏览器页面，其中包含您已注册的应用程序的详细信息。重要的详细信息是 <strong>Consumer key</strong>（使用者键值）和 <strong>Consumer secret</strong>（使用者密钥）。</li>
+  <li>从浏览器中复制 "Consumer key"（使用者键值）。在 IDE 中，找到其中设置 <tt>CONSUMER_KEY</tt> 的行。在引号之间粘贴使用者键值。 <br><img alt="显示 CONSUMER_KEY 和 CONSUMER_SECRET 位置的 TwitterClient" class="margin-around" height="220" src="../../../images_www/articles/73/websvc/jersey-rcp-client/keys-in-twitter-client.png" width="467"></li>
+  <li>将浏览器中的使用者密钥键值复制并粘贴到 TwitterClient。保存所做的更改。</li>
+</ol>
+  
+<h2><a name="design-window"></a>设计窗口</h2>
+<p>要完成此项目，请添加一个窗口。使用 UI 组件填充窗口并添加操作，以便在例如单击某个按钮时将显示好友状态列表。</p>
+<p><strong>设计窗口：</strong></p>
+<ol>
+  <li>在 "Projects"（项目）窗口中，右键单击模块的节点，然后选择 "New"（新建）> "Window"（窗口）。此时将打开新建窗口向导，其中显示 "Basic Settings"（基本设置）面板。</li>
+  <li>在 Basic Settings"（基本设置）面板中，选择 <tt>editor</tt> 窗口位置，选择 "Open on Application Start"（在应用程序启动时打开），然后单击 "Next"（下一步）。此时将打开 "Name, Icon and Location"（名称、图标和位置）面板。</li>
+  <li>在 "Class Name Prefix"（类名前缀）字段中，键入 <tt>twitterFriendsStatus</tt>。选择 <tt>org.my.twitter.friends</tt> 包。单击 "Finish"（完成）。 <br><img alt="新建窗口向导的 "Name, Icon and Location"（名称、图标和位置）面板，其中显示类名前缀和包名" class="margin-around" height="453" src="../../../images_www/articles/73/websvc/jersey-rcp-client/new-window-wiz.png" width="600"></li>
+  <li>在 "Design"（设计）视图中将打开 <tt>twitterFriendsStatusTopComponent</tt> 文件。Swing UI 组件的组件面板在右侧打开。<br> <img alt="Swing 组件的新窗口和组件面板的设计视图，尚未添加任何组件" class="margin-around" height="407" src="../../../images_www/articles/73/websvc/jersey-rcp-client/empty-window.png" width="587"></li>
+  <li>将以下 GUI 元素拖动至设计区域：
+  
+    <table width="527" border="1">
+    <tbody>
+      <tr>
+        <th width="79" class="tblheader" scope="col">组件</th>
+        <th width="135" class="tblheader" scope="col">显示文本</th>
+        <th width="291" class="tblheader" scope="col">设置</th>
+      </tr>
+      <tr>
+        <td>Button（按钮）</td>
+        <td>"Get Friends' Statuses"（获取朋友的状态）</td>
+        <td><p>将变量名称更改为 getStatusesButton。</p>
+          <p>取消选中 "enabled" 属性 </p>
+          <p><img alt="取消选中的 "enabled"（启用）属性" height="18" src="../../../images_www/articles/73/websvc/jersey-rcp-client/unselected-enabled-prop.png" width="115">          </p>
+          </td>
+      </tr>
+      <tr>
+        <td>Button（按钮）</td>
+        <td>"Log in"（登录）</td>
+        <td>将变量名称更改为 loginButton</td>
+      </tr>
+      <tr>
+        <td>Scroll pane（滚动窗格）</td>
+        <td>--</td>
+        <td>&nbsp;</td>
+      </tr>
+      <tr>
+        <td>Text area（文本区域）</td>
+        <td>--</td>
+        <td>拖至滚动窗格中</td>
+      </tr>
+      </tbody>
+    </table>
+    <p>调整文本区域/滚动窗格的大小，并根据您的喜好对齐按钮。 <br> <img alt="显示已完成窗口的新窗口设计视图" class="margin-around" height="415" src="../../../images_www/articles/73/websvc/jersey-rcp-client/designed-window.png" width="536"></li>
+  <li>双击 "Login" 按钮。IDE 为该按钮生成一个操作方法，而编辑器切换至 "Source"（源）视图，并且其焦点位于操作方法上。 </li>
+  <li>将以下代码键入或复制到登录按钮操作方法的主体中。此代码可启动用于使应用程序登录 Twitter 的方法、启用 "getStatuse" 按钮以及禁用登录按钮。应用程序只需要登录一次。请注意，不需要实例化 TwitterClient 即可调用其登录方法。 
+    <pre class="examplecode">private void loginButtonActionPerformed(java.awt.event.ActionEvent evt) {                                   
+   TwitterClient.login();
+   getStatusesButton.setEnabled(true);
+   loginButton.setEnabled(false);
+} </pre></li>
+  <li>双击 "getStatuses" 按钮。IDE 为该按钮生成一个操作方法，而编辑器切换至 "Source"（源）视图，并且其焦点位于操作方法上。 <br>
+  </li>
+  <li>将以下处理代码粘贴或键入到 "getStatuses" 按钮操作方法的主体。此代码使用 <tt>login</tt> 方法创建的标记实例化 TwitterClient 并初始化 OAuth。然后该代码调用 <tt>getFriendsTimeline</tt>、获取状态列表、将包含用户名的行和每种状态的文本添加到字符串中，然后将该字符串传递到文本区域。
+    <pre class="examplecode">private void getStatusesButtonActionPerformed(java.awt.event.ActionEvent evt) {                                         <br>    TwitterClient client = new TwitterClient(&quot;xml&quot;);<br>    client.initOAuth();<br>    Statuses response = client.getFriendsTimeline(Statuses.class, null, null, null, &quot;10&quot;);<br>    response.getStatus().size();<br>    String text = &quot;&quot;;<br>    for (StatusType st : response.getStatus()) {<br>        text += st.getUser().getName() + &quot;:  &quot; + st.getText() + &quot;\n&quot;;<br>    }<br>    jTextArea1.setText(text);<br>}     </pre>
+  </li>
+  <li>此代码对于未找到的类有一些警告图标。按 Ctrl-Shift-I 组合键（在 MacOS 上按 ⌘-Shift-I 组合键）。"Fix All Imports"（修复所有导入）对话框即打开。选择 <tt>twitter.twitteroauth.twitterresponse</tt> 类。单击 "OK"（确定）。<br> <img alt="显示要导入的正确类的 "Fix All Imports"（修复所有导入）对话框" class="margin-around" height="227" src="../../../images_www/articles/73/websvc/jersey-rcp-client/fix-imports.png" width="573"></li>
+</ol>
+<p>现在已完成此应用程序。运行 RestfulClientPlatformApp，然后出现一个 NetBeans 平台，在 "Output"（输出）部分中有设计的窗口。单击 "Log In"（登录），此时会打开一个对话框，其中包含一个链接，单击该链接即可授权应用程序访问数据。</p>
+<p><img alt="用于授权 OAuth 将数据传递到应用程序的对话框" class="margin-around" height="167" src="../../../images_www/articles/73/websvc/jersey-rcp-client/oauth-auth-dialog.png" width="501"></p>
+<p>单击该链接，此时会打开浏览器页面，Twitter 会在该页面中询问您是否希望允许您的应用程序访问 Twitter 数据。单击 "Allow"（允许），然后该页面会刷新，同时显示个人识别码。将该个人识别码复制并粘贴到验证对话框的检验器字符串字段中。单击 "OK"（确定）。</p>
+<p>现在禁用了 "Log In"（登录）按钮并启用了 "Get Friends' Statuses"（获取好友状态）按钮。单击 "Get Friends' Statuses"（获取好友状态），随即出现一个有关 Twitter 好友的最新状态消息的列表。</p>
+<img alt="显示状态消息的正在运行的应用程序" class="margin-around" height="384" src="../../../images_www/articles/73/websvc/jersey-rcp-client/running-app.png" width="533">
+
+
+<h2><a name="more-exercises"></a>更多练习</h2>
+<p>下面是供您探讨的更多思路：</p>
+<ul>
+  <li>向模块中添加另一个窗口，使用 friends_timeline API 中的其他方法。</li>
+  <li>向项目中添加另一个模块，使用其他的 Twitter 资源。</li>
+  <li>浏览 Facebook 模块样例，该样例位于 "New Project"（新建项目）> "Samples"（样例）> "NetBeans Modules"（NetBeans 模块）> "Facebook Module Sample"（Facebook 模块样例）。<br style="clear:both;"> <br>
+  <div class="feedback-box" ><a href="/about/contact_form.html?to=3&amp;subject=Feedback:%20RESTful%20Service%20Clients%20in%20NetBeans%20Modules">请将您的反馈意见发送给我们</a></div>
+
+    <!-- ======================================================================================= -->
+  </li>
+</ul>
+<h2><a name="seealso"></a>另请参见</h2>
+    
+    <p>有关使用 NetBeans IDE 开发 Java EE 应用程序的更多信息，请参见以下资源：    </p>
+    
+    <ul>
+        <li><a href="http://netbeans.dzone.com/oauth-support-netbeans" target="_blank">DZone：NetBeans IDE 6.9 中的 OAuth 支持</a></li>
+        <li><a href="../../docs/websvc/rest.html">REST 风格的 Web 服务入门指南</a></li>
+        <li><a href="http://platform.netbeans.org/tutorials/nbm-quick-start.html" target="_blank">NetBeans 平台快速入门</a></li>
+        <li><a href="../../trails/web.html">Web 服务学习资源</a></li>
+        <li><a href="https://netbeans.org/kb/trails/platform.html" target="_blank">NetBeans 平台学习资源</a></li>
+    </ul>
+<p>要发送意见和建议、获得支持以及随时了解 NetBeans IDE Java EE 开发功能的最新开发情况，请<a href="../../../community/lists/top.html">加入 nbj2ee@netbeans.org 邮件列表</a>。</p>
+    <p>要发送意见和建议、获得支持以及随时了解有关在 NetBeans 平台上开发 RCP 应用程序的主题，请<a href="../../../community/lists/top.html">加入 dev@platform.netbeans.org 邮件列表</a>。</p>
+</body>

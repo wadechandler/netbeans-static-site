@@ -1,0 +1,789 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>NetBeans プラットフォーム 6.5: ファイルの種類統合のチュートリアル</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="AUDIENCE" content="NBUSER"/>
+  <meta name="TYPE" content="ARTICLE"/>
+  <meta name="EXPIRES" content="N"/>
+  <meta name="developer" content="gwielenga@netbeans.org"/>
+  <meta name="indexed" content="y"/>
+  <meta name="description"
+ content="A short guide to using the DataLoader API, as well as other APIs
+ relating to file support."/>
+<!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+	<h1>ファイルの種類統合のチュートリアル</h1>
+
+<p>このチュートリアルでは、IDE または NetBeans プラットフォーム上に構築されたその他のアプリケーションに、新しいファイルの種類を認識させるモジュールを作成する方法を示します。</p>
+
+   <p><b class="notes">注:</b> このドキュメントでは NetBeans IDE 6.5 リリースを使用します。NetBeans IDE 6.x を使用している場合、<a href="60/nbm-filetype_ja.html">このドキュメントの 6.1 バージョン</a>を参照してください。</p>
+
+   <p><b>目次</b></p>
+   
+   <p><img src="../../images/articles/69/netbeans-stamp7-8-9.png" class="stamp" width="114" height="114" alt="このページの内容は NetBeans IDE 6.5、6.7、および 6.8 が対象です" title="このページの内容は NetBeans IDE 6.5、6.7、および 6.8 が対象です" /></p>
+      <ul class="toc">
+  <li><a href="#intro">ファイルの種類統合について</a></li>
+  <li><a href="#creating">モジュールプロジェクトの作成</a></li>
+  <li><a href="#recognizing">Abc ファイルの認識</a></li>
+  <li><a href="#install">インストールおよび機能の動作確認</a></li>
+  <li><a href="#adding">Abc ファイルの機能の作成</a>
+  <ul>
+      <li><a href="#action">アクションの追加</a></li>
+      <li><a href="#topcomponent">ファイルをウィンドウで開く</a></li>
+      <li><a href="#multiview">マルチビューウィンドウの作成</a></li>
+  </ul></li>
+  <li><a href="#share">共有可能バイナリの作成</a></li>
+       </ul>
+         
+<p><b>このチュートリアルを行うには、次の表に示すソフトウェアおよびリソースが必要です。</b></p>
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                <th class="tblheader" scope="col">必須バージョン</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.7 以上</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">version 6 または<br/>version 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+
+
+
+<h2 class="tutorial"><a name="intro"></a>ファイルの種類統合について</h2>
+
+<p>IDE で認識されるファイルの種類には、独自のアイコン、メニュー項目、および動作があります。表示される「ファイル」は <tt>FileObjects</tt> であり、<tt>java.io.File</tt> のラッパーか、構成ファイルの場合は通常、モジュールの XML ファイル内など、ほかの方法で保存されたデータのラッパーです。実際に<i>表示</i>されているものは <tt>Nodes</tt> で、アクションのような機能や、ファイルなどのオブジェクトにローカライズされた名前を提供します。<tt>Nodes</tt> と <tt>FileObjects</tt> の間には <tt>DataObjects</tt> があります。<tt>DataObject</tt> は <tt>FileObject</tt> に似ていますが、どの種類のファイルが表示されるかはわかりません。通常、異なる拡張子を持つファイルと異なる名前空間を持つ XML ファイルに対して、異なる種類の <tt>DataObject</tt> があります。各 <tt>DataObject</tt> は異なるモジュールによって提供されます。各実装は、1 つ以上のファイルの種類をサポートします。たとえば、画像モジュールは <tt>.gif</tt> ファイルおよび <tt>.png</tt> ファイルを認識し、開くことができます。</p>
+
+<p>ファイルの種類を認識するモジュールは、<tt>DataLoader</tt> (ファイルの種類に固有の <tt>DataObject</tt> 用のファクトリ) をインストールします。フォルダを展開すると、IDE は各既存の <tt>DataLoader</tt> に「これは何かわかりますか ?」と問い合わせます。最初に「はい」と答えた DataLoader が、ファイルの <tt>DataObject</tt> を作成します。各ファイルの何かを実際に表示するために、システムが各 <tt>DataObject</tt> に対して <tt>DataObject.getNodeDelegate()</tt> を呼び出すと、<tt>Nodes</tt> が IDE で実際に表示されるものになります。</p>
+
+<p>次の左側の図は、前述の各項目を示しています。</p>
+
+<p><img  src="../../images/tutorials/filetype/diagram-dataobject2.png" alt="図。" /></p>
+
+<p>このチュートリアルでは、架空のファイル「Abc」 (ファイル拡張子は <tt>.abc</tt>) に、<tt>DataLoader</tt> をインストールするモジュールを作成します。デフォルトで、「abc」拡張子を持つファイルは、IDE が認識しないその他のファイルとして扱われます。これはテキストファイルとして扱われるため、IDE はテキストファイルの場合と同様の機能を、Abc ファイルに提供します。モジュールを作成すると、Abc ファイルでのみ利用できる機能を拡張する方法が表示されます。開発サイクルが完了すると、ほかの人にそのモジュールを簡単に使用させることができます。IDE では、ほかの人に送信できるバイナリを作成できます。ほかの人は、アップデートセンターからそれをインストールできます。</p>
+
+<!-- ===================================================================================== -->
+
+<h2 class="tutorial"><a name="creating"></a> モジュールプロジェクトの作成</h2>
+      
+<p>この節では、ウィザードを使用して、各 NetBeans モジュールが必要とするソースの構造を作成します。ソースの構造は、特定の場所にある特定のフォルダと、常に必要なファイルのセットで構成されます。たとえば、すべての NetBeans モジュールには、プロジェクトのメタデータを保存する <tt>nbproject</tt> フォルダと、ツールバーボタンやウィンドウなどの項目を宣言登録するための <tt>layer.xml</tt> ファイルが必要です。</p>
+
+<ol>
+          
+	      <li>「ファイル」&gt;「新規プロジェクト」(Ctrl-Shift-N) を選択します。「カテゴリ」で「NetBeans モジュール」を選択します。「プロジェクト」で「モジュール」を選択し、「次へ」をクリックします。</li>
+	<li>「名前と場所」パネルで、「プロジェクト名」に「<tt>AbcFileType</tt>」と入力します。「プロジェクトの場所」を、<tt>c:\mymodules</tt> などのコンピュータ上の任意のディレクトリに変更します。「スタンドアロンモジュール」ラジオボタンは選択したままにしておきます。パネルは次のようになります。
+
+<p><img style="border: 1px solid #0e1b55" src="../../images/tutorials/filetype/65-projectwizard1.png" alt="新規プロジェクトウィザードの手順 1。" /></p>
+ <p>「次へ」をクリックします。</p></li>
+
+<li>「基本モジュール構成」パネルで、コード名ベースに「<tt>org.myorg.abcfiletype</tt>」と入力します。推奨されるモジュール表示名に空白文字を追加し、<tt>Abc File Type</tt> に変更します。「XML レイヤーを生成」チェックボックスを選択し、「ローカライズ版バンドル」と「XML レイヤー」の場所はそのままにしておきます。これらは <tt>org/myorg/abcfiletype</tt> という名前のパッケージに格納されます。パネルは次のようになります。
+
+<p><img  src="../../images/tutorials/filetype/65-projectwizard2.png" alt="新規プロジェクトウィザードの手順 2。" /></p></li>
+
+<li>「完了」をクリックします。</li></ol>
+
+<p> IDE によって <tt>Abc File Type</tt> プロジェクトが作成されます。このプロジェクトには、ソースや、プロジェクトの Ant 構築スクリプトなどのプロジェクトメタデータがすべて含まれます。IDE でプロジェクトが開きます。「プロジェクト」ウィンドウ (Ctrl-1) で、プロジェクトの論理構造を表示できます。また、「ファイル」ウィンドウ (Ctrl-2) で、プロジェクトのファイル構造を表示できます。たとえば、「プロジェクト」ウィンドウは次のように表示されます。</p>
+
+<p><img  src="../../images/tutorials/filetype/65-projectswindow1.png" alt="プロジェクトの初期ウィンドウ" /></p>
+
+<!-- ===================================================================================== -->
+<h2><a name="recognizing"></a>Abc ファイルの認識</h2>
+
+<p>この節では、ウィザードを使用して、Abc ファイルがほかのすべてのファイルとは異なることを認識するために必要なクラスを作成します。このチュートリアルの最初で説明したとおり、これを行うには、データオブジェクトとデータローダーのほかに、MIME タイプリゾルバと <tt>layer.xml</tt> ファイルの登録エントリが必要です。「新規ファイルの種類」ウィザードによってそれらがすべて作成されます。</p>
+
+  
+ <ol>
+	
+	 <li>プロジェクトノードを右クリックし、「新規」&gt;「ファイルの種類」を選択します。</li>
+	      <li>「ファイルの認識」パネルで、次を行います。
+<ul>
+<li>MIME タイプの編集ボックスに「<tt>text/x-abc</tt>」と入力します。</li>
+<li>ファイル名の拡張子の編集ボックスに「<tt>.abc .ABC</tt>」と入力します。</li>
+</ul>
+<p>これで、「ファイルの認識」パネルは次のようになります。</p>
+
+	       <p><img style="border: 1px solid #0e1b55" src="../../images/tutorials/filetype/60-filewizard1.png" alt="新規ファイルウィザードの手順 1。" /></p>
+
+	       <p>「ファイルの認識」パネルには、次のフィールドがあります。</p>
+	       <ul>
+		       <li><b>MIME タイプ。</b>データオブジェクトの一意の MIME タイプを指定します。</li>
+		       <li>認識方法
+			       <ul><li><b>ファイル名の拡張子。</b>1 つまたは複数のファイル拡張子を指定して、指定の MIME タイプに属することを IDE に認識させます。任意で、ファイル拡張子の前にピリオドを 1 つ付けることができます。区切り文字はコンマか空白文字、またはその両方です。したがって、次の拡張子はすべて有効です。
+		       <ul><li><tt>.abc,.def</tt></li>
+			       <li><tt>.abc .def</tt></li>
+			       <li><tt>abc def</tt></li>
+			       <li><tt>abc,.def ghi, .wow</tt></li></ul>
+			<p>Abc ファイルが大文字小文字を区別するとします。その場合、このチュートリアルでは <i>2 つの</i> MIME タイプ、<tt>.abc</tt> と <tt>.ABC</tt> を指定します。</p></li>
+		       <li><b>XML のルート要素。</b>一意の名前空間を指定して、XML ファイルの種類をほかのすべての XML ファイルの種類と区別します。多くの XML ファイルは同じ拡張子 (<tt>xml</tt>) を持つので、IDE はその XML ルート要素を使用して XML ファイルを区別します。さらに具体的に言うと、IDE は名前空間と XML ファイルの最初の XML 要素を区別できます。これを使用すると、たとえば、JBoss 配備記述子と WebLogic 配備記述子を区別できます。この区別を行うと、JBoss 配備記述子のコンテキストメニューに追加したメニュー項目が、WebLogic 配備記述子で使用できなくなります。例については、<a href="nbm-palette-api2.html">NetBeans コンポーネントパレットモジュールのチュートリアル</a>を参照してください。</li></ul></li>
+</ul>
+	      
+	      <p>「次へ」をクリックします。</p></li>
+
+	      <li>「名前と場所」パネルで、「クラス名の接頭辞」に「<tt>Abc</tt> 」と入力し、次に示すように、任意の 16x16 ピクセルの画像ファイルを新しいファイルの種類のアイコンとして参照します。
+	      
+<p><img style="border: 1px solid #0e1b55" src="../../images/tutorials/filetype/65-filewizard2.png" alt="新規ファイルウィザードの手順 2。" /></p>
+
+
+              <p><b>注:</b> 16x16 ピクセルの任意のアイコンを使用できます。必要に応じて、このアイコン <img style="border: 1px solid #0e1b55" src="../../images/tutorials/filetype/Datasource.gif" alt="Datasource.gif" /> をクリックしてローカルに保存し、前述のウィザードの手順で指定できます。</p></li>
+
+<li>「完了」をクリックします。</li></ol>
+
+<p>「プロジェクト」ウィンドウは次のようになります。</p>
+
+<p><img  src="../../images/tutorials/filetype/65-projectswindow2.png" alt="プロジェクトの最終ウィンドウ。" /></p>
+
+<p>新しく生成された各ファイルについて簡単に説明します。</p>
+ <ul>
+	<li><b>AbcDataObject.java。</b><tt>FileObject</tt> をラップします。DataObjects は DataLoaders によって生成されます。詳細については、<a href="http://wiki.netbeans.org/wiki/view/DevFaqDataObject">What is a DataObject?</a> を参照してください。</li>
+ <li><b>AbcResolver.xml。</b><tt>.abc</tt> および <tt>.ABC</tt> の拡張子を MIME タイプにマップします。<tt>AbcDataLoader</tt> は MIME タイプのみを認識し、ファイル拡張子については認識しません。</li>
+	 <li><b>AbcTemplate.abc。</b>「新規ファイル」ダイアログに新しいテンプレートとしてインストールされるように、<tt>layer.xml</tt> に登録されているファイルテンプレートの基盤を提供します。</li>
+         <li><b>AbcDataObjectTest.java。</b><tt>DataObject</tt> の JUnit テストクラス。</li>
+</ul>
+      
+      <p><tt>layer.xml</tt> ファイルは、次のように表示されます。</p>
+      
+<pre>&lt;folder name=&quot;Loaders&quot;&gt;
+    &lt;folder name=&quot;text&quot;&gt;
+        &lt;folder name=&quot;x-abc&quot;&gt;
+            &lt;folder name=&quot;Actions&quot;&gt;
+                &lt;file name=&quot;org-myorg-abcfiletype-MyAction.shadow&quot;&gt;
+                    &lt;attr name=&quot;originalFile&quot; stringvalue=&quot;Actions/Edit/org-myorg-abcfiletype-MyAction.instance&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;600&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-CopyAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;100&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-CutAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;200&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-DeleteAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;300&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-FileSystemAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;400&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-OpenAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;500&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-PropertiesAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;700&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-RenameAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;800&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-SaveAsTemplateAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;900&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-ToolsAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1000&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;sep-1.instance&quot;&gt;
+                    &lt;attr name=&quot;instanceClass&quot; stringvalue=&quot;javax.swing.JSeparator&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1100&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;sep-2.instance&quot;&gt;
+                    &lt;attr name=&quot;instanceClass&quot; stringvalue=&quot;javax.swing.JSeparator&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1200&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;sep-3.instance&quot;&gt;
+                    &lt;attr name=&quot;instanceClass&quot; stringvalue=&quot;javax.swing.JSeparator&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1300&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;sep-4.instance&quot;&gt;
+                    &lt;attr name=&quot;instanceClass&quot; stringvalue=&quot;javax.swing.JSeparator&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1400&quot;/&gt;
+                &lt;/file&gt;
+            &lt;/folder&gt;
+            &lt;folder name=&quot;Factories&quot;&gt;
+                &lt;file name=&quot;AbcDataLoader.instance&quot;&gt;
+                    &lt;attr name=&quot;SystemFileSystem.icon&quot; urlvalue=&quot;nbresloc:/org/myorg/abcfiletype/Datasource.gif&quot;/&gt;
+                    &lt;attr name=&quot;dataObjectClass&quot; stringvalue=&quot;org.myorg.abcfiletype.AbcDataObject&quot;/&gt;
+                    &lt;attr name=&quot;instanceCreate&quot; methodvalue=&quot;org.openide.loaders.DataLoaderPool.factory&quot;/&gt;
+                    &lt;attr name=&quot;mimeType&quot; stringvalue=&quot;text/x-abc&quot;/&gt;
+                &lt;/file&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>      
+
+
+      
+    <!-- ======================================================================================= -->
+
+<h2><a name="install"></a>インストールおよび機能の動作確認</h2>
+<p>次に、モジュールをインストールし、これまでに作成した基本機能を使用します。IDE は、Ant 構築スクリプトを使用してモジュールを構築およびインストールします。構築スクリプトは、プロジェクトを作成するときに作成されます。</p>
+<div class="indent">
+
+
+      <ol>
+	      <li>「プロジェクト」ウィンドウで、<tt>Abc File Type</tt> プロジェクトを右クリックし、「実行」を選択します。
+	      <p>IDE の新しいインスタンスが起動し、それにモジュールがインストールされます。</p></li>
+	       <li>「新規プロジェクト」ダイアログ (Ctrl-Shift-N) を使用して、任意の種類のアプリケーションを IDE に作成します。</li>
+               <li>アプリケーションノードを右クリックし、「新規」&gt;「その他」を選択します。「その他」カテゴリで、新しいファイルの種類を操作するためのテンプレートを使用できます。
+         <p><img  src="../../images/tutorials/filetype/60-action4.png" alt="ダミーテンプレート。" /></p>
+         <p>ウィザードを完了するとテンプレートが作成されます。このテンプレートを使用して、特定のファイルの種類でユーザーの作業を開始できます。</p>
+		 <p class="tips">このテンプレートを使用してデフォルトのコードを提供する場合は、「新規ファイルの種類」ウィザードで作成された <tt>AbcTemplate.abc</tt> ファイルにそのコードを追加します。</p></li>
+       </ol>          
+   </div>
+
+<!-- ===================================================================================== -->
+<h2><a name="adding"></a>Abc ファイルの機能の作成</h2>
+<p>これで、NetBeans プラットフォームが、Abc ファイルとほかの種類のすべてのファイルを区別できるようになりました。次に、これらの種類のファイルに特有の機能を追加します。この節では、「プロジェクト」ウィンドウなどのエクスプローラウィンドウで、ファイルのノードを右クリックしたコンテキストメニューのメニュー項目を追加します。また、ファイルをエディタではなくウィンドウで開けるようにします。</p>
+
+      <div class="indent">
+          
+          <h3 class="tutorial"><a name="action"></a>アクションの追加</h3>
+          
+          <p>このサブセクションでは、「新規アクション」ウィザードを使用して、ファイルの種類のアクションを実行する Java クラスを作成します。このウィザードでは、エクスプローラウィンドウにあるファイルの種類のノードの、右クリックのコンテキストメニューから呼び出しできるように、クラスを <tt>layer.xml</tt> ファイルに登録します。</p>
+          
+          <ol>
+              
+              <li>プロジェクトノードを右クリックし、「新規」&gt;「アクション」を選択します。</li>
+              <li>「アクションの種類」パネルで、「条件付きで有効」をクリックします。次に示すように、前に「新規ファイルの種類」ウィザードで生成したデータオブジェクトの名前 <tt>AbcDataObject</tt> を入力します。
+              
+              <p><img  src="../../images/tutorials/filetype/60-action1.png" alt="新規アクションウィザードの手順 1。" /></p>
+              
+              
+              
+              <p>「次へ」をクリックします。</p></li>
+              
+              <li>「GUI 登録」パネルで、「カテゴリ」ドロップダウンリストから「編集」カテゴリを選択します。「カテゴリ」ドロップダウンリストは、IDE のキーボードショートカットエディタでアクションが表示される場所を制御します。
+              <p>次に、「大域メニュー項目」を選択解除して「ファイルの種類のメニュー項目」を選択します。「内容の種類」ドロップダウンリストで、次に示すように、「新規ファイルの種類」ウィザードで前に指定した MIME タイプを選択します。</p>
+              
+              <p><img  src="../../images/tutorials/filetype/60-action2.png" alt="新規アクションウィザードの手順 2。" /></p>
+              
+              <p>メニュー項目の位置は設定可能で、そのメニュー項目を前後の項目から離すことができます。「次へ」をクリックします。</p></li>
+              
+              <li>「名前と場所」パネルで、「クラス名」に「<tt>MyAction</tt>」と入力し、「表示名」に「<tt>MyAction</tt>」と入力します。コンテキストメニューにあるメニュー項目には、アイコンが表示されません。したがって、「完了」をクリックすると <tt>org.myorg.abcfiletype</tt> パッケージに <tt>MyAction.java</tt> が追加されます。</li>
+              
+              <li>ソースエディタで、アクションの <tt>actionPerformed</tt> メソッドにいくつかのコードを追加します。
+              
+<pre class="examplecode">@Override
+public void actionPerformed(ActionEvent ev) {
+   FileObject f = context.getPrimaryFile();
+   String displayName = FileUtil.getFileDisplayName(f);
+   String msg = &quot;I am &quot; + displayName + &quot;. Hear me roar!&quot;; 
+        NotifyDescriptor nd = new NotifyDescriptor.Message(msg);
+        DialogDisplayer.getDefault().notify(nd);
+}</pre>
+              <p>Ctrl-Shift-I キーを押します。IDE によって、インポート文がクラスの先頭に自動で追加されます。</p>
+
+<p class="tips">一部のコードには、まだ赤い下線が付いています。これは、クラスパスに必要なパッケージのすべてがないことを示しています。プロジェクトノードを右クリックして「プロパティー」を選択し、「プロジェクトプロパティー」ダイアログの「ライブラリ」をクリックします。「ライブラリ」区画の上部にある「追加」をクリックし、「ダイアログ API」を追加します。</p>
+              
+              <p><tt>MyAction.java</tt> クラスで、もう一度 Ctrl-Shift-I キーを押します。 IDE がダイアログ API の必要なパッケージを検出したため、赤い下線が消えます。</p></li>
+              
+              <li>「重要なファイル」ノードで、「XML レイヤー」を展開します。「<tt>&lt;このレイヤー&gt;</tt>」と「<tt>&lt;コンテキスト内のこのレイヤー&gt;</tt>」の 2 つのノードと、それらのサブノードが、<a href="https://platform.netbeans.org/tutorials/nbm-glossary.html">System ファイルシステム</a>ブラウザを構成します。「<tt>&lt;このレイヤー&gt;</tt>」、「<tt>Loaders</tt>」を順に展開し、前に作成した「<tt>Action</tt>」が表示されるまでノードを展開します。</li>
+              
+              <li><tt>My Action</tt> をドラッグ＆ドロップすると、次に示すように、<tt>開く</tt>アクションの下に表示されます。
+              <p><img  src="../../images/tutorials/filetype/60-action3.png" alt="System ファイルシステムブラウザ。" /></p>
+              
+              <p>最後の 2 つの手順から分かるとおり、System ファイルシステムブラウザは、System ファイルシステムに登録されている項目の順序をすばやく再編成するのに使用できます。</p></li>
+              
+              <li>前の節で実行したように、モジュールを再実行します。</li>
+              <li>前の節で示したテンプレートを使用して ABC ファイルを作成し、「プロジェクト」ウィンドウや「お気に入り」ウィンドウなど、いずれかのエクスプローラビューでそのファイルのノードを右クリックします。
+	       <p>Abc ファイルには、モジュールで割り当てたアイコンと、右クリックのコンテキストメニューから使用できる、<tt>layer.xml</tt> ファイルで定義されているアクションのリストがあります。</p>
+		<p><img  src="../../images/tutorials/filetype/60-dummytemplate.png" alt="プロジェクトの最終ウィンドウ。" /></p></li>
+		<li>新規メニュー項目を選択すると、Abc ファイルの名前と場所が次のように表示されます。
+		<p><img style="border: 1px solid #0e1b55" src="../../images/tutorials/filetype/60-information.png" alt="情報。" /></p></li>
+		
+              
+          </ol>
+
+ <p>特定の種類のファイルのコンテキストメニューに表示される新しいアクションを、「プロジェクト」ウィンドウ、「ファイル」ウィンドウ、または「お気に入り」ウィンドウで作成する方法について学習しました。</p>
+
+          <h3 class="tutorial"><a name="topcomponent"></a>ファイルをウィンドウで開く</h3>
+          <p>デフォルトでは、このチュートリアルで定義した種類のファイルを開くと、そのファイルが基本のエディタで開きます。ただし、ファイルの視覚表現を作成したい場合があります。ユーザーはウィジェットをドラッグして視覚表現にドロップします。このようなユーザーインタフェースを作成する最初の手順として、ユーザーはファイルをウィンドウで開きます。このサブセクションでその方法を説明します。</p>
+          <ol>
+              <li>プロジェクトノードを右クリックし、「新規」&gt;「ウィンドウコンポーネント」を選択します。次に示すように、「ウィンドウの位置」に「editor」と、「アプリケーションの起動時に開く」を設定します。
+              
+ <p><img  src="../../images/tutorials/filetype/65-topc-1.png" alt="新規アクションウィザードの手順 1。" /></p></li>
+<li>「次へ」をクリックし、「クラス名の接頭辞」に「Abc」と入力します。
+ <p><img  src="../../images/tutorials/filetype/65-topc-2.png" alt="新規アクションウィザードの手順 1。" /></p>
+ <p>「完了」をクリックします。</p>
+              </li>
+              <li><tt>DataObject</tt> コンストラクタを次のように変更し、DataEditorSupport の代わりに <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/OpenSupport.html">OpenSupport</a></tt> を使用するように <tt>DataObject</tt> を変更します。
+
+<pre>public AbcDataObject(FileObject pf, MultiFileLoader loader)
+        throws DataObjectExistsException, IOException {
+
+    super(pf, loader);
+    CookieSet cookies = getCookieSet();
+    <b>//cookies.add((Node.Cookie) DataEditorSupport.create(this, getPrimaryEntry(), cookies));
+    cookies.add((Node.Cookie) new AbcOpenSupport(getPrimaryEntry()));</b>
+              
+}</pre>
+       </li>
+              
+              <li>次の <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/OpenSupport.html">OpenSupport</a> クラスを作成します。</tt>
+              
+<pre>class AbcOpenSupport extends OpenSupport implements OpenCookie, CloseCookie {
+
+    public AbcOpenSupport(AbcDataObject.Entry entry) {
+        super(entry);
+    }
+
+    protected CloneableTopComponent createCloneableTopComponent() {
+        AbcDataObject dobj = (AbcDataObject) entry.getDataObject();
+        AbcTopComponent tc = new AbcTopComponent();
+        tc.setDisplayName(dobj.getName());
+        return tc;
+    }
+ 
+}</pre>              
+              
+              <p class="tips">TopComponent を変更して、TopComponent の代わりに CloneableTopComponent を拡張します。TopComponent のクラス修飾子を設定し、そのコンストラクタの修飾子を private ではなく public に設定します。</p></li>
+          </ol>	
+<p>モジュールを再実行すると、次に Abc ファイルを開くときに、<tt>OpenSupport</tt> クラスがファイルを開く処理を行います。たとえば、<tt>DataEditorSupport</tt> が提供する基本エディタの代わりに <tt>TopComponent</tt> でファイルが開かれます。</p>
+ 
+  <p><img style="border: 1px solid #0e1b55" src="../../images/tutorials/filetype/65-topc-3.png" alt="新規アクションウィザードの手順 1。" /></p>
+
+     <p class="tips"><a href="https://platform.netbeans.org/tutorials/nbm-visual_library.html">NetBeans ビジュアルライブラリのチュートリアル</a>に、TopComponent の詳細を開発する方法の例が説明されています。たとえば、このチュートリアルで定義されたファイルの種類に対応するファイルの内容を視覚的に表示します。</p>
+          
+      <br />
+
+<!-- ======================================================================================= -->
+
+<h3><a name="multiview"></a>マルチビューウィンドウの作成</h3>
+
+<p>ファイルをウィンドウで開くことができるようになったので、ウィンドウを少し変えてみます。マルチビューウィンドウを作成します。通常、マルチビューウィンドウの最初のタブでファイルを視覚的に表示し、2 番目のタブでソースビューを表示します。3 つ以上のタブを作成して、それぞれのタブに、開いたファイルの詳細を表示することもできます。</p>
+
+      <ol>
+	      <li>プロジェクトノードを右クリックし、「プロパティー」を選択します。「プロジェクトプロパティー」ダイアログで「ライブラリ」を選択し、「追加」をクリックします。「<a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-core-multiview/overview-summary.html">マルチビューウィンドウ</a>」の依存関係を設定します。「了解」をクリックし、再度「了解」をクリックして、「プロジェクトプロパティー」ダイアログを終了します。</li>
+	      <li>マルチビューウィンドウに作成する各タブについて、<tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-core-multiview/org/netbeans/core/spi/multiview/MultiViewDescription.html">MultiViewDescription</a></tt> および <tt>Serializable</tt> を実装するクラスを作成します。<p>このチュートリアルでは、まず、指定されたクラスを実装する <tt>AbcMultiviewDescription1</tt> というクラスを作成します。</p>
+<pre>public class AbcMultiviewDescription1 implements MultiViewDescription, Serializable {
+
+    public int getPersistenceType() {
+        throw new UnsupportedOperationException(&quot;Not supported yet.&quot;);
+    }
+
+    public String getDisplayName() {
+        throw new UnsupportedOperationException(&quot;Not supported yet.&quot;);
+    }
+
+    public Image getIcon() {
+        throw new UnsupportedOperationException(&quot;Not supported yet.&quot;);
+    }
+
+    public HelpCtx getHelpCtx() {
+        throw new UnsupportedOperationException(&quot;Not supported yet.&quot;);
+    }
+
+    public String preferredID() {
+        throw new UnsupportedOperationException(&quot;Not supported yet.&quot;);
+    }
+
+    public MultiViewElement createElement() {
+        throw new UnsupportedOperationException(&quot;Not supported yet.&quot;);
+    }
+
+}</pre>
+
+          <p class="tips">上の <tt>AbcMultiviewDescription1</tt> クラスでは、<tt>createElement()</tt> メソッドが MultiViewElement を返します。ここで返したいのは <tt>TopComponent</tt> です。これについては次の手順で実行します。</p></li>
+
+  <li>クラスの署名を書き直します。前の手順の description にマルチビュー要素を提供するには、次のように <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-core-multiview/org/netbeans/core/spi/multiview/MultiViewElement.html">MultiViewElement</a></tt> を実装する必要があります。
+
+<pre>public final class AbcTopComponent extends TopComponent implements MultiViewElement {</pre>
+
+<p><tt>TopComponent</tt> で、<tt>findInstance()</tt>、<tt>getPersistenceType()</tt>、<tt>writeReplace()</tt>、および <tt>preferredID()</tt> の各メソッドを削除 (コメントアウト) する必要があります。</p></li>
+
+<li>ここでは、必要な各メソッドの単純な実装を提供します。まず、新しい <tt>JToolbar</tt> を <tt>TopComponent</tt> クラスの最初に定義します。
+
+ <pre>private JToolBar toolbar = new JToolBar();</pre>
+
+<p>次に、メソッドを実装します。</p>
+
+ <pre>    public JComponent getVisualRepresentation() {
+        return this;
+    }
+
+    public JComponent getToolbarRepresentation() {
+        return toolbar;
+    }
+
+    public void setMultiViewCallback(MultiViewElementCallback arg0) {
+    }
+
+    public CloseOperationState canCloseElement() {
+        return null;
+    }
+
+    public Action[] getActions() {
+        return new Action[]{};
+    }
+
+    public Lookup getLookup() {
+        return Lookups.singleton(this);
+    }
+
+    public void componentShowing() {
+    }
+
+    public void componentHidden() {
+    }
+
+    public void componentActivated() {
+    }
+
+    public void componentDeactivated() {
+    }
+
+    public UndoRedo getUndoRedo() {
+        return UndoRedo.NONE;
+    }</pre></li>
+
+ <li>これで、次のように <tt>AbcMultiviewDescription1</tt> を再定義できます。
+
+ <pre>public class AbcMultiviewDescription1 implements MultiViewDescription, Serializable {
+
+    public int getPersistenceType() {
+        return TopComponent.PERSISTENCE_ALWAYS;
+    }
+
+    public String getDisplayName() {
+        return &quot;Tab 1&quot;;
+    }
+
+    public Image getIcon() {
+        return ImageUtilities.loadImage(&quot;/org/myorg/abcfiletype/Datasource.gif&quot;);
+    }
+
+    public HelpCtx getHelpCtx() {
+        return null;
+    }
+
+    public String preferredID() {
+       return &quot;AbcMultiviewDescription1&quot;;
+    }
+
+    public MultiViewElement createElement() {
+        return new AbcTopComponent();
+    }
+
+}</pre></li>
+
+          <li><tt>OpenSupport</tt> クラスの <tt>createCloneableTopComponent</tt> メソッドを変更して、<tt>TopComponent</tt> を先ほど作成した <tt>MultiViewDescription</tt> クラスで開くようにします。
+
+<pre>protected CloneableTopComponent createCloneableTopComponent() {
+
+    // マルチビュー記述子の配列を作成します:
+    AbcMultiviewDescription1 firstTab = new AbcMultiviewDescription1();
+    MultiViewDescription[] descriptionArray = { firstTab };
+
+    // マルチビューウィンドウを作成します:
+    CloneableTopComponent tc = MultiViewFactory.createCloneableMultiView(descriptionArray, firstTab,  null);
+    tc.setDisplayName(entry.getDataObject().getName());
+    return tc;
+
+}</pre>
+
+
+ <p class="tips"><tt>MultiViewFactory.createCloneableMultiView</tt> の 2 番目の引数は、デフォルトで開くタブを決定します。ここでは、<tt>AbcMultiViewDescription1</tt> で定義されるタブ <tt>firstTab</tt> になります。</p></li>
+
+<li>再度、ファイルをインストールして開きます。これで、1 つのタブを持つマルチビューウィンドウができました。
+
+    <p><img style="border: 1px solid #0e1b55" src="../../images/tutorials/filetype/65-mvdeployed.png" alt="配備されたマルチビュー" /></p></li>
+
+       </ol>
+
+ <p>マルチビューウィンドウには単一のタブがあります。追加するタブごとに、新しい <tt>MultiviewDescription</tt> クラスを新しい <tt>TopComponent</tt> とともに作成し、前に表示したとおり、<tt>OpenSupport</tt> 拡張クラス内の <tt>MultiViewDescription</tt> クラスをインスタンス化します。</p>
+
+    </div>
+
+
+<!-- ======================================================================================= -->
+
+<h2><a name="share"></a>共有可能なモジュールバイナリの作成</h2>
+
+<p>モジュールが完了したので、ほかの人にそのモジュールを使用させることができます。そのためには、バイナリの「NBM」 (NetBeans モジュール) ファイルを作成し、それを配布する必要があります。</p>
+
+<div class="indent">
+
+      <ol>
+	      <li>「プロジェクト」ウィンドウで、<tt>Abc File Type</tt> プロジェクトを右クリックし、「NBM を作成」を選択します。
+
+	      <p>NBM ファイルが作成されます。これは「ファイル」ウィンドウ (Ctrl-2) で確認できます。</p>
+	      <p><img style="border: 1px solid #0e1b55" src="../../images/tutorials/filetype/60-shareable-nbm.png" alt="共有可能な NBM。" /></p></li>
+	      <li>たとえば、<a href="http://plugins.netbeans.org/PluginPortal/">NetBeans プラグインポータル</a>を通じて、ほかの人がそのファイルを使用できるようにします。受信者は「プラグインマネージャー」(「ツール」&gt;「プラグイン」) を使用して、それをインストールします。</li>
+       </ol>
+
+    </div>
+
+
+<!-- ======================================================================================== -->
+
+
+  <br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20File%20Type%20Module%20Tutorial">ご意見をお寄せください</a></div>
+<br style="clear:both;" />
+  
+  
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>次の手順</h2>
+
+<p>NetBeans モジュールの作成と開発の詳細については、次のリソースを参照してください。 
+  <ul>
+	  <li><a href="https://platform.netbeans.org/index.html">NetBeans プラットフォームのホームページ</a></li>
+	  <li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API の一覧 (現行の開発バージョン)</a></li>
+  <li><a href="https://netbeans.org/kb/trails/platform_ja.html">その他の関連チュートリアル</a></li></ul>
+  </p>
+  
+<!-- ======================================================================================== -->
+<!-- 
+<h2><a name="version"></a>Versioning </h2>
+  
+<p>
+
+<table width="76%" >
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+         25 August 2005
+      </td>
+      <td>
+	      <ul><li>Initial version.
+		      <li>To do:
+		      <ul><li>Add post-creation customizations (i.e., the "Extending Support for the New File Type" section).
+		      <li>Explain what the generated files are for (placeholders currently).
+		      <li>Explain the layer file's entries.
+		      <li>Explain the first File Type panel (placeholders currently).
+		      <li>Maybe create a separate tutorial for recognizing XML files.</ul></ul>
+      </td>
+  </tr>
+<tr>
+      <td>
+         2
+      </td>
+      <td>
+         23 September 2005
+      </td>
+      <td>
+	      <ul><li>A lot of info added from the FAQ and added the Action wizard and System Filesystem Browser.
+		      <li>To do:
+		      <ul><li>Explain <tt>LoaderBeanInfo.java</tt> and <tt>Resolver.xml</tt> (one line each)
+			      <li>Maybe create a separate tutorial for recognizing XML files.
+			      <li>Using Tomcat GIF maybe not good idea.
+			      <li>Maybe the action should do something useful.
+			      <li>Maybe direct links to FAQ not good idea.
+			      <li>Probably more needed on <tt>layer.xml</tt> file.
+			      <li>Maybe other useful apisupport functionality could be added to this scenario.
+			      <li>More info needed on MIME types.
+			      <li>The introductory paragraphs should be illustrated with a graphic. A diagram to
+			      show relationship between node, dataobject, fileobject, dataloader, etc.</ul></ul> 
+      </td>
+  </tr>
+
+<tr>
+      <td>
+         3
+      </td>
+      <td>
+         28 September 2005
+      </td>
+      <td>
+	      <ul><li>Integrated comments from Jesse Glick.
+		      <li>To do:
+		      <ul>    <li>More info needed on MIME types.
+			      <li>The introductory paragraphs should be illustrated with a graphic. A diagram to
+			      show relationship between node, dataobject, fileobject, dataloader, etc.
+			      <li>Many Javadoc links to be added (also for <tt>performAction</tt>.
+			      <li>Info on cookies, cookie actions, cookie classes needed.
+			      <li>Action ended up in text-html even though I chose my own mime type.
+			      <li>Need to explain or link to explanation for instance, shadow, etc.
+			      <li>Platform Manager needs to be mentioned in the context of installing
+			      in target platform.
+			      <li>Show how to add properties to the property sheet.</ul></ul> 
+      </td>
+  </tr>
+<tr>
+      <td>
+         4
+      </td>
+      <td>
+         4 October 2005
+      </td>
+      <td>
+	      <ul><li>Added two diagrams in the introductory paragraphs, from Tim Boudreau's JavaOne presentation.
+ <li>To do:
+		      <ul>    <li>More info needed on MIME types.
+			      <li>Many Javadoc links to be added (also for <tt>performAction</tt>).
+			      <li>Need to create section near the start: "Related FAQs":
+			      <ul><li>Info on cookies, cookie actions, cookie classes needed.
+				      <li>Need to explain or link to explanation for instance, shadow, etc.
+			      <li>DataLoader, DataObject, etc.</ul>
+			      <li>Platform Manager needs to be mentioned in the context of installing
+			      in target platform.
+			      <li>Show how to add properties to the property sheet.
+			      <li>Mention the dummy template that you get, how to modify it,
+	       			and how to set the description in the New File wizard.</ul></ul> 
+		     
+      </td>
+  </tr>
+<tr>
+      <td>
+         4
+      </td>
+      <td>
+         4 November 2005
+      </td>
+      <td>
+	      <ul><li>Added downloadable source code, new 'Installing the Sample' section, and link to
+		       Syntax Highlighting tutorial at the end.
+ <li>To do:
+ <ul>   <li>Same items as on 4 October still to be done.</ul> 
+		     
+      </td>
+  </tr>
+<tr>
+      <td>
+         5
+      </td>
+      <td>
+         29 November 2005
+      </td>
+      <td>
+	      <ul><li>Added links to brand new Component Palette tutorial.
+ <li>To do:
+ <ul>   <li>Same items as on 4 October still to be done.</ul> 
+		     
+      </td>
+  </tr>
+<tr>
+      <td>
+         6
+      </td>
+      <td>
+	      21 April 2006
+      </td>
+      <td>
+	      <ul><li>Changed the title from "DataLoader Module Tutorial" to "Recognizing a File Type Tutorial".
+ <li>To do:
+ <ul>   <li>Same items as on 4 October still to be done.</ul> 
+		     
+      </td>
+  </tr>
+  <tr>
+      <td>
+         7
+      </td>
+      <td>
+	      17 November 2007
+      </td>
+      <td>
+	      <ul><li>Updated the whole tutorial to 6.0, replaced all screenshots, and
+              now [because the 6.0 IDE already provides support for manifest files], the
+              tutorial focuses on imaginary Abc files.
+ <li>To do:
+ <ul>   <li>Need to replace the download, which is the same as before, dealing with manifest files.
+       <li>Same items as on 4 October still to be done.
+       <li>Added OpenSupport into TopComponent, with a reference to Visual Library.</ul>  
+	<li>Changed title to File Type Integration Tutorial
+        <li>Tweaked several places throughout tutorial, for 6.0
+      </td>
+  </tr>
+   <tr>
+                <td>
+                    8
+                </td>
+                <td>
+                    15 April 2008
+                </td>
+                <td>
+                    Updated the styles (badge, table of contents, required software table)
+                    to the new format.
+                </td>
+            </tr>
+   <tr>
+                <td>
+                    9
+                </td>
+                <td>
+                    16 July 2008
+                </td>
+                <td>
+                    Created new version for 6.5, because of changes to the
+                    way file type recognition is done in that release. To do:
+                    <ul>
+                        <li>6.5-specific badge
+                        <li>Required software table
+                        <li>Search for DataNode, BeanInfo, DataLoader and reword
+                        <li>Check screenshots
+                        <li>Make sure all the sections work as before
+                    </ul>
+                </td>
+            </tr>
+   <tr>
+                <td>
+                    10
+                </td>
+                <td>
+                    4 April 2009
+                </td>
+                <td>
+                    Worked through everything and added the multiview section.
+                </td>
+            </tr>
+   <tr>
+                <td>
+                    11
+                </td>
+                <td>
+                    9 Feb 2010
+                </td>
+                <td>
+                    Changed JPanel to TopComponent in multiview section.
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    12
+                </td>
+                <td>
+                    10 Feb 2010
+                </td>
+                <td>
+                    Added links to javadoc for the MultiView classes.
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    13
+                </td>
+                <td>
+                    18 Feb 2010
+                </td>
+                <td>
+                    Added style for borders and fixed action instructions.
+                </td>
+            </tr>
+  </tbody>
+</table>
+-->
+</body>
+</html>

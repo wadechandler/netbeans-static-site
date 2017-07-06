@@ -1,0 +1,292 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+
+<html>
+<head>
+   <title>Особые компоненты Visual Mobile Designer: создание экранов ожидания для мобильных приложений &ndash; учебный курс по среде NetBeans Java ME</title>
+   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+   <link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+   <meta name="author" content="Karol Harezlak">
+</head>
+<body>
+<a name="top"></a>
+<h1>Особые компоненты Visual Mobile Designer: создание экранов ожидания для мобильных приложений</h1>
+  <p> Для правильной работы приложений Java ME зачастую необходимо подключение к сети. К сожалению, скорость передачи данных в беспроводных сетях пока еще довольно мала. Любая фоновая задача, ожидающая подключения к сети или передачу данных, может приостановить выполнение приложения и оставить пользователей в недоумении, если на экране все застынет на неопределенное время или, если им придется отменять попытку подключения и повторять ее позже (или не повторять вовсе). Поэтому у разработчиков возникает вопрос, как избавить пользователей от этого неприятного, но распространенного явления. </p>
+<p>Ответ &ndash; добавьте экран ожидания. Экраны ожидания позволяют пользователям выполнять блокирующую фоновую задачу (например, подключение к сети) и показывают процесс выполнения задачи или выводят на экран сообщение, информирующее пользователя о том, что приложение все еще выполняется. В этом руководстве мы покажем, как Visual Mobile Designer (VMD) упрощает создание экранов ожидания за счет включения специального компонента экрана ожидания, который можно модифицировать и включать в последовательность действий приложения.</p>
+<p>Если вы ранее не разрабатывали мобильные приложения в среде NetBeans, начните с изучения <A HREF="quickstart.html">Краткого руководства пользователя по NetBeans Java ME MIDP</A>.</p>
+<!--<p class="notes"><b>Примечание.</b> Если используется среда IDE NetBeans 6.8, воспользуйтесь руководством <a href="../../68/javame/waitscreen.html">Создание экранов ожидания для мобильных приложений в среде IDE NetBeans 6.8</a>.</p>-->
+<h3>Содержание</h3>
+<img  src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" class="stamp" alt="Содержимое данной страницы относится к среде IDE NetBeans 6.9 и более поздним версиям" title=" Содержимое данной страницы относится к среде IDE NetBeans 6.9 и более поздним версиям" >
+
+<ul>
+
+<li><a href="#intro" title="Как работает компонент WaitScreen">Как работает компонент WaitScreen</a></li>
+<li><a href="#sample" title="Установка и выполнение примера приложения">Установка и выполнение примера приложения</a></li>
+<li><a href="#creating" title="Создание мобильного приложения с использованием особого компонента WaitScreen">Создание мобильного приложения с использованием особого компонента WaitScreen</a>
+<ul>
+    <li> <a href="#create">Создание проекта &quot;WaitScreenExample&quot;</a> </li>
+    <li><a href="#add">Добавление пакетов и визуального мидлета к проекту &quot;WaitScreenExample&quot;</a></li>
+    <li><a href="#addcomponent">Добавление компонентов к проекту &quot;MyWaitScreenMIDlet&quot;</a></li>
+    <li><a href="#addimage">Добавление изображений</a></li>
+    <li><a href="#addcomponents">Добавление команд Ok, Back и Exit к компонентам TextBox и WaitScreen </a></li>
+    <li><a href="#createflow">Создание последовательности действий приложения</a>.</li>
+    <li><a href="#backgroundtask">Создание фоновой задачи для экрана ожидания</a></li>
+    <li><a href="#run">Выполнение проекта</a></li>
+  </ul></li>
+  <li><a href="#javadoc-waitscreen">Документация Javadoc для компонентов WaitScreen и SimpleCancellableTask</a></li>
+  <li><a href="#seealso" title="Дополнительные сведения">Дополнительные сведения</a></li>
+</ul>
+
+<p><b>Для работы с этим учебным курсом требуются программное обеспечение и ресурсы, перечисленные ниже.</b></p>
+
+<table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Программное обеспечение или ресурс</th>
+                <th class="tblheader" scope="col">Требуемая версия</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">Среда IDE NetBeans с Java ME</a></td>
+                <td class="tbltd1">версия 6.9 или более поздняя</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Комплект для разработки приложений на языке Java</a> (JDK)</td>
+                <td class="tbltd1">версия 6 или 7</td>
+            </tr>      
+        </tbody>
+</table>
+<h2><a name="intro"></a>Как работает компонент WaitScreen </h2>
+<p> Существует два метода создания фоновых задач для компонента WaitScreen. Можно написать класс, реализующий интерфейс <code>CancellableTask</code>, или использовать ресурс <code>SimpleCancellableTask</code>. Фоновые задачи присваиваются экрану ожидания с помощью метода <code>setTask()</code>. </p>
+  <p>Когда фоновая задача выполнена, компонент WaitScreen автоматически переключается на другой отображаемый объект. При успешном выполнении задачи экран ожидания переключается на экран, определяемый методами <code>setNextDisplayable()</code>. Если задача не выполнена, экран ожидания переключается на экран, определяемый методами <code>setFailureDisplayable()</code>. Если информация о сбое не должна выводиться на экран по умолчанию, экран ожидания переключается на экран, определяемый методом <code>setNextDisplayable()</code>. Если следующий экран для отображения не указан, экран ожидания переключается на ранее отображавшийся экран. </p>
+  <p>Обратите внимание, что этот компонент доступен для приложений, поддерживающих только профиль устройства MIDP 2.0.</p>
+  <p class="align-center"><a href="#top">В начало</a></p>
+<h2><a name="sample"></a>Установка и выполнение примера приложения</h2>
+<div class="indent"> Перед тем, как приступить к учебному курсу, можно ознакомиться с окончательным результатом этой работы. 
+  <p>Для установки примера приложения &quot;waitscreenexample&quot; выполните следующие действия.</p>
+  <ol>
+    <li> Загрузите <a href="https://netbeans.org/projects/samples/downloads/download/Samples/Mobile/WaitScreenExample.zip"> WaitScreenExample.zip.</a></li>
+    <li> Распакуйте файл. </li>
+    <li> В среде IDE выберите <tt>File </tt> &gt; <tt>Open Project</tt> и перейдите к папке, содержащей распакованный файл. </li>
+    <li>Нажмите кнопку &quot;Open Project&quot;.<br>Представление &quot;Project&quot; должно выглядеть следующим образом: 
+    <p class="align-center"><img src="../../../images_www/articles/71/mobility/waitscreen/ws-project-window.png" alt="Окно &quot;Проект&quot;(&quot;Project&quot;) с файлами WaitScreenExample" border=1> 
+    </p> </li>
+    <li> В окне &quot;Проект&quot; щелкните узел проекта правой кнопкой мыши и выберите &quot;Выполнить&quot; в контекстном меню (или нажмите клавишу F6). После запуска приложения откроется окно эмулятора, в котором отображается это приложение, выполняющееся в эмуляторе устройства по умолчанию. </li>
+    <li>В окне эмулятора нажмите кнопку под элементом &quot;Launch.&quot; Эмулятор выведет на экран URL-адрес веб-сайта среды NetBeans: http://netbeans.org.</li>
+    <li>Нажмите кнопку под элементом &quot;OK&quot;. На экране появится запрос о том, действительно ли вы хотите выйти в Интернет. </li>
+    <li>Для продолжения нажмите кнопку под элементом &quot;Yes&quot;. Пока эмулятор пытается установить подключение к веб-сайту, он отображает экран ожидания. 
+ <p class="align-center"> <img src="../../../images_www/articles/71/mobility/waitscreen/ws-emulator.png" alt="Эмулятор DefaultColorPhone, отображающий пример приложения экрана ожидания" border=1> </p>
+    </li>
+    <li>После того, как эмулятор установит подключение, закройте приложение. </li>
+  </ol>
+</div>
+
+<p class="align-center"><a href="#top">В начало</a></p>
+<h2><a name="creating"></a>Создание мобильного приложения с использованием особого компонента WaitScreen </h2>
+<div class="indent"> 
+<p>Теперь, после ознакомления с компонентом WaitScreen,  вернемся к началу и создадим данное приложение. Для создания приложения необходимо выполнить следующие действия. </p>
+  <ol>
+    <li> <a href="#create">Создание проекта &quot;WaitScreenExample&quot;</a> </li>
+    <li><a href="#add">Добавление пакетов и визуального мидлета к проекту &quot;WaitScreenExample&quot;</a></li>
+    <li><a href="#addcomponent">Добавление компонентов к проекту &quot;MyWaitScreenMIDlet&quot;</a></li>
+    <li><a href="#addimage">Добавьте изображения</a>.</li>
+    <li><a href="#addcomponents">Добавление команд Ok, Back и Exit к компонентам TextBox и WaitScreen </a></li>
+    <li><a href="#createflow">Создайте поток операций приложения</a>.</li>
+    <li><a href="#backgroundtask">Создайте фоновую задачу для экрана ожидания</a>.</li>
+    <li><a href="#run">Запустите проект</a>.</li>
+  </ol>
+  <p class="notes"><strong>Примечание.</strong> Перед созданием данного проекта не забудьте закрыть или удалить образец проекта WaitScreenExample, запущенный выше. В среде IDE NetBeans невозможно одновременно открыть проекты с идентичными именами. </p>
+</div>
+<div class="indent"> 
+  <h3 class="tutorial">Создание проекта &quot;WaitScreenExample&quot;<a name="create"></a></h3>
+  <ol>
+    <li> Выберите <tt>File (&quot;Файл&quot;)</tt> &gt; <tt>New Project (&quot;Создать проект&quot;) (Ctrl-Shift-N)</tt>. В Categories (&quot;Категории&quot;) выберите <tt>Java ME</tt>. В области Projects (&quot;Проекты&quot;) выберите <tt>Mobile Application</tt> (&quot;Мобильное приложение&quot;) и нажмите кнопку &quot;Далее&quot;. </li>
+    <li> Введите <code>WaitScreenExample</code> в поле Project Name (&quot;Имя проекта&quot;). В поле &quot;Project Location&quot; укажите локальный каталог. Мы называем этот каталог <tt>$PROJECTHOME</tt>. </li>
+    <li> Снимите флажок &quot;Create Hello MIDlet&quot;. Нажмите кнопку Next (&quot;Далее&quot;). </li>
+    <li> Оставьте &quot;Sun Java Wireless Toolkit 2.5.2&quot; в качестве выбранной платформы эмулятора. Нажмите кнопку Finish (&quot;Готово&quot;).  </li>
+    <!--li> Click Finish. The project folder contains all of your sources and project metadata, such as the project Ant script. The application itself is displayed in the Flow Design window of the Visual Mobile Designer. </li-->
+  </ol>
+  <h3 class="tutorial">Добавление пакетов и визуального мидлета к проекту &quot;WaitScreenExample&quot;<a name="add"></a></h3>
+  <ol>
+    <li> Выберите проект <code> WaitScreenExample</code> в окне проектов и выберите <tt>File</tt> (&quot;Файл&quot;) &gt; <tt>New File (Ctrl-N)</tt> (&quot;Создать файл&quot;). В области &quot;Категории&quot; выберите &quot;Java&quot;. В разделе &quot;Типы файлов&quot; выберите &quot;Java Package&quot;. Нажмите кнопку &quot;Далее&quot;. </li>
+    <li> Введите <code>waitscreenexample</code> в поле Package Name (&quot;Имя пакета&quot;). Нажмите кнопку Finish (&quot;Готово&quot;).  </li>
+    <li> Выберите пакет <code>waitscreenexample</code> в окне проектов и выберите <tt>File</tt> (&quot;Файл&quot;) &gt; <tt>New File (Ctrl-N)</tt> (&quot;Создать файл&quot;). В разделе &quot;Категории&quot; выберите &quot;MIDP&quot;. В разделе &quot;Типы файлов&quot; выберите &quot;Visual MIDlet&quot;. Нажмите кнопку &quot;Далее&quot;. </li>
+      <li> Введите <code>MyWaitScreenMidlet</code> в поля &quot;MIDlet Name&quot; и &quot;MIDP Class Name&quot;. Нажмите кнопку &quot;Готово&quot;.  </li>
+  </ol>
+  <h3 class="tutorial">Добавление компонентов к проекту &quot;MyWaitScreenMidlet&quot;<a name="addcomponent"></a></h3>
+  <p>При выборе пункта &quot;Visual MIDlet&quot; откроется редактор Visual Mobile Designer (VMD). При выборе представления &quot;Flow&quot; вверху окна VMD будет открыт Flow Designer, в котором можно спроектировать последовательность действий приложения. </p>
+  <ol>
+    <li> Переключите визуальный мидлет на представление &quot;Flow&quot;. Перетащите следующие компоненты &quot;Screen&quot; из окна &quot;Palette&quot; в окно &quot;Flow Designer&quot;: 
+    
+    <ul>
+      <li> 
+        <div class="indent"> TextBox;</div>
+      </li>
+      <li> 
+        <div class="indent">WaitScreen;</div>
+      </li>
+      <li> 
+        <div class="indent">List;</div>
+      </li>
+      <li> 
+        <div class="indent">Alert. 
+        </div>
+      </li>
+    </ul></li>
+    <li>Выберите <tt>textBox</tt>. В окне &quot;Properties&quot; (под окном &quot;Component Palette&quot;) измените свойство &quot;Title&quot; на <code>Text Box</code>.</li>
+    <li>Используйте ту же самую процедуру для изменения заголовков следующих компонентов:      
+      <ul>
+        <li> 
+          <div class="indent">Смените <tt>waitScreen</tt> на <code>Wait Screen</code></div>
+        </li>
+        <li> 
+          <div class="indent">Смените <tt>list</tt> на <code>List</code></div>
+        </li>
+        <li> 
+          <div class="indent">Смените <tt>alert</tt> на<code> Alert</code></div>
+        </li>
+      </ul>
+    </li>
+    <li>Используйте значения свойств для каждого из следующих компонентов:  
+      <ul>
+        <li> 
+          <div class="indent">Смените значение свойства Text для <tt>textBox</tt> на <code>http://netbeans.org</code></div>
+        </li>
+        <li> 
+          <div class="indent">Смените значение свойства String для <tt>alert</tt> на <code>Connection Failed</code></div>
+        </li>
+		<li> 
+          <div class="indent">Смените значение свойства Text для<tt>WaitScreen</tt> на <code>Please Wait...</code></div>
+        </li>
+      </ul>
+    </li>
+   
+  </ol>
+  <p>Представление &quot;Flow&quot; должно выглядеть следующим образом: </p>
+   <p class="align-center">
+					  <a href="../../../images_www/articles/71/mobility/waitscreen/ws-flowdesigner.png" rel="lytebox"
+                       title="Представление &quot;Flow&quot; со значками компонентов"><img src="../../../images_www/articles/71/mobility/waitscreen/ws-flowdesigner-small.png"
+                     alt="Представление &quot;Flow&quot; со значками компонентов" border=1></a></p>
+  
+  <h3 class="tutorial">Добавление изображений<a name="addimage" id="addimage"></a></h3>
+  <p>В этом разделе мы добавим изображения, используемые на экранах ожидания и предупреждения. </p>
+  <ol>
+    <li>Загрузите и скопируйте файлы <a href="../../../images_www/articles/71/mobility/waitscreen/alert.png">alert.png</a> и <a href="../../../images_www/articles/71/mobility/waitscreen/sandglass.png">sandglass.png</a> в папку <code>$PROJECTHOME/src/waitscreenexample</code>.</li>
+    <li>Щелкните правой кнопкой мыши компонент <tt>alert</tt> и выберите Properties (&quot;Свойства&quot;) во всплывающем меню.</li>
+    <li>В диалоговом окне свойств нажмите кнопку Ellipsis (&quot;Многоточие&quot;)  (<img src="../../../images_www/articles/71/mobility/waitscreen/ellipsis-button.png" border=1 alt="кнопка Ellipsis"  >) напротив свойства Image (&quot;Изображение&quot;).</li>
+    <li>В диалоговом окне изображения нажмите кнопку Add (&quot;Добавить).<br>
+    Будет добавлен компонент <tt>image1</tt>.</li>
+<li>Нажмите кнопку Browse (&quot;Обзор&quot;) и в диалоговом окне Open (&quot;Открыть&quot;) укажите путь к скопированному файлу alert.png.</li>
+<li>Нажмите кнопку &quot;Открыть&quot;.<br>Изображение добавлено.</li>
+<li>Нажмите кнопку OK, чтобы закрыть диалоговое окно изображения.</li>
+<li>Нажмите кнопку Close (&quot;Закрыть&quot;), чтобы закрыть диалоговое окно свойств.<br>Изображение alert.png привязано к компоненту <tt>alert</tt>.</li>
+	
+	
+    
+    <li>Повторите действия 2-8 для компонента <tt>waitScreen</tt>, добавьте sandglass.png как <tt>image2</tt> и привяжите его к компоненту. </li>
+  </ol>
+</div> 
+<div class="indent"> 
+  <h3 class="tutorial">Добавление команд Ok, Back и Exit к компонентам TextBox и WaitScreen<a name="addcommands" id="addcommands"> </a></h3>
+  <ol>
+    <li>Выберите <tt>Ok Command</tt> (&quot;Команда Ок&quot;) из раздела Commands (&quot;Команды&quot;) в Palette (&quot;Палитра&quot;). Перетащите ее в <tt>textBox</tt>.</li>
+    <li> Выберите <tt>Back Command</tt> (&quot;Команда Back&quot;) из раздела Commands (&quot;Команды&quot;) в Palette (&quot;Палитра&quot;). Перетащите ее в <tt>list</tt>.</li>
+    <li> Выберите <tt>Exit Command</tt> (&quot;Команда Exit&quot;) из раздела Commands (&quot;Команды&quot;) в Palette (&quot;Палитра&quot;). Перетащите ее в <tt>list</tt>.</li>
+  </ol>
+  <h3 class="tutorial">Создание последовательности действий приложения<a name="createflow" id="createflow"></a>.</h3>
+  <p>Теперь можно приступить к созданию последовательности действий приложения</p>
+  <ol>
+    <li>В представлении Flow (&quot;Последовательность действий&quot;) щелкните <tt>Started</tt> (&quot;Запущено&quot;) на Mobile Device и перетащите его в компонент <tt>textBox</tt>.</li>
+    <li>Аналогичным образом соедините другие компоненты, как показано на следующем рисунке. 
+  
+  <p class="align-center">
+					  <a href="../../../images_www/articles/71/mobility/waitscreen/ws-flow.png" rel="lytebox"
+                       title="Соединения на экране конструктора потока должны выглядеть следующим образом: Mobile Device к textBox1 к waitScreen к list к MobileDevice. Соединение команды Failure с alert, которое в свою очередь соединено с list"> <img src="../../../images_www/articles/71/mobility/waitscreen/ws-flow-small.png"
+                     alt="Соединения на экране конструктора потока должны выглядеть следующим образом: от Mobile Device к textBox1 к waitScreen к list к MobileDevice. Соединение команды Failure с alert, которое в свою очередь соединено с list" border=1></a></p>
+  
+    </li>
+  </ol>
+  <h3 class="tutorial">Создание фоновой задачи для экрана ожидания<a name="backgroundtask" id="backgroundtask"></a></h3>
+  <ol>
+    <li>В представлении Flow (&quot;Последовательность действий&quot;) выберите компонент <tt>waitScreen</tt>, затем выберите Properties (&quot;Свойства&quot;) из всплывающего меню.</li>
+    <li>В диалоговом окне Properties (&quot;Свойства&quot;) выберите <tt>&lt;NewCancellableTask&gt;</tt> из раскрывающегося меню Task (&quot;Задача&quot;) и щелкните Close (&quot;Закрыть&quot;). <br> 
+    <tt>simpleCancellableTask</tt> теперь является фоновой задачей компонента <tt>waitScreen</tt>.</li>
+    <li>Нажмите кнопку Source (&quot;Исходный код&quot;) в Visual Mobile Designer для перехода к исходному коду приложения. </li>
+    <li>Добавьте метод для фоновой задачи, скопировав следующий код в исходный код <code>MyWaitScreenMIDlet</code> после<code> public void destroyapp(boolean unconditional) { }</code>:
+    <pre class="examplecode">
+      private void getServerInfo() throws IOException {
+      String url = textBox.getString();
+      list.deleteAll();
+      /**
+      * Open an HttpConnection
+      */ 
+      HttpConnection hc = (HttpConnection) Connector.open(url);
+
+      /**
+      * Gets a header field key and header field by index and
+      * insert it into list.
+      */
+      list.setTitle(hc.getURL());   
+      for (int i=0;hc.getHeaderFieldKey(i)!=null; i++){
+      list.insert(i,hc.getHeaderFieldKey(i)+&quot; :&quot;+hc.getHeaderField(i),null);       
+      }     
+      /**
+      * Closing time ...
+      */
+      hc.close();
+      } 
+</pre></li>
+    <li>Щелкните исходный код правой кнопкой мыши и выберите Fix Imports (&quot;Исправить импортированное&quot;) во всплывающем меню (либо нажмите Ctrl+Shift+I).</li>
+	<li>Найдите строку <tt>public class MyWaitScreenMidlet extends MIDlet implements CommandListener {</tt> (строка 18) и вставьте <tt>final</tt>, чтобы результат выглядел следующим образом:
+	<pre class="examplecode"> public final class MyWaitScreenMidlet extends MIDlet implements CommandListener {</pre></li>
+	<li>Найдите метод <tt>public MyWaitScreenMidlet()</tt> в исходном коде (строка 38) и вставьте следующий код после <tt>public MyWaitScreenMidlet() {</tt>:<br>
+	<pre class="examplecode"> List list1 = getList();</pre> </li>
+    <li>Щелкните Screen (&quot;Экран&quot;) для перехода к представлению экрана и выберите <tt>SimpleCancellableTask</tt>.</li>
+	<li>В окне Properties (&quot;Свойства&quot;) нажмите кнопку Еllipsis (&quot;Многоточие&quot;) (<img src="../../../images_www/articles/71/mobility/waitscreen/ellipsis-button.png" border=1 alt="кнопка Ellipsis"  >) напротив свойства <tt>Executable Code</tt> (&quot;Исполняемый код&quot;).</li>
+	<li> Щелкните Go To source (&quot;Переход к исходному коду&quot;) в диалоговом окне исполняемого кода.</li>
+    <li>Найдите метод <tt>getSimpleCancellableTask()</tt> в исходном коде (строка 328) и вставьте следующий код после <tt>public void execute() throws Exception {</tt> where it reads <tt>// write task-execution user code here</tt>:<br>
+	<pre class="examplecode"> getServerInfo();</pre></li> 
+  </ol>
+</div>
+<div class="indent"> 
+  <h3 class="tutorial">Запуск проекта<a name="run"></a></h3>
+  
+      <p>Нажмите F6 для запуска основного проекта</p>
+      <p> или выберите &quot;Run&quot; &gt; &quot;Run Main Project&quot;.</p>
+    
+ 
+</div>
+<p class="align-center"><a href="#top">В начало</a></p>
+<div class="indent"> 
+<a name="javadoc-waitscreen"></a>
+  <h2>Документация Javadoc для компонентов WaitScreen и SimpleCancellableTask</h2>
+  <P>Среда IDE NetBeans предоставляет документацию Javadoc по интерфейсам API для компонентов <tt>WaitScreen</tt> и <tt>SimpleCancellableTask</tt>, а также другим компонентам, которые могут быть использованы в VMD. Чтобы прочесть документацию Javadoc для компонентов <tt>WaitScreen</tt> и <tt>SimpleCancellableTask</tt>, выполните следующие действия.</P>
+  <OL>
+<li>Наведите курсор на компонент <tt>WaitScreen</tt> или <tt>SimpleCancellableTask</tt> в исходном коде, после чего нажмите Ctr-Shift-Space (либо выберите <tt>Source</tt> (&quot;Исходный код&quot;) &gt; <tt>Show Documentation</tt> (&quot;Показать документацию&quot;)).<br>
+ Документация Javadoc для данного элемента отобразится во всплывающем окне.  </li>
+<li>Щелкните значок Show documentation in external web browser (&quot;Показать документацию во внешнем веб-обозревателе&quot;) (<img src="../../../images_www/articles/71/mobility/smscomposer/show-doc-button.png" alt="Show documentation in external web browser">) во всплывающем окне для просмотра подробной информации о компоненте <tt>WaitScreen</tt> или <tt>SimpleCancellableTask</tt> в браузере.</li>
+
+	
+</OL>
+</div>
+
+<p class="align-center"><a href="#top">В начало</a></p>
+ <div class="feedback-box"><a href="/about/contact_form.html?to=6&subject=VMD%20Custom%20Components:%20Creating%20Wait%20Screens">Мы ждем ваших отзывов</a>
+  </div>
+  <br style="clear:both;" >
+   <br>
+<h2><a name="seealso"></a>Дополнительные сведения</h2>
+  <ul>
+    <li><a href="smscomposer.html">Особые компоненты Visual Mobile Designer: создание приложения редактора сообщений SMS</a></li>
+    <li><a href="filebrowser.html">Особые компоненты Visual Mobile Designer: создание обозревателя файлов мобильных устройств</a></li>
+    <li><a href="pimbrowser.html">Особые компоненты Visual Mobile Designer: создание приложения для управления персональной информацией</a></li>
+    <li><a href="loginscreen.html">Особые компоненты Visual Mobile Designer: создание мобильных экранов входа в систему</a></li>
+    <li><a href="splashscreen.html">Особые компоненты Visual Mobile Designer: использование экранов заставок в приложениях Java ME</a></li>
+    <li><a href="tableitem.html">Особые компоненты Visual Mobile Designer: использование элементов таблицы в приложениях Java ME</a></li>
+    <li><a href="http://wiki.netbeans.org/VisualMobileDesignerPalatteReference">Справочная информация: руководство по компонентам Palette в Visual Mobile Designer</a></li>
+  </ul>
+  <p class="align-center"><a href="#top">В начало</a></p>
+</body>
+</html>

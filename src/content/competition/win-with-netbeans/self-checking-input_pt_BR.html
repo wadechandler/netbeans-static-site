@@ -1,0 +1,421 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+<head>
+	<title>Caixas de entrada html com auto-sele&ccedil;&atilde;o - Tutorial para o Concurso NetBeans</title>
+<link rel="stylesheet" type="text/css" href="../../netbeans.css">
+<META NAME="AUDIENCE" CONTENT="NBUSER">
+<META NAME="TYPE" CONTENT="ARTICLE">
+<META NAME="TOPIC" CONTENT="ADVANCED">
+<META NAME="description" CONTENT="Building extended HTML input elements with self-checking.">
+</head>
+
+<body >
+<h1>Caixas de entrada html com auto-sele&ccedil;&atilde;o</h1>
+<div class="articledate" style="margin-left:0px;">Contribui&ccedil;&atilde;o de Zsolt Kiss como parte da competi&ccedil;&atilde;o <a href="../../competition/win-with-netbeans.html">Win With NetBeans</a></div></p>
+<p><a href="https://netbeans.org/files/documents/4/303/selfcheckinginputs.zip">Download de arquivos e c&oacute;digo-fonte</a></p>
+
+<p>
+Neste tutorial iremos construir algum html entendido. <pre class="examplecode">&lt;input type=&quot;text&quot;&gt;</pre> elements. Estes elementos ter&atilde;o a propriedade de auto-sele&ccedil;&atilde;o, o que significa que &eacute; predefinido o que &eacute; inserido pelo usu&aacute;rio e que somente poderiam aceitar.
+
+</p>
+<p>
+Podemos fazer isso usando bibliotecas de identificadores personalizados da tecnologia Java Server Pages.
+</p>
+<p>
+As bibliotecas de identificadores personalizados estender os tags html b&aacute;sico com elemento definidos pelo programador e adiciona desta forma novas fun&ccedil;&otilde;es ao html. Daquele ponto um desenvolvedor Java inventou uma nova tag que pode ser usada por qualquer designer da Web e codificadores html sem qualquer (ou meramente) conhecimento de programa&ccedil;&atilde;o. Portanto, programadores da Web que n&atilde;o est&atilde;o familiarizados com o Java, tamb&eacute;m podem apreciar as vantagens destas tecnologias.
+</p>
+<p>
+Vamos usar o NetBeans 4.0 para desenvolver nossas novas tags html. Este incr&iacute;vel ambiente fornece tudo que iremos precisar para desenvolver bibliotecas de identificadores personalizados JSP rapidamente e de uma forma muito simples.
+</p>
+		
+
+<h2>Desenvolvendo nossa bibliotecas de identificadores personalizados e manuseadores de identificador Java com o NetBeans 4.0</h2>
+<p>As seguintes etapas principais ser&atilde;o apresentadas:</p>
+<ul>
+  <li><a href="#setup">Configurando um novo aplicativo da Web com o NetBeans IDE 4.0</a></li>
+
+  <li><a href="#createtld">Criando um descritor para a biblioteca de identificadores para nossos novos elementos html</a></li>
+  <li><a href="#taghandlers">Criando manuseadores de identificador Java</a></li>
+  <li><a href="#useyourtags">Usando seus novos identificadores em uma p&aacute;gina JSP</a></li>
+  <li><a href="#javascript">Colocando algum c&oacute;digo javascript em seu JSP</a></li>
+  <li><a href="#buildandrun">Desenvolver e executar o projeto</a></li>
+ </ul>
+
+ 
+<p>
+<h3 class='tutorial'><a name="setup">Configurando um novo aplicativo da Web com o NetBeans IDE 4.0</a></h3>
+
+<ol>
+	<li>
+<p>
+Inicie seu NetBeans e no menu principal escolha Arquivo &gt;Novo projeto. Sob Categorias selecione Web e deixe que o projeto seja um aplicativo da Web. Clique em Pr&oacute;ximo. Na pr&oacute;xima p&aacute;gina, digite SelfcheckingTags como o nome do projeto e procure por uma pasta adequada onde deseja que o IDE crie sua pasta de projeto. Clique em Terminar.
+</p> 
+	</li>
+<li>
+<p>
+Voc&ecirc; pode verificar sua pr&oacute;pria pasta e seu conte&uacute;do no IDE: pressione Ctrl+1 para ver a janela Projeto e Ctrl+2 para a janela Arquivo. O IDE criou um arquivo index.jsp padr&atilde;o e a sempre necess&aacute;ria pasta WEB-INF.
+</p> 
+	</li>	
+
+</ol>
+ 
+<h3 class='tutorial'><a name="createtld">l</a>Criando um descritor para a biblioteca de identificadores para nossos novos elementos html</h3>
+
+
+<ol>
+	<li>
+<p>
+Primeiro, &eacute; preciso criar um descritor para a biblioteca de identificadores. Este &eacute; um arquivo com sintaxe xml que cont&eacute;m as informa&ccedil;&otilde;es sobre o identificador que estamos desenvolvendo. Descreve seu nome, atributos e tipos de dados para estes valores, etc., que define o identificador. Clique com o bot&atilde;o direito do mouse no nome do projeto na janela Projetos do IDE, selecione Novo &gt; Arquivo/Pasta, a seguir Web e Descritor da biblioteca de identificadores como o tipo de arquivo. Clique em Pr&oacute;ximo e na tela seguinte digite selfcheckers como o nome do arquivo e sfchk como sufixo, abaixo. Deixe as outras entradas como est&atilde;o.
+
+</p> 
+	</li>
+<li>
+<p>
+Ent&atilde;o, o IDE cria um arquivo de descritor denominado selfcheckers.tld na pasta WEB_INF/tlds. Voc&ecirc; pode ver abaixo a apar&ecirc;ncia de nosso arquivo de descritor.
+<br><span style="color:red;font-weight:bold;">N&atilde;o digite agora o c&oacute;digo, n&oacute;s iremos criar o conte&uacute;do do arquivo do descritor mais adiante com um mecanismo amig&aacute;vel ao usu&aacute;rio do NetBeans IDE.</span>
+
+<pre class="examplecode">
+&lt;tag&gt;
+    &lt;name&gt;xinput&lt;/name&gt;
+    &lt;tag-class&gt;com.zsoltkiss.web.customtags.selfcheckers.XInput&lt;/tag-class&gt;
+    &lt;body-content&gt;empty&lt;/body-content&gt;
+
+    &lt;attribute&gt;
+      &lt;name&gt;id&lt;/name&gt;
+      &lt;required&gt;true&lt;/required&gt;
+      &lt;type&gt;java.lang.String&lt;/type&gt;
+
+    &lt;/attribute&gt;
+    &lt;attribute&gt;
+      &lt;name&gt;pattern&lt;/name&gt;
+      &lt;required&gt;true&lt;/required&gt;
+      &lt;rtexprvalue&gt;true&lt;/rtexprvalue&gt;
+
+      &lt;type&gt;java.lang.String&lt;/type&gt;
+    &lt;/attribute&gt;
+    &lt;attribute&gt;
+      &lt;name&gt;allowedEmpty&lt;/name&gt;
+      &lt;rtexprvalue&gt;true&lt;/rtexprvalue&gt;
+
+      &lt;type&gt;boolean&lt;/type&gt;
+    &lt;/attribute&gt;
+    &lt;attribute&gt;
+      &lt;name&gt;message&lt;/name&gt;
+      &lt;rtexprvalue&gt;true&lt;/rtexprvalue&gt;
+
+      &lt;type&gt;java.lang.String&lt;/type&gt;
+    &lt;/attribute&gt;
+  &lt;/tag&gt;
+  &lt;tag&gt;
+    &lt;name&gt;xiudv&lt;/name&gt;
+
+    &lt;tag-class&gt;com.zsoltkiss.web.customtags.selfcheckers.XInputUDV&lt;/tag-class&gt;
+    &lt;body-content&gt;empty&lt;/body-content&gt;
+    &lt;attribute&gt;
+      &lt;name&gt;id&lt;/name&gt;
+
+      &lt;required&gt;true&lt;/required&gt;
+      &lt;type&gt;java.lang.String&lt;/type&gt;
+    &lt;/attribute&gt;
+    &lt;attribute&gt;
+      &lt;name&gt;maxlength&lt;/name&gt;
+
+      &lt;rtexprvalue&gt;true&lt;/rtexprvalue&gt;
+      &lt;type&gt;int&lt;/type&gt;
+    &lt;/attribute&gt;
+    &lt;attribute&gt;
+      &lt;name&gt;method&lt;/name&gt;
+
+      &lt;required&gt;true&lt;/required&gt;
+      &lt;rtexprvalue&gt;true&lt;/rtexprvalue&gt;
+      &lt;type&gt;java.lang.String&lt;/type&gt;
+    &lt;/attribute&gt;
+
+  &lt;/tag&gt;
+
+</pre>
+Vamos estudar um pouco os descritores de identificadores. Estas entradas definem dois identificadores, que o desenvolvedor da Web pode usar como segue:
+<pre class="examplecode">
+&lt;sfchk:xinput id=&quot;&quot; pattern=&quot;&quot; allowedEmpty=&quot;&quot; message=&quot;&quot; /&gt;
+&lt;sfchk:xiudv id=&quot;&quot; maxlength=&quot;15&quot; validator=&quot;&quot; /&gt;
+</pre>
+E a explica&ccedil;&atilde;o &eacute;: <i>sfchk</i> &eacute; um prefixo de identifica nossa biblioteca de identificadores. Caso venhamos a criar outros identificadores n&atilde;o relacionados a estes, &eacute; pr&aacute;tico coloc&aacute;-los em outra pasta com seu pr&oacute;prio prefixo.<br>A <b><i>id</i></b> &eacute; a ID normalmente usada para o elemento html. <br>
+
+No atributo <b><i>pattern</i></b> o desenvolvedor da Web pode especificar uma express&atilde;o regular que descreve quais entradas podem ser aceitas pelo elemento de entrada e quais n&atilde;o. Por exemplo, se voc&ecirc; especifica <pre>pattern=&quot;/^[0-9]{1,}$/&quot;</pre> Esta regra significa que somente positivos inteiros e o valor zero podem ser colocados na caixa de entrada. (Caso n&atilde;o esteja familiarizado com express&otilde;es regulares, consulte um javadoc do JDL ou algum livro do Java ou JavaScript).books.)<br>
+O atributo <b><i>allowedEmpty</i></b> tem alguns truques. Se definido como falso, o usu&aacute;rio n&atilde;o pode continuar a editar enquanto n&atilde;o inserir um valor v&aacute;lido na caixa de entrada. O cursor ser&aacute; colocado de novo e de novo na caixa. <br>Com o atributo <b><i>message</i></b> pode especificar uma mensagem suspensa que aparecer&aacute; se o usu&aacute;rio n&atilde;o inserir um valor v&aacute;lido.<br>O atributo <b><i>method</i></b> somente pode ser usado no elemento <i>&lt;sfchk:xiudv /&gt;</i>, que permite que o desenvolvedor defina um m&eacute;todo verificador javascript pr&oacute;prio para validar a entrada do conte&uacute;do do campo xinput. (Falando nisso, xiudv significa <b>e</b>xtended <b>i</b>nput <b>u</b>ser <b>d</b>efined <b>v</b>alidation.)
+</p> 
+	</li>	
+</ol>
+
+<h3 class='tutorial'><a name="taghandlers"></a>Criando manuseadores de identificador Java</h3>
+
+
+<ol>
+	<li>
+<p>
+Agora n&oacute;s temos nossos descritores da biblioteca de identificadores e &eacute; o momento de escrever algum c&oacute;digo Java real. Vamos continuar com classes de manuseadores de identificador.<br>
+A tarefa da classe de manuseadores de identificador &eacute; de interpretar o que os containers da Web devem fazer quando encontram algum tag html n&atilde;o padr&atilde;o durante o processo de an&aacute;lise do c&oacute;digo-fonte da p&aacute;gina. Temos que criar um manuseador de identificador para cada um de nossos identificadores &uacute;nicos. Para fazer isso, clique com o bot&atilde;o direito do mouse no nome do projeto, escolha Novo &gt; Arquivo/Pasta, e a seguir selecione Web e Manuseador de identificador como o tipo de arquivo. A seguir, clique em Pr&oacute;ximo.
+</p> 
+	</li>
+	<li>
+<p>
+Na tela seguinte digite XInput como o nome da classe, com.zsoltkiss.web.customtags.selfcheckers como o nome do pacote (ou use sua pr&oacute;pria estrutura de pacote) e deixe o bot&atilde;o SimpleTagSupport selecionado. Clique em Pr&oacute;ximo. Na pr&oacute;xima p&aacute;gina deixe selecionado o <i>Adicionar identificador correspondente no descritor da biblioteca de identificadores</i> e com Procurar mostre seu arquivo tld para o IDE. Modifique o nome do identificador para xinput com min&uacute;sculas (nenhuma mai&uacute;scula), defina Conte&uacute;do do corpo como vazio e adicione atributos de identificador com Novo, como segue:
+	<ul>
+
+		<li>name: id, type: String, required:t rue, request time eval.: true </li>
+		<li>name: pattern, type: String, required: true, request time eval.: true </li>
+		<li>name: allowedEmpty, type: boolean, required: false, request time eval.: true </li>
+		<li>name: message, type: String, required: false, request time eval.: true </li>
+	</ul>
+Clique em Terminar. Isso foi quando o IDE criou o conte&uacute;do de seu arquivo .tld e n&atilde;o episodicamente o arquivo de c&oacute;digo-fonte esqueleto XInput.java...	
+</p> 
+	</li>	
+		<li>
+
+<p>
+Com base nas etapas anteriores crie sua segunda classe de manuseador de identificador denominada XInputUDV, para um identificador denominado xiudv com os seguintes atributos:
+<ul>
+	<li>name: id, type: String, required: true, request time eval.: true</li>
+	<li>name: maxlength, type: int, required: false, request time eval.: true</li>
+	<li>name: method, type: String, required: true, request time eval.: true</li>
+</ul>
+Agora n&oacute;s temos dois arquivos esqueleto de manuseador de identificador Java e nosso descritor de biblioteca de identificadores est&aacute; completo. Deixe-me mostrar a apar&ecirc;ncia deste arquivo.
+</p> 
+	</li>
+	<li>
+
+<p>
+O m&eacute;todo Search XInput.java's doTag() e a linha que mostra: <pre class="examplecode">if(f != null) f.invoke(out);</pre><br>Diretamente acima desta linha est&aacute; o seguinte c&oacute;digo:
+<pre class="examplecode">
+out.print(&quot;&lt;input type=\&quot;text\&quot; name=\&quot;&quot; + id + &quot;\&quot; id=\&quot;&quot; + id + &quot;\&quot; onblur=\&quot;validate(this,&quot; + pattern +&quot;,&quot;);
+if(allowedEmpty) {
+	out.print(&quot;true,&quot;);
+}else {
+    out.print(&quot;false,&quot;);
+}
+            
+if(message != null) {
+	out.print(&quot;'&quot; + message + &quot;'&quot;);
+}else {
+    out.print(&quot;''&quot;);
+}
+            
+out.print(&quot;);\&quot;&gt;\n&quot;);
+</pre>
+Adicione de forma similar este fragmento de c&oacute;dido em seu arquivo XInputUDV.java, come&ccedil;ando no mesmo ponto do precedente:
+<pre class="examplecode">
+out.print(&quot;&lt;input type=\&quot;password\&quot; name=\&quot;&quot; + id + &quot;\&quot; id=\&quot;&quot; + id + &quot;\&quot; &quot;);
+if(maxlength &gt; 0) {
+	out.print(&quot;maxlength=\&quot;&quot; + maxlength + &quot;\&quot; &quot;);
+}
+            
+out.print(&quot;onblur=\&quot;&quot; + method + &quot;(this);\&quot;&gt;\n&quot;);
+</pre>
+Estes fragmentos de c&oacute;digo fazem a sa&iacute;da simples para o c&oacute;digo-fonte html nestes lugares, onde o analisador encontra um identificador sfchk:xinput ou sfchk:xiudv. De fato estes manuseadores de identificador aliviam o trabalho do desenvolvedor: este n&atilde;o tem de digitar os mesmos m&eacute;todos de entrada pelo usu&aacute;rio, de novo e de novo.
+</p>	
+	</li>
+
+</ol>	
+
+<h3 class='tutorial'><a name="useyourtags"></a>Usando seus novos identificadores em uma p&aacute;gina JSP</h3>
+
+<ol>
+	<li>
+<p>
+Neste ponto seu Java est&aacute; terminado. Falta modificar o index.jsp. Vamos tentar fazer funcionar nosso novo identificador. Coloque o seguinte fragmento de c&oacute;digo em seu index.jsp, entre o <i>&lt;bodx&gt;&lt;/bodye&gt;</i>:
+<pre class="examplecode">
+&lt;table border=&quot;1&quot; cellpadding=&quot;3&quot;&gt;
+        &lt;form name=&quot;form1&quot; onsubmit=&quot;return CheckForm()&quot;&gt;
+
+	&lt;th colspan=&quot;2&quot; bgcolor=&quot;#f5f5dc&quot; style=&quot;font-family:Courier;letter-spacing:2px;&quot;&gt;Selfchecking inputs&lt;/th&gt;
+        &lt;tr bgcolor=&quot;#ffdab9&quot;&gt;
+            &lt;td style=&quot;font-family:Courier;color:navy;font-weight:bold;&quot;&gt;Positive integer and zero&lt;/td&gt;
+            &lt;td align=right&gt;
+                &lt;sfchk:xinput id=&quot;numOnly&quot; pattern=&quot;/^[0-9]{1,}$/&quot; allowedEmpty=&quot;false&quot; message=&quot;You are allowed only positive integer and and zero.&quot; /&gt;
+
+            &lt;/td&gt;
+        &lt;/tr&gt;
+        
+        &lt;tr bgcolor=&quot;#ffff00&quot;&gt;
+            &lt;td style=&quot;font-family:Courier;color:navy;font-weight:bold;&quot;&gt;Signed integer with two digit accurence (the plus or minus sign must be typed)&lt;/td&gt;
+            &lt;td td align=right&gt;
+
+            	&lt;sfchk:xinput id=&quot;digits&quot; pattern=&quot;/^(\+|\-)\d{1,}\.\d{2,2}$/&quot; allowedEmpty=&quot;true&quot; message=&quot;Only signed float with two digit followed the decimal point allowed.&quot; /&gt;
+            &lt;/td&gt;
+		&lt;/tr&gt;
+	
+		&lt;tr bgcolor=&quot;#ffdab9&quot;&gt;
+            &lt;td style=&quot;font-family:Courier;color:navy;font-weight:bold;&quot;&gt;Valid ZIP Code in Budapest, Hungary: has to start with 1, second digit can be 0, 1, or 2, third and fourth digit can be any number&lt;/td&gt;
+
+            &lt;td td align=right&gt;
+		&lt;sfchk:xinput id=&quot;zipOnly&quot; pattern=&quot;/^1(0|1|2)\d\d$/&quot; allowedEmpty=&quot;true&quot; message=&quot;Enter only valid ZIP code in Budapest, Hungary&quot; /&gt;
+            &lt;/td&gt;
+		&lt;/tr&gt;
+	
+		&lt;tr bgcolor=&quot;#ffff00&quot;&gt;
+            &lt;td td style=&quot;font-family:Courier;color:navy;font-weight:bold;&quot;&gt;E-mail address form&lt;/td&gt;
+
+            &lt;td&gt;
+		&lt;sfchk:xinput id=&quot;mailOnly&quot; pattern=&quot;/.{1,}@.{1,}\.\D{2,3}$/&quot; allowedEmpty=&quot;true&quot; message=&quot;Enter only e-mail address form.&quot; /&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+        
+        &lt;tr bgcolor=&quot;#ffdab9&quot;&gt;
+            &lt;td style=&quot;font-family:Courier;color:navy;font-weight:bold;&quot;&gt;Username (arbitrary here but used in password checking below )&lt;/td&gt;
+
+            &lt;td td align=right&gt;
+                &lt;input type=&quot;text&quot; readonly id=&quot;username&quot; value=&quot;zsolt&quot;&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+        
+        &lt;tr bgcolor=&quot;#ffff00&quot;&gt;
+            &lt;td style=&quot;font-family:Courier;color:navy;font-weight:bold;&quot;&gt;
+
+                Secure password that matches a policy&lt;br&gt;
+                (min 8, max 15 characters, at least two numbers, mixed small and capital letters, mustn't contain username)
+                    
+            &lt;/td&gt;
+            &lt;td td align=right&gt;
+                &lt;sfchk:xiudv id=&quot;securePW&quot; maxlength=&quot;15&quot; method=&quot;isSecure&quot; /&gt;
+            &lt;/td&gt;
+
+        &lt;/tr&gt;
+				
+    &lt;/table&gt;&lt;br&gt;
+	&lt;span style=&quot;font-family:Courier;color:navy;font-weight:bold;&quot;&gt;
+			These form inputs are extends the basic html text inputs providing a &quot;self checking method&quot; when user types
+			te input. As entradas permitidas s&atilde;o regidas por uma biblioteca de identificadores JSP, onde o programador pode definir suas entradas e regras de uso frequente (m&eacute;todos do verificador javascript) que faz a verifica&ccedil;&atilde;o. Esta p&aacute;gina precisa incluir os m&eacute;todos do verificador javascript como um arquivo .js externo.	&lt;/span&gt;
+</pre>
+Estas linhas constroem um formul&aacute;rio htm simples com nossos novos identificadores. Caso estude a sintaxe usada nos elementos xinput e xiudv, poder&aacute; ver exemplos de como parametriz&aacute;-los.<br>
+
+O primeiro elemento xinput somente aceita positivos inteiros, o segundo aceita um inteiro com sinal com dois d&iacute;gitos ap&oacute;s o ponto decimal, e o terceiro somente permite um tipo do usu&aacute;rio em um &uacute;nico determinado formato de c&oacute;digo ZIP, e o quarto faz a verifica&ccedil;&atilde;o do endere&ccedil;o de e-mail. O quinto elemento &eacute; uma entrada html padr&atilde;o e somente usado para ajudar a verificar se a quinta entrada &eacute; um elemento xiudv. O quinto &eacute; interessante tamb&eacute;m porque seu atributo de m&eacute;todo fornece a chance ao desenvolvedor de especificar qual m&eacute;todo javascript deveria ser executado para validar. <br>
+</p> 
+	</li>
+	<li>
+H&aacute; mais ma coisa importante relacionado a parte JSP do c&oacute;digo, coloque explicitamente uma diretiva <b>&lt;%@taglib %&gt;</b> no topo do c&oacute;digo diretamente acima das diretivas &lt;%@page %&gt; ... Esta linha identifica a biblioteca de identificadores, para que diga ao JSP como solucionar os nomes e prefixos de identificadores. A linha a ser colocada &eacute;:
+<pre class="examplecode">
+&amp;lt%@taglib prefix=&quot;sfchk&quot; uri=&quot;/WEB-INF/tlds/selfcheckers&quot;%&gt;
+</pre>
+
+	</li>
+</ol>	
+
+<h3 class='tutorial'><a name="javascript"></a>Colocando algum c&oacute;digo javascript em seu JSP</h3>
+
+<ol>
+	<li>
+<p>
+Uma &uacute;ltima coisa a fazer &eacute; executar o aplicativo para adicionar m&eacute;todos de verificador javascript. Sem isso nossos novos identificadores n&atilde;o ir&atilde;o reviver. Voc&ecirc; pode se perguntar qual &eacute; o significado de tudo isso, portanto, isso tamb&eacute;m &eacute; necess&aacute;rio para escrever o javascript? N&atilde;o se esque&ccedil;a. este javascript somente tem de ser escrito uma vez. Crie alguns m&eacute;todos de verificador javascript e os coloque em um arquivo .js externo, e use-os a qualquer momento com novos elementos de entrada estendida desenvolvidos. Este &eacute; o significado. Portanto, vamos ver o javascript:
+<pre class="examplecode" >
+&lt;script type=&quot;text/javascript&quot;&gt;
+function validate(obj,pattern,empty,message) {
+	var input = obj.value;
+	if(input.search(pattern) == -1) {
+		alert(obj.name + &quot;:\n&quot; + message);
+		if(!empty) {
+			obj.select();
+			obj.focus();
+		}else {
+			obj.value = &quot;&quot;;
+		}
+		return false;
+	}
+	return true;
+}
+
+function isSecure(obj) {
+    var pwOK = true;
+    var errorMessage = obj.name + &quot;: ERROR!\n----------------------&quot;;
+
+    var input = new String(obj.value);
+    //alert(input.length);
+    var minlength = 8;
+        
+                                                    //must not contain user name
+    var startnum = /^\d/;                           //must not start with number
+    var endnum = /.{1,}\d$/;                        //must not end with number
+    var specialChars=/(@|-|_|,|\.)/;                //these special chars are not allowed (the chars must be OR-ed for the code work!)('\.' means the dot)
+    var space=/\s/;                                 //must not contain spaces
+    var numbers=/\d/g;                              //must contain at least two numbers
+    var letters=/[a-z]/;                            //must contain small letters (not capital)
+    var capitalLetters=/[A-Z]/;                     //must contain capital lettes
+    
+    if(input.length &lt; minlength) {
+        pwOK = false;
+        errorMessage += &quot;\nMin. length must be at least &quot; + minlength + &quot; character.&quot;;
+    }
+    
+    if(input.indexOf(document.getElementById(&quot;username&quot;).value) != -1) {
+        pwOK = false;
+        errorMessage += &quot;\nThe password must NOT contain the username.&quot;;
+    }
+    
+    if(input.search(startnum) != -1) {
+        pwOK = false;
+        errorMessage += &quot;\nPassword must NOT start with a number.&quot;;
+    }
+    
+    if(input.search(endnum) != -1) {
+        pwOK = false;
+        errorMessage += &quot;\nPassword must NOT end with a number.&quot;;
+    }
+    
+    if(input.search(specialChars) != -1) {
+        pwOK = false;
+        errorMessage += &quot;\nPassword must NOT contain special chars.&quot;;
+    }
+    
+    if(input.search(space) != -1) {
+        pwOK = false;
+        errorMessage += &quot;\nPassword must NOT contain spaces.&quot;;
+    }
+    
+    if(input.search(letters) == -1) {
+        pwOK = false;
+        errorMessage += &quot;\nPassword must contain small and capital letters mixed.&quot;;
+    }
+    
+    if(input.search(capitalLetters) == -1) {
+        pwOK = false;
+        errorMessage += &quot;\nPassword must contain small and capital letters mixed.&quot;;
+    }
+    
+    var numHits = input.match(numbers);
+    if(numHits == null || numHits.length == null || numHits.length &lt; 2) {
+        pwOK = false;
+        errorMessage += &quot;\nPassword must contain at least two numbers.&quot;;
+    }
+    
+    if(!pwOK) {
+        alert(errorMessage);
+    }
+    
+    return pwOK;
+}//end function
+
+&lt;/script&gt;
+</pre>
+Coloque este bloco de scritps em seu index.jsp entre os elementos &lt;head&gt;&lt;/head&gt; ... Acho que estamos prontos para testar se isso funciona apropriadamente.
+</p> 
+	</li>
+</ol>	
+
+<h3 class='tutorial'><a name="buildandrun"></a>Desenvolver e executar o projeto</h3>
+<ol>
+	<li>
+
+<p>
+Para desenvolver e executar seu projeto no IDE, primeiro pressione Ctrl+F11 para limpar e desenvolver. Caso tenha &ecirc;xito, ent&atilde;o poder&aacute; executar o projeto com F6. Estas fun&ccedil;&otilde;es podem com certeza serem acionadas a partir do menu. Se o seu projeto executa o Tomcat incorporado no IDE renderizando o index.jsp, voc&ecirc; pode ver algo como isso:<br><br>
+<img src="../../images_www/articles/win-with-netbeans/webgui.gif"><br><br>
+Se voc&ecirc; digita em caixas de texto, os identificadores xinput fazem a verifica&ccedil;&atilde;o imediata e lhe avisam se sua entrada est&aacute; correta. Se voc&ecirc; reparametriza as configura&ccedil;&otilde;es dos identificadores <i>emptyAllowed</i> como verdadeiro, poder&aacute; se livrar do efeito incomodado de <i>&quot;voltar ao cursor e digitar at&eacute; estar OK&quot;</i>.<br>Na figura abaixo, voc&ecirc; pode ver um alerta do verificador de javascript que recebi quando tentei digitar uma senha n&atilde;o coincidente com a pol&iacute;tica de seguran&ccedil;a.<br><br>
+<img src="../../images_www/articles/win-with-netbeans/alert.gif">
+</p><br><br>
+
+</body>
+</html>
+
+
+
+
+

@@ -1,0 +1,595 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<!-- -*- xhtml -*- -->
+  <title>Tutorial de integra&ccedil;&atilde;o de tipo de arquivo para a Plataforma NetBeans 6.5</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="gwielenga@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A short guide to using the Nodes API.">
+<!--      Copyright (c) 2005 Sun Microsystems, Inc. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+	<h1>Tutorial de integra&ccedil;&atilde;o de tipo de arquivo</h1>
+
+<p>Este tutorial mostra como gravar um m&oacute;dulo que permite que o IDE, ou qualquer outro aplicativo constru&iacute;do na Plataforma NetBeans, reconhe&ccedil;a um novo tipo de arquivo. 
+
+   </p><p><b class="notes">Observa&ccedil;&atilde;o:</b> este documento usa a vers&atilde;o NetBeans IDE 6.5. Se voc&ecirc; estiver usando o NetBeans IDE 6.x, consulte <a href="60/nbm-filetype_pt_BR.html">a vers&atilde;o 6.1 deste documento</a>.
+
+   </p><p><b>Conte&uacute;do</b></p>
+   
+   <img  src="../images/articles/65/netbeans-stamp65.gif" class="stamp" width="114" height="114" alt="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.5" title="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.5"> </p>
+      <ul class="toc">
+  <li><a href="#intro">Introdu&ccedil;&atilde;o &agrave; integra&ccedil;&atilde;o do tipo de arquivo</a></li>
+  <li><a href="#creating">Criando o projeto do m&oacute;dulo </a></li>
+  <li><a href="#recognizing">Reconhecendo arquivos Abc</a></li>
+  <li><a href="#install">Instalando e testando a funcionalidade</a></li>
+  <li><a href="#adding">Criando recursos para arquivos Abc</a></li>
+  <ul>
+      <li><a href="#action">Adicionando uma a&ccedil;&atilde;o</a>
+      </li><li><a href="#topcomponent">Abrindo o arquivo em uma janela</a>    
+  </li></ul>
+  <li><a href="#share">Criando um bin&aacute;rio que pode ser compartilhado</a></li>
+       </ul>
+         
+<p><b>Para seguir este tutorial, voc&ecirc; preciso dos softwares e recursos listados na tabela seguinte.</b></p>
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software ou recurso</th>
+                <th class="tblheader" scope="col">Vers&atilde;o necess&aacute;ria</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">vers&atilde;o 6.5 Java</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Vers&atilde;o 6 ou<br/>vers&atilde;o 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+
+
+
+<h2 class="tutorial"><a name="intro"></a>Introdu&ccedil;&atilde;o &agrave; integra&ccedil;&atilde;o do tipo de arquivo</h2>
+
+<p>Os tipos de arquivo reconhecidos no IDE possuem seus pr&oacute;prios &iacute;cones, itens de menu e comportamento. Os &quot;arquivos&quot; mostrados s&atilde;o <tt>FileObjects</tt> - wrappers em torno de <tt>java.io.File</tt> ou, no caso dos arquivos de configura&ccedil;&atilde;o, geralmente wrappers em torno dos dados armazenados de outra maneira, como em arquivos XML em m&oacute;dulos. O que voc&ecirc; <i>v&ecirc;</i>, na verdade, s&atilde;o <tt>n&oacute;s</tt>, que fornecem funcionalidade como a&ccedil;&otilde;es e nomes localizados a objetos como arquivos. Entre os <tt>n&oacute;s</tt> e os <tt>FileObjects</tt> est&atilde;o os <tt>DataObjects</tt>. Um <tt>DataObject</tt> &eacute; parecido com um <tt>FileObject</tt>, s&oacute; que ele sabe qual tipo de arquivo est&aacute; sendo mostrado e geralmente h&aacute; tipos diferentes de <tt>DataObject</tt> para arquivos com extens&otilde;es diferentes e arquivos XML com namespaces diferentes. Cada <tt>DataObject</tt> &eacute; fornecido por um m&oacute;dulo diferente, cada um implementando suporte para um ou mais tipos de arquivos. Por exemplo, o m&oacute;dulo Imagem permite que sejam reconhecidos e abertos arquivos   <tt>.gif</tt> e <tt>.png</tt>.
+
+</p><p>Um m&oacute;dulo que reconhece um tipo de arquivo instala um <tt>DataLoader</tt>: uma f&aacute;brica para um <tt>DataObject</tt> espec&iacute;fico de um tipo de arquivo. Quando uma pasta &eacute; expandida, o IDE pergunta a cada <tt>DataLoader</tt> conhecido, &quot;Voc&ecirc; sabe o que &eacute; isto?&quot; O primeiro que responder &quot;Sim&quot; cria o <tt>DataObject</tt> para o arquivo. Para realmente exibir algo para cada arquivo, o sistema chama <tt>DataObject.getNodeDelegate()</tt> para cada <tt>DataObject</tt> e os <tt>n&oacute;s</tt> s&atilde;o o que voc&ecirc; v&ecirc; na verdade no IDE. 
+
+</p><p>Abaixo, o diagrama &agrave; esquerda mostra o que cada item mencionado acima disponibiliza:
+
+</p><p></p><p align="left"><img  src="../images/tutorials/filetype/diagram-dataobject2.png" alt="Diagrama.">
+
+</p><p>Neste tutorial, voc&ecirc; criar&aacute; um m&oacute;dulo para instalar um <tt>DataLoader</tt> para arquivos &quot;Abc&quot; imagin&aacute;rios (extens&atilde;o de arquivo <tt>.abc</tt>). Por padr&atilde;o, um arquivo com a extens&atilde;o &quot;abc&quot; &eacute; tratado como qualquer outro arquivo que o IDE n&atilde;o reconhe&ccedil;a: ele &eacute; tratado como um arquivo de texto e, como resultado, o IDE fornece a mesma funcionalidade para os arquivos Abc que fornece para os arquivos de texto. Ap&oacute;s ter criado o m&oacute;dulo, voc&ecirc; saber&aacute; como aprimor&aacute;-lo com funcionalidades que estar&atilde;o dispon&iacute;veis somente para arquivos Abc. Quando voc&ecirc; concluir o ciclo de desenvolvimento, poder&aacute; permitir facilmente que outras pessoas utilizem o seu m&oacute;dulo; o IDE permite que voc&ecirc; crie um bin&aacute;rio que pode ser enviado para outras pessoas, que poder&atilde;o instal&aacute;-lo atrav&eacute;s da Central de Atualiza&ccedil;&otilde;es.
+
+<!-- ===================================================================================== -->
+
+</p><h2 class="tutorial"><a name="creating"></a>Criando o projeto do m&oacute;dulo </h2>
+      
+<p>Nesta se&ccedil;&atilde;o, usaremos um assistente para criar a estrutura de c&oacute;digo-fonte que todo m&oacute;dulo NetBeans precisa. A estrutura do c&oacute;digo-fonte consiste em determinadas pastas em locais espec&iacute;ficos e em um conjunto de arquivos que sempre s&atilde;o necess&aacute;rios. Por exemplo, cada m&oacute;dulo NetBeans requer uma pasta <tt>nbproject</tt>, que cont&eacute;m os metadados do projeto, e um arquivo <tt>layer.xml</tt>, para registro de declara&ccedil;&atilde;o de itens como janelas e bot&otilde;es da barra de ferramentas.
+
+</p><ol>
+          
+	      <li>Escolha Arquivo &gt; Novo projeto (Ctrl-Shift-N). Em Categorias, selecione M&oacute;dulos do NetBeans. Em Projetos, selecione M&oacute;dulo   e clique em Pr&oacute;ximo.</li>
+	<li>No painel Nome e localiza&ccedil;&atilde;o, digite <tt>AbcFileType</tt> em Nome do projeto.
+ Altere a Localiza&ccedil;&atilde;o do projeto para qualquer diret&oacute;rio no computador, como <tt>c:\meusmodulos</tt>. Deixe o bot&atilde;o de op&ccedil;&atilde;o M&oacute;dulo independente selecionado. O painel agora deve ter esta apar&ecirc;ncia:
+
+<p></p><p align="left"><img  src="../images/tutorials/filetype/65-projectwizard1.png" alt="Etapa 1 do assistente para Nova Projeto.">
+ </p><p>Clique em Pr&oacute;ximo.
+
+</p></li><li>No painel Configura&ccedil;&atilde;o b&aacute;sica de m&oacute;dulos, digite <tt>org.myorg.abcfiletype</tt> como o Nome base de c&oacute;digo. Adicione espa&ccedil;os ao Nome de exibi&ccedil;&atilde;o do m&oacute;dulo sugerido, para que ele seja alterado para <tt>Tipo de arquivo Abc</tt>. Marque a caixa de verifica&ccedil;&atilde;o &quot;Gerar camada XML&quot; e deixe o pacote de localiza&ccedil;&atilde;o e a camada XML onde est&atilde;o, para que eles sejam armazenados em um pacote com o nome <tt>org/myorg/abcfiletype</tt>. O painel agora deve ter esta apar&ecirc;ncia:
+
+<p></p><p align="left"><img  src="../images/tutorials/filetype/65-projectwizard2.png" alt="Etapa 2 do assistente para Novo projeto">
+
+</p></li><li>Clique em Terminar.</li></ol>
+
+<p> O IDE cria o projeto <tt>Tipo de arquivo Abc</tt>. O projeto cont&eacute;m todos os metadados de projeto e fontes, como o script de constru&ccedil;&atilde;o Ant do projeto. O projeto se abre no IDE. Voc&ecirc; pode ver a estrutura l&oacute;gica na janela Projetos (Ctrl-1) e a estrutura de arquivos na janela Arquivos (Ctrl+2). Por exemplo, a janela Projetos agora deve ter esta apar&ecirc;ncia:
+
+</p><p></p><p align="left"><img  src="../images/tutorials/filetype/65-projectswindow1.png" alt="Janela Projetos iniciais.">
+
+
+      <br />
+
+<!-- ===================================================================================== -->
+</p><h2><a name="recognizing"></a>Reconhecendo arquivos Abc</h2>
+
+<p>Nesta se&ccedil;&atilde;o, usaremos um assistente para criar as classes necess&aacute;rias para reconhecer arquivos Abc como sendo distintos de todos os outros. Conforme discutido no in&iacute;cio deste tutorial, precisamos de um objeto de dados e um carregador de dados, assim como de um solucionador de tipo MIME e entradas de registro no arquivo <tt>layer.xml</tt>, para fazer isso. O Assistente de novo tipo de arquivo criar&aacute; tudo isso.
+
+  
+ </p><ol>
+	
+	 <li>Clique com o bot&atilde;o direito do mouse no n&oacute; do projeto e escolha Novo &gt; Tipo de arquivo.</li>
+	      <li>No Painel de reconhecimento de arquivos, fa&ccedil;a o seguinte:
+<p></p><ul><li>Digite <tt>text/x-abc</tt> na caixa de edi&ccedil;&atilde;o Tipo MIME.
+</li><li>Digite <tt>.abc .ABC</tt> na caixa de edi&ccedil;&atilde;o Por extens&atilde;o de nome de arquivo.</li></ul>
+<p>O Painel de reconhecimento de arquivos agora deve ter esta apar&ecirc;ncia:
+
+	       </p><p></p><p align="left"><img border="1"  src="../images/tutorials/filetype/60-filewizard1.png" alt="Etapa 1 do assistente para Novo arquivo">
+
+	       </p><p>Observe o seguinte sobre os campos no Painel de reconhecimento de arquivos:
+	       </p><ul>
+		       <li><b>Tipo MIME.</b> Especifica o tipo MIME exclusivo do objeto de dados.
+		       </li><li>por
+			       <ul><li><b>Extens&atilde;o de nome de arquivo.</b> Especifica uma ou mais extens&otilde;es que o IDE ir&aacute; reconhecer como pertencente ao tipo de MIME determinado.  A extens&atilde;o do arquivo pode opcionalmente ser precedida por um ponto. Os separadores s&atilde;o v&iacute;rgulas, espa&ccedil;os ou ambos. Portanto, todos os exemplos a seguir s&atilde;o v&aacute;lidos:
+		       <p></p><ul><li><tt>.abc,.def</tt>
+			       </li><li><tt>.abc .def</tt>
+			       </li><li><tt>abc def</tt>
+			       </li><li><tt>abc,.def ghi, .wow</tt></li></ul>
+			<p>Vamos imaginar que os arquivos Abc diferenciem mai&uacute;sculas de min&uacute;sculas. Por esse motivo, voc&ecirc; especificar&aacute; <i>dois</i> tipos MIME neste tutorial&mdash;<tt>.abc</tt> e <tt>.ABC</tt>.		      
+		       </p></li><li><b>Elemento raiz XML.</b> Especifica um &uacute;nico namespace que distingue um tipo de arquivo XML de todos os outros tipos de arquivos XML. Como muitos arquivos XML possuem a mesma extens&atilde;o (<tt>xml</tt>), o IDE faz a distin&ccedil;&atilde;o entre os arquivos XML atrav&eacute;s de seus elementos raiz XML. Mais especificamente, o IDE pode distinguir entre namespaces e o primeiro elemento XML em arquivos XML. Voc&ecirc; pode usar isto para, por exemplo, distinguir entre um descritor de deployment JBoss e um descritor de deployment WebLogic. Ap&oacute;s ter feito essa distin&ccedil;&atilde;o, voc&ecirc; poder&aacute; certificar-se de que os itens de menu adicionados ao menu contextual do descritor de deployment JBoss n&atilde;o est&atilde;o dispon&iacute;veis no descritor de deployment WebLogic. Para obter um exemplo, consulte o <a href="nbm-palette-api2.html">Tutorial do m&oacute;dulo da paleta de componentes do NetBeans</a>.
+	</li></ul></li></ul>
+	      
+	      <p>Clique em Pr&oacute;ximo.
+
+	      </p></li><li>No painel Nome e localiza&ccedil;&atilde;o, digite <tt>Abc</tt> como o Prefixo do nome da classe e v&aacute; para qualquer arquivo de imagem de 16 x 16 pixels como o &iacute;cone do novo tipo de arquivo, conforme mostrado abaixo.
+	      
+<p align="left"></p><p></p><p align="left"><img  src="../images/tutorials/filetype/65-filewizard2.png" alt="Etapa 2 do assistente para Novo arquivo">
+
+
+              </p><p><b>Observa&ccedil;&atilde;o:</b> voc&ecirc; pode usar qualquer &iacute;cone. Se desejar, voc&ecirc; pode clicar neste e salv&aacute;-lo localmente e depois especific&aacute;-lo na etapa do assistente acima: <img  src="../images/tutorials/filetype/Datasource.gif" alt="Datasource.gif">
+
+</p></li><li>Clique em Terminar.
+
+<p></p><p>A janela Projetos agora deve ter esta apar&ecirc;ncia:
+
+</p><p></p><p align="left"><img  src="../images/tutorials/filetype/65-projectswindow2.png" alt="Janela Projetos finais."></p></li>
+
+<p>Cada um dos arquivos rec&eacute;m-gerados &eacute; brevemente apresentado:
+ </p><ul>
+	<li><b>AbcDataObject.java.</b> Inclui um <tt>FileObject</tt>. DataObjects s&atilde;o produzidos por DataLoaders. Para obter mais informa&ccedil;&otilde;es, consulte <a href="http://wiki.netbeans.org/wiki/view/DevFaqDataObject">O que &eacute; um DataObject?</a>.
+ </li><li><b>AbcResolver.xml.</b> Mapeia as extens&otilde;es <tt>.abc</tt> e <tt>.ABC</tt> para o tipo de MIME. O <tt>AbcDataLoader</tt> reconhece somente o tipo MIME; ele n&atilde;o conhece a extens&atilde;o de arquivo.
+	 </li><li><b>AbcTemplate.abc.</b> Fornece a base para um modelo de arquivo registrado no <tt>layer.xml</tt> de forma que seja instalado na caixa de di&aacute;logo Novo arquivo como um novo modelo.
+         </li><li><b>AbcDataObjectTest.java.</b> Classe de teste JUnit para <tt>DataObject</tt>.
+</li></ul>
+      </p>
+     </ol> 
+      <p>No arquivo <tt>layer.xml</tt>, voc&ecirc; deve ver o seguinte:
+      
+</p><pre>&lt;folder name=&quot;Loaders&quot;&gt;
+    &lt;folder name=&quot;text&quot;&gt;
+        &lt;folder name=&quot;x-abc&quot;&gt;
+            &lt;folder name=&quot;Actions&quot;&gt;
+                &lt;file name=&quot;org-myorg-abcfiletype-MyAction.shadow&quot;&gt;
+                    &lt;attr name=&quot;originalFile&quot; stringvalue=&quot;Actions/Edit/org-myorg-abcfiletype-MyAction.instance&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;600&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-CopyAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;100&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-CutAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;200&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-DeleteAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;300&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-FileSystemAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;400&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-OpenAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;500&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-PropertiesAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;700&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-RenameAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;800&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-SaveAsTemplateAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;900&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-ToolsAction.instance&quot;&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1000&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;sep-1.instance&quot;&gt;
+                    &lt;attr name=&quot;instanceClass&quot; stringvalue=&quot;javax.swing.JSeparator&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1100&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;sep-2.instance&quot;&gt;
+                    &lt;attr name=&quot;instanceClass&quot; stringvalue=&quot;javax.swing.JSeparator&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1200&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;sep-3.instance&quot;&gt;
+                    &lt;attr name=&quot;instanceClass&quot; stringvalue=&quot;javax.swing.JSeparator&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1300&quot;/&gt;
+                &lt;/file&gt;
+                &lt;file name=&quot;sep-4.instance&quot;&gt;
+                    &lt;attr name=&quot;instanceClass&quot; stringvalue=&quot;javax.swing.JSeparator&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;1400&quot;/&gt;
+                &lt;/file&gt;
+            &lt;/folder&gt;
+            &lt;folder name=&quot;Factories&quot;&gt;
+                &lt;file name=&quot;AbcDataLoader.instance&quot;&gt;
+                    &lt;attr name=&quot;SystemFileSystem.icon&quot; urlvalue=&quot;nbresloc:/org/myorg/abcfiletype/Datasource.gif&quot;/&gt;
+                    &lt;attr name=&quot;dataObjectClass&quot; stringvalue=&quot;org.myorg.abcfiletype.AbcDataObject&quot;/&gt;
+                    &lt;attr name=&quot;instanceCreate&quot; methodvalue=&quot;org.openide.loaders.DataLoaderPool.factory&quot;/&gt;
+                    &lt;attr name=&quot;mimeType&quot; stringvalue=&quot;text/x-abc&quot;/&gt;
+                &lt;/file&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>      
+
+
+      <br />
+      
+    <!-- ======================================================================================= -->
+
+<h2><a name="install"></a>Instalando e testando a funcionalidade</h2>
+<p>Agora vamos instalar o m&oacute;dulo e usar a funcionalidade b&aacute;sica criada at&eacute; o momento. O IDE utiliza um script de constru&ccedil;&atilde;o Ant para construir e instalar seu m&oacute;dulo.   O script de constru&ccedil;&atilde;o &eacute; criado quando o projeto &eacute; criado.</p>
+<div class="indent">
+
+
+      <ol>
+	      <li>Na janela Projetos, clique com o bot&atilde;o direito do mouse no projeto <tt>Tipo de arquivo Abc</tt> e escolha Instalar/recarregar no IDE de desenvolvimento.
+	      <p></p><p>O m&oacute;dulo &eacute; constru&iacute;do e instalado no IDE em execu&ccedil;&atilde;o atualmente. 
+	       </p></li><li>Crie qualquer tipo de aplicativo no IDE.
+               </li><li>Clique com o bot&atilde;o direito do mouse no n&oacute; do aplicativo e escolha Novo &gt; Outro.  Na categoria Outro, um modelo fict&iacute;cio est&aacute; dispon&iacute;vel para o novo tipo de arquivo:
+		 <p></p><p align="left"><img border="1"  src="../images/tutorials/filetype/60-action4.png" alt="Modelo fict&iacute;cio.">
+		 </p></li><li>Caso voc&ecirc; deseje fornecer c&oacute;digo padr&atilde;o atrav&eacute;s do modelo fict&iacute;cio, adicione o c&oacute;digo ao arquivo <tt>AbcTemplate.abc</tt> que o Assistente de novo tipo de arquivo criou para voc&ecirc;.
+       </li></ol>          
+   </div>
+      <br />
+
+<!-- ===================================================================================== -->
+<h2><a name="adding"></a>Criando recursos para arquivos Abc</h2>
+<p>Agora que a Plataforma NetBeans consegue distinguir arquivos Abc de todos os outros tipos de arquivos, &eacute; hora de adicionar recursos especificamente para esses tipos de arquivos. Nesta se&ccedil;&atilde;o, adicionaremos um item de menu no menu contextual de clique com o bot&atilde;o direito do n&oacute; do arquivo na janela do explorer, como na janela Projetos, e permitiremos que o arquivo seja aberto em uma janela, em vez de em um editor.
+
+      </p><div class="indent">
+          
+          <h3 class="tutorial"><a name="action"></a>Adicionando uma a&ccedil;&atilde;o</h3>
+          
+          <p>Nesta subse&ccedil;&atilde;o, usaremos o Assistente de nova a&ccedil;&atilde;o para criar uma classe Java que realizar&aacute; uma a&ccedil;&atilde;o para o nosso tipo de arquivo. O assistente tamb&eacute;m registrar&aacute; a classe no arquivo <tt>layer.xml</tt> de forma que o usu&aacute;rio possa chamar a a&ccedil;&atilde;o do menu contextual de clique com o bot&atilde;o direito do n&oacute; do tipo de arquivo em uma janela do explorer.
+          
+          </p><ol>
+              
+              <li>Clique com o bot&atilde;o direito do mouse no n&oacute; do projeto e escolha Nova &gt; A&ccedil;&atilde;o</li>
+              <li>No painel Tipo de a&ccedil;&atilde;o, clique em Habilitada condicionalmente. Digite <tt>AbcDataObject</tt>, que &eacute; o nome do objeto de dados gerado acima pelo Assistente de novo tipo de arquivo, conforme mostrado abaixo:
+              
+              <p></p><p align="left"><img border="1"  src="../images/tutorials/filetype/60-action1.png" alt="Etapa 1 do assistente para Nova a&ccedil;&atilde;o">
+              
+              
+              
+              </p><p>Clique em Pr&oacute;ximo.
+              
+              </p></li><li>No painel Registro de GUI, selecione 'Editar' na lista suspensa Categoria. A lista suspensa Categoria 
+            controla onde uma a&ccedil;&atilde;o &eacute; mostrada no editor de atalhos de teclado no IDE.
+              <p></p><p>Em seguida, desmarque Item de menu global e selecione Item de menu de conte&uacute;do de tipo de arquivo. Na lista suspensa Tipo de conte&uacute;do, selecione o tipo MIME especificado acima no Assistente de novo tipo de arquivo, conforme mostrado abaixo:
+              
+              </p><p align="left"></p><p></p><p align="left"><img border="1"  src="../images/tutorials/filetype/60-action2.png" alt="Etapa 2 do assistente para Nova a&ccedil;&atilde;o">
+              
+              </p><p>Observe que voc&ecirc; pode definir a posi&ccedil;&atilde;o do item de menu e que pode separar o item de menu do item antes e depois dele. Clique em Pr&oacute;ximo.
+              
+              </p></li><li>No painel Novo e localiza&ccedil;&atilde;o, digite <tt>MyAction</tt> como o Nome da classe e <tt>My Action</tt> como o Nome de exibi&ccedil;&atilde;o. Os itens de menu fornecidos por menus contextuais n&atilde;o exibem &iacute;cones. Assim, clique em Terminar e <tt>MyAction.java</tt> ser&aacute; adicionado ao pacote <tt>org.myorg.abcfiletype</tt>.
+              
+              </li><li>No Editor de c&oacute;digo-fonte, adicione c&oacute;digo ao m&eacute;todo <tt>performAction</tt> da a&ccedil;&atilde;o:
+              
+<pre class="examplecode">protected void performAction(Node[] activatedNodes) {
+	AbcDataObject d = (AbcDataObject) activatedNodes[0].getCookie(AbcDataObject.class);
+	FileObject f = d.getPrimaryFile();
+	String displayName = FileUtil.getFileDisplayName(f);
+	String msg = &quot;I am &quot; + displayName + &quot;. Hear me roar!&quot;; 
+        NotifyDescriptor nd = new NotifyDescriptor.Message(msg);
+        DialogDisplayer.getDefault().notify(nd);
+}</pre>
+              <p>Pressione Ctrl-Shift-I. O IDE automaticamente adiciona comandos import &agrave; parte superior da classe. Ainda h&aacute; algum c&oacute;digo sublinhado em vermelho, para indicar que nem todos os pacotes necess&aacute;rios est&atilde;o no classpath. Clique com o bot&atilde;o direito do mouse no projeto do projeto, escolha Propriedades e clique em Bibliotecas na caixa de di&aacute;logo Propriedades do projeto. Clique em Adicionar na parte superior do painel Bibliotecas e adicione a API das caixas de di&aacute;logo. 
+              </p><p>Na classe <tt>MyAction.java</tt>, pressione Ctrl-Shift-I novamente. O sublinhado vermelho desaparece porque o IDE encontra os pacotes necess&aacute;rios na API das caixas de di&aacute;logo.
+              
+              </p></li><li>No n&oacute; Arquivos importantes, expanda Camada XML. Os dois n&oacute;s <tt>&lt;esta camada&gt;</tt> e <tt>&lt;esta camada no contexto&gt;</tt>, junto com seus subn&oacute;s, formam o navegador <a href="https://platform.netbeans.org/tutorials/nbm-glossary.html">Sistema de arquivos do sistema</a>. Expanda <tt>&lt;esta camada&gt;</tt>, expanda <tt>Carregadores</tt>, continue expandindo n&oacute;s at&eacute; ver a <tt>A&ccedil;&atilde;o</tt> criada acima.
+              
+              </li><li>Arraste e solte <tt>Minha a&ccedil;&atilde;o</tt> para que ela apare&ccedil;a abaixo da a&ccedil;&atilde;o <tt>Abrir</tt>, como mostrado abaixo:
+              <p align="left"></p><p></p><p align="left"><img border="1"  src="../images/tutorials/filetype/60-action3.png" alt="Navegador Sistema de arquivos do sistema.">
+              
+              </p><p>Como voc&ecirc; pode ver nas &uacute;ltimas duas etapas, o Navegador Sistema de arquivos do sistema pode ser usado para reorganizar rapidamente a seq&uuml;&ecirc;ncia de itens registrados no sistema de arquivos do sistema.
+              
+              </p></li><li>Instale o m&oacute;dulo novamente, como foi feito na se&ccedil;&atilde;o anterior.
+              </li><li>Crie um arquivo ABC e clique com o bot&atilde;o direito do mouse no n&oacute; do arquivo em uma das exibi&ccedil;&otilde;es do Explorer, como na janela Projetos ou a janela Favoritos.
+	       <p></p><p>Observe que o arquivo Abc possui o &iacute;cone atribu&iacute;do a ele em seu m&oacute;dulo e que a lista de a&ccedil;&otilde;es definidas no arquivo <tt>layer.xml</tt> est&aacute; dispon&iacute;vel do menu contextual de clique com o bot&atilde;o direito do mouse:
+		</p><p></p><p align="left"><img  border="1" src="../images/tutorials/filetype/60-dummytemplate.png" alt="Janela Projetos finais.">
+		</p></li><li>Escolha o novo item de menu, o nome e a localiza&ccedil;&atilde;o do arquivo Abc s&atilde;o mostrados:
+		<p></p><p align="left"><img border="1" src="../images/tutorials/filetype/60-information.png" alt="Informa&ccedil;&atilde;o.">
+		
+              
+          </p></li>
+          
+          <h3 class="tutorial"><a name="topcomponent"></a>Abrindo o arquivo em uma janela</h3>
+          <p>Por padr&atilde;o, quando o usu&aacute;rio abre um arquivo do tipo definido neste tutorial, o arquivo &eacute; aberto em um editor b&aacute;sico. Entretanto, algumas vezes voc&ecirc; pode querer criar uma representa&ccedil;&atilde;o visual do arquivo, e permitir que o usu&aacute;rio arraste e solte widgets na representa&ccedil;&atilde;o visual. A primeira etapa na cria&ccedil;&atilde;o dessa interface do usu&aacute;rio &eacute; permitir que o usu&aacute;rio abra o arquivo em uma janela. Esta subse&ccedil;&atilde;o mostra como faz&ecirc;-lo.
+          </p><ol>
+              <li>Clique com o bot&atilde;o direito do mouse no n&oacute; do projeto e escolha Novo &gt; Componente da janela. Use essas configura&ccedil;&otilde;es:
+              
+ <p></p><p></p><p align="left"><img  src="../images/tutorials/filetype/65-topc-1.png" alt="Etapa 1 do assistente para Nova a&ccedil;&atilde;o">
+</p></li><li>Clique em Pr&oacute;ximo e digite &quot;Abc&quot; como o prefixo do nome da classe:
+ <p></p><p></p><p align="left"><img  src="../images/tutorials/filetype/65-topc-2.png" alt="Etapa 1 do assistente para Nova a&ccedil;&atilde;o">
+              </p></li>
+              <li>Altere <tt>DataObject</tt> para usar OpenSupport em vez de DataEditorSupport, alterando o construtor de <tt>DataObject</tt> da seguinte maneira:
+
+<p></p><pre>public AbcDataObject(FileObject pf, AbcDataLoader loader) 
+        throws DataObjectExistsException, IOException {
+
+    super(pf, loader);
+    CookieSet cookies = getCookieSet();
+    //cookies.add((Node.Cookie) DataEditorSupport.create(this, getPrimaryEntry(), cookies));
+    cookies.add((Node.Cookie) new AbcOpenSupport(getPrimaryEntry()));
+              
+}</pre>
+              
+              
+              </li><li>Crie a classe <tt>OpenSupport</tt>:
+              
+<p></p><pre>class AbcOpenSupport extends OpenSupport implements OpenCookie, CloseCookie {
+
+    public AbcOpenSupport(AbcDataObject.Entry entry) {
+        super(entry);
+    }
+
+    protected CloneableTopComponent createCloneableTopComponent() {
+        AbcDataObject dobj = (AbcDataObject) entry.getDataObject();
+        AbcTopComponent tc = new AbcTopComponent();
+        tc.setDisplayName(dobj.getName());
+        return tc;
+    }
+ 
+}</pre>              
+              
+              </li><li>Ajuste o TopComponent para estender CloneableTopComponent, em vez de TopComponent. Defina o modificador de classe do TopComponent e o modificador de seu construtor, como p&uacute;blico em vez de privado.
+          </li></ol>	
+<p>Instale o m&oacute;dulo novamente e, quando um arquivo Abc for aberto, a classe OpenSupport lidar&aacute; com a abertura de forma que o arquivo seja aberto no TopComponent em vez de no editor b&aacute;sico que o DataEditorSupport oferece:
+ 
+  </p><p></p><p align="left"><img  src="../images/tutorials/filetype/65-topc-3.png" alt="Etapa 1 do assistente para Nova a&ccedil;&atilde;o">
+
+     </p><p>O <a href="https://platform.netbeans.org/tutorials/60/nbm-visual_library_pt_BR.html">tutorial do NetBeans Visual Library 6.0</a> fornece um exemplo do que voc&ecirc; pode fazer para desenvolver o TopComponent ainda mais para que ele exiba o conte&uacute;do de um arquivo que corresponda ao tipo de arquivo definido neste tutorial.
+          
+      </p></ol></div>
+      <br />
+
+<!-- ======================================================================================= -->
+
+<h2><a name="share"></a>Criando um bin&aacute;rio de m&oacute;dulo que pode ser compartilhado</h2>
+
+<p>Agora que o m&oacute;dulo est&aacute; conclu&iacute;do, voc&ecirc; pode permitir que ele seja utilizado por outras pessoas. Para isso, voc&ecirc; precisa criar um arquivo &quot;NBM&quot; (m&oacute;dulo NetBeans) bin&aacute;rio e distribui-lo. 
+
+</p><div class="indent">
+  
+      <ol>
+	      <li>Na janela Projetos, clique com o bot&atilde;o direito do mouse no projeto <tt>Tipo de arquivo Abc</tt> e escolha Criar NBM.
+
+	      <p></p><p>O arquivo NBM &eacute; criado e voc&ecirc; pode visualiz&aacute;-lo na janela Arquivos (Ctrl+-2):
+	      </p><p></p><p align="left"><img border="1" src="../images/tutorials/filetype/60-shareable-nbm.png" alt="NBM que pode ser compartilhado.">
+	      </p></li><li>Disponibilize-o para outras pessoas, por exemplo, atrav&eacute;s do <a href="http://plugins.netbeans.org/PluginPortal/">Portal de plug-in do NetBeans</a>. O destinat&aacute;rio deve usar o Gerenciador de plug-ins (Ferramentas &gt; Plug-ins) para instal&aacute;-lo.
+       </li></ol>
+ 
+    </div>
+
+
+<!-- ======================================================================================== -->
+
+
+  <br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20File%20Type%20Module%20Tutorial">Envie-nos seus coment&aacute;rios</a></div>
+<br style="clear:both;" />
+  
+  
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Pr&oacute;ximas etapas</h2>
+
+<p>Para obter mais informa&ccedil;&otilde;es sobre a cria&ccedil;&atilde;o e o desenvolvimento de m&oacute;dulos do NetBeans, consulte os seguintes recursos: 
+  </p><ul>
+	  <li><a href="https://platform.netbeans.org/index.html">P&aacute;gina inicial da Plataforma NetBeans </a></li>
+	  <li><a href="https://netbeans.org/download/dev/javadoc/">Lista de APIs do NetBeans (Vers&atilde;o de desenvolvimento atual)</a></li>
+  <li><a href="https://platform.netbeans.org/tutorials">Outros tutoriais relacionados</a></li></ul>
+  </p>
+  
+  <hr><p></p><p>
+<!-- ======================================================================================== -->
+<!-- 
+<h2><a name="version"></a>Versioning </h2>
+  
+<p>
+
+<table width="76%" >
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+         25 August 2005
+      </td>
+      <td>
+	      <ul><li>Initial version.
+		      <li>To do:
+		      <ul><li>Add post-creation customizations (i.e., the "Extending Support for the New File Type" section).
+		      <li>Explain what the generated files are for (placeholders currently).
+		      <li>Explain the layer file's entries.
+		      <li>Explain the first File Type panel (placeholders currently).
+		      <li>Maybe create a separate tutorial for recognizing XML files.</ul></ul>
+      </td>
+  </tr>
+<tr>
+      <td>
+         2
+      </td>
+      <td>
+         23 September 2005
+      </td>
+      <td>
+	      <ul><li>A lot of info added from the FAQ and added the Action wizard and System Filesystem Browser.
+		      <li>To do:
+		      <ul><li>Explain <tt>LoaderBeanInfo.java</tt> and <tt>Resolver.xml</tt> (one line each)
+			      <li>Maybe create a separate tutorial for recognizing XML files.
+			      <li>Using Tomcat GIF maybe not good idea.
+			      <li>Maybe the action should do something useful.
+			      <li>Maybe direct links to FAQ not good idea.
+			      <li>Probably more needed on <tt>layer.xml</tt> file.
+			      <li>Maybe other useful apisupport functionality could be added to this scenario.
+			      <li>More info needed on MIME types.
+			      <li>The introductory paragraphs should be illustrated with a graphic. A diagram to
+			      show relationship between node, dataobject, fileobject, dataloader, etc.</ul></ul> 
+      </td>
+  </tr>
+
+<tr>
+      <td>
+         3
+      </td>
+      <td>
+         28 September 2005
+      </td>
+      <td>
+	      <ul><li>Integrated comments from Jesse Glick.
+		      <li>To do:
+		      <ul>    <li>More info needed on MIME types.
+			      <li>The introductory paragraphs should be illustrated with a graphic. A diagram to
+			      show relationship between node, dataobject, fileobject, dataloader, etc.
+			      <li>Many Javadoc links to be added (also for <tt>performAction</tt>.
+			      <li>Info on cookies, cookie actions, cookie classes needed.
+			      <li>Action ended up in text-html even though I chose my own mime type.
+			      <li>Need to explain or link to explanation for instance, shadow, etc.
+			      <li>Platform Manager needs to be mentioned in the context of installing
+			      in target platform.
+			      <li>Show how to add properties to the property sheet.</ul></ul> 
+      </td>
+  </tr>
+<tr>
+      <td>
+         4
+      </td>
+      <td>
+         4 October 2005
+      </td>
+      <td>
+	      <ul><li>Added two diagrams in the introductory paragraphs, from Tim Boudreau's JavaOne presentation.
+ <li>To do:
+		      <ul>    <li>More info needed on MIME types.
+			      <li>Many Javadoc links to be added (also for <tt>performAction</tt>).
+			      <li>Need to create section near the start: "Related FAQs":
+			      <ul><li>Info on cookies, cookie actions, cookie classes needed.
+				      <li>Need to explain or link to explanation for instance, shadow, etc.
+			      <li>DataLoader, DataObject, etc.</ul>
+			      <li>Platform Manager needs to be mentioned in the context of installing
+			      in target platform.
+			      <li>Show how to add properties to the property sheet.
+			      <li>Mention the dummy template that you get, how to modify it,
+	       			and how to set the description in the New File wizard.</ul></ul> 
+		     
+      </td>
+  </tr>
+<tr>
+      <td>
+         4
+      </td>
+      <td>
+         4 November 2005
+      </td>
+      <td>
+	      <ul><li>Added downloadable source code, new 'Installing the Sample' section, and link to
+		       Syntax Highlighting tutorial at the end.
+ <li>To do:
+ <ul>   <li>Same items as on 4 October still to be done.</ul> 
+		     
+      </td>
+  </tr>
+<tr>
+      <td>
+         5
+      </td>
+      <td>
+         29 November 2005
+      </td>
+      <td>
+	      <ul><li>Added links to brand new Component Palette tutorial.
+ <li>To do:
+ <ul>   <li>Same items as on 4 October still to be done.</ul> 
+		     
+      </td>
+  </tr>
+<tr>
+      <td>
+         6
+      </td>
+      <td>
+	      21 April 2006
+      </td>
+      <td>
+	      <ul><li>Changed the title from "DataLoader Module Tutorial" to "Recognizing a File Type Tutorial".
+ <li>To do:
+ <ul>   <li>Same items as on 4 October still to be done.</ul> 
+		     
+      </td>
+  </tr>
+  <tr>
+      <td>
+         7
+      </td>
+      <td>
+	      17 November 2007
+      </td>
+      <td>
+	      <ul><li>Updated the whole tutorial to 6.0, replaced all screenshots, and
+              now [because the 6.0 IDE already provides support for manifest files], the
+              tutorial focuses on imaginary Abc files.
+ <li>To do:
+ <ul>   <li>Need to replace the download, which is the same as before, dealing with manifest files.
+       <li>Same items as on 4 October still to be done.
+       <li>Added OpenSupport into TopComponent, with a reference to Visual Library.</ul>  
+	<li>Changed title to File Type Integration Tutorial
+        <li>Tweaked several places throughout tutorial, for 6.0
+      </td>
+  </tr>
+   <tr>
+                <td>
+                    8
+                </td>
+                <td>
+                    15 April 2008
+                </td>
+                <td>
+                    Updated the styles (badge, table of contents, required software table)
+                    to the new format.
+                </td>
+            </tr>
+   <tr>
+                <td>
+                    9
+                </td>
+                <td>
+                    16 July 2008
+                </td>
+                <td>
+                    Created new version for 6.5, because of changes to the
+                    way file type recognition is done in that release. To do:
+                    <ul>
+                        <li>6.5-specific badge
+                        <li>Required software table
+                        <li>Search for DataNode, BeanInfo, DataLoader and reword
+                        <li>Check screenshots
+                        <li>Make sure all the sections work as before
+                    </ul>
+                </td>
+            </tr>
+  </tbody>
+</table>
+-->
+</p></body>
+</html>

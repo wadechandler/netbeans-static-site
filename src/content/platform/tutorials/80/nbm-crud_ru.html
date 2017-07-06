@@ -1,0 +1,754 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+    <!-- -*- xhtml -*- -->
+    <title>Учебный курс по NetBeans CRUD для платформы NetBeans 6.5</title>
+    <meta name="AUDIENCE" content="NBUSER">
+    <meta name="TYPE" content="ARTICLE">
+    <meta name="EXPIRES" content="N">
+    <meta name="developer" content="gwielenga@netbeans.org">
+    <meta name="indexed" content="y">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">   
+    <meta name="description"
+          content="A guide describing how to create a CRUD application on
+           NetBeans Platform 6.5.">
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+   <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+
+<body>
+<h1><a name="top"></a>Учебный курс по NetBeans CRUD для платформы NetBeans</h1>
+
+  <p>В этом курсе описана интеграция базы данных Java DB в приложение платформы NetBeans. Вначале рассматривается база данных Java DB, исходя из которой создается класс сущностей. Следует отметить, что эти указания применимы не только для Java DB. Они могут использоваться для любой реляционной базы данных, поддерживаемой средой IDE NetBeans. Затем классы сущностей помещаются в оболочку модуля наряду с модулями для связанного компонента JPA JARS.
+
+  <p>После того как модули становятся частью приложения, создается новый модуль, который обеспечивает пользовательский интерфейс приложения. Новый модуль предоставляет пользователю древовидную иерархию, отображающую данные из базы данных. Затем создается другой модуль, позволяющий пользователю изменять данные, отображаемые первым модулем. Выделение средства просмотра и средства изменения в отдельные модули позволяет устанавливать различные редакторы для одного средства просмотра, так как различные редакторы могут создаваться внешними производителями как на коммерческой, так и на бесплатной основе. Таким образом, модульная архитектура платформы NetBeans обеспечивает гибкость.
+
+  <p>После установки редактора выполняется добавление функций CRUD. Первый компонент &quot;R&quot; (&quot;Read&quot;, чтение) обрабатывается описанным выше средством просмотра. Затем выполняется компонент &quot;U&quot; (&quot;Update&quot;, обновление), затем &ndash; &quot;C&quot; (&quot;Create&quot;, создание) и &quot;D&quot; (&quot;Delete&quot;, удаление).
+
+  <p>Этот курс позволит получить сведения о различных функциях платформы NetBeans, которые способствуют созданию приложений такого рода. Например, в курсе описаны средства <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/UndoRedo.Manager.html">UndoRedo.Manager</a></tt> и <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-explorer/org/openide/explorer/ExplorerManager.html">ExplorerManager</a></tt>, а также компоненты платформы NetBeans Swing, например, <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/org/openide/windows/TopComponent.html">TopComponent</a></tt> и <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-explorer/org/openide/explorer/view/BeanTreeView.html">BeanTreeView</a></tt>.
+
+   <p><b class="notes">Примечание.</b> В этом документе используется среда IDE NetBeans версии 6.8. Если установлена более ранняя версия, обратитесь к <a href="67/nbm-crud.html">версии 6.7 этого документа</a>.</p>
+
+   <p><b>Содержание</b></p>
+         
+   <p><img src="../images/articles/69/netbeans-stamp8-9.png" class="stamp" width="114" height="114" alt="Содержимое на этой странице относится к среде IDE NetBeans 6.5, 6.7, 6.8" title="Содержимое на этой странице относится к среде IDE NetBeans 6.5, 6.7, 6.8" /></p>
+      <ul class="toc">
+        <li><a href="#creating-app">Настройка приложения</a></li>
+        <li><a href="#integrating-database">Интеграция базы данных</a>
+        <ul>
+            <li><a href="#creating-entity">Создание классов сущностей из базы данных</a></li>
+            <li><a href="#wrapping-entity">Помещение файла JAR класса сущностей в оболочку модуля</a></li>
+            <li><a href="#creating-other">Создание других связанных модулей</a></li>
+            <li><a href="#designing-ui">Проектирование пользовательского интерфейса</a></li>
+            <li><a href="#setting-dependencies">Установка зависимостей</a></li>
+            <li><a href="#running-prototype">Запуск прототипа</a></li>
+        </ul>
+        <li><a href="#integrating-crud">Интеграция функциональности CRUD</a>
+        <ul>
+            <li><a href="#read">Чтение</a></li>
+            <li><a href="#update">Обновление</a></li>
+            <li><a href="#create">Создание</a></li>
+            <li><a href="#delete">Удаление</a></li>
+        </ul>
+        </li>
+      </ul>
+         
+<p><b>Для работы с этим руководством требуется программное обеспечение и ресурсы, перечисленные в следующей таблице.</b></p>
+
+ <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Программное обеспечение или ресурс</th>
+                <th class="tblheader" scope="col">Требуемая версия</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">Среда IDE NetBeans</a></td>
+                <td class="tbltd1">версия 6.8</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Комплект для разработчика на языке Java (JDK)</a></td>
+                <td class="tbltd1">версия 6 или<br/>версия 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <p>Создаваемое в этом курсе приложение выглядит следующим образом:</p>
+
+<p><img alt="итоговое состояние приложения" src="http://netbeans.dzone.com/sites/all/files/customer-app-on-nb.png" /> </p>
+
+<p class="tips"> Рекомендуется просмотреть серию демо-роликов <a href="https://platform.netbeans.org/tutorials/nbm-10-top-apis.html">10 лучших интерфейсов API NetBeans</a> перед началом работы с этим курсом. Многие используемые в этом курсе понятия более подробно рассматриваются в демо-роликах.
+
+
+    <p>
+<!-- ===================================================================================== -->  
+
+<br>
+<h2 class="tutorial"><a name="creating-app"></a>Настройка приложения</h2>
+
+<p>Начнем с создания нового приложения платформы NetBeans.
+
+<ol>
+    <li>Выберите в меню &quot;Файл&quot; команду &quot;Новый проект&quot; (CTRL+SHIFT+N). В разделе &quot;Категории&quot; выберите параметр &quot;Модули NetBeans&quot;. В разделе &quot;Проекты&quot; выберите параметр &quot;Приложение платформы NetBeans&quot;. Нажмите кнопку &quot;Далее&quot;.</li>
+    <li>На панели &quot;Имя и местоположение&quot; введите в поле &quot;Имя проекта&quot; текст <tt>DBManager</tt>. Нажмите кнопку &quot;Готово&quot;.</li>
+</ol>
+    
+<p>В среде IDE будет создан проект <tt>DBManager</tt>. Проект является контейнером для всех остальных создаваемых модулей.
+
+<p><img alt="Контейнер платформы NetBeans" src="../images/tutorials/crud/68dbmanager-1.png" /> </p>
+
+<br>
+
+<!-- ===================================================================================== -->
+
+<br>
+<h2><a name="integrating-database"></a>Интеграция базы данных</h2>
+
+<p>Для интеграции базы данных следует создать классы сущностей из базы данных и интегрировать эти классы вместе со связанными файлами JAR в модули, которые входят в состав приложения NetBeans Platform.</p>
+
+<div class="indent">
+    <h3 class="tutorial"><a name="creating-entity"></a>Создание классов сущностей</h3>
+    <p>В этом разделе выполняется создание классов сущностей из выбранной базы данных.
+    <ol>
+        <li>В рамках этого примера окно &quot;Службы&quot; используется для соединения с демонстрационной базой данных, поставляемой вместе со средой IDE NetBeans:
+
+        <p><img alt="Окно &quot;Службы&quot;" src="../images/tutorials/crud/68dbmanager-2.png" /> </p>
+
+        <p class="tips"> Возможно также выбрать любую другую базу и применить адаптировать действия к конкретному случаю. Если используется MySQL, обратитесь к разделу <a href="https://netbeans.org/kb/docs/ide/mysql_ru.html">Подключение к базе данных MySQL</a>.</p>
+        <p><li>В среде IDE выберите пункт меню &quot;Файл | Новый проект&quot;, а затем &ndash; &quot;Java | Библиотека классов Java&quot; для создания нового проекта библиотеки с именем <tt>CustomerLibrary</tt>.
+        <p><li>В окне &quot;Проекты&quot; правой кнопкой мыши щелкните проект библиотеки и выберите в меню &quot;Файл&quot; пункт &quot;Новый файл&quot;, а затем &ndash; &quot;Сохранение состояния&quot; | &quot;Классы сущностей из базы данных&quot;. В мастере выберите базу данных и требуемые таблицы. Здесь следует выбрать &quot;Клиент&quot;, после чего &quot;Код скидки&quot; будет добавлен автоматически, поскольку между этими двумя таблицами установлена связь.
+
+                 <p><img alt="добавление таблиц" src="../images/tutorials/crud/68dbmanager-3.png" /> </p>
+
+
+                 <p><li>Укажите стратегию постоянства, выбрав один из доступных вариантов: Поскольку выбор одного из вариантов является обязательным, выберем EclipseLink:
+
+                             <p><img alt="выбор eclipselink" src="../images/tutorials/crud/68dbmanager-4.png" /> </p>
+
+
+                            <p><li>Укажите имя demo для пакета, в котором будут созданы классы сущностей.
+                             <p><img alt="имя пакета" src="../images/tutorials/crud/68dbmanager-5.png" /> </p>
+
+        <p><li>Нажмите кнопку &quot;Готово&quot;. После выполнения этого действия просмотрите созданный код и обратите внимание на то, что теперь в папке META-INF располагается файл <tt>persistence.xml</tt>, а также классы сущностей для всех таблиц:
+
+<p><img alt="классы сущностей" src="../images/tutorials/crud/68dbmanager-7.png" /> </p>
+
+         <p><li>Создайте библиотеку Java, после чего файл JAR будет размещен в папке &quot;dist&quot;, которую можно просмотреть в окне &quot;Файлы&quot;:
+
+<p><img alt="папка назначения" src="../images/tutorials/crud/68dbmanager-8.png" /> </p>
+
+         </li>
+    </ol>
+    
+    <h3 class="tutorial"><a name="wrapping-entity"></a>Помещение файла JAR класса сущностей в оболочку модуля</h3>
+    <p>В этом разделе рассматривается добавление первого модуля к приложению. Новый модуль NetBeans помещает в обертку файл JAR, созданный в предыдущем разделе. 
+    <ol>
+        <li>Правой кнопкой мыши щелкните узел &quot;Модули <tt>DBManager</tt>&quot; в окне &quot;Проекты&quot; и выберите команду &quot;Добавить новую библиотеку&quot;.
+        <p><li>Выберите файл JAR, созданный в предыдущем подразделе, а затем завершите работу мастера, указав любые значения. Предположим, что приложение предназначено для работы с посетителями веб-сайта shop.org; в таком случае для основы кодового имени подходит уникальный идентификатор &quot;org.shop.model&quot;:
+
+         <p><img alt="уникальный идентификатор модуля" src="../images/tutorials/crud/68dbmanager-9.png" /> </p>
+
+    </ol>
+        <p>Теперь первый собственный модуль в новом приложении обертывает архив JAR, содержащий классы сущностей и файл persistence.xml:</p>
+
+        <p><img alt="persistence.xml" src="../images/tutorials/crud/68dbmanager-91.png" /> </p>
+
+    <h3 class="tutorial"><a name="creating-other"></a>Создание других связанных модулей</h3>
+    <p>В этом разделе создаются два новых модуля, которые помещают файлы JAR EclipseLink в оболочку, а также соединитель баз данных JAR.
+    <ol>
+        <li>Выполните те же действия, что и при создании оболочки библиотеки для файла JAR класса сущностей, но на этот раз для файлов JAR EclipseLink, которые расположены в библиотеке Java &quot;CustomerLibrary&quot;, созданной ранее:
+
+                <p><img alt="обертывание библиотеки" src="../images/tutorials/crud/68dbmanager-94.png" /></p>
+
+
+        <p class="tips"> В мастере &quot;Модуль-обёртка вокруг библиотеки&quot; можно выбрать несколько архивов JAR щелчком кнопки мыши при нажатой клавише CTRL.</p>
+
+        <p><li>Затем следует создать еще один модуль-обертку вокруг библиотеки для файла JAR клиента базы данных Java DB, предоставляемого в дистрибутиве JDK: <tt>db/lib/derbyclient.jar</tt>.
+    </ol>
+    
+    <h3 class="tutorial"><a name="designing-ui"></a>Проектирование пользовательского интерфейса</h3>
+    <p>В этом разделе создается простой прототип пользовательского интерфейса, который предоставляет окно <tt>JTextArea</tt> для отображения данных, извлеченных из базы данных.
+    <ol>
+        <li>Правой кнопкой мыши щелкните узел &quot;Модули <tt>DBManager</tt>&quot; в окне &quot;Проекты&quot; и выберите команду &quot;Добавить новый&quot;. Создайте новый модуль с именем <tt>CustomerViewer</tt> с основой кодового имени <tt>org.shop.ui</tt>.
+        <p><li>В окне &quot;Проекты&quot; щелкните правой кнопкой мыши новый модуль и выберите команду &quot;Создать&quot; | &quot;Оконный компонент&quot;. Укажите, что компонент должен быть создан в положении <tt>editor</tt> и должен открываться при запуске приложения. Установите <tt>Customer</tt> в качестве префикса имени класса окна.
+        <p><li>Используйте палитру (CTRL+SHIFT+8) для перетаскивания <tt>JTextArea</tt> в новое окно:
+
+        <p><img alt="Размещенная текстовая область" src="../images/tutorials/crud/68dbmanager-93.png" /></p>
+
+       <p><li>Добавьте этот код в конец конструктора TopComponent:
+<pre class="examplecode">EntityManager entityManager = Persistence.createEntityManagerFactory(&quot;CustomerLibraryPU&quot;).createEntityManager();
+Query query = entityManager.createQuery(&quot;SELECT c FROM Customer c&quot;);
+List&lt;Customer&gt; resultList = query.getResultList();
+for (Customer c : resultList) {
+  jTextArea1.append(c.getName() + &quot; (&quot; + c.getCity() + &quot;)&quot; + &quot;\n&quot;);
+}</pre>
+
+<p class="tips"> Так как не установлены зависимости модулей, которые предоставляют объект Customer и файлы состояния JAR, указанные выше операторы будут отмечены красным подчеркиванием. Это будет устранено в следующем разделе.</p>
+
+<p>Выше приведены ссылки на единицу сохранения состояния CustomerLibraryPU, имя которой установлено в файле <tt>persistence.xml</tt>. Кроме того, здесь имеется ссылка на один из классов сущностей с именем <tt>Customer</tt>, который находится в модуле классов сущностей. Если эти элементы отличаются от приведенных выше, их можно соответствующим образом адаптировать.
+
+    </ol>
+
+    <h3 class="tutorial"><a name="setting-dependencies"></a>Установка зависимостей</h3>
+    <p>В этом разделе будет показано, как в одних модулях использовать код из других модулей. Для этого нужно совершенно явным образом установить соглашения между связанными модулями. Строгая модульная архитектура платформы NetBeans предотвращает случайное и хаотическое использование кода разных модулей, что нередко происходит на других платформах.
+    <ol>
+         <li>Модуль классов сущностей должен иметь зависимости от модуля Derby Client, а также от модуля EclipseLink. Правой кнопкой мыши щелкните модуль <tt>CustomerLibrary</tt>, выберите команду &quot;Свойства&quot;, а затем перейдите на вкладку &quot;Библиотеки&quot; для задания зависимостей от двух модулей, необходимых модулю <tt>CustomerLibrary</tt>.
+        <p><li>Модуль <tt>CustomerViewer</tt> требует наличия зависимости от модуля EclipseLink, а также от модуля классов сущностей. Правой кнопкой мыши щелкните модуль <tt>CustomerViewer</tt>, выберите команду &quot;Свойства&quot;, а затем перейдите на вкладку &quot;Библиотеки&quot; для задания зависимостей от двух модулей, необходимых модулю <tt>CustomerViewer</tt>.
+        <p><li>Откройте элемент <tt>CustomerTopComponent</tt> в представлении &quot;Исходный код&quot;, правой кнопкой мыши щелкните окно редактора и выберите команду &quot;Исправить выражения импорта&quot;. Среда IDE теперь может добавлять необходимые операторы импорта, так как для компонента <tt>CustomerTopComponent</tt> теперь доступны модули, содержащие необходимые классы.
+    </ol>
+        <p>Теперь между модулями приложения установлены соглашения, которые дают возможность управления зависимостями в отдельных частях кода.
+
+    <h3 class="tutorial"><a name="running-prototype"></a>Запуск прототипа</h3>
+    <p>В этом разделе вы выполните запуск приложения, которое поможет проверить, верно ли установлено соединение с базой данных.
+    <ol>
+        <li>Запустите сервер базы данных.
+        <p><li>Запустите приложение. На экране должно отобразиться следующее изображение:
+
+        <p><img alt="запуск прототипа" src="../images/tutorials/crud/68dbmanager-92.png" /></p>
+    </ol>
+        <p>Таким образом, создан простой прототип, состоящий из приложения платформы NetBeans, и выводящий данные из базы данных, который будет расширен в следующем разделе.
+
+</div>
+
+<br>
+<h2><a name="integrating-crud"></a>Интеграция функциональности CRUD</h2>
+
+<p>Чтобы создать функциональность CRUD, которая тесно интегрируется с платформой NetBeans, необходимо реализовать некоторые очень специфические приемы программирования этой платформы. В следующих разделах эти шаблоны рассматриваются более подробно.</p>
+
+<div class="indent">
+    
+    <h3 class="tutorial"><a name="read"></a>Чтение</h3>
+    <p>В этом разделе производится изменение введенного в предыдущем разделе элемента <tt>JTextArea</tt> для представления проводника платформы NetBeans. Представления проводника платформы NetBeans являются компонентами Swing, которые, по сравнению со стандартными компонентами Swing, лучше всего интегрируются с платформой NetBeans. Среди прочего поддерживается понятие контекста, позволяющее представлениям обладать чувствительностью к контексту.
+    <p>Данные будут представлены в общей иерархической модели, предоставленной классом платформы NetBeans <tt>Node</tt>, который отображается во всех представлениях проводника платформы NetBeans. В конце данного раздела описан процесс синхронизации представления проводника с диалоговым окном &quot;Свойства&quot; платформы NetBeans.
+    <ol>
+        <li>В компоненте <tt>TopComponent</tt> удалите элемент <tt>JTextArea</tt> в представлении проектирования и закомментируйте связанный с ним код в представлении исходного кода:
+
+<pre class="examplecode">EntityManager entityManager =  Persistence.createEntityManagerFactory(&quot;CustomerLibraryPU&quot;).createEntityManager();
+Query query = entityManager.createQuery(&quot;SELECT c FROM Customer c&quot;);
+List&lt;Customer&gt; resultList = query.getResultList();
+//for (Customer c : resultList) {
+//    jTextArea1.append(c.getName() + &quot; (&quot; + c.getCity() + &quot;)&quot; + &quot;\n&quot;);
+//}</pre>
+
+<p><li>Правой кнопкой мыши щелкните модуль <tt>CustomerViewer</tt>, выберите команду &quot;Свойства&quot;, а затем перейдите на вкладку &quot;Библиотеки&quot; для задания зависимостей интерфейса API Nodes и интерфейса API Explorer &amp; Property Sheet.
+
+<p><li>Затем измените подпись класса для реализации элемента <tt>ExplorerManager.Provider</tt>:
+
+<pre class="examplecode">final class CustomerTopComponent extends TopComponent implements ExplorerManager.Provider</pre>
+
+<p>Необходимо переопределить <tt>getExplorerManager()</tt>
+
+<pre class="examplecode">@Override
+public ExplorerManager getExplorerManager() {
+    return em;
+}</pre>
+
+<p>В начале класса следует объявить и инициализировать <tt>ExplorerManager</tt>:
+
+<pre class="examplecode">private static ExplorerManager em = new ExplorerManager();</pre>
+
+<p class="tips"> Обратитесь к ролику <a href="https://platform.netbeans.org/tutorials/nbm-10-top-apis.html">10 лучших интерфейсов API NetBeans</a> для получения подробных сведений о приведенном выше коде, в особенности демо-ролик об интерфейсе Nodes API и интерфейсе Explorer &amp; Property Sheet API.
+
+<p><li>Откройте представление проектирования для <tt>TopComponent</tt>, щелкните правой кнопкой палитру, выберите в меню &quot;Менеджер палитры&quot; команду &quot;Добавить из файла JAR&quot;. Затем перейдите к элементу <tt>org-openide-explorer.jar</tt>, который находится в папке <tt>platform11/modules</tt> внутри каталога установки среды IDE NetBeans. Выберите элемент BeanTreeView и завершите работу мастера. Теперь элемент <tt>BeanTreeView</tt> должен отображаться на палитре. Перетащите его с палитры в окно.
+ 
+<p><li>Создайте класс фабрики, создающий новый экземпляр <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-db/org/netbeans/api/db/explorer/node/BaseNode.html">BeanNode</a> для каждого клиента в базе данных:
+
+<pre class="examplecode">import demo.Customer;
+import java.beans.IntrospectionException;
+import java.util.List;
+import org.openide.nodes.BeanNode;
+import org.openide.nodes.ChildFactory;
+import org.openide.nodes.Node;
+import org.openide.util.Exceptions;
+
+public class CustomerChildFactory extends ChildFactory&lt;Customer&gt; {
+
+    private List&lt;Customer&gt; resultList;
+
+    public CustomerChildFactory(List&lt;Customer&gt; resultList) {
+        this.resultList = resultList;
+    }
+
+    @Override
+    protected boolean createKeys(List&lt;Customer&gt; list) {
+        for (Customer Customer : resultList) {
+            list.add(Customer);
+        }
+        return true;
+    }
+
+    @Override
+    protected Node createNodeForKey(Customer c) {
+        try {
+            return new BeanNode(c);
+        } catch (IntrospectionException ex) {
+            Exceptions.printStackTrace(ex);
+            return null;
+        }
+    }
+
+}</pre>
+        <p><li>Повторно выберите компонент <tt>CustomerTopComponent</tt> и используйте <tt>ExplorerManager</tt> для передачи результата из запроса JPA в элемент <tt>Node</tt>:
+
+<pre class="examplecode">EntityManager entityManager =  Persistence.createEntityManagerFactory(&quot;CustomerLibraryPU&quot;).createEntityManager();
+Query query = entityManager.createQuery(&quot;SELECT c FROM Customer c&quot;);
+List&lt;Customer&gt; resultList = query.getResultList();
+<b>em.setRootContext(new AbstractNode(Children.create(new CustomerChildFactory(resultList), true)));</b>
+//for (Customer c : resultList) {
+//    jTextArea1.append(c.getName() + &quot; (&quot; + c.getCity() + &quot;)&quot; + &quot;\n&quot;);
+//}</pre>
+
+        <p><li>Запустите приложение. После запуска приложения откройте диалоговое окно &quot;Свойства&quot;. Обратите внимание на то, что, несмотря на доступность данных, отображаемых в <tt>BeanTreeView</tt>, элемент <tt>BeanTreeView</tt> не синхронизирован с диалоговым окном &quot;Свойства&quot;, которое открывается в меню &quot;Окно&quot; с помощью команды &quot;Свойства. Другими словами, при перемещении по древовидной иерархии в окне &quot;Свойства&quot; элементы не отображаются.
+
+        <p><li>Синхронизация окна &quot;Свойства&quot; с элементом <tt>BeanTreeView</tt> осуществляется путем добавления в конструктор элемента <tt>TopComponent</tt> следующего кода:
+
+<pre class="examplecode">associateLookup(ExplorerUtils.createLookup(em, getActionMap()));</pre>
+
+<p>Здесь элементы <tt>TopComponent</tt> <tt>ActionMap</tt> и <tt>ExplorerManager</tt> добавляются в элемент <tt>Lookup</tt> <tt>TopComponent</tt>. Это также приводит к тому, что в окне &quot;Свойства&quot; появляется отображаемое имя и текст всплывающей подсказки выбранного элемента <tt>Node</tt>.
+
+        <p><li>Повторно запустите приложение и обратите внимание на то, что диалоговое окно &quot;Свойства&quot; теперь синхронизировано с представлением проводника:
+
+        <p><img alt="синхронизация:" src="../images/tutorials/crud/68dbmanager-95.png" />
+
+    </ol>
+    <p>Теперь данные можно просмотреть в древовидной иерархии, как и в случае с элементом <tt>JTree</tt>. В то же время возможен переход в другое представление проводника без изменения модели, так как <tt>ExplorerManager</tt> выполняет роль посредника между моделью и представлением. Кроме того, теперь будет возможна синхронизация представления с окном &quot;Свойства&quot;.
+
+    <h3 class="tutorial"><a name="update"></a>Обновление</h3>
+    <p>В этом разделе вначале создается редактор. Редактор будет предоставлен новым модулем NetBeans. Таким образом, вначале будет создан новый модуль. Затем в этом модуле будет создан новый элемент <tt>TopComponent</tt>, содержащий два поля <tt>JTextFields</tt> (для каждого столбца, который доступен пользователю для редактирования). Модулю средства просмотра необходимо разрешить взаимодействие с модулем редактора. Каждый раз при выборе нового элемента <tt>Node</tt> в модуле средства просмотра текущий объект <tt>Customer</tt> будет добавлен в <tt>Lookup</tt>. В модуле редактора будет осуществляться прослушивание <tt>Lookup</tt> на появление объектов <tt>Customer</tt>. При появлении нового объекта <tt>Customer</tt> в <tt>Lookup</tt> будет выполнено обновление текстовых полей <tt>JTextField</tt> в редакторе.
+    <p>Затем поля <tt>JTextFields</tt> будут синхронизированы с функциями платформы NetBeans &quot;Отменить&quot;, &quot;Вернуть&quot; и &quot;Сохранить&quot;. Другими словами, при внесении пользователем изменения в поле <tt>JTextField</tt> существующая функциональность платформы NetBeans должна быть доступной, чтобы обеспечивать поддержку платформы NetBeans, исключающую необходимость создания новых функций. Для этого необходимо использовать элемент <tt>UndoRedoManager</tt> наряду с элементом <tt>SaveCookie</tt>.
+    <ol>
+        <li>Создайте новый модуль с именем <tt>CustomerEditor</tt> и основой кодового имени <tt>org.shop.editor</tt>.
+        <p><li>Правой кнопкой мыши щелкните модуль <tt>CustomerEditor</tt> и выберите команду &quot;Создать | Оконный компонент&quot;. Убедитесь в том, что в настройках указано отображать окно в положении<tt>editor</tt> и открывать его при запуске приложения. На последней панели мастера задайте префикс имени класса Editor.
+        <p><li>Используйте палитру (CTRL+SHIFT+8) для добавления двух меток <tt>JLabels</tt> и двух полей <tt>JTextFields</tt> в новое окно. Задайте тексты меток &quot;Имя&quot; и &quot;Город&quot;, а затем установите имена переменных полей <tt>JTextField</tt> равными <tt>jTextField1</tt> и <tt>jTextField2</tt>.
+
+        <p>В Конструкторе GUI окно теперь должно выглядеть следующим образом:</p>
+
+        <p><img alt="проектирование пользовательского интерфейса" src="../images/tutorials/crud/68dbmanager-96.png" /></p>
+
+        <p><li>Вернитесь к модулю <tt>CustomerViewer</tt> и измените его файл <tt>layer.xml</tt>, указав в нем, что окно <tt>CustomerTopComponent</tt> выводится в режиме <tt>explorer</tt>.
+
+         <p class="tips"> Правой кнопкой мыши щелкните проект и выберите команду &quot;Очистить&quot;, перейдя в файл <tt>layer.xml</tt>. Зачем это нужно? При каждом запуске приложения и его закрытии положения окон сохраняются в пользовательском каталоге. Таким образом, если элемент <tt>CustomerViewer</tt> изначально отображался в режиме <tt>editor</tt>, он останется в режиме <tt>editor</tt> до выполнения команды &quot;Очистить&quot;, которая сбрасывает пользовательский каталог (т.е. <i>удаляет</i> его) и позволяет отображать <tt>CustomerViewer</tt> в положении, установленном в настоящий момент в файле <tt>layer.xml</tt>.</p>
+
+
+         <p>Следует также убедиться в том, что <tt>BeanTreeView</tt> в <tt>CustomerViewer</tt> будет растягиваться по горизонтали и вертикали при изменении размера приложения пользователем. Для проверки этого откройте окно, выберите элемент <tt>BeanTreeView</tt>, а затем нажмите кнопки со стрелками на панели инструментов Конструктора GUI.
+
+         <li>Выполните приложение и проверьте, выводятся ли следующие данные при запуске приложения:
+
+                      <p><img alt="запуск нового пользовательского интерфейса" src="../images/tutorials/crud/68dbmanager-97.png" /></p>
+
+
+        <li>Теперь можно приступить к добавлению кода. Сначала необходимо открыть выбранный в настоящий момент объект Customer в редакторе:
+        <ul>
+         <li>Сначала настройте модуль <tt>CustomerViewer</tt> таким образом, чтобы текущий объект <tt>Customer</tt> добавлялся в окно средства просмотра <tt>Lookup</tt> при каждом выборе элемента <tt>Node</tt>. Для этого создайте <tt>AbstractNode</tt> вместо <tt>BeanNode</tt> в классе <tt>CustomerChildFactory</tt>. В этом случае текущий объект <tt>Customer</tt> можно будет добавить к <tt>Lookup</tt> узла следующим образом (обратите внимание на текст, выделенный полужирным шрифтом):
+
+<pre class="examplecode">@Override
+protected Node createNodeForKey(Customer c) {
+    Node node = new AbstractNode(Children.LEAF, Lookups.singleton(c));
+    node.setDisplayName(c.getName());
+    node.setShortDescription(c.getCity());
+    return node;
+//        try {
+//            return new BeanNode(c);
+//        } catch (IntrospectionException ex) {
+//            Exceptions.printStackTrace(ex);
+//            return null;
+//        }
+}</pre>
+
+        <p>Теперь при каждом создании элемента <tt>Node</tt>, которое выполняется при выборе нового клиента в средстве просмотра, новый объект <tt>Customer</tt> добавляется в окно <tt>Lookup</tt> элемента <tt>Node</tt>.
+
+         <p><li>Теперь следует изменить модуль редактора таким образом, чтобы его окно отслеживало объекты <tt>Customer</tt>, добавляемые в окно <tt>Lookup</tt>. Вначале установите в модуле редактора зависимость от модуля, который предоставляет класс сущностей, а также от модуля, предоставляющего файлы состояния JAR. 
+
+         <p><li>Затем настройте подпись класса <tt>EditorTopComponent</tt> для внедрения <tt>LookupListener</tt>:
+
+<pre class="examplecode">public final class EditorTopComponent extends TopComponent implements LookupListener</pre>
+
+         <p><li>Переопределите <tt>resultChanged</tt> таким образом, чтобы текстовые поля <tt>JTextField</tt> обновлялись при вставке нового объекта <tt>Customer</tt> в окно <tt>Lookup</tt>:
+
+<pre class="examplecode">@Override
+public void resultChanged(LookupEvent lookupEvent) {
+    Lookup.Result r = (Lookup.Result) lookupEvent.getSource();
+    Collection&lt;Customer&gt; coll = r.allInstances();
+    if (!coll.isEmpty()) {
+        for (Customer cust : coll) {
+            jTextField1.setText(cust.getName());
+            jTextField2.setText(cust.getCity());
+        }
+    } else {
+        jTextField1.setText(&quot;[no name]&quot;);
+        jTextField2.setText(&quot;[no city]&quot;);
+    }
+}</pre>
+
+        <p><li>После определения <tt>LookupListener</tt> необходимо добавить его к какому-либо элементу. В данном случае он добавляется к элементу <tt>Lookup.Result</tt>, полученному из глобального контекста. Глобальный контекст используется в качестве посредника для контекста выбранного элемента <tt>Node</tt>. Например, если в древовидной иерархии выбрано значение &quot;Ford Motor Co&quot;, то объект <tt>Customer</tt> для значения &quot;Ford Motor Co&quot; добавляется в окно <tt>Lookup</tt> элемента <tt>Node</tt>. Так как элемент <tt>Node</tt> является выбранным в настоящее время компонентом, объект <tt>Customer</tt> для значения &quot;Ford Motor Co&quot; становится доступным в глобальном контексте. Это передается в элемент <tt>resultChanged</tt> и приводит к заполнению текстовых полей.
+
+         <p>Все описанные операции начинают выполняться, то есть элемент <tt>LookupListener</tt> становится активным при каждом открытии окна редактора, как показано ниже:</p>
+
+<pre class="examplecode">@Override
+public void componentOpened() {
+    result = Utilities.actionsGlobalContext().lookupResult(Customer.class);
+    result.addLookupListener(this);
+    resultChanged(new LookupEvent(result));
+}
+
+@Override
+public void componentClosed() {
+    result.removeLookupListener(this);
+    result = null;
+}</pre>
+
+<p>Так как редактор открывается при запуске приложения, элемент <tt>LookupListener</tt> также доступен при запуске приложения.
+
+<p><li>Затем необходимо следующим образом объявить переменную result в начале класса:
+
+<pre class="examplecode">private Lookup.Result result = null;</pre>
+
+        <p><li>Запустите приложение повторно и обратите внимание на то, что окно редактора обновляется при выборе нового элемента <tt>Node</tt>:
+
+                      <p><img alt="обновленное окно редактора" src="../images/tutorials/crud/68dbmanager-98.png" /></p>
+
+
+<p>В то же время следует отметить операции, выполняемые при переходе в окно редактора:</p>
+
+                      <p><img alt="переключение фокусировки" src="../images/tutorials/crud/68dbmanager-99.png" /></p>
+
+<p>Так как элемент <tt>Node</tt> больше не является текущим, объект <tt>Customer</tt> покидает глобальный контекст. Как сказано выше, это происходит потому, что глобальный контекст выступает посредником для окна <tt>Lookup</tt> текущего элемента <tt>Node</tt>. Таким образом, в этом случае глобальный контекст не может использоваться. Вместо этого будет использоваться локальное окно <tt>Lookup</tt>, предоставленное окном Customer.</p>
+
+<p>Замените строку
+
+<pre class="examplecode">result = Utilities.actionsGlobalContext().lookupResult(Customer.class);</pre>
+
+<p>следующей строкой:
+
+<pre class="examplecode">result = WindowManager.getDefault().findTopComponent(&quot;CustomerTopComponent&quot;).getLookup().lookupResult(Customer.class);</pre>
+
+<p>Строка &quot;CustomerTopComponent&quot; является идентификатором <tt>CustomerTopComponent</tt>, который представляет собой строковую константу, находящуюся в исходном коде компонента <tt>CustomerTopComponent</tt>. Недостатком описанного выше подхода является то, что элемент <tt>EditorTopComponent</tt> при этом может работать только в том случае, если обнаруживается компонент <tt>TopComponent</tt> с идентификатором &quot;CustomerTopComponent&quot;. Это должно явным образом документироваться, чтобы информировать пользователей других редакторов о том, что идентификация <tt>TopComponent</tt> средства просмотра выполняется именно таким образом. Разработчик также может изменить модель выбора, <a href="http://weblogs.java.net/blog/timboudreau/archive/2007/01/how_to_replace.html">как описано здесь</a> Тимом Будро.
+
+<p>При использовании описанных подходов контекст не будет потерян при переключении фокусировки на компонент <tt>EditorTopComponent</tt>, как показано ниже:</p>
+
+                      <p><img alt="контекст не теряется" src="../images/tutorials/crud/68dbmanager-991.png" /></p>
+
+<p class="tips"> Поскольку теперь вместо <tt>BeanNode</tt> используется <tt>AbstractNode</tt>, в окне &quot;Свойства&quot; нет свойств. Их придется задать вручную, в соответствии с описанием в документе <a href="https://platform.netbeans.org/tutorials/nbm-nodesapi2.html">Руководство по интерфейсу API для узлов</a>.
+        </ul>
+        <li>Теперь следует перейти к функциям &quot;Отменить&quot; и &quot;Вернуть&quot;. Необходимо добиться того, чтобы при изменении пользователем одного из полей <tt>JTextFields</tt> стали доступны кнопки &quot;Отменить&quot; и &quot;Вернуть&quot;, а также связанные с ними команды меню &quot;Правка&quot;. Для этого платформа NetBeans предоставляет <a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/UndoRedo.Manager.html">UndoRedo.Manager</a>.
+        <ul>
+        <li>Объявите новый элемент UndoRedoManager и создайте его экземпляр в начале элемента <tt>EditorTopComponent</tt>:
+
+<pre class="examplecode">private UndoRedo.Manager manager = new UndoRedo.Manager();</pre>
+
+        <p><li>Затем следует переопределить метод <tt>getUndoRedo()</tt> в компоненте <tt>EditorTopComponent</tt>:
+
+<pre class="examplecode">@Override
+public UndoRedo getUndoRedo() {
+    return manager;
+}</pre>
+
+        <p><li>В конструкторе элемента <tt>EditorTopComponent</tt> следует добавить элемент <tt>KeyListener</tt> в поля <tt>JTextFields</tt>. Затем добавьте прослушиватели <tt>UndoRedoListeners</tt> в связанные методы, которые необходимо внедрить:
+
+<pre class="examplecode">jTextField1.getDocument().addUndoableEditListener(manager);
+jTextField2.getDocument().addUndoableEditListener(manager);
+</pre>
+
+        <p><li>Запустите приложение и проверьте функции &quot;Отменить&quot; и &quot;Вернуть&quot; в действии, а также кнопки и команды меню. Функции будут работать ожидаемым образом. Можно изменить прослушиватель <tt>KeyListener</tt> таким образом, чтобы не все клавиши вызывали включение функций &quot;Отменить&quot; и &quot;Вернуть&quot;. Например, при нажатии клавиши ВВОД включение функций &quot;Отменить&quot; и &quot;Вернуть&quot;, скорее всего, не потребуется. Следовательно, необходимо именить код, приведенный выше, чтобы он соответствовал требованиям предприятия.
+
+
+        </ul>
+        <li>Необходимо также выполнить интеграцию с функциональностью платформы NetBeans &quot;Сохранить&quot;:
+        <ul>
+        <li>По умолчанию на панели инструментов платформы NetBeans доступна кнопка &quot;Сохранить все&quot;. В рассматриваемой ситуации сохранение &quot;всех&quot; элементов не требуется, так как понятие &quot;все&quot; подразумевает наличие различных документов. Здесь имеется только один &quot;документ&quot;, то есть редактор, который используется для всех узлов древовидной иерархии. Удалите кнопку &quot;Сохранить все&quot; и добавьте кнопку &quot;Сохранить&quot;. Для этого добавьте следующий код в файл layer модуля <tt>CustomerEditor</tt>:
+
+<pre class="examplecode">&lt;folder name=&quot;Toolbars&quot;&gt;
+    &lt;folder name=&quot;File&quot;&gt;
+        &lt;file name=&quot;org-openide-actions-SaveAction.shadow&quot;&gt;
+            &lt;attr name=&quot;originalFile&quot; stringvalue=&quot;Actions/System/org-openide-actions-SaveAction.instance&quot;/&gt;
+            &lt;attr name=&quot;position&quot; intvalue=&quot;444&quot;/&gt;
+        &lt;/file&gt;
+        &lt;file name=&quot;org-openide-actions-SaveAllAction.shadow_hidden&quot;/&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+
+<p>При запуске приложения на панели инструментов отобразится другой значок. Вместо кнопки &quot;Сохранить все&quot; будет доступна кнопка &quot;Сохранить&quot;.
+
+        <p><li>Установите зависимости от интерфейса API Dialogs и интерфейса API Nodes.
+
+            <p><li>В конструкторе <tt>EditorTopCompontn</tt> добавьте вызов метода (определяемого на следующем этапе) при каждом обнаружении изменений:
+
+<pre class="examplecode">public EditorTopComponent() {
+
+        ...
+        ...
+        ...
+
+        jTextField1.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent arg0) {
+                fire(true);
+            }
+            public void removeUpdate(DocumentEvent arg0) {
+                fire(true);
+            }
+            public void changedUpdate(DocumentEvent arg0) {
+                fire(true);
+            }
+        });
+
+        jTextField2.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent arg0) {
+                fire(true);
+            }
+            public void removeUpdate(DocumentEvent arg0) {
+                fire(true);
+            }
+            public void changedUpdate(DocumentEvent arg0) {
+                fire(true);
+            }
+        });
+
+        //Создание экземпляра реализации SaveCookie:
+        impl = new SaveCookieImpl();
+
+        //Создание экземпляра динамического объекта:
+        content = new InstanceContent();
+
+        //Добавление динамического объекта в верхнюю часть TopComponent Lookup:
+        associateLookup(new AbstractLookup(content));
+
+    }
+
+    ...
+    ...
+    ...
+</pre>
+
+             <p><li>Здесь приведены два метода, упоминавшиеся выше. Первый метод вызывается при каждом обнаружении изменений. При обнаружении изменений к <tt>InstanceContent</tt> добавляется реализация <tt>SaveCookie</tt> из интерфейса API узлов:
+
+<pre class="examplecode">    public void fire(boolean modified) {
+        if (modified) {
+            //Если текст изменен,
+            //добавить реализацию SaveCookie к Lookup:
+            content.add(impl);
+        } else {
+            //В противном случае удалим реализацию SaveCookie из lookup:
+            content.remove(impl);
+        }
+    }
+
+    private class SaveCookieImpl implements SaveCookie {
+
+        @Override
+        public void save() throws IOException {
+
+           Confirmation message = new NotifyDescriptor.Confirmation(&quot;Сохранить \&quot;&quot;
+                    + jTextField1.getText() + &quot; (&quot; + jTextField2.getText() + &quot;)\&quot;?&quot;,
+                    NotifyDescriptor.OK_CANCEL_OPTION,
+                    NotifyDescriptor.QUESTION_MESSAGE);
+
+            Object result = DialogDisplayer.getDefault().notify(message);
+            //Если пользователь намерен сохранить, и нажимает &quot;Да&quot;,
+            //необходимо отключить действие Save,
+            //таким образом оно будет доступно только при наличии изменений
+            //текстового поля:
+            if (NotifyDescriptor.YES_OPTION.equals(result)) {
+                fire(false);
+                //Реализация функций сохранения.
+            }
+        }
+    }
+</pre>
+        <p><li>Запустите приложение и обратите внимание на включение и отключение кнопки &quot;Сохранить&quot;:
+
+                      <p><img alt="включенная кнопка сохранения" src="../images/tutorials/crud/68dbmanager-992.png" /></p>
+
+<p class="tips"> В настоящий момент при нажатии кнопки &quot;ОК&quot; в приведенном выше диалоговом окне не происходит. На следующем этапе будет добавлен код JPA, обрабатывающий состояние изменений.
+
+        <p><li>Затем следует добавить код JPA для сохранения изменений. Для этого замените комментарий &quot;//Реализация функций сохранения&quot;. Этот комментарий необходимо заменить следующим кодом.
+
+<pre class="examplecode">EntityManager entityManager = Persistence.createEntityManagerFactory(&quot;CustomerLibraryPU&quot;).createEntityManager();
+entityManager.getTransaction().begin();
+Customer c = entityManager.find(Customer.class, customer.getCustomerId());
+c.setName(jTextField1.getText());
+c.setCity(jTextField2.getText());
+entityManager.getTransaction().commit();</pre>
+
+<p class="tips"> Значение &quot;customer&quot; в <tt>customer.getCustomerId()()</tt> в настоящее время не определено. Добавьте строку, выделенную жирным шрифтом, в <tt>resultChanged</tt> ниже, сразу после определения <tt>Customer customer;</tt> в верхней части класса, таким образом текущий объект <tt>Customer</tt> будет определять значение <tt>customer</tt>, которое затем используется в коде сохранения состояния, определенном выше, для получения идентификатора текущего объекта <tt>Customer</tt>.
+
+<pre class="examplecode">@Override
+public void resultChanged(LookupEvent lookupEvent) {
+    Lookup.Result r = (Lookup.Result) lookupEvent.getSource();
+    Collection&lt;Customer&gt; c = r.allInstances();
+    if (!c.isEmpty()) {
+        for (Customer customer : c) {
+            <b>customer = cust;</b>
+            jTextField1.setText(customer.getName());
+            jTextField2.setText(customer.getCity());
+        }
+    } else {
+        jTextField1.setText(&quot;[имя не указано]&quot;);
+        jTextField2.setText(&quot;[город не указан]&quot;);
+    }
+}</pre>
+
+ <p><li>Запустите приложение и измените данные. В настоящее время функциональность &quot;Обновить&quot; отсутствует (она будет добавлена на следующем этапе), поэтому для просмотра обновленной информации следует перезапустить приложение. Например, в данном случае древовидная иерархия отображает сохраненное имя клиента &quot;Toyota Motor Co&quot;:
+
+                      <p><img alt="измененная база данных" src="../images/tutorials/crud/68dbmanager-993.png" /></p>
+
+        </ul>
+
+
+ <li>Затем следует добавить функцию для обновления средства просмотра Customer. Разработчик может добавить элемент <tt>Timer</tt>, который периодически обновляет средство просмотра. В этом примере в узел Root будет добавлена команда меню &quot;Обновить&quot;, позволяющая пользователю вручную обновить средство просмотра.
+<ul>
+        <li>В основном пакете модуля <tt>CustomerViewer</tt> необходимо создать новый элемент <tt>Node</tt>, заменяющий элемент <tt>AbstractNode</tt>, который в настоящее время используется в качестве корневого элемента нижестоящих элементов средства просмотра. Обратите внимание на то, что действие &quot;Обновить&quot; также привязывается к новому корневому узлу.
+
+<pre class="examplecode">public class CustomerRootNode extends AbstractNode {
+
+    public CustomerRootNode(Children kids) {
+        super(kids);
+        setDisplayName(&quot;Root&quot;);
+    }
+
+    @Override
+    public Action[] getActions(boolean context) {
+        Action[] result = new Action[]{
+            new RefreshAction()};
+        return result;
+    }
+
+    private final class RefreshAction extends AbstractAction {
+
+        public RefreshAction() {
+            putValue(Action.NAME, &quot;Обновить&quot;);
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            CustomerTopComponent.refreshNode();
+        }
+    }
+
+}</pre>
+
+<p><li>Добавьте этот метод в компонент <tt>CustomerTopComponent</tt> для обновления представления:
+
+<pre class="examplecode">public static void refreshNode() {
+    EntityManager entityManager = Persistence.createEntityManagerFactory(&quot;CustomerLibraryPU&quot;).createEntityManager();
+    Query query = entityManager.createQuery(&quot;SELECT c FROM Customer c&quot;);
+    List&lt;Customer&gt; resultList = query.getResultList();
+    em.setRootContext(new <b>CustomerRootNode</b>(Children.create(new CustomerChildFactory(resultList), true)));
+} </pre>
+
+
+<p>Теперь следует заменить приведенный выше код в конструкторе <tt>CustomerTopComponent</tt> на вызов упомянутого элемента. Как видно из выделенной части кода, теперь вместо элемента <tt>AbstractNode</tt> используется элемент <tt>CustomerRootNode</tt>. Элемент <tt>CustomerRootNode</tt> содержит действие &quot;Обновить&quot;, вызывающее приведенный выше код.
+
+<p><li>Добавьте к коду сохранения вызов привденного выше метода, чтобы при каждом сохранении данных происходило автоматическое обновление. Реализация этого расширения кода сохранения возможна несколькими разными способами. Например, можно создать новый модуль, содержащий действие обновления. Этот модуль затем будет совместно исползоваться модулем просмотра и модулем редактора, предоставляя общие функциональные возможности.
+
+ <p><li>Повторно запустите приложение и обратите внимание на то, что появился новый корневой узел с действием &quot;Обновить&quot;:
+
+                      <p><img alt="новый корневой узел" src="../images/tutorials/crud/68dbmanager-994.png" /></p>
+
+ <p><li>Измените данные, сохраните их, выполните действие &quot;Обновить&quot; и убедитесь в том, что средство просмотра обновляется.
+
+        </ul>
+    </ol>
+        <p>В этом разделе был рассмотрен способ обработки изменений полей <tt>JTextFields</tt> в платформе NetBeans. При изменении текста кнопки платформы NetBeans &quot;Отменить&quot; и &quot;Вернуть&quot; будут включены или отключены. Кроме того, кнопка &quot;Сохранить&quot; также корректно включается и отключается, что позволяет пользователю сохранять измененные данные в базу данных.
+
+    <h3 class="tutorial"><a name="create"></a>Создание</h3>
+    <p>В этом разделе пользователю предоставляется возможность создания новой записи базы данных.
+    <ol>
+        <li>Правой кнопкой мыши щелкните модуль <tt>CustomerEditor</tt> и выберите команду &quot;Создать действие&quot;. Используйте мастер создания действия для создания нового действия &quot;Всегда включено&quot;. Новое действие должно отображаться в любом положении на панели инструментов и/или в строке меню. На следующем шаге мастера вызовите действие <tt>NewAction</tt>.
+
+         <p class="tips">Убедитесь в наличии значка размером 16 на 16, который необходимо выбрать в мастере, если действие должно выбираться с панели инструментов.</p>
+        <P><li>В новом действии следует открыть компонент <tt>TopComponent</tt> вместе с пустыми полями <tt>JTextFields</tt>:
+
+<pre class="examplecode">import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public final class NewAction implements ActionListener {
+
+    public void actionPerformed(ActionEvent e) {
+        EditorTopComponent tc = EditorTopComponent.getDefault();
+        tc.resetFields();
+        tc.open();
+        tc.requestActive();
+    }
+
+}</pre>
+
+         <p class="tips">Это действие внедряет класс <tt>ActionListener</tt>, который привязан к приложению через записи в файле layer. Эти записи создаются мастером нового действия. Представьте себе легкость переноса существующего приложения Swing на платформу NetBeans при наличии возможности использования тех же классов <tt>Action</tt>, которые использовались в исходном приложении, без необходимости их изменения в соответствии с классами <tt>Action</tt>, предоставляемыми платформой NetBeans!</p>
+
+
+<p>В компоненте <tt>EditorTopComponent</tt> необходимо добавить следующий метод для сброса полей текстовых полей <tt>JTextField</tt> и создания нового объекта <tt>Customer</tt>:
+
+<pre class="examplecode">public void resetFields() {
+    customer = new Customer();
+    jTextField1.setText(&quot;&quot;);
+    jTextField2.setText(&quot;&quot;);
+}</pre>
+
+        <p><li>В элементе <tt>SaveCookie</tt> следует убедиться в том, что возврат значения <tt>null</tt> указывает на сохранение новой записи, а не на обновление существующей записи:
+
+<pre>public void save() throws IOException {
+
+    Confirmation message = new NotifyDescriptor.Confirmation(&quot;Сохранить \&quot;&quot;
+                    + jTextField1.getText() + &quot; (&quot; + jTextField2.getText() + &quot;)\&quot;?&quot;,
+                    NotifyDescriptor.OK_CANCEL_OPTION,
+                    NotifyDescriptor.QUESTION_MESSAGE);
+
+    Object result = DialogDisplayer.getDefault().notify(msg);
+
+    //Когда пользователь щелкает кнопку &quot;Yes&quot;, подтверждая сохранение,
+            //следует отключить кнопку &quot;Сохранить&quot; и команду меню &quot;Сохранить&quot;,
+            //чтобы они могли использоваться только при внесении следующего изменения 
+            //в текстовое поле:
+    if (NotifyDescriptor.YES_OPTION.equals(result)) {
+        fire(false);
+        EntityManager entityManager = Persistence.createEntityManagerFactory(&quot;CustomerLibraryPU&quot;).createEntityManager();
+        entityManager.getTransaction().begin();
+        <b>if (customer.getCustomerId() != null)</b> {
+            Customer c = entityManager.find(Customer.class, cude.getCustomerId());
+            c.setName(jTextField1.getText());
+            c.setCity(jTextField2.getText());
+            entityManager.getTransaction().commit();
+        } else {
+            <b>Query query = entityManager.createQuery(&quot;SELECT c FROM Customer c&quot;);
+            List&lt;Customer&gt; resultList = query.getResultList();
+            customer.setCustomerId(resultList.size()+1);
+            customer.setName(jTextField1.getText());
+            customer.setCity(jTextField2.getText());
+            //Добавить дополнительные поля, заполняющие оставшиеся столбцы в таблице!
+            entityManager.persist(customer);
+            entityManager.getTransaction().commit();</b>
+        }
+    }
+
+}</pre>
+
+<p><li>Повторно запустите приложение и добавьте нового клиента в базу данных.
+
+    </ol>
+
+    <h3 class="tutorial"><a name="delete"></a>Удаление</h3>
+    <p>В этом разделе пользователю предоставляется возможность удалять выбранную запись в базе данных. С помощью описанных выше приемов и кода внедрите действие &quot;Удалить&quot; самостоятельно.
+    <ol>
+        <li>Создайте новое действие <tt>DeleteAction</tt>. Следует определить необходимость привязки действия к узлу Customer, к панели инструментов, к строке меню, к сочетанию клавиш или к комбинации этих вариантов. В зависимости от привязки следует использовать различные подходы к написанию кода. Повторно изучите учебный курс, обратив особое внимание на способ создания действия &quot;Новое&quot; в сравнении с действием корневого узла &quot;Обновить&quot;.
+        <p><li>Получите текущий объект <tt>Customer</tt>, возвратите диалоговое окно &quot;Вы уверены?&quot;, а затем удалите запись. Для получения дополнительных сведений повторно прочитайте учебный курс, в особенности ту часть, в которой реализуется функция &quot;Сохранить&quot;. Вместо сохранения записи теперь производится ее удаление из базы данных.
+    </ol>
+
+</div>
+
+
+
+    <!-- ======================================================================================== -->
+    
+
+    <h2><a name="nextsteps"></a>Дополнительная информация</h2>
+
+    <p>На этом учебный курс по функциям CRUD в платформе NetBeans завершен. В этом документе описано создание нового приложения платформы NetBeans с функциональностью CRUD для определенной базы данных. Дополнительные сведения о создании и разработке приложений приведены в следующих ресурсах:
+    <ul>
+        <li><a href="https://netbeans.org/kb/trails/platform.html">Учебная карта по платформе NetBeans</a></li>
+        <li><a href="http://bits.netbeans.org/dev/javadoc/">Документация Javadoc по интерфейсам API в среде NetBeans</a></li>
+    </ul>
+
+    <!-- ======================================================================================== -->
+    
+</body>
+</html>

@@ -1,0 +1,1705 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>NetBeans Gmail Checker Module Tutorial</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="gwielenga@netbeans.org">
+  <meta name="indexed" content="y">
+<!--      Copyright (c) 2005 Sun Microsystems, Inc. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>NetBeans Gmail Checker Module Tutorial</h1>
+
+<p>This tutorial shows you how to embed a Gmail Checker in the IDE. The Gmail Checker 
+<!-- adds several new buttons to the toolbar&#8212;you use the main button to prompt the IDE to connect to a specified Gmail account. -->
+ The connection is made via settings that you specify in the IDE's Options window.
+ Once the IDE has established contact with a Gmail account, it displays the number of newly received e-mails and the percentage of
+ the mailbox that is in use. Then it displays the subject lines of the new e-mails in the toolbar, one at a time, as shown below:
+
+<p><img src="../images/tutorials/gmail/finalgmail.png" alt="Final result 1">
+
+<p>You use
+ the two arrow buttons to rotate sequentially between the headers of the newly received e-mails.
+
+<p>The IDE's Options window plays a central role in the Gmail Checker module. In this tutorial, you add a new panel to
+ the Options window, as shown below:
+
+<p><img src="../images/tutorials/gmail/finalgmail2.png" alt="Final result 2">
+
+<p> The new panel lets you specify settings such as the Gmail account name, password, proxy address, port number, 
+ duration of automatic checks performed by the module, duration that the rotation buttons stop between headers, and whether 
+ a sound is made when e-mails are received or headers are rotated.
+
+
+<p>The following topics are covered in this tutorial:</p>
+<ul>
+  <li><a href="#gettingtoknowthesample">Getting to Know the Sample</a></li>
+  <ul>
+  <li><a href="#installing-software">Installing the Software</a></li>
+<li><a href="#installing-sample">Installing the Sample</a></li>
+  <li><a href="#introducing-sample">Introducing the Sample</a></li>	
+  </ul>
+  <li><a href="#settingupthemoduleproject">Setting Up the Module Project</a></li>
+  <ul>
+<li><a href="#providingaccesstothesources">Providing Access to the NetBeans IDE Sources</a></li>
+  <li><a href="#creatingthemodulesuiteproject">Creating the Module Suite</a></li>
+<li><a href="#creatingthelibrarywrappermoduleprojects">Creating the Library Wrapper Module Projects</a></li>
+  <li><a href="#creatingthemoduleproject">Creating the Module Project</a></li>
+  </ul>
+  <li><a href="#creatingthemainfiles">Creating the Helper Classes</a></li>
+  <ul>
+    <li><a href="#GmailCountUsage.java">GmailCountUsage.java</a>
+    <li><a href="#GCheckSetting.java">GCheckSetting.java</a>
+   <li><a href="#GSettingUtil.java">GSettingUtil.java</a>
+<li><a href="#GmailHelper.java">GmailHelper.java</a></ul>
+<li><a href="#creatingthetoolbar">Creating the Toolbar</a></li>
+<ul>
+<li><a href="#designing">Designing the Gmail Checker</a></li>
+  <li><a href="#checking">Checking for E-Mail</a></li>
+<li><a href="#displaying">Displaying E-Mail Headers</a></li>
+  <li><a href="#scrolling">Scrolling between E-Mail Headers</a></li>
+  <li><a href="#playing">Playing Sounds</a></li>
+ <li><a href="#embedding">Embedding the JPanel in the IDE's Toolbar</a></li>
+  </ul>
+<li><a href="#creatingtheoptionswindow">Creating the Options Panel</a></li>
+<ul>
+<li><a href="#designingtheoptionspanel">Designing the Options Panel</a></li>
+  <li><a href="#settingapropertychangeevent">Setting a PropertyChange Event</a></li>
+<li><a href="#populatingtheoptionspanel">Populating the Options Panel</a></li>
+  <li><a href="#savingtheoptionspanel">Saving the Options Panel</a></li>
+ <li><a href="#embeddingtheoptionspanel">Embedding the Options Panel in the IDE's Options Window</a></li>
+  </ul>
+<li><a href="#registering">Registering the Gmail Checker in the NetBeans System Filesystem</a></li>
+<li><a href="#building">Building and Installing the Module</a></li>
+<ul>
+  <li><a href="#install-plugin">Installing the Module</a></li>
+<li><a href="#sharing">Creating a Shareable Module Binary (NBM File)</a></li></ul>
+
+</ul>
+<p><a name="top"></a>Once the software is installed, this tutorial can be completed in 60 minutes.
+
+<p>For more information on creating NetBeans plug-in modules, see the <a href="https://platform.netbeans.org/index.html">
+NetBeans Development Project home</a> on the NetBeans website. If you have questions, visit the 
+ <a href="http://wiki.netbeans.org/wiki/view/NetBeansDeveloperFAQ">NetBeans Developer FAQ</a> or use the feedback link
+ at the top of this page.</p>
+
+<br />
+
+<!-- ===================================================================================== -->
+<h2><a name="gettingtoknowthesample"></a>Getting to Know the Sample</h2>
+<p>Before you start writing the module, you have to make sure you have all of the necessary software.
+ In addition, you might want to play with the sample before building it yourself.</p>
+<div class="indent">
+
+ <h3 class="tutorial"><a name="installing-software"></a>Installing the Software</h3>
+   
+    
+      <p>Before you begin, you need to install the following software on your 
+        computer:</p>
+<ul>
+     <li>NetBeans IDE 5.x (<a href="http://www.netbeans.info/downloads/download.php?a=n&p=1">download</a>)</li>
+    
+    <li>Java Standard Development Kit (JDK&trade;) version 
+      1.4.2 (<a href="http://java.sun.com/j2se/1.4.2/download.html">download</a>) 
+      or 5.0 (<a href="http://java.sun.com/j2se/1.5.0/download.jsp">download</a>)</li>
+
+  <li>Archive with the libraries, sound files, and icons that are used by the Gmail Checker module
+  (<a href="https://netbeans.org/files/documents/4/654/GmailCheckerArchive.zip">download</a>)</li>
+  </ul>   
+
+    <h3 class="tutorial"><a name="installing-sample"></a>Installing the Sample</h3>
+<p>Take the following steps to install the sample:
+<ol><p><li>Unzip the <a href="https://netbeans.org/files/documents/4/658/gmail.zip">attached file</a>.
+<p><li>In the IDE, choose File &gt; Open Project and browse to the folder that contains the unzipped file.
+ Open the five module projects. They should look as follows:
+<p><img src="../images/tutorials/gmail/projects-window-final.png" alt="Final Projects window">
+<p><li>Right-click the project node and choose Install/Reload in Target Platform. The target
+ platform opens and the module is installed.</ol>
+
+ <h3 class="tutorial"><a name="introducing-sample"></a>Introducing the Sample</h3>
+<ol>
+<p><li>Choose Tools &gt; Options. In the Options window, click Gmail Checker in the left sidebar.
+<p><li>Set your preferences and then click OK.
+
+<p>When you exit the Options window, you are prompted to let the module save your changed settings.
+
+<p><li>In the IDE's toolbar, click on the "No Active Connection or Connection Is Not Usable" text:
+
+<p><img src="../images/tutorials/gmail/gmail1.png" alt="gmail 1">
+
+<p>The text changes to "Connecting to Gmail":
+
+<p><img src="../images/tutorials/gmail/gmail2.png" alt="gmail 2">
+
+<p>And a progress bar appears in the bottom right hand corner of the IDE:
+
+<p><img src="../images/tutorials/gmail/gmail5.png" alt="gmail 5">
+
+<p>If the connection fails, the text reverts to
+"No Active Connection or Connection Is Not Usable". If this happens, go back to the Options window
+ and correct your settings. For example, if you are behind a corporate firewall, set a proxy host
+ and proxy port number in the Gmail Checker panel.
+
+<p><li>When the Gmail Checker module successfully accesses Gmail, the text in the toolbar quickly
+ displays the percentage of the e-mail account that is in use, together with the number of new e-mails:
+
+<p><img src="../images/tutorials/gmail/gmail3.png" alt="gmail 3">
+
+<p>Then the text in the toolbar changes to show the subject line of the first unread e-mail found in the account's inbox. Use the left and right buttons
+ to scroll from subject line to subject line:
+
+<p><img src="../images/tutorials/gmail/gmail4.png" alt="gmail 4">
+
+<p>If you enabled sounds in the Options window, you hear
+ a small sound whenever you scroll from one header to another and also whenever a new e-mail appears
+ in the e-mail account.
+
+
+
+</ol>
+
+<p>Now that you know what the user interface of the Gmail Checker plug-in module looks like,
+ let's create the module from scratch.
+
+
+
+
+</div>
+      <br />
+
+<!-- ===================================================================================== -->
+<h2><a name="settingupthemoduleproject"></a>Setting Up the Module Project</h2>
+<p>Before you start writing the module, you have to make sure you
+  that your project is set up correctly. </p>
+<div class="indent">
+
+<h3 class="tutorial"><a name="providingaccesstothesources"></a>Providing Access to the NetBeans IDE Sources</h3>
+<p>When you make the IDE's sources available to the NetBeans Platform Manager,
+ you can access the IDE's source files and Javadoc from the Source Editor. This simplifies
+ plug-in module development, because it enables you to very quickly find out information about the classes and methods
+ that you are implementing.
+      <ol>
+<p><li>If you have not already done so, download the sources <a href="http://www.netbeans.info/downloads/download.php?type=5.0b&p=1&a=bsd&os=1&lang=1&rv=5.0&b_bt=1">here</a>.
+	<p><li>Choose Tools &gt; NetBeans Platform Manager.
+	<p><li>In the Sources tab, click Add ZIP/Folder, and browse to the ZIP file that contains the NetBeans IDE sources,
+ as shown below:
+<p><img src="../images/tutorials/refactoring/platform_manager.png" alt="NetBeans Platform Manager.">
+<p><li>Click Close.
+</ol>
+
+
+<h3 class="tutorial"><a name="creatingthemodulesuiteproject"></a>Creating the Module Suite Project</h3>
+
+<p>Module suite projects enable you to deploy multiple modules in one unit. In this tutorial, you create
+ a collection of modules&#8212;the <tt>gmailchecker</tt> module that provides the user interface and connection
+ to Gmail accounts, the <tt><a href="http://g4j.sourceforge.net/">g4j</a></tt> module that provides the APIs for communicating with Gmail, 
+ the <tt><a href="http://jakarta.apache.org/commons/httpclient/">commons-httpclient</a></tt> module that provides
+ HTTP functionality, and the <tt><a href="http://jakarta.apache.org/commons/codec/">commons-codec</a></tt> module
+ that provides implementations of common encoders and decoders. This is how the modules interact with each other and
+ with the NetBeans platform:
+
+<p><img src="../images/tutorials/gmail/diagram.png" alt="Diagram.">
+
+<p>Do the following to create the module suite project:
+
+<ol>
+	<p><li>Choose File &gt; New Project. Under Categories, select NetBeans Plug-in Modules. Under projects, 
+ select Module Suite Project and click Next.</li>
+	<p><li>In the Name and Location panel, type <tt>gmailsuite</tt> in Project Name.
+ Change the
+Project Location to any directory on your computer, such as <tt>c:\mymodules</tt>. Leave the Set as Main Project checkbox selected.
+ Click Finish.
+
+      </ol>
+
+<p>The new module suite project opens in the IDE. It contains one node in the Project window. This node, the Modules node,
+ is for manually adding module projects to the module suite project. When you use the Module Project wizard or the
+ Library Wrapper Module Project wizard, the module that you create can automatically be added to the module suite project.
+
+<h3 class="tutorial"><a name="creatingthelibrarywrappermoduleprojects"></a>Creating the Library Wrapper Module Projects</h3>
+
+<p>Modules that use an external library use a <i>wrapper module</i> to make classes from that library available at runtime.
+ A wrapper module is a module that acts as a proxy to turn a library into a NetBeans module.
+ This is the way you let your code use third party libraries. It serves the same function that 
+ running with <tt>java -cp</tt> or setting <tt>CLASS_PATH</tt> would do in a smaller Java application.
+
+<p>For each of the three libraries in the module collection, that is, <tt>commons-code.jar</tt>, <tt>commons-httpclient.jar</tt>,
+ and <tt>g4j.jar</tt>, repeat the steps below. You downloaded the three libraries as part of the Gmail Checker Archive at the start
+ of this tutorial. At the end of this subsection, you should have <i>three</i> library wrapper module projects.
+
+  <ol>
+	<p><li>Choose File &gt; New Project. Under Categories, select NetBeans Plug-in Modules. Under projects, 
+ select Library Wrapper Module Project and click Next.</li>
+	<p><li>In the Name and Location panel, browse to the library JAR file in Library.
+<p><li>Leave the License text field empty. If you intend to distribute the completed product, you should
+ include the external library's license file.
+  <p><li>Click Next, click Next again, and then click Finish.
+
+      
+
+<p>In the Files window, you should now see the following:
+
+<p><img src="../images/tutorials/gmail/module-suite-in-files-window.png" alt="module suite">
+
+<p><li>The library wrapper module projects depend on each other. For each project, right-click the project node, choose
+ Properties, and then click Libraries in the Project Properties dialog box. Click Add in the upper part of the dialog box
+ and add module dependencies as follows:
+
+<p><table width="76%" border="1">
+
+    <tbody><tr>
+      <td>
+	<div align="left"><b>Module</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Dependency</b></div>
+
+      </td>
+
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt>commons-codec</tt></td>
+      <td><tt>Commons Logging Integration</tt></td>
+
+    </tr>
+<tr>
+      <td align="left" valign="top"><tt>commons-httpclient</tt></td>
+      <td><tt>commons-codec</tt>, <tt>Commons Logging Integration</tt></td>
+
+    </tr>
+    <tr>
+	    <td align="left" valign="top"><tt>g4j</tt></td>
+
+    <td><tt>commons-codec</tt>, <tt>Commons Logging Integration</tt>, <tt>commons-httpclient</tt></td>
+ 
+
+    </tr>
+
+
+    </tbody>
+  </table>
+
+<p><li>For each project, expand the Important Files node in the Projects window, double-click the Project Metadata node, and note that the APIs you selected have been
+ declared as module dependencies.</ol>
+
+<h3 class="tutorial"><a name="creatingthemoduleproject"></a>Creating the Module Project</h3>
+
+<p>Now you need a module project, to contain the actual code you're going to write.
+
+      <ol>
+	<p><li>Choose File &gt; New Project. Under Categories, select NetBeans Plug-in Modules. Under projects, 
+ select Module Project and click Next.</li>
+	<p><li>In the Name and Location panel, type <tt>gmailchecker</tt> in Project Name.
+ Change the
+Project Location to any directory on your computer, such as <tt>c:\mymodules</tt>. Leave the Add to Modulde Suite radio button selected 
+and select the Set as Main Project checkbox.
+ Click Next.
+
+ <p><li>In the Basic Module Configuration panel, change <tt>yourorghere</tt> in Code Name Base to <tt>org.myorg</tt>
+  so that the whole name is <tt>org.myorg.gmailchecker</tt>. Leave <tt>gmailchecker</tt> as the Module Display Name.
+ Leave the location of the localizing bundle and XML layer, so that they will be stored in a
+ package with the name <tt>org.myorg.gmailchecker</tt>. Click Finish.
+
+<p> The IDE creates the <tt>gmailchecker</tt>
+project. The project contains all of your sources and
+project metadata, such as the project's Ant build script. The project
+opens in the IDE. You can view its logical structure in the Projects window (Ctrl-1) and its
+file structure in the Files window (Ctrl-2). 
+
+<p>You will need to subclass several classes that belong to <a href="https://netbeans.org/download/dev/javadoc/">NetBeans APIs</a>. 
+ Each has to be declared as a module dependency. Just as you did for the library wrapper module projects, 
+ use the Project Properties dialog box for this purpose, as described in the next steps.
+ 
+	  <li>In the Projects window, right-click the <tt>gmailchecker</tt> project node and choose Properties.
+ In the Project Properties dialog box, click Libraries.</li>
+	
+ <p><li>For each of the following APIs, click "Add...", 
+ select the name from the Module list, and then click OK to confirm it:
+
+<p><img src="../images/tutorials/gmail/projprops.png" alt="Project Properties dialog box.">
+<p><li>Click OK to exit the Project Properties dialog box.
+<p><li>In the Projects window, expand the Important Files node, double-click the Project Metadata node, and note that the APIs you selected have been
+ declared as Module dependencies:</li>
+
+<pre class=examplecode>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project xmlns="https://netbeans.org/ns/project/1"&gt;
+    &lt;type&gt;org.netbeans.modules.apisupport.project&lt;/type&gt;
+    &lt;configuration&gt;
+        &lt;data xmlns="https://netbeans.org/ns/nb-module-project/2"&gt;
+            &lt;code-name-base&gt;org.myorg.gmailchecker&lt;/code-name-base&gt;
+            &lt;suite-component/&gt;
+            &lt;module-dependencies&gt;
+                &lt;dependency&gt;
+                    &lt;code-name-base&gt;org.jdesktop.layout&lt;/code-name-base&gt;
+                    &lt;build-prerequisite/&gt;
+                    &lt;compile-dependency/&gt;
+                    &lt;run-dependency&gt;
+                        &lt;release-version&gt;1&lt;/release-version&gt;
+                        &lt;specification-version&gt;1.3&lt;/specification-version&gt;
+                    &lt;/run-dependency&gt;
+                &lt;/dependency&gt;
+                &lt;dependency&gt;
+                    &lt;code-name-base&gt;org.netbeans.api.progress&lt;/code-name-base&gt;
+                    &lt;build-prerequisite/&gt;
+                    &lt;compile-dependency/&gt;
+                    &lt;run-dependency&gt;
+                        &lt;release-version&gt;1&lt;/release-version&gt;
+                        &lt;specification-version&gt;1.4&lt;/specification-version&gt;
+                    &lt;/run-dependency&gt;
+                &lt;/dependency&gt;
+                &lt;dependency&gt;
+                    &lt;code-name-base&gt;org.netbeans.modules.options.api&lt;/code-name-base&gt;
+                    &lt;build-prerequisite/&gt;
+                    &lt;compile-dependency/&gt;
+                    &lt;run-dependency&gt;
+                        &lt;release-version&gt;0&lt;/release-version&gt;
+                        &lt;specification-version&gt;1.2&lt;/specification-version&gt;
+                    &lt;/run-dependency&gt;
+                &lt;/dependency&gt;
+                &lt;dependency&gt;
+                    &lt;code-name-base&gt;org.openide.awt&lt;/code-name-base&gt;
+                    &lt;build-prerequisite/&gt;
+                    &lt;compile-dependency/&gt;
+                    &lt;run-dependency&gt;
+                        &lt;specification-version&gt;6.7&lt;/specification-version&gt;
+                    &lt;/run-dependency&gt;
+                &lt;/dependency&gt;
+                &lt;dependency&gt;
+                    &lt;code-name-base&gt;org.openide.dialogs&lt;/code-name-base&gt;
+                    &lt;build-prerequisite/&gt;
+                    &lt;compile-dependency/&gt;
+                    &lt;run-dependency&gt;
+                        &lt;specification-version&gt;6.4&lt;/specification-version&gt;
+                    &lt;/run-dependency&gt;
+                &lt;/dependency&gt;
+                &lt;dependency&gt;
+                    &lt;code-name-base&gt;org.openide.filesystems&lt;/code-name-base&gt;
+                    &lt;build-prerequisite/&gt;
+                    &lt;compile-dependency/&gt;
+                    &lt;run-dependency&gt;
+                        &lt;specification-version&gt;6.4&lt;/specification-version&gt;
+                    &lt;/run-dependency&gt;
+                &lt;/dependency&gt;
+                &lt;dependency&gt;
+                    &lt;code-name-base&gt;org.openide.loaders&lt;/code-name-base&gt;
+                    &lt;build-prerequisite/&gt;
+                    &lt;compile-dependency/&gt;
+                    &lt;run-dependency&gt;
+                        &lt;specification-version&gt;5.9&lt;/specification-version&gt;
+                    &lt;/run-dependency&gt;
+                &lt;/dependency&gt;
+                &lt;dependency&gt;
+                    &lt;code-name-base&gt;org.openide.util&lt;/code-name-base&gt;
+                    &lt;build-prerequisite/&gt;
+                    &lt;compile-dependency/&gt;
+                    &lt;run-dependency&gt;
+                        &lt;specification-version&gt;6.7&lt;/specification-version&gt;
+                    &lt;/run-dependency&gt;
+                &lt;/dependency&gt;
+                &lt;dependency&gt;
+                    &lt;code-name-base&gt;siuying.gm&lt;/code-name-base&gt;
+                    &lt;build-prerequisite/&gt;
+                    &lt;compile-dependency/&gt;
+                    &lt;run-dependency&gt;
+                        &lt;specification-version&gt;1.0&lt;/specification-version&gt;
+                    &lt;/run-dependency&gt;
+                &lt;/dependency&gt;
+            &lt;/module-dependencies&gt;
+            &lt;public-packages/&gt;
+        &lt;/data&gt;
+    &lt;/configuration&gt;
+&lt;/project&gt;</pre>
+
+ 
+  </ol>
+
+</div>
+      <br />
+
+<!-- ===================================================================================== -->
+  
+<h2><a name="creating-the-refactoring-logic"></a>Creating the Helper Classes</h2>
+<p>In this section, you create four helper classes. These classes provide utility methods, such as getters and setters. They
+ are all housed in the <tt>org.myorg.gmailchecker.common</tt> package.
+
+<p><table width="76%" border="1">
+
+    <tbody><tr>
+      <td>
+	<div align="left"><b>File</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Description</b></div>
+
+      </td>
+<td>
+	<div align="left"><b>Used By</b></div>
+
+      </td>
+    </tr>
+    <tr>
+      <td align="left" valign="top"><tt>GmailCountUsage.java</tt></td>
+      <td>Retrieves a Gmail account's usage percentage and number of new e-mails.</td>
+<td><tt>GmailHelper.java</tt><br>
+<tt>GChecker.java</tt></td>
+    </tr>
+<tr>
+      <td align="left" valign="top"><tt>GCheckSetting.java</tt></td>
+      <td>Provides serializable settings that the user defines in the Options window.</td>
+<td><tt>GSettingUtil.java</tt><br>
+<tt>GChecker.java</tt><br>
+<tt>GCheckCustomizer.java</tt></td>
+    </tr>
+    <tr>
+	    <td align="left" valign="top"><tt>GSettingUtil.java</tt></td>
+
+      <td>Saves and restores the settings defined in the Options window.
+
+      
+      </td>
+ <td><tt>GChecker.java</tt><br>
+<tt>GGCheckerOptionsPanelController.java</tt></td>
+
+    </tr>
+  <tr>
+	    <td align="left" valign="top"><tt>GmailHelper.java</tt></td>
+
+      <td>Connects to Gmail and retrieves each new e-mail's subject line, count, and usage percentage.
+
+      
+      </td>
+<td><tt>GChecker.java</tt></td>
+    </tr>
+
+    </tbody>
+  </table>
+
+<p>Below, you are told how to create the files. In each case, a link is provided to the source code.
+
+<h3 class="tutorial"><a name="GmailCountUsage.java"></a>GmailCountUsage.java</h3>
+
+
+<ol>
+<p><li><b>Create the file.</b> Right-click the <tt>org.myorg.gmailchecker</tt> package node, choose New &gt; Java Class,
+ and type <tt>GmailCountUsage</tt> in Class Name. Change the Package name to  <tt>org.myorg.gmailchecker.common</tt>.
+  Click Finish. The new Java class opens in the Source Editor.
+ Replace the default code with code found <a href="https://netbeans.org/files/documents/4/645/GmailCountUsage.java">here</a>.</li>
+
+<p><li><b>Understand the file.</b> This Java class is responsible for providing access to
+ the usage percentage of the e-mail account and the number of new e-mails in the account. Getters
+ and setters are provided for each of the properties:
+<p>
+   <ul><li>newMailCount
+    <li>usage</ul> 
+
+<ul>
+
+</ol>
+
+<h3 class="tutorial"><a name="GCheckSetting.java"></a>GCheckSetting.java</h3>
+
+
+<ol>
+<p><li><b>Create the file.</b> Right-click the <tt>org.myorg.gmailchecker.common</tt> package node, choose New &gt; Java Class,
+ and type <tt>GCheckSetting</tt> in Class Name. 
+  Click Finish. The new Java class opens in the Source Editor.
+ Replace the default code with code found <a href="https://netbeans.org/files/documents/4/644/GCheckSetting.java">here</a>.</li>
+
+<p><li><b>Understand the file.</b> This Java class is responsible for providing access to
+  all the settings that the user can define in the Options window. Getters and setters are provided
+ for each of the properties:
+<p>
+   <ul><li>userName
+    <li>password
+    <li>proxy
+    <li>useProxy
+    <li>checkMailPriod
+    <li>delayBetweenDiplay
+   <li>delayBeforeStartCheck
+    <li>port
+    <li>voiceOn
+    <li>showUnreadMails</ul>
+
+
+</ol>
+
+<h3 class="tutorial"><a name="GSettingUtil.java"></a>GSettingUtil.java</h3>
+
+
+<ol>
+<p><li><b>Create the file.</b> Right-click the <tt>org.myorg.gmailchecker.common</tt> package node, choose New &gt; Java Class,
+ and type <tt>GSettingUtil</tt> in Class Name. Click Finish. The new Java class opens in the Source Editor.
+ Replace the default code with code found <a href="https://netbeans.org/files/documents/4/647/GSettingUtil.java">here</a>.</li>
+
+<p><li><b>Understand the file.</b> This Java class is responsible for saving and retrieving options that the
+ user sets in the Options window. In this tutorial, you store settings in an external file. Note that 
+ a more typical NetBeans approach is to use
+ the <a href="https://netbeans.org/download/dev/javadoc/org-openide-options/overview-summary.html">NetBeans Options Settings API</a>.These are the methods used in this class:
+
+<p><pre class=examplecode>public GSettingUtil() {
+    folderObject= Repository.getDefault().getDefaultFileSystem().getRoot().getFileObject("Settings");
+    if (folderObject==null){
+        try {
+            folderObject=Repository.getDefault().getDefaultFileSystem().getRoot().createFolder("Settings");
+            storeSetting(gsetting);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            // TODO file can not be created , do something about it
+        }
+    }
+}
+
+public boolean storeSetting(GCheckSetting settings){
+    try {
+        if (folderObject.getFileObject("Gcheck","Cfg")==null){
+            settingFile= folderObject.createData("Gcheck","Cfg");
+        }
+        settingFile= folderObject.getFileObject("Gcheck","Cfg")           ;
+        lock = settingFile.lock();
+        ObjectOutputStream objectOutStr = new ObjectOutputStream(settingFile.getOutputStream(lock));
+        objectOutStr.writeObject(settings);
+        objectOutStr.close();
+        lock.releaseLock();
+    } catch (IOException ex) {
+        // TODO file can not be created , do something about it
+        ex.printStackTrace();
+        return false;
+    }
+    return true;
+}
+
+public GCheckSetting retrieveSetting(){
+    settingFile= folderObject.getFileObject("Gcheck","Cfg");
+    try {
+        ObjectInputStream objectInStr = new ObjectInputStream(settingFile.getInputStream());
+        gsetting = (GCheckSetting) objectInStr.readObject();
+        objectInStr.close();
+    } catch (IOException ex) {
+        ex.printStackTrace();
+        return null;
+    } catch (ClassNotFoundException ex) {
+        ex.printStackTrace();
+        return null;
+    }
+    return gsetting;
+}</pre>
+
+<p>The Constructor checks to see that the Settings folder is present. If it is not present, the Constructor
+ creates the folder. The Constructor stores the settings in the newly created folder, which prevents subsequent
+ retrieve and save calls from raising an NPE exception. The <tt>storeSetting()</tt> method stores the parameters
+ that are passed to it. This method is used from the Options window. The <tt>storeSetting()</tt> method checks whether the <tt>Gcheck.Cfg</tt>
+ file exists or not. If the file does not exist, the method creates it. If the file exists, the method tries to
+ initialize a <tt>FileObject</tt> for it. Next, a lock is placed on the file, to make sure that the method
+ has exclusive access. An output stream is then initiated for the file. This enables the object to be
+ written to the file. Finally, the output stream is closed and the lock is released. 
+ <p>The <tt>retrieveSetting()</tt> method returns a <tt>GCheckSetting</tt> object. This object is leveraged
+ by the user interface. The method creates a <tt>FileObject</tt> on <tt>GCheck.cfg</tt>, initiates an input stream, 
+ and reads the settings into the <tt>GCheckSetting</tt> object. 
+
+</ol>
+
+<h3 class="tutorial"><a name="GmailHelper.java"></a>GmailHelper.java</h3>
+
+
+<ol>
+<p><li><b>Create the file.</b> Right-click the <tt>org.myorg.gmailchecker.common</tt> package node, choose New &gt; Java Class,
+ and type <tt>GSettingUtil</tt> in Class Name. 
+  Click Finish. The new Java class opens in the Source Editor.
+ Replace the default code with code found <a href="https://netbeans.org/files/documents/4/646/GmailHelper.java">here</a>.</li>
+
+<p><li><b>Understand the file.</b> This Java class is responsible for making
+ a connection to Gmail. The methods <tt>connect()</tt>, <tt>getCountUsage()</tt>, and <tt>getMailsInfo()</tt>
+ do most of the work here:
+
+<p><pre class=examplecode>public boolean connect(){
+    if (!proxyHost.equalsIgnoreCase("No Proxy"))
+        connector.setProxy(proxyHost,port)    ;
+    return connector.connect();
+}
+
+public GmailCountUsage getCountUsage(){
+    int totalnewMessage = 0;
+    int percent=0;
+    boolean problematic=false;
+    if (connector.isConnected())    {
+        try {
+            res=connector.request(GMConstants.GM_REQ_STANDARD,"Inbox","");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            problematic=true;
+        } catch (ParsePacketException ex) {
+            problematic=true;
+            ex.printStackTrace();
+        } catch(NullPointerException npe){
+            npe.printStackTrace();
+        }
+        totalnewMessage =Integer.parseInt( (String) res.getGminfo().get("stdbox.inbox") );
+        percent= Integer.parseInt( ( (String) res.getGminfo().get("quota.percent")).replaceAll("%", ""));
+        return  new GmailCountUsage(totalnewMessage,percent,false);
+    } else     return  new GmailCountUsage(-1,-1,true);
+}
+
+public ArrayList getMailsInfo(){
+    return res.getGMThreads();
+}</pre>
+
+<p>The <tt>connect()</tt> method initiates the <a href="http://jsourcery.com/output/sourceforge/g4j/0.3.12/siuying/gm/GMConnector.html">GMConnector</a>
+ object. The <tt>getCountUsage()</tt> method retrieves the total count of the new e-mails received. It also retrieves
+ the total usage percentage of the mailbox. The <tt>getMailsInfo()</tt> method returns an <tt>ArryList</tt>.
+ The list contains all the new e-mail headers. Each header is stored in an object of type <a href="http://jsourcery.com/output/sourceforge/g4j/0.3.12/siuying/gm/structure/GMThread.html">GMThread</a>.
+ This object holds information about the e-mails. The <tt>ArryList</tt> is used to retrieve the subjects of the new e-mails and
+ to display them to the user.</ol></div>
+     
+
+<h2><a name="creatingthetoolbar"></a>Creating the Toolbar</h2>
+
+<p>The Gmail Checker toolbar is implemented in the same was as the Google toolbar described in
+ <a href="https://platform.netbeans.org/tutorials/nbm-google.html">NetBeans Google Toolbar Module Tutorial</a>&#8212;first, you
+ create an action that is registered in the IDE as a toolbar. Then, you override the action's
+ <a href="https://netbeans.org/project/www/download/dev/javadoc/OpenAPIs/org/openide/util/actions/Presenter.Toolbar.html#getToolbarPresenter()"><tt>getToolbarPresenter()</tt></a> method so that the <tt>JPanel</tt> that defines the Gmail Checker is presented in the toolbar, instead of an icon. The toolbar is responsible
+ for the following:
+
+<ul>
+<li>Retrieving the settings from the setting file, using <tt>GCheckUtil.java</tt>.
+<li>Connecting to Gmail, using <tt>GmailHelper</tt>. It should do this periodically. The length of the pause between checks is stored in the settings file.
+<li>Waiting for a few seconds before starting the first, post start-up, e-mail check.
+<li>Showing the total number of new e-mails and usage percentage to the user.
+<li>Rotating the subjects in the toolbar. It should be able to do this automatically, based on the period of time specified in the settings file. It should also be able to do this manually, when the user clicks the left or right button.
+<li>Playing a sound, based on settings that are stored in the setting file, if new e-mails are found in the e-mail account and
+ if the user rotates between subjects by using the left and right buttons.</ul>
+
+<p>You can choose to follow the instructions below, or you can replace the default code with code
+  found <a href="https://netbeans.org/files/documents/4/649/Gchecker.java">here</a>. If you copy
+ the content from the link, it is still a good idea to read the code described below, so that you
+ understand how things work and so that you know where problems might be occurring if you need to debug.</li>
+
+<div class="indent">
+
+	<h3 class="tutorial"><a name="designing"></a>Designing the Gmail Checker</h3>
+
+<ol>
+<p><li><b>Create the file.</b> Right-click the <tt>org.myorg.gmailchecker</tt> package node, choose New &gt; File/Folder, and
+ then select JPanel Form from the Java GUI Forms category.
+ Type <tt>Gchecker</tt> in Class Name. Change the package name to <tt>org.myorg.gmailchecker.gui</tt>.
+  Click Finish. The new Java class opens in the Source Editor.
+
+
+
+<p><li><b>Understand the file.</b> This Java class is responsible for interaction with the user. The methods
+ are discussed in the following subsections.
+
+
+<p><li><b>Resize the JPanel and add user interface components.</b> 
+ When you design the toolbar, you use the NetBeans IDE 5.x GUI Builder (also known as Matisse). In NetBeans IDE 5.x, the IDE's
+ GUI Builder is revamped to make it more powerful and intuitive, allowing you to build professional-looking GUIs without 
+ having an intimate understanding of layout managers. The IDE's GUI Builder eliminates the difficulties of building GUIs, 
+ enabling you to lay out your forms by simply drag-and-dropping components where you want them. The GUI Builder is introduced in the
+ <a href="https://netbeans.org/kb/50/quickstart-gui.html">GUI Building in NetBeans IDE</a> tutorial.
+
+<p>The end product of this stage of the module-building process is that you should have a <tt>JPanel</tt> that looks
+ similar to the following:
+
+<p><img src="../images/tutorials/gmail/toolbar.png" alt="Toolbar">
+
+<p>The icons in the illustration above are from the Gmail Checker Archive that you downloaded at the start of this tutorial.
+ In your filesystem, move the <tt>resources</tt> folder that you find in the Gmail Checker Archive into the <tt>org.myorg.gmailchecker</tt>
+ package.
+
+<p>It is important that the components that you define in the toolbar 	have the following names:
+
+<ul>
+<li><tt>leftButton</tt>
+<li><tt>rightButton</tt>
+<li><tt>displayText</tt>
+</ul>
+
+<p>For the <tt>JLabel</tt>, define the <tt>text</tt> property, as follows:
+
+<p><img src="../images/tutorials/gmail/jlabel.png" alt="Toolbar">
+
+<p>By using HTML tags, you can very easily format the display text of a component in your application. In this case,
+ this is the content of the text property:
+
+
+<p><pre class=examplecode>&lt;html&gt;Gmail checker Module.... &lt;b&gt;Disconnected&lt;/b&gt;&lt;/html&gt;</pre>
+
+
+<p>For the <tt>icon</tt> property of each component, set the image source type to Classpath, as follows:
+
+<p><img src="../images/tutorials/gmail/jbutton.png" alt="Toolbar">
+
+<p><li><b>Declare the variables and constants.</b> Declare the following at the top of the class:
+
+<p><pre class=examplecode>//&lt;editor-fold defaultstate="collapsed" desc="variables-consts"&gt;
+ArrayList eMailsInformation = null;
+GmailCountUsage gmcu=null;
+GmailHelper gmHelper=null;
+GCheckSetting settings =null;
+GSettingUtil settingUtil=null;
+org.openide.util.RequestProcessor.Task tskGm = null;
+int CurrentMailSubject=0;
+Timer mailcheckerTimer;//= new java.util.Timer();
+Timer ShowSubjectDurationTimer; //= new java.util.Timer();
+boolean checkIsUnderGo=false;
+
+private String Connecting_to="&lt;html&gt;&lt;b&gt;Connecting To Gmail...&lt;/b&gt;&lt;/html&gt;";
+private String Retrieving_user_count_info="&lt;html&gt;&lt;b&gt;Retrieving Usage and Count Information...&lt;/b&gt;&lt;/html&gt;";
+private String usagePercent = "Usage Percent Is : ";
+private String newMailsCount = "Total New Mails Is : ";
+private String No_active_connection="&lt;html&gt;&lt;b&gt;No Active Connection or Connection Is Not Usable...&lt;/b&gt;&lt;/html&gt;";
+private String InitiateString ="&lt;html&gt;Gmail checker Module.... &lt;b&gt;Disconnected&lt;/b&gt;&lt;/HTML&gt;";
+private String ModuletooltipString="Gmail Checker Module.....";
+private String Retrieving_emails_info="&lt;html&gt;&lt;b&gt;Retrieving e-mail Headers...&lt;/b&gt;&lt;/html&gt;";
+//&lt;/editor-fold&gt;</pre>
+
+</ol>
+
+
+
+
+<h3 class="tutorial"><a name="checking"></a>Checking for E-Mail</h3>
+
+<p>The Gmail Checker module provides a variety of ways in which e-mail checks are performed. When the IDE first starts up, 
+ a timer is started. When the period of time that the user previously specified in the Options window has passed, the first automatic e-mail check
+ is performed. The timing of subsequent automatic e-mail checks can also be specified in the Options window. In addition, the user
+ uses the left button and right button to manually force the IDE to perform an e-mail check.
+
+<ol>
+
+<li>The <tt>DoCheckMail()</tt> method makes the connection to Gmail. It retrieves
+  information about new e-mails and their subject lines. This method uses the toolbar label
+ to show what the Gmail Checker module is doing and it uses the <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-api-progress/overview-summary.html">Progress API</a> to display the progress of the job in the IDE's progress bar.
+
+<p>The method defines 3 <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/lang/Runnable.html">runnables</a>.
+ Each runnable calls one of the methods in the <tt>org.myorg.gmailchecker.common.GmailHelper</tt> class:
+
+<ul>
+
+<li><tt>connectRun()</tt> calls <tt>connect()</tt>.
+<li><tt>CheckUsageCount()</tt> calls <tt>getCountUsage()</tt>.
+<li><tt>GetHeader()</tt> calls <tt>getMailsInfo()</tt>.
+</ul>
+
+<p>Since the Progress API is used to show the progress of the Gmail Checker's tasks in the IDE's progress bar, you
+ need to comply with the requirements of the API. This API requires that the tasks be runnables.
+ In each runnable, some of the class's variables are set and in a later runnable, the variables are used to continue the task.
+
+<p>Add the <tt>DoCheckMail()</tt> method to the class:
+
+
+<p><pre class=examplecode>public boolean DoCheckMail(){
+
+    //&lt;editor-fold defaultstate="collapsed" desc="runnables for gmhelper calling"&gt;
+    Runnable connectRun = new Runnable() {
+        public void run() {
+            gmHelper.connect();
+        }
+    };
+    Runnable CheckUsageCount = new Runnable() {
+        public void run() {
+            gmcu=gmHelper.getCountUsage();
+            if (gmcu.getNewMailCount()&gt;0) playSound("receive");
+
+        }
+    };
+    Runnable GetHeader = new Runnable() {
+        public void run() {
+            eMailsInformation=gmHelper.getMailsInfo();
+        }
+    };
+    //&lt;/editor-fold&gt;
+
+    <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-api-progress/org/netbeans/api/progress/ProgressHandle.html">ProgressHandle</a> ProgHandl = <a href="http://www.netbeans.org/download/dev/javadoc/org-netbeans-api-progress/org/netbeans/api/progress/ProgressHandleFactory.html">ProgressHandleFactory.createHandle(Connecting_to)</a>;
+    displayText.setText(Connecting_to);
+    <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-api-progress/org/netbeans/api/progress/ProgressHandle.html#start(int)">ProgHandl.start(99)</a>;
+    RequestProcessor.getDefault().post(connectRun).waitFinished();
+    displayText.setText(Retrieving_user_count_info);
+    <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-api-progress/org/netbeans/api/progress/ProgressHandle.html#progress(java.lang.String,%20int)">ProgHandl.progress(Retrieving_user_count_info,33)</a>;
+    RequestProcessor.getDefault().post(CheckUsageCount).waitFinished();
+    if(gmcu.getNewMailCount()==-1 && gmcu.getUsage()==-1 && gmcu.isProblematic()){
+        displayText.setText(No_active_connection);
+	<a href="https://netbeans.org/download/dev/javadoc/org-netbeans-api-progress/org/netbeans/api/progress/ProgressHandle.html#finish()">ProgHandl.finish()</a>;
+        return false;
+    }else{
+        displayText.setText(Retrieving_emails_info);
+	<a href="https://netbeans.org/download/dev/javadoc/org-netbeans-api-progress/org/netbeans/api/progress/ProgressHandle.html#progress(java.lang.String,%20int)">ProgHandl.progress(Retrieving_emails_info,33)</a>;
+        RequestProcessor.getDefault().post(GetHeader).waitFinished();
+	<a href="https://netbeans.org/download/dev/javadoc/org-netbeans-api-progress/org/netbeans/api/progress/ProgressHandle.html#progress(java.lang.String,%20int)">ProgHandl.progress(33)</a>;
+	<a href="https://netbeans.org/download/dev/javadoc/org-netbeans-api-progress/org/netbeans/api/progress/ProgressHandle.html#finish()">ProgHandl.finish()</a>;
+        return true;
+    }
+}</pre>
+
+
+<p>
+<li>The <tt>startCheck()</tt> method starts the work that needs to be done to
+ show the e-mail headers in the toolbar. Each time a check is performed, the settings are retrieved.
+ This enables the check to be done with the latest settings. An integer <tt>delayBeforeStartCheck</tt>
+ is passed to the method. This is one of the settings retrieved from the settings file. This setting
+ determines how long the module waits, after the IDE has started, before performing its first automatic check.
+
+<p><pre class=examplecode>public void startCheck(int delayBeforeStartCheck){
+
+    settings = settingUtil.retrieveSetting();
+    gmcu = new GmailCountUsage(0,0,false);
+    gmHelper = new GmailHelper(settings.getUserName(),settings.getPassword(),settings.getProxy(),settings.getPort(),0);
+
+    mailcheckerTimer = new java.util.Timer();
+    mailcheckerTimer.scheduleAtFixedRate(new TimerTask() {
+        public void run() {
+            checkIsUnderGo=true;
+            CurrentMailSubject=0;
+
+	    if(DoCheckMail())     ShowInfoAuto();
+        }
+    },delayBeforeStartCheck,settings.getCheckMailPriod()*60*1000);
+}</pre>
+
+<p>
+<li>The constructor sets the text and the tooltip. It initializes the settings file and
+ retrieves the settings. Finally, it calls the <tt>startCheck()</tt> method, to perform the first automatic check.
+
+<p><pre class=examplecode>public Gchecker() {
+   initComponents();
+   displayText.setText(InitiateString);
+   displayText.setToolTipText(ModuletooltipString);
+   settingUtil = new GSettingUtil();
+   settings=settingUtil.retrieveSetting();
+   startCheck(settings.getDelayBeforeStartCheck()*1000);
+}</pre>
+
+<p>
+<li>The <tt>ForceCheck()</tt> method is to enable the user to manually determine
+ when an e-mail check is performed. Later in this tutorial, you create an action that
+ you register as a menu item. The <tt>performAction()</tt> in this action calls the <tt>ForceCheck()</tt> method.
+
+<p><pre class=examplecode>public void ForceCheck(){
+    if(ShowSubjectDurationTimer!=null)        ShowSubjectDurationTimer.cancel();
+    if(mailcheckerTimer!=null) mailcheckerTimer.cancel();
+    startCheck(0);
+}</pre>
+
+
+
+<p>
+<li>The <tt>displayTextMouseClicked</tt> method provides an alternative way for the user
+ to force an e-mail check to be performed. In the Design view, right-click the <tt>displayText</tt> and choose
+ Events &gt; Mouse &gt; mouseClicked. The Source Editor opens, with the cursor at the newly
+ created <tt>displayTextMouseClicked</tt> method. Fill out the method with this code to force the
+ e-mail check to be performed when the user clicks on the label:
+
+<p><pre class=examplecode>private void displayTextMouseClicked(java.awt.event.MouseEvent evt) {                                     
+   if(ShowSubjectDurationTimer!=null)  ShowSubjectDurationTimer.cancel();
+   if(mailcheckerTimer!=null) mailcheckerTimer.cancel();
+   startCheck(0);
+}</pre>
+
+</ol>
+
+<h3 class="tutorial"><a name="displaying"></a>Displaying E-Mail Headers</h3>
+
+<p>E-mail headers are displayed in the toolbar. Each header is accompanied by a number. The number indicates
+ the order in which the new e-mails were received in the Gmail account. The lowest number was received last.
+ The display of the e-mail headers is built from three methods, as outlined below.
+
+<ol>
+
+<li>The <tt>getSubject()</tt> method gets an integer index of the email in ArrayList and return the subject.
+ It shows the usage percentage and number of new e-mails in the toolbar's label:
+
+<p><pre class=examplecode>private void setUsageCount(int count, int usage){
+    this.displayText.setText(newMailsCount+" "+count+" , "+usagePercent+usage+"%  ");
+}</pre>
+
+<p>
+<li>The <tt>getSubject()</tt> method gets a Gmail thread and returns a header.
+ The header's length is truncated when it is more than 68 characters. 
+The header of each e-mail is retrieved from <tt>eMailsInformation</tt>, which Is an <tt>ArrayList</tt> that is filled by calling 
+ <tt>GmailHelper.getMailsInfo</tt>.
+
+<p><pre class=examplecode>private String getSubject(int subjectNo ) {
+    String tempStr= ((<a href="http://g4j.sourceforge.net/doc/siuying/gm/structure/GMThread.html">GMThread</a>)(eMailsInformation.get(subjectNo))).getSubjectHtml();
+    if (tempStr.length()>68) {
+       tempStr.subSequence(0,68);return tempStr+"...";
+    }
+    else return tempStr;
+}</pre>
+
+<p>
+<li>The <tt>ShowInfoAuto()</tt> method uses the <tt>setUsageCount()</tt> method and the <tt>getSubject()</tt> method. These two methods are described above, in this subsection. The <tt>setUsageCount()</tt> method
+ shows the number of new e-mails and the percentage of the e-mail account that is in use. Next, in <tt>ShowInfoAuto()</tt>, a timer is initiated. The timer
+ performs a task until its activity is canceled. The related classes are <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/TimerTask.html">java.util.TimerTask</a> and <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/Timer.html">java.util.Timer</a>.
+ The timer's activity is canceled when no more information is found in the <tt>eMailsInformation</tt>
+ <tt>ArrayList</tt>. The task is performed at fixed intervals, by means of <tt>scheduleAtFixedRate()</tt>, which executes
+ a task periodically after a fixed delay. This enables the e-mail headers to be shown one by one via a timer. Another way
+ of doing this is to subclass the NetBeans API's <a href="https://netbeans.org/download/dev/javadoc/org-openide-util/org/openide/util/Task.html">Task</a>
+ class. However, using this class means using a different thread to contain the timer.
+
+<p><pre class=examplecode>private void ShowInfoAuto(){
+    setUsageCount(gmcu.getNewMailCount(),gmcu.getUsage());
+    ShowSubjectDurationTimer = new  java.util.Timer();
+    ShowSubjectDurationTimer.scheduleAtFixedRate(new TimerTask() {
+
+        public void run() {
+            if(CurrentMailSubject &lt; gmcu.getNewMailCount()){
+                displayText.setText("&lt;html&gt;"+"&lt;b&gt;"+(CurrentMailSubject+1)+"&lt;/b&gt; :"+getSubject(CurrentMailSubject)+"&lt;/html&gt;");
+                CurrentMailSubject++;
+            } else{
+                ShowSubjectDurationTimer.cancel();
+            }
+	}
+
+    },settings.getDelayBeweenDiplay()*1000,settings.getDelayBeweenDiplay()*1000
+
+            );
+}</pre>
+
+</ol>
+
+<h3 class="tutorial"><a name="scrolling"></a>Scrolling between E-Mail Headers</h3>
+
+<p>The left and right buttons in the toolbar enable the user to scroll from one e-mail header to the next. The code
+ for these buttons is provided by their <tt>actionPerformed()</tt> methods. The IDE can create these methods for you.
+ Once they are created, you can fill them in with your code.
+
+<ol>
+
+<p><li>In the Design mode, right-click <tt>leftButton</tt> and choose Events &gt; Action &gt; 
+actionPerformed[leftButtonActionPerformed]</tt>, as shown below:
+
+<p><img src="../images/tutorials/gmail/actionPerformed.png" alt="Action performed">
+
+<p>The Source Editor opens, with the cursor in the <tt>leftButtonActionPerformed()</tt> method. 
+
+<li>Fill out the method so that it has the following content:
+
+<p><pre class=examplecode>private void leftButtonActionPerformed(java.awt.event.ActionEvent evt) {                                         
+        if(ShowSubjectDurationTimer!=null) 
+        {
+            ShowSubjectDurationTimer.cancel();
+	    if(CurrentMailSubject &gt; 0 && gmcu.getNewMailCount() &gt; 0)
+            {
+                CurrentMailSubject--;
+                displayText.setText("&lt;html&gt;"+"&lt;b&gt;"+(CurrentMailSubject+1)+" Subject: &lt;/b&gt;"+getSubject(CurrentMailSubject)+"&lt;/html&gt;");
+	    } 
+	    else
+	    {
+                CurrentMailSubject=gmcu.getNewMailCount();
+                CurrentMailSubject--;
+                displayText.setText("&lt;html&gt;"+"&lt;b&gt;"+(CurrentMailSubject+1)+" Subject: &lt;/b&gt;"+getSubject(CurrentMailSubject)+"&lt;/html&gt;");
+            }
+        }
+        playSound("pop");
+}</pre>           
+
+<p>Based on the delay specified by the timer, which is defined in the Options window, a new e-mail count is retrieved. Only if the number of new e-mails
+ is greater than zero and there is more than one header, is the new e-mail count retrieved. Whether or not this is true, a text is displayed in the
+ toolbar's label. The text consists of an incremented number together with the text in the header.
+
+<p>
+<li>Do the same for <tt>rightButton</tt> and create this <tt>rightButtonActionPerformed()</tt> method:
+
+<p><pre class=examplecode>private void rightButtonActionPerformed(java.awt.event.ActionEvent evt) {                                         
+	if(ShowSubjectDurationTimer!=null) 
+        {
+            ShowSubjectDurationTimer.cancel();
+	    if(CurrentMailSubject &lt; gmcu.getNewMailCount()-1 && gmcu.getNewMailCount() &gt; 0)
+            {
+		displayText.setText("&lt;html&gt;"+"&lt;b&gt;"+(CurrentMailSubject+1)+" Subject: &lt;/b&gt;"+getSubject(CurrentMailSubject)+"&lt;/html&gt;");
+                CurrentMailSubject++;
+	    } 
+	    else
+	    {
+	       CurrentMailSubject=0;
+               CurrentMailSubject++;
+	       displayText.setText("&lt;html&gt;"+"&lt;b&gt;"+(CurrentMailSubject+1)+" Subject: &lt;/b&gt;"+getSubject(CurrentMailSubject)+"&lt;/html&gt;");
+            }
+        }
+        playSound("pop");
+}</pre>
+
+<p><b>Tip:</b> To understand what the variables in a method are used for, hold down the Ctrl key, move your mouse
+ over an identifier, and click the hyperlink that appears:
+
+<p><img src="../images/tutorials/gmail/hyperlink.png" alt="Hyperlink">
+
+<p>When you click the link, the cursor jumps to the identifier's declaration.
+
+</ol>
+
+<h3 class="tutorial"><a name="playing"></a>Playing Sounds</h3>
+
+<p>When a new e-mail arrives in a Gmail account to which the module has obtained a connection, a small 'zing' sound
+ is emitted. When the user clicks the left and right buttons to scroll from one e-mail to another, a small 'pop'
+ sound can be heard. How this is done is described below.
+
+<ol>
+
+<p>
+<li>The <tt>playSound()</tt> method gets the name of a WAV file and then plays the file by using the <tt>Applet</tt> and <tt>AudioClip</tt> classes.
+ Here, the <tt>getResource()</tt> method creates an absolute URL from the relative path that you give it. 
+ You pass the name of the WAV file stored in the <tt>resources</tt> folder and use the <tt>Applet</tt> class to play the URL that gets the resource.
+ The method understands the resource's protocol, so the absolute URL that you get when you want to play some sound file is 
+ the address of a file inside a JAR file, specified with the JAR protocol.
+
+
+<p><pre class=examplecode>private void playSound(String SoundName){
+    if (settings.isVoiceOn()){
+        AudioClip Clip;
+        URL Url;
+        try{
+            Url=getClass().getResource("org/myorg/gmailchecker/resources/"+SoundName+".wav");
+            Clip=Applet.newAudioClip(Url);
+            Clip.play();
+        }catch(Exception e){
+            //TODO: exception handling
+        }
+    }
+}</pre>
+
+<p><li>The name of a WAV file is passed to the <tt>playSound()</tt> method from the following methods:
+<ul>
+<li>During the <tt>DoCheckMail()</tt> method, to indicate that new e-mail has been received.
+<li>When the left button is clicked, using the button's <tt>actionPerformed()</tt> method.
+<li>When the right button is clicked, using the button's <tt>actionPerformed()</tt> method.
+</ul>
+</ol>
+
+<h3 class="tutorial"><a name="embedding"></a>Embedding the JPanel in the IDE's Toolbar</h3>
+
+<p>One way in which the user can force the module to perform a check is by choosing
+ a menu item. The menu item is found in the Tools menu:
+
+<p><img src="../images/tutorials/gmail/menu-item.png" alt="Hyperlink">
+
+<p>To create the new menu item, do the following:
+
+<ol>
+
+<p><li>Use the <a href="https://platform.netbeans.org/tutorials/nbm-google.html">NetBeans Google Toolbar Module Tutorial</a>
+ to create an action that is registered as a toolbar. Call the class <tt>checkMailAction</tt> and house it in the same
+ package as where the other user interface classes are found, in <tt>org.myorg.gmailchecker.ui</tt>.
+
+<p><li> As explained in the NetBeans Google Toolbar Module Tutorial, override
+ the <a href="https://netbeans.org/project/www/download/dev/javadoc/OpenAPIs/org/openide/util/actions/Presenter.Toolbar.html#getToolbarPresenter()">getToolbarPresenter()</a> method. Return <tt>gChecker.java</tt>, which is the toolbar that you created earlier.
+
+<p><li>Fill in the <tt>performAction()</tt> method so that the <tt>ForceCheck()</tt> method is called.
+
+<p>The <tt>checkMailAction</tt> should now look as follows:
+
+<p><pre class=examplecode>package org.myorg.gmailchecker.gui;
+
+import org.openide.util.HelpCtx;
+import org.openide.util.NbBundle;
+import org.openide.util.actions.CallableSystemAction;
+
+public final class checkMailAction extends CallableSystemAction {
+    
+    Gchecker gChecker = new Gchecker();
+    
+    public void performAction() {
+        gChecker.ForceCheck();
+    }
+    
+    public String getName() {
+        return NbBundle.getMessage(checkMailAction.class, "CTL_checkMailAction");
+    }
+    
+    public HelpCtx getHelpCtx() {
+        return HelpCtx.DEFAULT_HELP;
+    }
+    
+    protected boolean asynchronous() {
+        return false;
+    }
+    
+    public java.awt.Component getToolbarPresenter() {
+        return gChecker;
+    }
+
+}</pre>
+
+</ol>
+
+<p>Before working on the Options window, which is described in the next section, you might want to test
+ that the toolbar displays correctly in the IDE. To do so, make sure that the toolbar and menu item are
+ <a href="#registering">registered</a> correctly, and then <a href="#building">build and install</a> the module. If the toolbar
+ displays as expected, continue with the next section and work on extending the Options window.
+
+
+</div>
+      <br />
+
+<h2><a name="creatingtheoptionswindow"></a>Creating the Options Panel</h2>
+
+<p>To enable the user to specify settings such as the username and password for the Gmail account, you need
+ to provide a user interface to receive and process user input. The IDE's Options window can be extended for this purpose.
+ To extend the Options window, use the <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/overview-summary.html">NetBeans Options Dialog SPI</a>, as described in the subsections that follow. Once you have designed the Options window and specified the options, you will be shown how to register the Options window in the
+ <tt>layer.xml</tt> file. Everything you need to know about these procedures is described in the
+ <a href="https://platform.netbeans.org/tutorials/nbm-options.html">NetBeans Options Window Extension Module Tutorial</a>.
+
+<p><b>Note:</b> In this tutorial, you store settings in an external file. You set listeners on the components in the
+ Options window to determine whether a property has changed or not. A more typical NetBeans approach is to use
+ the <a href="https://netbeans.org/download/dev/javadoc/org-openide-options/overview-summary.html">NetBeans Options Settings API</a>.
+
+<p>In the following subsections, you create three classes:
+</p><ul>
+<p></p><li><b><tt>GCheckerCustomizer.java.</tt></b> A class that extends <tt>javax.swing.JPanel</tt>. 
+ This class provides the user interface for the Gmail Checker's options.
+<p></p></li><li><b><tt>GCheckerOptionCategory.java.</tt></b> A class that extends <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsCategory.html"><tt>OptionsCategory</tt></a> or a class that extends <a href="http://www.netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/AdvancedOption.html"><tt>AdvancedOption</tt></a>. If the class extends <tt>OptionsCategory</tt>, the options
+ will be displayed in a new panel in the Options window. If the class extends <tt>AdvancedOption</tt>, the options will be added to the Miscellaneous panel. In this tutorial,
+ because we have so many options, the category is displayed in a new panel.
+
+<p></p></li><li><b><tt>GCheckerOptionsPanelController.java.</tt></b> A class that extends <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsPanelController.html"><tt>OptionsPanelController</tt></a>. This class specifies how the panel
+ interacts with the Options window.
+</li></ul>
+
+
+<p>For <tt>GCheckerCustomizer.java</tt>, you can choose to follow the instructions below, or you can replace the default code with code
+  found <a href="https://netbeans.org/files/documents/4/649/Gchecker.java">here</a>. If you copy
+ the content from the link, it is still a good idea to read the code described below, so that you
+ understand how things work and so that you know where problems might be occurring if you need to debug.</li>
+
+
+<div class="indent">
+
+	<h3 class="tutorial"><a name="designingtheoptionspanel"></a>Designing the Options Panel</h3>
+
+
+
+<ol>
+<p><li><b>Create the file.</b> Right-click the <tt>org.myorg.gmailchecker</tt> package node, choose New &gt; File/Folder, and
+ then select JPanel Form from the Java GUI Forms category.
+ Type <tt>GcheckeCustomizer</tt> in Class Name. Chane the package name to <tt>org.myorg.gmailchecker.gui</tt>.
+  Click Finish. The new Java class opens in the Source Editor.
+
+<p><li><b>Understand the file.</b> This Java class is responsible for interaction with the user. The methods
+ are discussed in he following subsections.
+
+<p><li><b>Add components to the panel.</b> As with the toolbar that you created in the previous section,
+ you use the NetBeans IDE GUI Builder to design the Options window. 
+ The end product of this stage of the module-building process is that you should have a <tt>JPanel</tt> that looks
+ similar to the following:
+
+<p><img src="../images/tutorials/gmail/optionswindow.png" alt="Options window">
+
+<p>The names of the components in the <tt>JPanel</tt> are irrelevant. They are only used within the <tt>JPanel</tt> itself.
+ For example, you could name the components as follows:
+
+<p><table width="400" border="1">
+
+    <tbody><tr>
+      <td>
+	<div align="left"><b>Label</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Name</b></div>
+
+      </td>
+<td>
+
+    </tr>
+    <tr>
+      <td align="left" valign="top">Username</td>
+      <td><tt>jTextField1</tt></td>
+    </tr>
+<tr>
+      <td align="left" valign="top">Password</td>
+       <td><tt>jPasswordField1</tt></td>
+    </tr>
+    <tr>
+	    <td align="left" valign="top">Sound enabled</td>
+
+      <td><tt>jCheckBox1</tt></td>
+
+    </tr>
+  <tr>
+	    <td align="left" valign="top">Delay before first e-mail check</td>
+
+      <td><tt>jSpinner1</tt></td>
+    </tr>
+ <tr>
+	    <td align="left" valign="top">Delay between automatic checks</td>
+
+      <td><tt>jSpinner2</tt></td>
+    </tr>
+ <tr>
+	    <td align="left" valign="top">Delay between scroll rotation</td>
+
+      <td><tt>jSpinner3</tt></td>
+    </tr>
+ <tr>
+	    <td align="left" valign="top">Include unread e-mails</td>
+
+      <td><tt>jCheckBox2</tt></td>
+    </tr>
+ <tr>
+	    <td align="left" valign="top">Proxy host</td>
+
+      <td><tt>jTextField2</tt></td>
+    </tr>
+<tr>
+	    <td align="left" valign="top">Proxy port</td>
+
+      <td><tt>jTextField3</tt></td>
+    </tr>
+<tr>
+	    <td align="left" valign="top">Proxy?</td>
+
+      <td><tt>jCheckBox3</tt></td>
+    </tr>
+    </tbody>
+  </table>
+
+
+
+<p>When you create the <tt>JPanels</tt> (for "General Options", "Advanced Options", and "Proxy Settings"), set the
+ <tt>border</tt> property as follows:
+
+
+
+<p><img src="../images/tutorials/gmail/border.png" alt="Border titled">
+
+</ol>
+
+<h3 class="tutorial"><a name="settingapropertychangeevent"></a>Setting a PropertyChange Event</h3>
+
+<p>In the Design view, select <i>all</i> the editable items in the <tt>JPanel</tt> (i.e., everything except the labels). Then, in the 
+ Properties window, notice that the titlebar changes to 'Multiple Objects'. In the <tt>propertyChange</tt> event,
+ type <tt>propertyChange</tt>, as shown below:
+
+<p><img src="../images/tutorials/gmail/propertychange.png" alt="Property Change">
+
+<p>In the Source view, fill out the <tt>propertyChange()</tt> method as follows:
+
+<pre class=examplecode>private void propertyChange(java.beans.PropertyChangeEvent evt) {                                
+    Changed=true;
+}</pre>
+
+<p>At the top of the class, declare the following:
+
+<pre class=examplecode>public boolean Changed = false;</pre>
+
+ 
+<h3 class="tutorial"><a name="populatingtheoptionspanel"></a>Populating the Options Panel</h3>
+
+<p>Add the following method to <tt>GcheckeCustomizer.java</tt>:
+
+<pre class=examplecode>public void populateUI(GCheckSetting setting) {
+        
+        this.jTextField1.setText(setting.getUserName());
+        this.jPasswordField1.setText(setting.getPassword());
+       
+        this.jCheckBox1.setSelected(setting.isVoiceOn());
+        
+        this.jSpinner1.setValue(new Integer(setting.getCheckMailPriod()));
+        this.jSpinner2.setValue(new Integer(setting.getDelayBeweenDiplay()));
+        this.jSpinner3.setValue(new Integer(setting.getDelayBeforeStartCheck()));
+        
+        this.jCheckBox2.setSelected(setting.isShowUnreadMails());
+        
+        this.jCheckBox3.setSelected(setting.isUseProxy());
+        this.jTextField2.setText(setting.getProxy());
+	this.jTextField3.setText(String.valueOf(setting.getPort()));
+
+	Changed=false;
+
+}</pre>
+
+<p>Here, by default, there are no changes. However, when OK or Cancel is clicked, <tt>applyChanges()</tt> or
+ <tt>Cancel()</tt> are automatically called on <tt>GCheckerOptionsPanelController.java</tt>. These methods
+ handle the state of 'Changed'. When it is true, the settings are saved in <tt>GSettingUtil.java</tt>.
+
+<h3 class="tutorial"><a name="savingtheoptionspanel"></a>Saving the Options Panel</h3>
+
+<p>Add the following method to <tt>GcheckeCustomizer.java</tt>:
+<pre class=examplecode>public GCheckSetting returnSetting() {
+
+	GCheckSetting  st = new GCheckSetting();
+        st.setCheckMailPriod(((Integer) this.jSpinner1.getValue()).intValue());
+        st.setDelayBeforeStartCheck(((Integer) this.jSpinner3.getValue()).intValue());
+        st.setDelayBeweenDiplay(((Integer) this.jSpinner2.getValue()).intValue());
+        st.setPassword(jPasswordField1.getText());
+        st.setPort(Integer.parseInt(jTextField3.getText()));
+	st.setProxy(jTextField2.getText());
+        st.setShowUnreadMails(jCheckBox2.isSelected());
+        st.setUseProxy(jCheckBox3.isSelected());
+        st.setUserName(jTextField1.getText());
+        st.setVoiceOn(jCheckBox1.isSelected());
+	return st;
+
+}</pre>
+
+<p>In this method the settings specified in the Options panel are saved in properties
+ defined in <tt>GCheckSettings.java</tt>.
+
+
+<h3 class="tutorial"><a name="embeddingtheoptionspanel"></a>Embedding the Options Panel in the IDE's Options Window</h3>
+
+<p>In the Options window, a category consists of a <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsPanelController.html"><tt>OptionsPanelController</tt></a>, which provides the JPanel and information about how the JPanel interacts with the Options window, and one of the following combinations, depending on where the
+ category is positioned:
+<ul>
+<p><li>An icon, a category name, and a title, if the category extends <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsCategory.html"><tt>OptionsCategory</tt></a>. The icon is displayed in the left sidebar of the Basic Options view,
+ the category name is also displayed in the left sidebar, while the title is displayed in the panel itself.
+<p><li>A display name and a tooltip, if the category extends <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/AdvancedOption.html"><tt>AdvancedOption</tt></a>. The display name is displayed in the Miscellaneous panel,
+ while the tooltip is displayed when the mouse hovers over the title.</ul>
+<p>Both scenarios are demonstrated in the <a href="nbm-options.html">NetBeans Options Window Extension Module Tutorial</a>. In this tutorial,
+ because there are a lot of options, you implement them in a new panel, by extending <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsCategory.html"><tt>OptionsCategory</tt></a>.
+
+<ol>
+<p><li><b>Create the file.</b> Right-click the <tt>org.myorg.gmailchecker</tt> package node, choose New &gt; Java Class,
+ type <tt>GCheckerOptionsCategory </tt> in Class Name, and append <tt>options</tt> 
+ to <tt>org.myorg.gmailchecker</tt> in Package. Click Finish. The new Java class opens in the <tt>org.myorg.gmailchecker.options</tt> package.
+ Replace the default code with the following:
+
+<pre class=examplecode>package org.myorg.gmailchecker.options;
+
+import org.netbeans.spi.options.OptionsCategory;
+import org.netbeans.spi.options.OptionsPanelController;
+
+public class GCheckerOptionsCategory extends <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsCategory.html">OptionsCategory </a> {
+    
+    public String <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsCategory.html#getCategoryName()">getCategoryName ()</a> {
+        return "Gmail Checker";
+    }
+
+    public String <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsCategory.html#getTitle()">getTitle ()</a> {
+        return "Gmail Checker Setting";
+    }  
+
+    public String getIconBase() {
+        return "org/myorg/gmailchecker/resources/go";
+    }
+
+    private String getTooltip() {
+        return "Provide settings for the Gmail Checker";
+    }
+
+    public OptionsPanelController <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsCategory.html#create()">create ()</a> {
+        return new GCheckerOptionsPanelController();
+    } 
+
+}</pre>
+
+</li>
+
+
+
+<p>Now that you have a panel and a category, you need to provide information about how you
+ want them to interact with the Options window. You define the interaction between the category and
+ the Options window in a class that extends <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsPanelController.html"><tt>OptionsPanelController</tt></a>. For example, when the user clicks the OK button
+ in the Options window, the <tt>applyChanges()</tt> method is called. And, when the Cancel button is clicked,
+ the <tt>cancel()</tt> method is called. 
+
+
+<p><li><b>Create the file.</b> Create <tt>GCheckerOptionsPanelController</tt> in <tt>org.myorg.gmailchecker.options</tt>.
+  Click Finish. The new Java class opens in the Source Editor.
+ Replace the default code with the following:
+
+<p><pre class=examplecode>package org.myorg.gmailchecker.options;
+
+import org.myorg.gmailchecker.common.GSettingUtil;
+import org.myorg.gmailchecker.gui.GCheckerCustomizer;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.beans.PropertyChangeListener;
+import javax.swing.JComponent;
+import org.netbeans.spi.options.OptionsPanelController;
+import org.openide.DialogDescriptor;
+import org.openide.DialogDisplayer;
+import org.openide.util.HelpCtx;
+import org.openide.util.Lookup;
+
+
+public final class GCheckerOptionsPanelController extends <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsPanelController.html"><tt>OptionsPanelController</tt></a> {
+
+    GCheckerCustomizer customizer = new GCheckerCustomizer();
+    GSettingUtil settingutil = new GSettingUtil();
+
+    private String sureTocancel="&lt;html&gt;&lt;b&gt;Do you want to save your changes?&lt;/b&gt;&lt;html&gt;";
+    
+    public GCheckerOptionsPanelController() {
+    }
+    
+    public void <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsCategory.PanelController.html#update()">update ()</a> {
+        // init values in your panel here
+        customizer.populateUI(settingutil.retrieveSetting());
+    }
+    
+    public void <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsCategory.PanelController.html#applyChanges()">applyChanges ()</a> {
+        // this method is called when OK button has been pressed
+	// save values here
+        if (customizer.Changed) {
+            settingutil.storeSetting(customizer.returnSetting());
+        }
+
+    }
+    
+    public void <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsCategory.PanelController.html#cancel()">cancel ()</a> {
+        // this method is called when Cancel button has been pressed
+	// revert any possible changes here
+        if (customizer.Changed) {
+            DialogDescriptor ddesc = new DialogDescriptor((Object)sureTocancel,"Changes will be lost",
+                    true,DialogDescriptor.YES_NO_OPTION,DialogDescriptor.CANCEL_OPTION,new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    if(e.getActionCommand().equalsIgnoreCase("yes")){
+                        settingutil.storeSetting(customizer.returnSetting());}
+                }});
+                DialogDisplayer.getDefault().createDialog(ddesc).setVisible(true);
+        }
+    }
+    
+    public boolean <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsCategory.PanelController.html#isValid()">isValid ()</a> {
+        return true;
+    }
+    
+    public boolean <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsCategory.PanelController.html#isChanged()">isChanged ()</a> {
+        return changed;
+    }
+    
+    public HelpCtx <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsCategory.PanelController.html#getHelpCtx()">getHelpCtx ()</a> {
+	return new HelpCtx ("org.myorg.gmailchecker.options.GCheckerOptionsPanelController");
+    }
+    
+    public JComponent <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsCategory.PanelController.html#getComponent(org.openide.util.Lookup)">getComponent (Lookup masterLookup)</a> {
+        return customizer;
+    }
+
+    public void <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsCategory.PanelController.html#addPropertyChangeListener(java.beans.PropertyChangeListener)">addPropertyChangeListener(PropertyChangeListener propertyChangeListener)</a> {
+    }
+
+    public void <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-options-api/org/netbeans/spi/options/OptionsCategory.PanelController.html#removePropertyChangeListener(java.beans.PropertyChangeListener)">removePropertyChangeListener(PropertyChangeListener propertyChangeListener)</a> {
+    }
+  
+}</pre></li>
+
+
+</ol>
+
+
+</div>
+<br/>
+
+
+<h2><a name="registering"></a>Registering the Gmail Checker in the NetBeans System Filesystem</h2>
+
+<p>When you used the New Action wizard to create <tt>checkMailAction.java</tt>, the wizard generated XML tags
+ in the <tt>layer.xml</tt> file. The XML tags specify that the new action is to be registered as a menu item and as 
+ a toolbar. You need to add one additional set of registration entries yourself&#8212;the registration entries for the new
+ options category. Right at the end of the <tt>layer.xml</tt> file, just before the closing <tt>&lt;/filesystem&gt;</tt> tag, add
+ the following:
+
+<p><pre class=examplecode>&lt;folder name="OptionsDialog"&gt;
+        &lt;attr name="Keymaps.instance/GCheckerOption.instance" boolvalue="true"/&gt; 
+        &lt;file name="GCheckerOption.instance"&gt;
+	    &lt;attr name="instanceClass" stringvalue="org.myorg.gmailchecker.options.GCheckerOptionsCategory"/&gt;
+        &lt;/file&gt; 
+        &lt;attr name="GCheckerOption.instance/Advanced.instance" boolvalue="true"/&gt;
+&lt;/folder&gt;</pre>
+
+<p>Thanks to these tags, the new options category will be correctly registered in the Netbeans System Filesystem, between
+ the Keymaps category and the Advanced category.
+
+
+
+      <br />
+      
+<h2><a name="building"></a>Building and Installing the Module</h2>
+<p>The IDE uses an Ant build script to build and install your module. The build script is created for you
+when you create the module project.</p>
+<div class="indent">
+
+	<h3 class="tutorial"><a name="install-plugin"></a>Installing the Module</h3>
+
+      <ol>
+	      <li>In the Projects window, right-click the module suite project node node and choose Run Project. 
+	      <p>The module suite, with its contents, is built and installed in the target platform. The target platform opens so that you
+	      can try out your new module. The default target platform is the 
+	      installation used by the current instance of the development IDE. 
+	      <p><li>Use the Gmail Checker as described in <a href="#introducing-sample">Introducing the Sample</a>.
+       </ol>
+
+      
+       <h3 class="tutorial"><a name="sharing"></a>Creating a Shareable Module Binary (NBM File)</h3>
+ <p>An NBM file is a NetBeans module packaged for delivery via the web. 
+       The principal differences between NBM files and module JAR files are:
+       <ul><li>An NBM file is compressed.
+	       <li>An NBM file can contain more than one JAR file&#8212;modules can package any libraries they use into their NBM file.
+	       <li>An NBM file contains metadata that NetBeans will use to display information about it in the Update Center, such as the manifest contents, the license, etc.
+	       <li>An NBM file is typically signed for security purposes.</ul>
+       <p>NBM files are just ZIP files with a special extension. They use the JDK's mechanism for 
+       signing JAR files. Unless you are doing something unusual, you will not need to worry about the 
+       contents of an NBM file&#8212;just let the standard Ant build script for NBM creation take care of 
+       it for you. The IDE generates the build script based on the options you enter in the project's 
+       Project Properties dialog box. You can set the module's dependencies, versioning, and packaging 
+       information in the Project Properties dialog box. You can further customize program execution 
+       by editing the Ant script and Ant properties for the project.
+      <ol>
+	      <p><li>Right-click each of the module projects in turn.
+	      <p><li>In each case, choose Create NBM from the pop-up menu.
+      </ol>
+      <p>In the Files window, you should see the NBM files in each module's <tt>build</tt> folder:
+
+      <p><img src="../images/tutorials/gmail/create-nbm.png" alt="Create NBM">
+
+      <p>When you&#8212;or whoever you send them to&#8212;want to install the NBM files, it is easiest to install all of them
+       together:
+
+       <p><img src="../images/tutorials/gmail/create-nbm2.png" alt="Create NBM">
+
+       <p>Happy Gmail checking!
+</div>
+      <br />
+
+<!-- ===================================================================================== -->
+
+
+<br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20GMail%20Checker%20Module%20Tutorial">Send Us Your Feedback</a></div>
+<br style="clear:both;" />
+
+
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Next Steps</h2>
+
+<p>For more information about creating and developing NetBeans Module, see the following resources: 
+  <ul>
+	  <p><li><a href="https://platform.netbeans.org/index.html">Module Developer's Resources</a></li>
+	  <p><li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API List (Current Development Version)</a></li>
+</ul>
+  </p>
+  
+  <hr>
+<!-- ======================================================================================== -->
+
+<h2><a name="version"></a>Versioning </h2>
+  
+<p>
+
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+ <tr>
+      <td>
+	 1
+      </td>
+      <td>
+	      5 December 2005
+      </td>
+      <td><ul>
+		      <li>Initial version.
+		      <li>To do:
+		      <ul>
+			      <li>Add Options window files.
+			      <li>Add GUI files (toolbar and action).
+			      <li>Add tips from Masoud's original document. (For example, use refactoring
+			       to generate getters and setters.)
+		      </ul>
+	      
+	    
+      </td>
+  </tr>
+ <tr>
+      <td>
+	 2
+      </td>
+      <td>
+	      8 December 2005
+      </td>
+      <td><ul>
+		      <li>Major update.
+		      <li>To do:
+		      <ul>
+			      <li>Probably shouldn't talk about "the module" but about "the IDE", because they're integrated.
+			      <li>Provide many more details on Progress API.
+			      <li>Provide details on the more typical way of working with options (i.e., via a settings file,
+			      layer file entries, and NetBeans API classes).
+			      <li>Bring in many more tips and tricks.
+			      <li>Go through Masoud's original document and see if everything is covered.
+			      <li>Why is one of the options in the Options window greyed out?
+			      <li>Proxy check box should grey-out/enable the proxy host and port textfields.
+			    
+		      </ul>
+	      
+	    
+      </td>
+  </tr>
+ <tr>
+      <td>
+	 3
+      </td>
+      <td>
+	      11 December 2005
+      </td>
+      <td><ul>
+		      <li>Major update.
+		      <li>To do:
+		      <ul>
+			      <li>Localize all strings.
+			      <li>Explain more about each of the libraries.
+			      <li>Change the files because of package name change.
+			      <li>Save dialog box called regardless of changes made.
+			     
+			    
+		      </ul>
+	      
+	    
+      </td>
+  </tr>
+ <tr>
+      <td>
+	4
+      </td>
+      <td>
+	      15 December 2005
+      </td>
+      <td><ul>
+		      <li>Correction. Fixed erroneous instruction at the end to install the module instead of running the module suite.
+		      
+	      
+	    
+      </td>
+  </tr>
+<tr>
+      <td>
+	4
+      </td>
+      <td>
+	      17 December 2005
+      </td>
+      <td><ul>
+		      <li>Major update. All the gaps filled in. The following open issues remain:
+		      <ul>
+			      <li>Greyed-out check box, why?
+			      <li>Must add a lot of explanation about <tt>g4j</tt> library, also the other two.
+			      <li>Provide JavaDoc links in code, as well as more explanations. Also, Progress API needs info.
+			      <li>Prompt to save even if no changes made, sometimes.
+			      <li>Need to add more tips from Masoud's original doc.
+		      </ul>
+		      
+	      
+	    
+      </td>
+  </tr>
+  </tbody>
+  </table>
+
+  <p>Thanks to Masoud Kalali for this creative, fun, and educational module and tutorial!
+  
+</body>
+</html>

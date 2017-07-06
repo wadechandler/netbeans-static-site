@@ -1,0 +1,664 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Guia de in&iacute;cio r&aacute;pido da plataforma NetBeans utilizando o Maven</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+    <meta name="AUDIENCE" content="NBUSER"/>
+    <meta name="TYPE" content="ARTICLE"/>
+    <meta name="EXPIRES" content="N"/>
+    <meta name="indexed" content="y"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="description"
+          content="A short demonstration of how to create a simple
+    NetBeans Platform application and module and use Maven for the build framework."/>
+   <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+<body>
+
+   <h1>Guia de in&iacute;cio r&aacute;pido da plataforma NetBeans utilizando o Maven</h1>
+
+   <p>Bem-vindo &agrave; <a href="https://platform.netbeans.org/"><b>Plataforma NetBeans</b></a>!</p>
+
+    <p>Este documento &eacute; uma demonstra&ccedil;&atilde;o r&aacute;pida de como criar um simples aplicativo e m&oacute;dulo da plataforma NetBeans e utilizar o Maven para a estrutura da constru&ccedil;&atilde;o. Neste documento ser&atilde;o utilizados os arqu&eacute;tipos Maven para criar um aplicativo e m&oacute;dulo da plataforma NetBeans. Voc&ecirc; utilizar&aacute; o kit de ferramentas da interface de usu&aacute;rio Swing e o Construtor GUI &quot;Matisse&quot; para criar um componente de janela no m&oacute;dulo. O aspecto modular da plataforma NetBeans lhe possibilita desenvolver e expandir a funcionalidade do seu aplicativo, adicionando simplesmente novos m&oacute;dulos.
+    </p>
+
+    <p>Este documento tem base no <a href="nbm-quick-start_pt_BR.html">Guia de in&iacute;cio r&aacute;pido da Plataforma NetBeans para Plataformas NetBeans</a> com base no Ant. e ilustra algumas das diferen&ccedil;as entre o uso do Ant e do Maven para desenvolver os aplicativos da plataforma NetBeans. Ap&oacute;s ter entendido como o Maven &eacute; diferente do Ant, ser&aacute; poss&iacute;vel prosseguir com facilidade atrav&eacute;s de outros tutoriais na <a href="https://netbeans.org/kb/trails/platform_pt_BR.html">Trilha de aprendizado da Plataforma NetBeans</a>.</p>
+
+    <p class="tips">Caso esteja utilizando o NetBeans IDE 6.8, consulte o <a href="68/nbm-maven-quickstart.html">Guia de in&iacute;cio r&aacute;pido para Plataforma NetBeans 6.8 utilizando o Maven</a>.</p>
+
+    <p class="tips">Caso n&atilde;o tenha experi&ecirc;ncia com a plataforma NetBeans, recomenda com &ecirc;nfase assistir &agrave; s&eacute;rie de screencasts <a href="https://platform.netbeans.org/tutorials/nbm-10-top-apis.html">As 10 principais APIs do NetBeans</a>.</p>
+
+    <p><b>Conte&uacute;do</b></p>
+    <p><img src="../../images/articles/69/netbeans-stamp69.png" class="stamp" width="114" height="114" alt="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.5, 6.7, 6.8" title="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.5, 6.7, 6.8" /></p>
+
+    <ul class="toc">
+        <li><a href="#config">Configurando Maven</a></li>
+        <li><a href="#01">Criando projeto de aplicativo da plataforma NetBeans</a>
+            <ul>
+            <li><a href="#01a">Modificando elementos de marca</a></li>
+            </ul>
+        </li>
+        <li><a href="#02">Criando m&oacute;dulo Maven WordEngine</a>
+            <ul>
+            <li><a href="#02b">Tornando m&oacute;dulo uma depend&ecirc;ncia</a></li>
+            <li><a href="#02c">Adicionando um componente de janela</a></li>
+            </ul>
+        </li>
+        <li><a href="#04">Criando m&oacute;dulo TextFilter</a>
+            <ul>
+            <li><a href="#04b">Tornando m&oacute;dulo uma depend&ecirc;ncia</a></li>
+            <li><a href="#04c">Adionando uma interface</a></li>
+            <li><a href="#04d">Tornando p&uacute;blico o m&oacute;dulo</a></li>
+            </ul>
+        </li>
+        <li><a href="#05">Criando m&oacute;dulo MyFilter</a>
+            <ul>
+            <li><a href="#05b">Adicionando TextFilter como uma depend&ecirc;ncia</a></li>
+            <li><a href="#05c">Adicionando uma classe Java</a></li>
+            <li><a href="#05d">Chamando o m&eacute;todo a partir do m&oacute;dulo Maven WordEngine</a></li>
+            </ul>
+        </li>
+        <li><a href="#06">Adicionando campos Listener e Conte&uacute;do</a></li>
+        <li><a href="#07">Criando m&oacute;dulo Hist&oacute;rico</a>
+            <ul>
+            <li><a href="#07b">Adicionando um componente de janela</a></li>
+            </ul>
+        </li>
+        <li><a href="#08">Executando aplicativo</a></li>
+      </ul>
+
+<p><b>Para seguir este tutorial, s&atilde;o necess&aacute;rios os softwares e recursos listados na tabela a seguir.</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software ou recurso</th>
+                <th class="tblheader" scope="col">Vers&atilde;o necess&aacute;ria</th>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://download.netbeans.org/">NetBeans IDE</a></td>
+                <td class="tbltd1">vers&atilde;o 6.9</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Vers&atilde;o 6</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://maven.apache.org/">Maven</a></td>
+                <td class="tbltd1">vers&atilde;o 2.0.9 ou superior</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><strong class="notes">Observa&ccedil;&atilde;o:</strong> n&atilde;o &eacute; necess&aacute;rio baixar uma vers&atilde;o avulsa da plataforma NetBeans para desenvolver os aplicativos para a plataforma NetBeans. Normalmente, voc&ecirc; desenvolve os aplicativos e m&oacute;dulos no NetBeans IDE e, a seguir, inclui somente os m&oacute;dulos necess&aacute;rios para executar a plataforma NetBeans e seu aplicativo.</p>
+
+    <p>Antes de come&ccedil;ar este tutorial, talvez voc&ecirc; queira se familiarizar com a documenta&ccedil;&atilde;o a seguir.</p>
+    <ul>
+        <li><a href="http://wiki.netbeans.org/MavenBestPractices">Melhores pr&aacute;ticas para o Apache Maven no NetBeans 6.x</a></li>
+        <li><a href="http://www.sonatype.com/books/maven-book/reference/introduction.html">Cap&iacute;tulo 1. Introdu&ccedil;&atilde;o ao Apache Maven</a> (do <a href="http://www.sonatype.com/books/maven-book/reference/public-book.html">Maven: o guia definitivo</a>)</li>
+        <li><a href="https://netbeans.org/kb/docs/java/gui-functionality_pt_BR.html">Introdu&ccedil;&atilde;o &agrave; constru&ccedil;&atilde;o de GUIs</a></li>
+    </ul>
+
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++ Configuring Maven +++++++++++++++++++++++++++++++++ -->
+
+<h2><a name="config"></a>Configurando Maven</h2>
+    <p>Se este for seu primeiro Projeto Maven, talvez voc&ecirc; queira verificar as defini&ccedil;&otilde;es de configura&ccedil;&otilde;es do Maven na janela Op&ccedil;&otilde;es. Para completar este tutorial &eacute; preciso ter o Maven instalado no sistema local. &Eacute; poss&iacute;vel fazer o download do instalador no <a href="http://maven.apache.org/">site do Maven</a>.</p>
+
+    <ol>
+        <li>Selecione a categoria Diversos na janela Op&ccedil;&otilde;es e clique na aba Maven.</li>
+        <li>Especifique a localiza&ccedil;&atilde;o da instala&ccedil;&atilde;o local do Maven (requer 2.0.9 ou mais recente).</li>
+        <li>Verifique se a localiza&ccedil;&atilde;o do reposit&oacute;rio local do Maven est&aacute; correta.</li>
+        <li>Clique em OK.</li>
+    </ol>
+    <p>Na maioria dos casos, se a configura&ccedil;&atilde;o do Maven for normal, as informa&ccedil;&otilde;es na janela Op&ccedil;&otilde;es j&aacute; devem estar corretas.</p>
+    
+    <p class="notes"><strong>Observa&ccedil;&atilde;o.</strong> O suporte do Maven &eacute; ativado como parte do conjunto dos recursos do Java SE. Caso a aba Maven n&atilde;o esteja dispon&iacute;vel na janela Op&ccedil;&otilde;es, confirme que o Java SE est&aacute; ativado criando um aplicativo Java.</p>
+
+    <p>O IDE usa o Maven SCM para checkout dos artefatos Maven. Talvez voc&ecirc; queira verificar se os clientes necess&aacute;rios para o checkout das fontes est&atilde;o instalados na m&aacute;quina local e configurados corretamente.</p>
+    <p class="tips">Para mais detalhes sobre o Maven SCM, consulte a <a href="http://maven.apache.org/scm/index.html">p&aacute;gina Maven SCM</a>.</p>
+
+    <div class="indent">
+        <h3><a name="config1"></a>Visualizando reposit&oacute;rios Maven</h3>
+        <p>Os artefatos que s&atilde;o utilizados pelo Maven para construir todos os seus projetos s&atilde;o armazenados no reposit&oacute;rio local Maven. Quando um artefato &eacute; declarado como uma depend&ecirc;ncia do projeto, o artefato &eacute; baixado para o reposit&oacute;rio local a partir de um dos reposit&oacute;rios remotos registrados.</p>
+
+        <p>O reposit&oacute;rio NetBeans e v&aacute;rios outros reposit&oacute;rios conhecidos Maven indexados s&atilde;o registrados e listados, por padr&atilde;o, na janela Navegador do reposit&oacute;rio. O reposit&oacute;rio do NetBeans cont&eacute;m a grande maioria dos artefatos p&uacute;blicos necess&aacute;rios para a constru&ccedil;&atilde;o do projeto. &Eacute; poss&iacute;vel utilizar o navegador do reposit&oacute;rio Maven para visualizar o conte&uacute;do dos reposit&oacute;rios locais e remotos. &Eacute; poss&iacute;vel expandir o n&oacute; Reposit&oacute;rio local para visualizar os artefatos que est&atilde;o presentes localmente. Os artefatos listados sob os n&oacute;s Reposit&oacute;rio do NetBeans podem ser adicionados &agrave;s depend&ecirc;ncias do projeto, mas nem todos eles est&atilde;o presentes localmente. Eles s&atilde;o adicionados ao reposit&oacute;rio local somente quando s&atilde;o declarados como depend&ecirc;ncias do projeto.</p>
+
+        <p>Para abrir o navegador do reposit&oacute;rio Maven:</p>
+        <ul>
+            <li>Escolha Janela &gt; Outro &gt; Navegador do reposit&oacute;rio Maven do menu principal.<br/>
+            <img src="../../images/tutorials/maven-quickstart68/maven-nbm-netbeans-repo.png" alt="Captura de tela do Navegador do reposit&oacute;rio Maven" title="Captura de tela do Navegador do reposit&oacute;rio Maven" class="margin-around b-all"  />
+            </li>
+        </ul>
+
+
+        <p>Quando o cursor estiver sobre um artefato, o IDE exibir&aacute; uma dica de ferramenta com as coordenadas do artefato. &Eacute; poss&iacute;vel visualizar detalhes adicionais sobre um artefato ao clicar duas vezes no arquivo JAR do artefato no navegador.</p>
+
+        <p class="tips">&Eacute; poss&iacute;vel pesquisar por um artefato ao clicar no bot&atilde;o Localizar da barra de ferramentas do navegador do reposit&oacute;rio Maven ou ao utilizar o campo de texto Pesquisa r&aacute;pida na barra de ferramentas principal.</p>
+        <p class="tips">Para saber mais sobre como gerenciar as depend&ecirc;ncias de classpath Maven e sobre como trabalhar com reposit&oacute;rios Maven no IDE, consulte a se&ccedil;&atilde;o <a href="http://wiki.netbeans.org/MavenBestPractices#Dependency_management">Gerenciamento de depend&ecirc;ncia</a> em <a href="http://wiki.netbeans.org/MavenBestPractices">Melhores pr&aacute;ticas para o Apache Maven no NetBeans 6.x</a>.
+        </p>
+        <p class="tips">Para assistir a uma demonstra&ccedil;&atilde;o sobre como utilizar o Visualizador de artefato, consulte o screencast <a href="https://netbeans.org/kb/docs/java/maven-dependencies-screencast.html"> Trabalhando com depend&ecirc;ncias Maven</a>.</p>
+
+</div>
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++ Creating the Platform Application +++++++++++++++++ -->
+
+<h2><a name="01"></a>Criando projeto do aplicativo da plataforma NetBeans</h2>
+
+    <p>Nesta se&ccedil;&atilde;o ser&aacute; utilizado o assistente Novo projeto para criar um aplicativo NetBeans a partir de um arqu&eacute;tipo Maven. O assistente criar&aacute; os projetos do m&oacute;dulo Maven necess&aacute;rios para desenvolver um aplicativo na plataforma NetBeans. O assistente fornece tamb&eacute;m a op&ccedil;&atilde;o de criar um m&oacute;dulo NetBeans no projeto do aplicativo, mas neste tutorial ser&aacute; criado cada m&oacute;dulo individualmente.</p>
+
+    <div class="indent">
+        <h3>Criando projeto</h3>
+
+        <p>Execute as etapas a seguir, para criar o aplicativo da plataforma NetBeans utilizando o assistente Novo projeto.</p>
+        <ol>
+            <li>Selecione Arquivo &gt; Novo projeto (Ctrl-Shift-N) para abrir o assistente Novo projeto.</li>
+            <li>Selecione o aplicativo Netbeans Maven na categoria Maven. Clique em Pr&oacute;ximo.</li>
+            <li>Digite <strong>MavenPlatformWordApp</strong> como o nome do projeto e defina a localiza&ccedil;&atilde;o do projeto. Clique em Terminar. <br/>
+            <img src="../../images/tutorials/maven-quickstart/maven-newproject.png" alt="Captura de tela do assistente Novo projeto" title="Captura de tela do assistente Novo projeto" class="margin-around b-all"  />
+            </li>
+        </ol>
+
+        <p class="notes"><strong>Observa&ccedil;&atilde;o.</strong> Caso este seja o seu primeiro aplicativo da plataforma NetBeans utilizando o Maven, pode ser que leve mais tempo para criar os projetos, uma vez que o IDE precisa baixar todos os artefatos necess&aacute;rios a partir do reposit&oacute;rio NetBeans.</p>
+
+        <p>Ao clicar em Terminar, por padr&atilde;o, o IDE cria os seguintes tipos do projeto Maven.</p>
+        <ul>
+            <li><strong>Aplicativo da plataforma NetBeans.</strong> Este projeto &eacute; um projeto recipiente para o aplicativo da plataforma e lista os m&oacute;dulos a serem inclu&iacute;dos e a localiza&ccedil;&atilde;o dos reposit&oacute;rios do projeto. Este projeto n&atilde;o cont&eacute;m nenhuma origem. O IDE gera os m&oacute;dulos contendo as fontes e recursos nos subdiret&oacute;rios deste projeto.</li>
+            <li><strong>Aplicativo com base na plataforma NetBeans.</strong> Este projeto especifica os artefatos (fontes) necess&aacute;rios para a compila&ccedil;&atilde;o do aplicativo. As depend&ecirc;ncias exigidas (artefatos IDE, artefatos de m&oacute;dulos) s&atilde;o especificadas no arquivo <tt>pom.xml</tt> do projeto. Se expandir o n&oacute; Bibliotecas, poder&aacute; visualizar as bibliotecas necess&aacute;rias para o aplicativo da plataforma NetBeans.</li>
+            <li><strong>Recursos de marca do aplicativo da plataforma.</strong> Este projeto cont&eacute;m os recursos utilizados para a marca do aplicativo.  </li>
+        </ul>
+
+        <p>Para todos os projetos Maven, o arquivo <tt>pom.xml</tt> (POM) est&aacute; localizado sob o n&oacute; Arquivos do projeto na janela Projetos. Se observar o POM para o projeto do aplicativo da plataforma NetBeans, poder&aacute; notar que os outros dois m&oacute;dulos criados pelo assistente est&atilde;o listados como m&oacute;dulos no aplicativo.</p>
+<pre class="examplecode">
+&lt;modules&gt;
+   &lt;module&gt;branding&lt;/module&gt;
+   &lt;module&gt;application&lt;/module&gt;
+&lt;/modules&gt;
+</pre>
+
+
+        <h3><a name="01a"></a>Modificando elementos da marca</h3>
+        <p>O m&oacute;dulo da marca especifica os recursos da marca utilizados ao construir o aplicativo da plataforma. A caixa de di&aacute;logo da marca lhe permite modificar facilmente as propriedades do aplicativo para alterar o nome, a tela de splash e os valores dos elementos de texto. </p>
+
+        <p>Ao criar o aplicativo da plataforma NetBeans a partir do arqu&eacute;tipo, o nome padr&atilde;o para o aplicativo &eacute; o artifactId do aplicativo. Neste exerc&iacute;cio ser&aacute; utilizado o assistente de marca para modificar o nome do aplicativo e substituir a imagem padr&atilde;o para a tela splash.</p>
+        <p class="notes"><strong>Observa&ccedil;&atilde;o.</strong> O IDE precisa construir o m&oacute;dulo de marca antes que voc&ecirc; possa modificar os recursos da marca.</p>
+        <ol>
+            <li>Clique com o bot&atilde;o direito no m&oacute;dulo <strong>Recursos de marca do aplicativo da plataforma</strong> e selecione Marca.</li>
+            <li>Na aba B&aacute;sico, altere o t&iacute;tulo do aplicativo para <strong>Aplicativo My Maven Platform Word</strong>.<br/>
+            <img src="../../images/tutorials/maven-quickstart/maven-branding1.png" alt="Captura de tela do assistente Novo projeto" title="Captura de tela do assistente Novo projeto" class="margin-around b-all"  />
+            </li>
+            <li>Clique na aba Tela splash e clique no bot&atilde;o Navegador ao lado da imagem da tela splash para localizar uma imagem diferente. Clique em OK.</li>
+            <!--<li>Click the Resource Bundles tab and expand the <strong>org/netbeans/core/startup/Bundle.properties</strong> node.</li>
+            <li>Double-click <strong>CTL_About_Title</strong> and type a new title for the About dialog window. Click OK.<br/>
+            <img src="../../images/tutorials/maven-quickstart/maven-branding2.png" alt="Screenshot of New Project wizard" title="Screenshot of New Project wizard" class="margin-around b-all" />
+            </li>-->
+        </ol>
+
+
+        <p class="tips">&Eacute; poss&iacute;vel copiar a imagem abaixo para o seu sistema local e especificar a imagem como uma tela splash na caixa de di&aacute;logo Marca.</p>
+        <img src="../../images/tutorials/maven-quickstart68/splash.gif" alt="Exemplo da imagem splash padr&atilde;o" title="Exemplo da imagem splash padr&atilde;o" class="margin-around b-all"  />
+
+    </div>
+
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++ Creating the MavenWordEngine Module +++++++++++++++ -->
+
+
+<h2><a name="02"></a>Criando m&oacute;dulo Maven WordEngine</h2>
+
+    <p>Nesta se&ccedil;&atilde;o ser&aacute; criado um novo m&oacute;dulo chamado Maven WordEngine. Voc&ecirc; modificar&aacute; ent&atilde;o o m&oacute;dulo para adicionar um componente de janela, um bot&atilde;o e uma &aacute;rea de texto.</p>
+
+    <div class="indent">
+        <h3><a name="02a"></a>Criando m&oacute;dulo</h3>
+        <p>Neste exerc&iacute;cio ser&aacute; criado um novo projeto de m&oacute;dulo no mesmo diret&oacute;rio que cont&eacute;m o m&oacute;dulo da marca e o m&oacute;dulo do aplicativo.</p>
+        <ol>
+            <li>Selecione no menu principal Arquivo &gt; Novo projeto.</li>
+            <li>Selecione M&oacute;dulo NetBeans Maven na categoria Maven. Clique em Pr&oacute;ximo.</li>
+            <li>Digite <strong>Maven WordEngine</strong> como o nome do projeto.</li>
+            <li>Clique em Navegador e localize o diret&oacute;rio MavenPlatformWordApp como a localiza&ccedil;&atilde;o do projeto. Clique em Terminar.</li>
+        </ol>
+
+        <img src="../../images/tutorials/maven-quickstart/maven-wizard-project-location.png" alt="Captura de tela do assistente Novo projeto" title="Captura de tela do assistente Novo projeto" class="margin-around b-all"  />
+
+
+        <p>Se observar o POM para o m&oacute;dulo MavenWordEngine notar&aacute; que a <tt>artifactId</tt> do projeto &eacute; <strong>MavenWordEngine</strong>.</p>
+
+        <pre class="examplecode">
+&lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+&lt;parent&gt;
+    &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+    &lt;artifactId&gt;MavenPlatformWordApp&lt;/artifactId&gt;
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+&lt;/parent&gt;
+&lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+&lt;artifactId&gt;<strong> MavenWordEngine </strong>&lt;/artifactId&gt;
+&lt;packaging&gt;nbm&lt;/packaging&gt;
+&lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+&lt;name&gt;MavenWordEngine NetBeans Module&lt;/name&gt;
+</pre>
+
+        <p>Para construir o m&oacute;dulo NetBeans &eacute; necess&aacute;rio utilizar o <tt>nbm-maven-plugin</tt>. Se observar o POM para o m&oacute;dulo, poder&aacute; notar que o IDE especificou automaticamente o <tt>nbm</tt> para o <tt>pacote</tt> e que o <strong>nbm-maven-plugin</strong> foi especificado como um plugin de constru&ccedil;&atilde;o.</p>
+
+        <pre class="examplecode">
+&lt;plugin&gt;
+   &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+   &lt;artifactId&gt;<strong>nbm-maven-plugin</strong>&lt;/artifactId&gt;
+   &lt;version&gt;3.2-SNAPSHOT&lt;/version&gt;
+   &lt;extensions&gt;true&lt;/extensions&gt;
+&lt;/plugin&gt;
+</pre>
+
+        <p>Se observar o POM para o aplicativo da plataforma NetBeans, voc&ecirc; notar&aacute; que o <strong>MavenWordEngine</strong> foi adicionado &agrave; lista de m&oacute;dulos no aplicativo.</p>
+
+        <pre class="examplecode">
+&lt;modules&gt;
+   &lt;module&gt;branding&lt;/module&gt;
+   &lt;module&gt;application&lt;/module&gt;
+   &lt;module&gt;<strong>MavenWordEngine</strong>&lt;/module&gt;
+&lt;/modules&gt;
+</pre>
+
+        <h3><a name="02b"></a>Tornando m&oacute;dulo uma depend&ecirc;ncia do MavenPlatformWordApp</h3>
+        <p>Neste exerc&iacute;cio ser&aacute; declarado o m&oacute;dulo MavenWordEngine como uma depend&ecirc;ncia do aplicativo com base na plataforma NetBeans adicionando a depend&ecirc;ncia no POM. O POM para o aplicativo declara as depend&ecirc;ncias a seguir.</p>
+        <pre class="examplecode">&lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.netbeans.cluster&lt;/groupId&gt;
+        &lt;artifactId&gt;platform&lt;/artifactId&gt;
+        &lt;version&gt;${netbeans.version}&lt;/version&gt;
+        &lt;type&gt;pom&lt;/type&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+        &lt;artifactId&gt;branding&lt;/artifactId&gt;
+        &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;</pre>
+
+        <p>Se expandir o n&oacute; Bibliotecas para o aplicativo com base na plataforma NetBeans, notar&aacute; que h&aacute; uma depend&ecirc;ncia no m&oacute;dulo da marca e em outras bibliotecas que s&atilde;o depend&ecirc;ncias do cluster necess&aacute;rio para construir o aplicativo.</p>
+        <img src="../../images/tutorials/maven-quickstart/maven-projects-libraries.png" alt="Captura de tela do n&oacute; Bibliotecas" title="Captura de tela da caixa de di&aacute;logo Adicionar depend&ecirc;ncia" class="margin-around b-all"  />
+        <p class="tips">&Eacute; poss&iacute;vel expandir a lista de depend&ecirc;ncias n&atilde;o-classpath para visualizar a lista completa de depend&ecirc;ncias.</p>
+
+        <p>Para adicionar a depend&ecirc;ncia ao POM, &eacute; poss&iacute;vel editar o POM diretamente no editor ou abrir a caixa de di&aacute;logo Adicionar depend&ecirc;ncia na janela Projetos.</p>
+
+        <ol>
+            <li>Expanda o <strong>Aplicativo com base na plataforma NetBeans-MavenPlatformAPP</strong> na janela Projetos.</li>
+            <li>Clique com o bot&atilde;o direito no n&oacute; Bibliotecas e selecione Adicionar depend&ecirc;ncia.</li>
+            <li>Clique na aba Abrir projetos e selecione <strong>MavenWordEngine</strong>. Clique em OK.</li>
+        </ol>
+        <img src="../../images/tutorials/maven-quickstart/maven-add-dependency1.png" alt="Captura de tela da caixa de di&aacute;logo Adicionar depend&ecirc;ncia" title="Captura de tela da caixa de di&aacute;logo Adicionar depend&ecirc;ncia" class="margin-around b-all"  />
+
+        <p class="notes"><strong>Observa&ccedil;&atilde;o.</strong> O novo projeto aparecer&aacute; na caixa de di&aacute;logo ap&oacute;s o IDE finalizar a an&aacute;lise e atualiza&ccedil;&atilde;o dos &iacute;ndices.</p>
+
+        <p>Se expandir o n&oacute; Bibliotecas do MavenPlatformWordApp na janela Projetos, voc&ecirc; notar&aacute; que o MavenWordEngine est&aacute; agora listado com uma depend&ecirc;ncia.</p>
+
+        <h3><a name="02c"></a>Adicionando componente de janela a um m&oacute;dulo</h3>
+
+        <p>Neste exerc&iacute;cio ser&aacute; utilizado um assistente para adicionar o componente de janela ao m&oacute;dulo MavenWordEngine.</p>
+        <ol>
+            <li>Clique com o bot&atilde;o direito do mouse no <strong>M&oacute;dulo NetBeans MavenWordEngine</strong> na janela Projetos e selecione Novo &gt; Outro para abrir o assistente Novo arquivo.</li>
+            <li>Selecione Janela na categoria Desenvolvimento do m&oacute;dulo. Clique em Pr&oacute;ximo.</li>
+            <li>Selecione <strong>sa&iacute;da</strong> na lista suspensa Posi&ccedil;&atilde;o da janela. Clique em Pr&oacute;ximo.<br/>
+            <img src="../../images/tutorials/maven-quickstart/maven-new-window.png" alt="Captura de tela da p&aacute;gina Componente de janela no assistente Novo arquivo" title="Captura de tela da p&aacute;gina Componente de janela no assistente Novo arquivo" class="margin-around b-all"  />
+            </li>
+            <li>Digite <strong>Texto</strong> no campo Prefixo do nome da classe. Clique em Terminar.
+            <p>O assistente exibe uma lista de arquivos que ser&atilde;o criados e dos arquivos que ser&atilde;o modificados. </p></li>
+        </ol>
+
+
+
+        <p>Ao clicar em Terminar, na janela Projetos, poder&aacute; notar que o IDE gerou a classe <tt>TextTopComponent.java</tt> no <tt>com.mycompany.mavenwordengine</tt> sob os pacotes Origem. O IDE tamb&eacute;m gerou arquivos de recursos adicionais no <tt>com.mycompany.mavenwordengine</tt> sob Outras fontes. Neste exerc&iacute;cio ser&aacute; editado somente o arquivo <tt>TextTopComponent.java</tt>.</p>
+
+        <p>&Eacute; poss&iacute;vel visualizar a estrutura do projeto na janela Arquivos. Para compilar um projeto Maven, somente arquivos de origem podem ser localizados sob os pacotes Origem (diret&oacute;rio <tt>src/main/java</tt> na janela Arquivos). Outros recursos (ex. arquivos XML) precisam ser localizados sob Outras fontes (diret&oacute;rio <tt>src/main/resources</tt> na janela Arquivos). </p>
+
+        <h3><a name="02d"></a>Modificando componente de janela</h3>
+
+        <p>Neste exerc&iacute;cio ser&atilde;o adicionados uma &aacute;rea de texto e um bot&atilde;o ao componente de janela. Voc&ecirc; modificar&aacute; ent&atilde;o o m&eacute;todo invocado pelo bot&atilde;o para mudar as letras na &aacute;rea de texto para letras mai&uacute;sculas.</p>
+        <ol>
+            <li>Clique na aba Desenho do <tt>TextTopComponent.java</tt> no editor.</li>
+            <li>Arraste e solte um bot&atilde;o e uma &aacute;rea de texto da paleta na janela.</li>
+            <li>Clique com o bot&atilde;o direito na &aacute;rea de texto e selecione Alterar nome vari&aacute;vel e, a seguir, digite <strong>texto</strong> como o nome. Voc&ecirc; utilizar&aacute; o nome ao acessar o componente do seu c&oacute;digo.</li>
+            <li>Defina o texto do bot&atilde;o como &quot;<strong>Filtro!</strong>&quot;.<br/>
+            <img src="../../images/tutorials/maven-quickstart68/maven-nbm-textopcomponent.png" alt="Captura de tela da p&aacute;gina Componente de janela no assistente Novo arquivo" title="Captura de tela da p&aacute;gina Componente de janela no assistente Novo arquivo" class="margin-around b-all"  />
+            </li>
+            <li>Clique duas vezes no elemento do bot&atilde;o Filtro! na visualiza&ccedil;&atilde;o Desenho para abrir o m&eacute;todo manipuladores de eventos para o bot&atilde;o no editor do c&oacute;digo de origem. O m&eacute;todo &eacute; criado automaticamente ao clicar duas vezes no elemento bot&atilde;o.</li>
+            <li>Modifique o corpo do m&eacute;todo e adicione o c&oacute;digo a seguir. Salve as altera&ccedil;&otilde;es.
+            <pre class="examplecode">
+private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {
+   <strong>tring s = text.getText();
+   s = s.toUpperCase();
+   text.setText(s);</strong>}</pre>
+            <p class="tips">&Eacute; poss&iacute;vel utilizar a conclus&atilde;o do c&oacute;digo no editor para ajud&aacute;-lo a digitar o c&oacute;digo. </p>
+            </li>
+        </ol>
+
+        <p>Se desejar testar se seus aplicativos est&atilde;o funcionando corretamente, pode clicar com o bot&atilde;o direito do mouse no n&oacute; Projeto do <strong>aplicativo com base na plataforma NetBeans mavenPlatformWordApp</strong> e selecionar Construir com depend&ecirc;ncias.</p>
+
+        <p>A a&ccedil;&atilde;o padr&atilde;o mapeada para Construir com depend&ecirc;ncias &eacute; construir o projeto utilizando o plugin Reator. Ao construir um projeto utilizando o plugin Reator, as depend&ecirc;ncias dos subprojetos s&atilde;o constru&iacute;das antes que o projeto recipiente seja constru&iacute;do. A janela Sa&iacute;da exibe a ordem de constru&ccedil;&atilde;o.</p>
+
+        <img src="../../images/tutorials/maven-quickstart/maven-buildwithdependencies1.png" alt="Captura de tela da Ordem de constru&ccedil;&atilde;o do Reator na janela Sa&iacute;da" title="Captura de tela da Ordem de constru&ccedil;&atilde;o do Reator na janela Sa&iacute;da" class="margin-around b-all"  />
+
+        <p>Os resultados da constru&ccedil;&atilde;o s&atilde;o mostrados tamb&eacute;m na janela Sa&iacute;da.</p>
+
+        <img src="../../images/tutorials/maven-quickstart/maven-buildwithdependencies2.png" alt="Captura de tela da Constru&ccedil;&atilde;o bem sucedida do Reator na janela Sa&iacute;da" title="Captura de tela da Constru&ccedil;&atilde;o bem sucedida do Reator na janela Sa&iacute;da" class="margin-around b-all"  />
+
+        <p>Se observar a janela Projetos, notar&aacute; que os projetos n&atilde;o possuem mais distintivos porque os artefatos das depend&ecirc;ncias exigidas agora est&atilde;o dispon&iacute;veis no reposit&oacute;rio local sob o n&oacute; <tt>com.mycompany</tt>.</p>
+
+        <img src="../../images/tutorials/maven-quickstart/maven-localrepo.png" alt="Captura de tela do Reposit&oacute;rio local" title="Captura de tela do Reposit&oacute;rio local" class="margin-around b-all"  />
+
+        <p>Para executar o projeto, clique com o bot&atilde;o direito no n&oacute; projeto do <strong>aplicativo com base na plataforma NetBeans MavenPlatformWordApp</strong> e selecione Executar. Ap&oacute;s a ativa&ccedil;&atilde;o do aplicativo, &eacute; poss&iacute;vel test&aacute;-lo executando as etapas a seguir.</p>
+        <ol>
+            <li>Selecione Janela &gt; Texto no menu principal do aplicativo da plataforma para abrir a janela Texto.</li>
+            <li>Digite algumas letras min&uacute;sculas na &aacute;rea de texto e clique em Filtro! </li>
+            <li>Saia do Maven Platform Word App.</li>
+        </ol>
+        <p>Ao clicar em Filtro!, as letras que digitou ser&atilde;o alteradas para mai&uacute;sculas e exibidas na &aacute;rea de texto. </p>
+
+    </div>
+
+
+
+
+
+<!-- =================================================================== -->
+<!-- +++++++++++++ Creating the TextFilter Module ++++++++++++++++++++++ -->
+
+
+<h2><a name="04"></a>Criando m&oacute;dulo TextFilter</h2>
+
+    <p>Neste exerc&iacute;cio ser&aacute; criado um m&oacute;dulo chamado <b>TextFilter</b> e adicionar&aacute; o m&oacute;dulo como uma depend&ecirc;ncia ao aplicativo. O m&oacute;dulo TextFilter fornecer&aacute; um servi&ccedil;o e conter&aacute; somente uma interface. Ent&atilde;o ser&aacute; poss&iacute;vel acessar o servi&ccedil;o a partir de seus outros m&oacute;dulos utilizando o objeto Pesquisar.</p>
+
+    <div class="indent">
+        <h3><a name="04a"></a>Criando m&oacute;dulo</h3>
+        <p>Neste exerc&iacute;cio ser&atilde;o executados as etapas a seguir para criar o m&oacute;dulo TextFilter.</p>
+
+        <ol>
+            <li> Selecione Arquivo &gt; Novo projeto (Ctrl-Shift-N).</li>
+            <li> Selecione o arqu&eacute;tipo do m&oacute;dulo NetBeans Maven na categoria Maven. Clique em Pr&oacute;ximo.</li>
+            <li> Digite <b>TextFilter</b> como o nome do projeto.</li>
+            <li> Clique no Navegador para definir a localiza&ccedil;&atilde;o do projeto e localizar o diret&oacute;rio MavenPlatformWordApp. Clique em Terminar.</li>
+        </ol>
+
+        <p>Ao clicar em Terminar, o IDE cria o m&oacute;dulo e abre o projeto do m&oacute;dulo <b>M&oacute;dulo NetBeans TextFilter </b> na janela Projetos.</p>
+        <p>O IDE modifica o arquivo <tt>pom.xml</tt> do projeto POM aplicativo da plataforma NetBeans - MavenPlatformWordApp para adicionar o novo m&oacute;dulo &agrave; lista de m&oacute;dulos a ser inclu&iacute;da no projeto.</p>
+
+<pre class="examplecode">&lt;modules&gt;
+    &lt;module&gt;branding&lt;/module&gt;
+    &lt;module&gt;application&lt;/module&gt;
+    &lt;module&gt;MavenWordEngine&lt;/module&gt;
+    &lt;module&gt;TextFilter&lt;/module&gt;
+&lt;/modules&gt;</pre>
+
+        <p>Ap&oacute;s criar o m&oacute;dulo ser&aacute; necess&aacute;rio adicionar o mesmo como uma depend&ecirc;ncia do aplicativo.</p>
+
+        <h3><a name="04b"></a>Adicionando M&oacute;dulo TextFilter como uma depend&ecirc;ncia do MavenPlatformWordApp</h3>
+
+        <p>Neste exerc&iacute;cio ser&aacute; adicionado o m&oacute;dulo TextFilter como uma depend&ecirc;ncia do aplicativo com base na plataforma NetBeans MavenPlatformWordApp.</p>
+        <ol>
+            <li>Clique com o bot&atilde;o direito do mouse no n&oacute; Bibliotecas do projeto<strong>aplicativo com base na plataforma NetBeans - MavenPlatformWordApp</strong> e selecione Adicionar depend&ecirc;ncia.</li>
+            <li>Clique na aba Abrir projetos na caixa de di&aacute;logo Adicionar depend&ecirc;ncia.</li>
+            <li>Selecione o m&oacute;dulo <strong>M&oacute;dulo TextFilterNetBeans</strong>. Clique em OK.</li>
+        </ol>
+
+        <p>Ao clicar em OK, o IDE adiciona o m&oacute;dulo como uma depend&ecirc;ncia do projeto. Se expandir o n&oacute; Biblioteca, poder&aacute; notar que o m&oacute;dulo foi adicionado &agrave; lista de depend&ecirc;ncias. No POM para o <strong>aplicativo com base na plataforma NetBeans - MavenPlatformWordApp</strong>, poder&aacute; notar que o IDE adicionou as linhas seguintes dentro do elemento <tt>depend&ecirc;ncias</tt>.</p>
+
+<pre class="examplecode">&lt;dependency&gt;
+   &lt;groupId&gt;${project.groupId}&lt;/groupId&gt;
+   &lt;artifactId&gt;TextFilter&lt;/artifactId&gt;
+   &lt;version&gt;${project.version}&lt;/version&gt;
+&lt;/dependency&gt;</pre>
+
+
+
+        <h3><a name="04c"></a>Adicionando uma interface ao m&oacute;dulo TextFilter</h3>
+        <p>Neste exerc&iacute;cio ser&aacute; adicionado uma interface simples ao m&oacute;dulo TextFilter.</p>
+
+        <ol>
+            <li> Clique com o bot&atilde;o direito do mouse no <strong>M&oacute;dulo NetBeans TextFilter</strong> e selecione Nova &gt; Interface Java.</li>
+            <li> Digite <strong>TextFilter</strong> como o nome da classe.</li>
+            <li> Selecione <b>com.mycompany.textfilter</b> na lista suspensa Pacote. Clique em Terminar.</li>
+            <li> Modifique a classe para adicionar o c&oacute;digo a seguir. Salve as altera&ccedil;&otilde;es.</li>
+        </ol>
+<pre class="examplecode">package com.mycompany.textfilter;
+
+public interface TextFilter {
+    <strong>public String process(String s);</strong>}</pre>
+
+
+        <h3><a name="04d"></a>Tornando p&uacute;blico o m&oacute;dulo TextFilter</h3>
+        <p>Neste exerc&iacute;cio voc&ecirc; tornar&aacute; p&uacute;blico os conte&uacute;dos do pacote <tt>com.mycompany.textfilter</tt>, de forma que outros m&oacute;dulos possam acessar os m&eacute;todos. Para declarar um pacote como p&uacute;blico, modifique o elemento da <tt>configura&ccedil;&atilde;o</tt> do <tt>nbm-maven-plugin</tt> no POM para especificar os pacotes exportados como p&uacute;blico pelo plugin. &Eacute; poss&iacute;vel fazer as altera&ccedil;&otilde;es ao POM no editor ou selecionar os pacotes a se tornarem p&uacute;blicos na caixa de di&aacute;logo Propriedades.
+        </p>
+
+
+        <ol>
+            <li> Clique com o bot&atilde;o direito no <strong>M&oacute;dulo NetBeans TextFilter</strong> e selecione Propriedades.</li>
+            <li> Selecione a categoria Pacotes p&uacute;blicos na caixa de di&aacute;logo Propriedades do projeto.</li>
+            <li> Selecione o pacote <strong>com.mycompany.textfilter</strong>. Clique em OK.</li>
+        </ol>
+        <img src="../../images/tutorials/maven-quickstart/maven-public-packages.png" alt="Captura de tela da caixa de di&aacute;logo Propriedades" title="Captura de tela da caixa de di&aacute;logo Propriedades" class="margin-around b-all"  />
+
+
+        <p>Ao clicar em OK, o IDE modifica o projeto POM para modificar o elemento da <tt>configura&ccedil;&atilde;o</tt> do artefato <tt>nbm-maven-plugin</tt> para adicionar as seguintes entradas.</p>
+
+<pre>&lt;publicPackages&gt;
+   &lt;publicPackage&gt;com.mycompany.textfilter&lt;/publicPackage&gt;
+&lt;/publicPackages&gt;</pre>
+
+        <p>Agora a entrada do POM cont&eacute;m as seguintes entradas.</p>
+<pre>&lt;plugin&gt;
+    &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+    &lt;artifactId&gt;nbm-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;3.2&lt;/version&gt;
+    &lt;extensions&gt;true&lt;/extensions&gt;
+    &lt;configuration&gt;
+                    &lt;publicPackages&gt;
+                        &lt;publicPackage&gt;com.mycompany.textfilter&lt;/publicPackage&gt;
+                    &lt;/publicPackages&gt;
+
+    &lt;/configuration&gt;
+&lt;/plugin&gt;</pre>
+
+
+        <p class="tips">Para mais informa&ccedil;&otilde;es, consulte <a href="http://mojo.codehaus.org/nbm-maven-plugin/manifest-mojo.html#publicPackages" class="external text" title="http://mojo.codehaus.org/nbm-maven-plugin/manifest-mojo.html#publicPackages" rel="nofollow">manifesto nbm-maven-plugin</a></p>
+
+    </div>
+
+<!-- =================================================================== -->
+<!-- +++++++++++++ Creating the MyFilter Module ++++++++++++++++++++++++ -->
+
+
+    <h2><a name="05"></a>Criando m&oacute;dulo MyFilter</h2>
+    <p>Neste exerc&iacute;cio ser&aacute; criado o m&oacute;dulo <b>MyFilter</b> e adicionado como uma depend&ecirc;ncia do TextFilter. &Eacute; poss&iacute;vel ent&atilde;o chamar os m&eacute;todos no MyFilter pesquisando o servi&ccedil;o TextFilter.</p>
+    <div class="indent">
+
+        <h3><a name="05a"></a>Criando m&oacute;dulo</h3>
+        <p>Neste exerc&iacute;cio ser&aacute; criado o m&oacute;dulo chamado <strong>MyFilter</strong>. Para criar o m&oacute;dulo, voc&ecirc; seguir&aacute; os mesmas etapas que executou ao criar o m&oacute;dulo TextFilter.</p>
+
+        <ol>
+            <li> Selecione Arquivo &gt; Novo projeto (Ctrl-Shift-N).</li>
+            <li> Selecione M&oacute;dulo NetBeans Maven na categoria Maven. Clique em Pr&oacute;ximo.</li>
+            <li> Digite <b>MyFilter</b> como o nome do projeto.</li>
+            <li> Clique no Navegador para definir a localiza&ccedil;&atilde;o do projeto e localizar o diret&oacute;rio <strong>MavenPlatformWordApp</strong>. Clique em Terminar.</li>
+            <li> Adicione o m&oacute;dulo MyFilter como uma depend&ecirc;ncia do projeto do <b>aplicativo com base na plataforma NetBeans - MavenPlatformWordApp</b>.</li>
+        </ol>
+
+
+        <h3><a name="05b"></a>Adicionando m&oacute;dulo TextFilter como uma depend&ecirc;ncia</h3>
+        <p>Neste exerc&iacute;cio ser&aacute; adicionado o m&oacute;dulo TextFilter como uma depend&ecirc;ncia do m&oacute;dulo MyFilter.</p>
+
+        <ol>
+            <li>Clique com o bot&atilde;o direito do mouse no n&oacute; Bibliotecas do projeto <b>MyFilter</b> e selecione Adicionar depend&ecirc;ncia.</li>
+            <li>Clique na aba Abrir projetos na caixa de di&aacute;logo Adicionar depend&ecirc;ncia.</li>
+            <li>Selecione o m&oacute;dulo <strong>TextFilter</strong>. Clique em OK.</li>
+        </ol>
+
+        <h3><a name="05c"></a>Modificando m&oacute;dulo MyFilter</h3>
+        <p>Neste exerc&iacute;cio ser&aacute; adicionada uma classe Java com um m&eacute;todo simples chamado <tt>processo</tt> que converte uma string para letra mai&uacute;scula. Voc&ecirc; tamb&eacute;m especificar&aacute; que a classe implementar&aacute; a interface TextFilter. Voc&ecirc; utilizar&aacute; tamb&eacute;m uma anota&ccedil;&atilde;o <tt>@ServiceProvider</tt> para especificar que o TextFilter &eacute; um servi&ccedil;o que ser&aacute; registrado no tempo de compila&ccedil;&atilde;o.</p>
+
+        <ol>
+            <li> Clique com o bot&atilde;o direito no m&oacute;dulo <b>MyFilter</b> e selecione Nova &gt; Classe Java.</li>
+            <li> Digite <b>UpperCaseFilter</b> como o nome da classe.</li>
+            <li> Selecione<b>com.mycompany.myfilter</b> na lista suspensa Pacote. Clique em Terminar.</li>
+            <li> Modifique a classe para adicionar o c&oacute;digo a seguir. Salve as altera&ccedil;&otilde;es.</li>
+        </ol>
+
+<pre>package com.mycompany.myfilter;
+
+import com.mycompany.textfilter.TextFilter;
+import org.openide.util.lookup.ServiceProvider; <strong>@ServiceProvider(service=TextFilter.class)</strong> public class UpperCaseFilter <strong>implements TextFilter {
+
+    public String process(String s) {
+        return s.toUpperCase();
+    }</strong>}</pre>
+
+        <p class="tips">Observe como a anota&ccedil;&atilde;o &eacute; usada para especificar o provedor do servi&ccedil;o. Para mais informa&ccedil;&otilde;es sobre a anota&ccedil;&atilde;o do <tt>@ServiceProvider</tt> e sobre o funcionamento do mecanismo ServiceceLoader no JDK 6, consulte a documenta&ccedil;&atilde;o dos utilit&aacute;rios API.</p>
+
+
+
+        <h3><a name="05d"></a>Modificando m&oacute;dulo MavenWordEngine</h3>
+        <p>Neste exerc&iacute;cio ser&aacute; modificado o manipulador de eventos no componente de janela Texto para utilizar um objeto pesquisar para chamar a interface TextFilter e acessar o m&eacute;todo no MyFilter. Antes de adicionar o c&oacute;digo ao manipulador de eventos &eacute; necess&aacute;rio declarar uma depend&ecirc;ncia no m&oacute;dulo TextFilter.</p>
+
+        <ol>
+            <li>Clique com o bot&atilde;o direito do mouse no n&oacute; Bibliotecas no m&oacute;dulo <strong>MavenWordEngine</strong> e adicione uma depend&ecirc;ncia no m&oacute;dulo TextFilter.</li>
+            <li>Expanda os pacotes Origem do m&oacute;dulo <strong>MavenWordEngine</strong> e abra o <tt>TextTopComponent</tt> no editor de origem.</li>
+            <li>Modifique o m&eacute;todo manipulador do bot&atilde;o <tt>jButton1ActionPerformed</tt> para adicionar o c&oacute;digo a seguir. Salve as altera&ccedil;&otilde;es.
+
+<pre>private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {
+    String s = text.getText();
+    <strong>TextFilter filter = Lookup.getDefault().lookup(TextFilter.class);
+    if (filter != null) {
+        s = filter.process(s);
+    }</strong>    text.setText(s);
+}</pre>
+            </li>
+        </ol>
+        <p class="tips">&Eacute; poss&iacute;vel utilizar a conclus&atilde;o do c&oacute;digo para obter ajuda com o c&oacute;digo.</p>
+
+        <p>Nesta fase voc&ecirc; pode verificar se seu aplicativo est&aacute; funcionando corretamente. A seguir, voc&ecirc; adicionar&aacute; um novo componente de janela que exibir&aacute; um hist&oacute;rico do texto que processou utilizando o filtro.</p>
+
+    </div>
+
+
+<!-- =================================================================== -->
+<!-- ++++++++++++++++++ Adding a LookupListener ++++++++++++++++++++++++ -->
+
+    <h2><a name="06"></a>Adicionando objetos LookupListener e InstanceContent para o componente de janela Texto</h2>
+    <p>Neste exerc&iacute;cio ser&atilde;o adicionados um listener e um campo para armazenar os conte&uacute;dos da &aacute;rea de texto ao clicar no bot&atilde;o  &quot;Filtro!&quot;.</p>
+
+    <ol>
+        <li>No m&oacute;dulo <strong>MavenWordEngine</strong> adicione o objeto <tt>InstanceContent</tt> e modifique o construtor do <tt>TextTopComponent</tt> adicionando o c&oacute;digo a seguir.
+
+        <pre>public final class TextTopComponent extends TopComponent {
+     <strong>private InstanceContent content;</strong>     public TextTopComponent() {
+        initComponents();
+        setName(NbBundle.getMessage(TextTopComponent.class, &quot;CTL_TextTopComponent&quot;));
+        setToolTipText(NbBundle.getMessage(TextTopComponent.class, &quot;HINT_TextTopComponent&quot;));
+        //        setIcon(Utilities.loadImage(ICON_PATH, true));
+
+        <strong>content = new InstanceContent();
+        associateLookup(new AbstractLookup(content));</strong>    }</pre>
+        </li>
+        <li>Modifique o m&eacute;todo <tt>jButton1ActionPerformed</tt> para adicionar um valor antigo do texto ao objeto <tt>InstanceContent</tt> quando o bot&atilde;o for clicado.
+
+        <pre>private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {
+     String s = text.getText();
+     TextFilter filter = Lookup.getDefault().lookup(TextFilter.class);
+     if (filter&nbsp;!= null) {
+         <strong>content.add(s);</strong>         s = filter.process(s);
+     }
+     text.setText(s);
+ }</pre>
+        </li>
+    </ol>
+
+
+<!-- =================================================================== -->
+<!-- ++++++++++++++ Creating the History Module ++++++++++++++++++++++++ -->
+
+    <h2><a name="07"></a>Criando m&oacute;dulo Hist&oacute;rico</h2>
+    <p>Nesta se&ccedil;&atilde;o ser&aacute; criado um m&oacute;dulo chamado <strong>Hist&oacute;rico</strong> que exibir&aacute; o valor do <tt>InstanceContent</tt>. Para criar o m&oacute;dulo, voc&ecirc; seguir&aacute; os mesmas etapas que executou ao criar os m&oacute;dulos TextFilter e MyFilter.</p>
+
+    <div class="indent">
+        <ol>
+            <li>Selecione Arquivo &gt; Novo projeto (Ctrl-Shift-N).</li>
+            <li>Selecione M&oacute;dulo NetBeans Maven na categoria Maven. Clique em Pr&oacute;ximo.</li>
+            <li>Digite <strong>Hist&oacute;rico</strong> como o nome do projeto.</li>
+            <li>Clique no Navegador para definir a localiza&ccedil;&atilde;o do projeto e localizar o diret&oacute;rio MavenPlatformWordApp. Clique em Terminar.</li>
+            <li>Adicione o m&oacute;dulo Hist&oacute;rico como uma depend&ecirc;ncia do projeto do <b>aplicativo com base na plataforma NetBeans - MavenPlatformWordApp</b>.</li>
+        </ol>
+
+        <h3><a name="07a"></a>Criando um componente de janela no m&oacute;dulo Hist&oacute;rico</h3>
+        <p>Neste exerc&iacute;cio ser&aacute; utilizado um assistente para adicionar um componente de janela ao m&oacute;dulo.</p>
+
+        <ol>
+            <li>Clique com o bot&atilde;o direito em <b>M&oacute;dulo NetBeans Hist&oacute;rico</b> na janela Projetos e selecione Novo &gt; Outro para abrir a caixa de di&aacute;logo Novo Arquivo.</li>
+            <li>Selecione Janela na categoria Desenvolvimento do m&oacute;dulo. Clique em Pr&oacute;ximo.</li>
+            <li>Selecione <b>editor</b> na lista suspensa Posi&ccedil;&atilde;o da janela. Clique em Pr&oacute;ximo.</li>
+            <li>Digite <b>Hist&oacute;rico</b> no campo Prefixo do nome da classe. Clique em Terminar.<br />
+            O assistente exibe uma lista de arquivos que ser&atilde;o criados e dos arquivos que ser&atilde;o modificados.</li>
+        </ol>
+
+        <h3><a name="07b"></a>Modificando componente de janela Hist&oacute;rico</h3>
+
+        <p>Voc&ecirc; agora adicionar&aacute; um elemento da &aacute;rea de texto ao componente de janela que ser&aacute; exibido nas strings filtradas.</p>
+
+        <ol>
+            <li>Clique na aba Desenho do arquivo <tt>HistoryTopComponent.java</tt> no editor.</li>
+            <li>Arraste e solte uma &aacute;rea de texto a partir da paleta na janela.</li>
+            <li>Clique com o bot&atilde;o direito do mouse na &aacute;rea de texto e selecione Alterar nome da vari&aacute;vel e, a seguir, digite <b>historyText</b> como o nome.</li>
+            <li>Adicione o campo <tt>resultado</tt><tt>privado</tt> e o c&oacute;digo seguinte ao construtor do <tt>HistoryTopComponent</tt> de maneira que este observe o objeto pesquisar da classe String da janela ativa atual e exiba todos os objetos String recuperados nesta &aacute;rea de texto.
+            <pre class="examplecode">
+      <strong>private Lookup.Result result;</strong>     public HistoryTopComponent() {
+          initComponents();
+          ...
+
+          <strong>result = org.openide.util.Utilities.actionsGlobalContext().lookupResult(String.class);
+          result.addLookupListener(new LookupListener() {
+              public void resultChanged(LookupEvent e) {
+                  historyText.setText(result.allInstances().toString());
+              }
+          });</strong>     }</pre>
+            </li>
+        </ol>
+    </div>
+
+    <h2><a name="02c"></a>Construindo e Executando aplicativo</h2>
+    <p>Agora &eacute; poss&iacute;vel testar o aplicativo.</p>
+    <ol>
+        <li>Clique com o bot&atilde;o direito no n&oacute; Projeto no <strong>aplicativo com base na plataforma NetBeans mavenPlatformWordApp</strong> e selecione Limpar.</li>
+        <li>Clique com o bot&atilde;o direito no n&oacute; Projeto no <strong>aplicativo com base na plataforma NetBeans mavenPlatformWordApp</strong> e selecione Construir com depend&ecirc;ncias.</li>
+        <li>Clique com o bot&atilde;o direito no n&oacute; Projeto no <strong>aplicativo com base na plataforma NetBeans mavenPlatformWordApp</strong> e selecione Executar.</li>
+    </ol>
+
+    <p>Ao clicar em Executar, o IDE ativa o aplicativo da plataforma NetBeans. &Eacute; poss&iacute;vel abrir as janelas Hist&oacute;rico e Texto a no menu Janela.<br/>
+
+    <img src="../../images/tutorials/maven-quickstart/maven-final-app.png" alt="Captura de tela do aplicativo final da plataforma NetBeans" title="Captura de tela do aplicativo final da plataforma NetBeans" class="margin-around b-all"  />
+</p>
+    <p>Ao digitar o texto na janela Texto e clicar no bot&atilde;o Filtro!, o texto &eacute; convertido em letra mai&uacute;scula e &eacute; adicionado ao conte&uacute;do da janela Hist&oacute;rico.</p>
+
+    <p>Este Guia de in&iacute;cio r&aacute;pido demonstra que criar um aplicativo da plataforma NetBeans utilizando Maven, n&atilde;o &eacute; muito diferente de criar um aplicativo utilizando Ant. A principal diferen&ccedil;a &eacute; entender como o POM Maven controla como o aplicativo &eacute; montado. Para mais exemplos sobre como construir os aplicativos e m&oacute;dulos da plataforma NetBeans, consulte os tutoriais listados na <a href="https://netbeans.org/kb/trails/platform_pt_BR.html">Trilha de aprendizado da plataforma NetBeans</a>.</p>
+
+
+<!-- ======================================================================================== -->
+
+
+    <h2><a name="nextsteps"></a>Veja tamb&eacute;m</h2>
+
+    <p>Para mais informa&ccedil;&otilde;es sobre a cria&ccedil;&atilde;o e o desenvolvimento dos aplicativos, consulte os recursos a seguir.</p>
+    <ul>
+        <li><a href="https://netbeans.org/kb/trails/platform_pt_BR.html">Trilha de aprendizado da plataforma NetBeans</a></li>
+        <li><a href="http://bits.netbeans.org/dev/javadoc/">Javadoc da API do NetBeans</a></li>
+    </ul>
+    <p>Caso tenha alguma d&uacute;vida referente &aacute; plataforma Netbeans, envie-nos um e-mail para dev@platform.netbeans.org, ou consulte o <a href="https://netbeans.org/projects/platform/lists/dev/archive">arquivo de endere&ccedil;os da plataforma Netbeans</a>.</p>
+
+
+    <!-- ======================================================================================== -->
+
+
+
+</body>
+
+</html>

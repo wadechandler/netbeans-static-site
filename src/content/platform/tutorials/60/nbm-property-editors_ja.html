@@ -1,0 +1,316 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"><!-- -*- xhtml -*- -->
+
+  <title>NetBeans Platform 6.0 NetBeans プロパティーエディタチュートリアル</title><!--      Copyright (c) 2006 Sun Microsystems, Inc. All rights reserved. --><!--     Use is subject to license terms.-->
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="tboudreau@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="NetBeans でプロパティーエディタを使う方法。">
+
+
+</head>
+<body>
+<h1>NetBeans プロパティーエディタチュートリアル</h1>
+ <img  src="../../images/articles/60/netbeans-stamp60-61.gif" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.1" title="Content on this page applies to NetBeans IDE 6.1"> </p>
+ <p>このチュートリアルでは、カスタムエディタやカスタムインプレイスエディタ (custom inplace editor) の提供など、 NetBeans でプロパティーエディタを使う方法について紹介します。特に以下の内容を扱います:<ul>
+    <li>ノードごとに独自のプロパティーエディタを提供する</li>
+    <li>カスタムエディタの作成</li>
+    <li>カスタムインプレイスエディタの作成</li>
+    <li>カスタムプロパティーエディタをグローバル登録する</li>
+</ul><!-- ===================================================================================== -->
+
+
+<p><h2><a name="gettingtoknowthesample"></a>はじめに</h2>このチュートリアルは以下のチュートリアルの続きとして用意されており、サンプルコードはこれらのチュートリアルで作成したコードを基にしています:<ul>
+    <li><a href="nbm-selection-1_ja.html">NetBeans セレクション管理のチュートリアル I—TopComponent の Lookup を使う方法</a></li>
+    <li><a href="nbm-selection-2_ja.html">NetBeans セレクション管理のチュートリアル II—ノードを使う方法</a></li>
+    <li><a href="nbm-nodesapi2_ja.html">ノード API チュートリアル</a></li>
+</ul>
+
+<p>もしもこれらのチュートリアルがまだお済みでないなら、先に済ませることをお勧めします。</p>
+
+<p>サンプルをダウンロードするには<a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=3146">ここ</a>をクリックしてください。<p><a href="nbm-nodesapi2_ja.html">前回のチュートリアル</a>では、プロパティーシートに表示することができる <code>Property</code> を持つ<code>ノード</code>の作成方法を学びました。<!-- ===================================================================================== -->
+<p><h2><a name="custom-editors"></a>カスタムプロパティーエディタ</h2>
+<p>標準のプロパティーエディタでは十分ではなかったり、標準のエディタが用意されていない型のプロパティーが必要になる時があるでしょう。NetBeans IDE には一般的な Swing の型に対するクラスが組み込まれていますが、標準のプロパティーエディタですべての需要がカバーできるというわけではありません。</p>
+<p>これより前回のチュートリアルで中断したところ、つまり、 <code>APIObject</code> オブジェクトをラップする <code>MyNode</code> クラスが、 <code>index</code> という読み取り専用のプロパティーと、読み書き可能な <code>date</code> プロパティーを提供しているところから開始します。 <p>
+
+<p><h2><a name="creating-custom-editor"></a>プロパティーエディタの作成</h2>
+<p>プロパティーエディタ作成の基本はとてもシンプルです。JavaBeans API には、プロパティーエディタの基本をほとんどカバーする <code>PropertyEditorSupport</code> という基本クラスがあり、ほんの少しの手間で簡単なプロパティーエディタを作成することができます。</p>
+
+<p>プロパティーエディタの役目は２つあります。プロパティーシートに表示する文字列から値にもしくは値から文字列へと変換することと、設定された値を検査することです。まず始めに、異なるフォーマットの日時を表示、入力できるプロパティーエディタを作成します。<ol>
+    <li><code>org.myorg.myeditor</code> パッケージを右クリックし、「新規」&gt;「Java クラス」を選択します。ウィザードで、クラス名を <code>DatePropertyEditor</code> とします。</li>
+    <li>コードエディタで、クラスのシグネチャを変更し、 <code>PropertyEditorSupport</code> を拡張するようにします:<pre class=examplecode>
+public class DatePropertyEditor extends PropertyEditorSupport {
+    </pre>
+    </li>
+    <li><code>setAsText()</code> と <code>getAsText()</code> を以下のように実装します:<pre class=examplecode>
+public String getAsText() {
+    Date d = (Date) getValue();
+    if (d == null) {
+        return "No Date Set";
+    }
+    return new SimpleDateFormat("MM/dd/yy HH:mm:ss").format(d);
+}
+
+public void setAsText(String s) {
+    try {
+        setValue (new SimpleDateFormat("MM/dd/yy HH:mm:ss").parse(s));
+    } catch (ParseException pe) {
+        IllegalArgumentException iae = new IllegalArgumentException ("Could not parse date");
+        throw iae;
+    }
+}
+    </pre>
+    </li>
+    <li><code>MyNode</code> をコードエディタで開きます。<code>dateProperty</code> の宣言部分を変更し、<code>Property</code> ではなく、 <code>PropertySupport.Reflection</code> の変数として宣言します。そして、 <code>PropertySupport.Reflection</code> 独自の関数を使っていきます:<pre class=examplecode>
+PropertySupport.Reflection dateProp = new PropertySupport.Reflection(obj, Date.class, "date");
+    </pre>
+    </li>
+    <li>この行の後に、以下の１行を挿入してください:<pre class=examplecode>
+dateProp.setPropertyEditorClass(DatePropertyEditor.class);
+    </pre>
+    </li>
+    <li>モジュールスイートを実行し、「ファイル」&gt;「Open Editor」をクリックしてエディタを開き、以下のように Date プロパティーのフォーマットが変わることを確認してください:</p>
+ <img border="1" border="1" src="../../images/tutorials/custom-editors/changed-date-60.png"/>
+
+</li>
+</ol>
+
+<p><h2><a name="customEditor"></a>カスタムエディタの作成</h2>
+<p>標準の <code>java.beans.PropertyEditor</code> とそのサブクラスのもう１つの特徴は、"カスタムエディタ" を作成することができるということです。これは通常、プロパティーシートの端にある "..." ボタンをクリックすると出てくるダイアログのことです。</p>
+
+<p>このようなエディタの実装の詳細について説明することは、チュートリアルの本題からはそれるのですが、基本的には以下の通りです:</p>
+
+<ol>
+    <li><code>DatePropertyEditor</code> の以下の２つのメソッドを実装します:<pre class=examplecode>
+public Component getCustomEditor() {
+    return new JLabel ("I want to be a custom editor");
+}
+
+public boolean supportsCustomEditor() {
+    return true;
+}
+    </pre>
+    </li>
+    <li>スイートを実行すると、今度は以下のように、"..." ボタンがプロパティーシートの端に表示されます:</p>
+<img border="1" border="1" src="../../images/tutorials/custom-editors/custom-editor-60-1.png"/> 
+<p><p>このボタンをクリックすると、 getCustomEditor() メソッドで作成した JLabel が表示されます:</p>
+<img border="1" border="1" src="../../images/tutorials/custom-editors/custom-editor-60-2.png"/> 
+   
+<p><p>実際に使用するには、JPanel を作成し、プロパティーを簡単に設定できるようにカレンダーや時計を追加します。話がそれるので、ここで実際のコードは紹介しません。</p>
+
+</li><li>続きへ進む前に、以上で追加した２つのメソッドを削除します。</li></ol>
+
+<p><h2><a name="inplace-editor"></a>カスタムインプレイスエディタの作成</h2>
+<p>本当に便利な方法は、よりよい日時エディタをプロパティーシート自身に組み込むことです。NetBeans にはこのようなことをするための API があるのです。多少のコードは必要になりますが、そうするだけの価値はあります。</p>
+<p> java.net の <a href="https://swingx.dev.java.net/">SwingLabs</a> プロジェクトに、 date picker component という便利なコンポーネントがあるので、これを単純にリユースすることにします。まず最初にしなくてはいけないことは、NetBeans に SwingX を組み込むことです。<ol>
+    <li><a href="http://swinglabs.org/downloads.jsp">SwingLabs のサイト</a>から、 <code>swingx.jar</code> をダウンロードします。(ライセンスの都合により、 NetBeans の CVS で管理することはできません。)</li>
+    <li>SelectionSuite を展開し、「モジュール」ノードを右クリックして、「新規ライブラリを追加」を選択します:</p>
+    <p>
+    <img border="1" border="1" src="../../images/tutorials/custom-editors/library-wrapper-60.png"/>
+    </li>
+    <li>先ほどダウンロードした <code>swingx.jar</code> を参照します。「次へ」をクリックします。</li>
+    <li>もう一度「次へ」をクリックし、コード名ベースが <tt>org.jdesktop.swingx</tt> となっていることを確認して「完了」をクリックします。</li>
+    <li>プロジェクトタブで、My Editor プロジェクトを右クリックし、「プロパティー」を選択します。</li>
+    <li>「ライブラリ」カテゴリの「依存関係を追加」をクリックし、 swingx のライブラリラッパーモジュールへの依存関係を追加します。</li>
+</ol>
+
+<p>これで date picker を利用する準備が整いました。これより、NetBeans 固有のインタフェースをいくつか実装します:</p>
+<ul>
+    <li>ExPropertyEditor—プロパティーシートが環境変数 (<code>PropertyEnv</code>)  を渡すことができるプロパティーエディタインタフェース。この環境変数により、エディタは編集中の <code>Property</code> オブジェクトなどにアクセスすることができる。</li>
+    <li>InplaceEditor.Factory—<code>InplaceEditor</code> を所有するオブジェクトのインタフェース</li>
+    <li>InplaceEditor—プロパティーシート内にカスタムコンポーネントを表示するためのインタフェース</li>
+</ul>
+
+<p><code>InplaceEditor.Factory</code> と <code>ExPropertyEditor</code> を <code>DatePropertyEditor</code> に直接実装し、 <code>InplaceEditor</code> をネストクラスとして作成します:<ol>
+    <li><code>DatePropertyEditor</code> のシグネチャを以下のように変更します:<pre class=examplecode>
+public class DatePropertyEditor extends PropertyEditorSupport implements ExPropertyEditor, InplaceEditor.Factory {
+    </pre>
+    </li>
+    <li>これまでにもしたように、Ctrl-Shift-I キーを押してインポートを修正し、「すべての抽象メソッドの実装」を実行して必要な関数を追加します。<p></li>
+    <li><code>DatePropertyEditor</code> に以下のメソッドを追加します:<pre class=examplecode>
+public void attachEnv(PropertyEnv env) {
+    env.registerInplaceEditorFactory(this);
+}
+
+private InplaceEditor ed = null;
+
+public InplaceEditor getInplaceEditor() {
+    if (ed == null) {
+        ed = new Inplace();
+    }
+    return ed;
+}
+    </pre>
+    </li>
+    <li>次に <code>InplaceEditor</code> を実装する必要があります。このクラスに、 swingx の <code>JXDatePicker</code> コンポーネントと、このコンポーネントに値を設定し、必要がなくなった際にリソースを解放する関数を追加します。多少のコードは必要になりますが、とても簡単です。<code>DatePropertyEditor</code> に <code>Inplace</code> という static なネストクラスを作成します:<pre class=examplecode>
+
+    private static class Inplace implements InplaceEditor {
+    
+        private final JXDatePicker picker = new JXDatePicker();
+        private PropertyEditor editor = null;
+        
+        public void connect(PropertyEditor propertyEditor, PropertyEnv env) {
+            editor = propertyEditor;
+            reset();
+        }
+
+        public JComponent getComponent() {
+            return picker;
+        }
+
+        public void clear() {
+            //avoid memory leaks:
+            editor = null;
+            model = null;
+        }
+
+        public Object getValue() {
+            return picker.getDate();
+        }
+
+        public void setValue(Object object) {
+            picker.setDate ((Date) object);
+        }
+
+        public boolean supportsTextEntry() {
+            return true;
+        }
+
+        public void reset() {
+            Date d = (Date) editor.getValue();
+            if (d != null) {
+                picker.setDate(d);
+            }
+        }
+
+        public KeyStroke[] getKeyStrokes() {
+            return new KeyStroke[0];
+        }
+
+        public PropertyEditor getPropertyEditor() {
+            return editor;
+        }
+
+        public PropertyModel getPropertyModel() {
+            return model;
+        }
+
+        private PropertyModel model;
+        public void setPropertyModel(PropertyModel propertyModel) {
+            this.model = propertyModel;
+        }
+
+        public boolean isKnownComponent(Component component) {
+            return component == picker || picker.isAncestorOf(component);
+        }
+
+        public void addActionListener(ActionListener actionListener) {
+           //do nothing - not needed for this component
+        }
+
+        public void removeActionListener(ActionListener actionListener) {
+           //do nothing - not needed for this component
+        }
+    }
+    </pre>
+    </li>
+    <li>まだインポートを修正していなければ、Ctrl-Shift-I キーを押してインポートを修正します。<p></li>
+    <li>モジュールスイートを実行し、「ファイル」&gt;「Open Editor」をクリックしてエディタ (もはや大したエディタではありませんが) を開き、 <code>MyNode</code> のインスタンスを選択して、プロパティーシートの date プロパティーの値をクリックします。date picker のポップアップが表示され、ちゃんと動作することを確認してください:</p>
+
+    <p>
+    <img border="1" src="../../images/tutorials/custom-editors/custom-inplace-editor-60.png"/>
+</li>
+    </ol>
+
+
+<p><h2><a name="registering"></a>DatePropertyEditor をグローバル登録する</h2>
+<p>プロパティーエディタを同じ型のすべてのプロパティーに対して使えるように登録しておくと便利な場合が多いでしょう。実際、 <code>DatePropertyEditor</code> は通常、 <code>java.util.Date</code> 型のどんなプロパティーにも有用です。このようなプロパティーエディタを登録すべきか決めるのに有用性が第１の要件ではありませんが、もしアプリケーションやモジュールが定期的に Date プロパティーを扱うのなら、登録したほうがよいでしょう。</p>
+<p>それでは、 <code>java.util.Date</code> 型のすべてのプロパティーがプロパティーシートでエディタとして利用できるように <code>DatePropertyEditor</code> を登録する方法をご紹介します:</p>
+
+<ol>
+    <li>My Editor プロジェクトを右クリックし、ポップアップメニューから 「プロパティー」を選択します。<p></li>
+    <li>「プロジェクトプロパティー」ダイアログの「ライブラリ」カテゴリの「依存関係を追加」をクリックします。ここで追加しなくてはならないのは、モジュールシステム API への依存関係です。そうすれば <code>ModuleInstall</code> のサブクラスを作成し、スタートアップ時にいくつかのコードを実行することができるからです。ダイアログに <code>ModuleInstall</code> と入力します。ダイアログは自動的に「モジュールシステム API」を選択するはずです。Enter キーを押すか「了解」をクリックし、 My Editor モジュールにモジュールシステム API への依存関係を追加します。<p></li>
+    <li>My Editor プロジェクトの <code>org.myorg.myeditor</code> パッケージを右クリックし、「新規」&gt;「その他」を選択します。「モジュールの開発」カテゴリの「モジュールインストーラ」を選択し、「次へ」をクリックします。「完了」をクリックします。すると <code>org.openide.modules.ModuleInstall</code> のサブクラスが作成されるでしょう。このクラスには、スタートアップ時に実行されるコードが含まれています。<p></li>
+    <li>スタートアップ時に実行される <code>restored()</code> メソッドを以下のように実装します:<pre class=examplecode>
+public void restored() {
+    PropertyEditorManager.registerEditor(Date.class, DatePropertyEditor.class);
+}
+    </pre>ここでは、 <code>java.util.Date</code> 型のすべてのプロパティーの、システムを通じたデフォルトエディタとして、 <code>DatePropertyEditor</code> を登録しています。<p></li>
+    <li>Ctrl-Shift-I キーを押してインポートを修正します。</li>
+</ol>    
+
+<p>本当に必要のある場合のみ <code>ModuleInstall</code> を使うということを忘れないでください。 &lt;c1&gt;ModuleInstall&lt;/c1&gt; クラスは、スタートアップ時により多くのコードを実行することになるので、アプリケーションの起動を遅くしてしまいます。使わないですむなら使わないでください。もしどうしてもたくさんのプロパティーエディタを登録する必要があるなら、１つのモジュールに統合し、そこですべてのエディタを登録するのがよいでしょう。</p>  
+<p>
+<p>独自の型に対してプロパティーエディタを作成したい場合は、登録コードをそのクラスがロードされた時に実行される静的プロックなどに埋め込むなどするとよいでしょう。</p>
+<pre class=examplecode>
+public class Foo {
+    static {
+         PropertyEditorManager.registerEditor(Foo.class, FooEditor.class);
+    }
+    //...
+</pre>
+<blockquote>
+<p><font color="red"><b>要注意:</b> もし、プロパティーエディタが使用されるかどうか定かでないときは、 <code>PropertyEditorManager.setEditorSearchPath()</code> を使い、 <code>PropertyEditorManager.getEditorSearchPath()</code>で取得するパッケージの配列にあなたのパッケージを追加した方がよいかもしれません。上のコードは、 <code>FooEditor.class</code> をメモリにロードします。約１K は不必要なメモリを使用することになります。プロパティーエディタが１つや２つなら許されるでしょうが、それ以上ならプロパティーエディタを１つのパッケージにまとめ、各クラスに適当な名前をつけ、このパッケージを検索パスに登録したほうがよいでしょう。プロパティーエディタに関するより多くの情報については、 <code><a href="http://java.sun.com/j2se/1.4.2/docs/api/java/beans/PropertyEditorManager.html">PropertyEditorManager</a></code> の javadoc を参照してください。</font>
+</blockquote>
+
+
+
+<p><h2><a name="propertypanel"></a>プロパティーパネルの使用</h2>詳細に取り扱わないにしても、プロパティーシートが <code>Node.Property</code> オブジェクトが役に立つ唯一の場所というわけではないということに言及しておいた方がよいでしょう。他にも <code>PropertyPanel</code> と呼ばれる便利な UI クラスが、 <code>org.openide.explorer.propertysheet</code> パッケージにあります。このクラスは、プロパティーシートのように、エディタ領域とカスタムエディタボタンと共に、１プロパティーを表示することができます。もしくは <code>somePropertyPanel.setPreferences(PropertyPanel.PREF_CUSTOM_EDITOR)</code> を呼べば、<code>Property</code> のカスタムエディタを表示することができます。プロパティーエディタがある設定/取得メソッドのペアを編集するのに適した UI コンポーネントを取得するために便利な方法として役に立ちます。<!--
+<p><h2><a name="propertypanel"></a>Using PropertyPanel</h2>
+The property sheet is not the only place <code>Node.Property</code>s are 
+useful:  There is also a convenient UI class in the <code>org.openide.explorer.PropertySheet</code>
+class called <code>PropertyPanel</code>.  It's function is to display one property,
+much as it is displayed in the property sheet, providing an editor field and a
+custom editor button.  So for the final exercise, you will modify the <code>MyViewer</code>
+component (which is now nearly superfluous, since the property sheet now does
+everything it did) to use <code>PropertyPanel</code> to show one property of
+the currently selected <code>MyNode</code>.
+
+<ol>
+    <li>Right-click the My Viewer project and choose Properties from the popup
+    menu</li>
+    <li>On the Libraries page, click the Add button.  In the resulting dialog,
+    type PropertyPanel.  The dialog should auto-select &quot;Explorer and Property Sheet API&quot;.
+    When it does, press Enter or click OK to add the dependency.  The My Viewer
+    module can now refer to classes in the property sheet API.
+    </li>
+    <li>Click the Add button once more, and type &quot;AbstractNode&quot; and
+    add a dependency on the Nodes API from My Viewer&#8212;you will be needing 
+    that momentarily</li>
+    <li>Open <code>MyViewerTopComponent</code> in Matisse, the form editor.</li>
+    <li>Select all of the components in <code>MyViewerTopComponent</code> and 
+    delete them</li>
+    <li>In the Component Inspector, right-click the node labeled &quot;TopComponent&quot;
+    and choose Set Layout &gt; FlowLayout from the popup menu.</li>
+    <li>Press the Code button in the editor toolbar to switch to the code editor</li>
+    <li>Add the following line to the head of the class definition, so it appears thusly:
+    <pre class=examplecode>
+public final class MyViewerTopComponent extends TopComponent implements LookupListener {
+    private final PropertyPanel pnl;
+    </pre>
+    </li>
+    <li>Add the following line at the end of the constructor:
+    <pre class=examplecode>
+        add (pnl = new PropertyPanel());
+    </pre>
+    </li>
+    -->
+</ol>
+
+ <br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Property%20Editor%20Tutorial%20for%206.0">ご意見をお寄せください</a></div>
+<br style="clear:both;" />
+
+    <br><br>
+    <hr>
+    <h3>この翻訳は、nora さんに提供していただきました。</h3>
+    <br>
+
+</body>
+</html>

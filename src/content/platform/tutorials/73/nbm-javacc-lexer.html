@@ -1,0 +1,1182 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <!-- -*- xhtml -*- -->
+        <title>JavaCC Lexer Generator Integration Tutorial for NetBeans Platform 7.2</title>
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+        <meta name="AUDIENCE" content="NBUSER"/>
+        <meta name="TYPE" content="ARTICLE"/>
+        <meta name="EXPIRES" content="N"/>
+        <meta name="developer" content="gwielenga@netbeans.org"/>
+        <meta name="indexed" content="y"/>
+        <meta name="description"
+              content="A short guide to integrating JavaCC into the NetBeans Platform."/>
+        <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+    <body>
+        <h1>JavaCC Lexer Generator Integration Tutorial for NetBeans Platform 7.2</h1>
+
+        <p>This tutorial shows you how to generate a lexer with <a href="http://javacc.java.net/">JavaCC</a>
+            and use it to create editor features for
+            applications created on top of the NetBeans Platform.</p>
+
+        <p><b class="notes">Note:</b> This document uses NetBeans IDE 7.2 and NetBeans Platform 7.2. If you
+            are using an earlier version, see <a href="71/nbm-javacc-lexer.html">the previous version
+                of this document</a>.</p>
+
+        <p><b>Contents</b></p>
+
+        <p><img src="../images/articles/72/netbeans-stamp.gif" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 7.2" title="Content on this page applies to NetBeans IDE 7.2"/></p>
+        <ul class="toc">
+            <li><a href="#intro">Introduction</a></li>
+            <li><a href="#creating">Creating the Module</a></li>
+            <li><a href="#recognizing">Recognizing SJ Files</a></li>
+            <li><a href="#generating">Generating a Lexer from JavaCC</a></li>
+            <li><a href="#integrating">Integrating the JavaCC Lexer with NetBeans APIs</a></li>
+            <li><a href="#registering">Registering the NetBeans Lexer</a></li>
+            <li><a href="#enable">Enabling Lexer Support in NetBeans Platform Applications</a></li>
+            <li><a href="#defining">Defining Tokens and Assigning Colors</a></li>
+        </ul>
+
+        <p><b>To follow this tutorial, you need the software and resources listed in the following
+                table.</b></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Software or Resource</th>
+                    <th class="tblheader" scope="col">Version Required</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                    <td class="tbltd1">version 7.2 or above</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                    <td class="tbltd1">version 6 or above</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="tips">For troubleshooting purposes, you are welcome to download the <a href="http://java.net/projects/nb-api-samples/sources/api-samples/show/versions/7.2/tutorials/SimpleJava">completed tutorial source code</a>.</p>
+
+        <p></p>
+        <p class="notes"><b>Note:</b> Though some explanations of JavaCC are given in this tutorial,
+            the focus here is not on JavaCC as such. This is NOT a JavaCC tutorial.
+            For background information and
+            a thorough understanding of JavaCC, see the related website, <a href="http://java.net/projects/javacc">http://java.net/projects/javacc</a>.
+            The intended
+            audience of this tutorial is the JavaCC user who would like to integrate a
+            generated JavaCC lexer into NetBeans IDE or into another application created atop the NetBeans Platform. In this tutorial,
+            JavaCC is discussed
+            only in so far as it is needed to set up a scenario for using the related
+            NetBeans APIs.</p>
+        <!--
+                <p>A basic overview of the steps to be taken during the instructions
+                    that follow can be seen here:</p>
+                <p><object><iframe width="560" height="315" src="http://www.youtube.com/embed/aOwdeoOlZ7E" frameborder="0" allowfullscreen></iframe></object></p>-->
+
+        <h2 class="tutorial"><a name="intro"></a>Introduction</h2>
+
+        <p>JavaCC is a generator for Java lexers and Java parsers.
+            A Java lexer and parser generator is a tool that reads a grammar
+            specification and converts it to a Java program that can recognize
+            matches to the grammar. </p>
+
+        <p>This tutorial focuses specifically on lexers.
+            Lexical analysis, or "lexing", is the process of
+            converting a sequence of characters into a sequence of tokens.
+            Functionality that performs lexical analysis is called a
+            lexical analyzer, a lexer, or a scanner. In this tutorial,
+            the term "lexer" will be used. A lexer typically
+            exists as a single function called by a parser.
+            For example, while a typical lexer recognizes parentheses as tokens,
+            it does nothing to ensure that an opening parentheses is matched
+            by a closing parentheses, which is a task for a parser.
+        </p>
+        <p class="tips"> Part 2 of this tutorial, the <a href="nbm-javacc-parser.html">JavaCC Parser Generator Integration Tutorial</a>,
+            shows you how to create a parser that parses the same text
+            that the lexer in this tutorial lexes.</p>
+
+        <p>The NetBeans Platform
+            provides hooks for integrating a lexer into your own Java desktop
+            application on the NetBeans Platform. For example, in this tutorial,
+            you use a sample grammar specification provided by JavaCC to generate a lexer and use
+            it to create syntax coloring
+            in an editor for a simplified
+            Java language defined by the sample grammar specification:</p>
+
+        <p><img style="border:1px solid black" src="../images/tutorials/javacc/72/result-1.png" alt="editor."/></p>
+
+        <p>The principles you learn in this tutorial should help you integrate
+            a JavaCC-based lexer of your own.</p>
+
+        <!-- ===================================================================================== -->
+
+        <h2 class="tutorial"><a name="creating"></a>Creating the Module</h2>
+
+        <p>In this section, we use a wizard to create the source structure that every NetBeans module requires. The
+            source structure consists of certain folders in specific places and a set of files that are
+            always needed. For example, every NetBeans module requires a <tt>nbproject</tt> folder, which holds
+            the project's metadata.</p>
+
+        <div class="indent">
+
+            <ol>
+
+                <li>Choose File &gt; New Project (Ctrl-Shift-N). Under Categories, select NetBeans Modules. Under Projects,
+                    select Module. Click Next.</li>
+                <li><p>In the Name and Location panel, type <tt>SimpleJava</tt> in Project Name.
+                        Change the
+                        Project Location to any directory on your computer. Click Next.</p></li>
+
+                <li><p>In the Basic Module Configuration panel, type <tt>org.simplejava</tt>
+                        as the Code Name Base. Click Finish.</p></li></ol>
+
+        </div>
+        <p> The IDE creates the <tt>SimpleJava</tt>
+            project:</p>
+        <p><img src="../images/tutorials/javacc/72/code-1.png" alt="source."/></p>
+        <p>The project contains all of your sources and
+            project metadata, such as the project's Ant build script. The project
+            opens in the IDE. You can view its logical structure in the Projects
+            window (Ctrl-1) and its
+            file structure in the Files window (Ctrl-2). </p>
+
+        <!-- ===================================================================================== -->
+        <h2><a name="recognizing"></a>Recognizing SJ Files</h2>
+
+        <p>In this section, we use a wizard to create the classes necessary for
+            recognizing "SimpleJava" files, for which we will create the
+            new "text/x-sj" MIME type, which will recognize files with
+            ".sj" as their file extension.</p>
+
+        <p class="notes"><b>Note:</b> For details on the steps below,
+            follow the <a href="https://platform.netbeans.org/tutorials/nbm-filetype.html">File Type Integration Tutorial</a>.</p>
+
+        <div class="indent">
+            <ol>
+
+                <li>Right-click the project node and
+                    choose New &gt; Other &gt; Module Development &gt; File Type.</li>
+                <li>In the File Recognition panel, do the following:
+                    <br/>
+                    <br/>
+                    <ul>
+                        <li>Type <tt>text/x-sj</tt> in the MIME Type edit box.</li>
+                        <li>Type <tt>sj SJ</tt> in the by Filename Extension edit box.</li>
+                    </ul>
+                    <p>The File Recognition panel should now look as follows:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/javacc/72/code-2.png" alt="source."/></p>
+                    <br/>
+
+                    <p>Click Next.</p></li>
+
+                <li><p>In the Name and Location panel, type <tt>SJ</tt> as the Class Name Prefix
+                        and browse to any 16x16 pixel image file as the new file type's icon,
+                        as shown below.</p>
+                    <br/>
+                    <p><img src="../images/tutorials/javacc/72/code-3.png" alt="source."/></p>
+                    <br/>
+                    <p class="notes"><b>Note:</b> You can use any icon of a 16x16 pixel dimension. If you like, you can
+                        right-click on this one and save it locally, and then
+                        specify it in the wizard step above:
+                        <img src="../images/tutorials/javacc/71/JavaIcon.gif" alt="gif."/></p>
+                </li>
+                <li><p>Click Finish. The Projects window should now look as follows:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/javacc/72/code-4.png" alt="source."/></p>
+                    <br/>
+                    <p class="tips">The newly generated files above are described in the <a href="https://platform.netbeans.org/tutorials/nbm-filetype.html">File Type Integration Tutorial</a>.</p>
+                </li>
+                <li><p>Right-click the module and choose Run. The application starts up, installing
+                        your module. Make sure to create
+                        a few files on disk with ".sj" as the file extension. The content of these
+                        files is irrelevant at this stage.
+                        In the application, once it has started up, go
+                        to the Favorites window (Ctrl-3) and open a few
+                        of the files that have ".sj" as their file extension.</p>
+                    <p>You should see your icon is shown for the file type, the Actions
+                        registered via the annotations in the <tt>DataObject</tt> are shown when you right-click
+                        the file in the Favorites window, and three tabs are shown in
+                        the editor (the source tab, the visual tab, and the local history tab):</p>
+                    <br/>
+                    <p><img style="border:1px solid black" src="../images/tutorials/javacc/72/code-5.png" alt="source."/></p>
+                    <br/>
+                    <p>Create a new Java project and then go to the New File dialog, where you should
+                        see that your template has been registered:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/javacc/72/code-6.png" alt="source."/></p>
+                </li>
+            </ol>
+        </div>
+        <p>You now have a basic file type recognition infrastructure set up. In the next section, we generate
+            a lexer via JavaCC and then use it to add syntax coloring for the SJ file type.</p>
+
+
+        <!-- ======================================================================================= -->
+
+        <h2><a name="generating"></a>Generating a Lexer from JavaCC</h2>
+        <p>Let's now use JavaCC to generate a lexer!</p>
+        <div class="indent">
+
+            <ol>
+                <li><p>Download "javacc-5.0.zip" from
+                        <a href="http://java.net/projects/javacc/downloads">http://java.net/projects/javacc/downloads</a>
+                        and unpack it to a folder somewhere. In this section, for purposes of this example, we
+                        will use the grammar
+                        specified in the <tt>Java1.5.jj</tt> file:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/javacc/72/javacc-1.png" alt="source."/></p>
+                    <br/>
+                    <p class="notes"><b>Note:</b> You can try to use a different version of JavaCC, but there could
+                        be differences in the generated files, making the result
+                        incompatible with the sections that follow. </p></li>
+                <li><p>Create a new package named <tt>org.simplejava.jcclexer</tt> in your project.
+                        Copy the two files mentioned above, <tt>Java1.5.jj</tt>
+                        and <tt>Token.java</tt>, into the
+                        new package:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/javacc/72/javacc-2.png" alt="source."/></p>
+                    <br/>
+                    <p>In the next steps, we're going to tweak the <tt>Java1.5.jj</tt> file so that it fits our
+                        specific needs.</p>
+                </li>
+                <li><p>Firstly, we need to make sure that the classes
+                        that JavaCC will generate for us will be generated into the correct
+                        package, that is, the package where we copied the two files above.
+                        Add "package org.simplejava.jcclexer;"
+                        to <tt>Java1.5.jj</tt> file after the "PARSER_BEGIN(JavaParser)" line, so
+                        that the files will be generated in the correct package:</p>
+
+                    <pre class="examplecode">PARSER_BEGIN(JavaParser)
+
+<b>package org.simplejava.jcclexer;</b>
+
+import java.io.*;</pre></li>
+                <li><p>The <tt>Java1.5.jj</tt> file contains the
+                        descriptions of tokens for the Java parser.
+                        That's nearly what we need for our own Java lexer, though
+                        there are some differences. The lexer defined for the parser
+                        hides some types of tokens, such as comments and whitespaces.
+                        However, we need to see such tokens in the NetBeans lexer
+                        because we want to define special colors for comments.
+                        Therefore, we need to change that in our JavaCC file. </p>
+                    <br/>
+                    <ul><li><p>Change:</p>
+                            <pre class="examplecode">SKIP :
+{
+  " "
+| "\t"
+| "\n"
+| "\r"
+| "\f"
+}</pre>
+
+                            to:
+
+                            <pre class="examplecode">TOKEN :
+{
+  &lt; WHITESPACE:
+  " "
+| "\t"
+| "\n"
+| "\r"
+| "\f">
+}</pre>
+                        </li>
+                        <li><p>For the same reason, change all SPECIAL_TOKEN definitions:</p>
+
+                            <pre class="examplecode">SPECIAL_TOKEN :
+{
+  &lt;SINGLE_LINE_COMMENT: "//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")?&gt;
+}
+
+&lt;IN_FORMAL_COMMENT&gt;
+SPECIAL_TOKEN :
+{
+  &lt;FORMAL_COMMENT: "*/" &gt; : DEFAULT
+}
+
+&lt;IN_MULTI_LINE_COMMENT&gt;
+SPECIAL_TOKEN :
+{
+  &lt;MULTI_LINE_COMMENT: "*/" &gt; : DEFAULT
+}</pre>
+
+                            <p>to TOKEN definitions:</p>
+
+                            <pre class="examplecode">TOKEN :
+{
+  &lt;SINGLE_LINE_COMMENT: "//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")?&gt;
+}
+
+&lt;IN_FORMAL_COMMENT&gt;
+TOKEN :
+{
+  &lt;FORMAL_COMMENT: "*/" &gt; : DEFAULT
+}
+
+&lt;IN_MULTI_LINE_COMMENT&gt;
+TOKEN :
+{
+  &lt;MULTI_LINE_COMMENT: "*/" &gt; : DEFAULT
+}</pre>
+
+                        </li>
+
+                        <li>Delete this section, we will not need it in this tutorial:
+
+                            <pre class="examplecode">/* >'s need special attention due to generics syntax. */
+TOKEN :
+{
+  < RUNSIGNEDSHIFT: ">>>" >
+  {
+     matchedToken.kind = GT;
+     ((MyToken)matchedToken).realKind = RUNSIGNEDSHIFT;
+     input_stream.backup(2);
+     matchedToken.image = ">";
+  }
+| < RSIGNEDSHIFT: ">>" >
+  {
+     matchedToken.kind = GT;
+     ((MyToken)matchedToken).realKind = RSIGNEDSHIFT;
+     input_stream.backup(1);
+     matchedToken.image = ">";
+  }
+| < GT: ">" >
+}</pre>
+
+
+                    </ul></li>
+                <li><p>Because we will use our <tt>Java1.5.jj</tt> grammar
+                        file to create a lexer only, we can simplify it.
+                        Add this line, which sets the BUILD_PARSER property to false:</p>
+
+                    <pre class="examplecode">options {
+  JAVA_UNICODE_ESCAPE = true;
+  ERROR_REPORTING = false;
+  STATIC = false;
+  COMMON_TOKEN_ACTION = false;
+  TOKEN_FACTORY = "<b>Token</b>";
+  JDK_VERSION = "1.5";
+  <b>BUILD_PARSER = false;</b>
+}</pre>
+                    <p class="notes"><b>Note:</b> Also change <tt>MyToken</tt> to <tt>Token</tt>, as you can see above.</p>
+                </li>
+
+                <li><p>Part of the <tt>Java1.5.jj</tt> file is obsolete for our purposes, so let's delete some sections.
+                        Firstly, keep the PARSER_BEGIN and PARSER_END
+                        sections, but delete the JavaParser class body, so that you're
+                        left with exactly this:</p>
+
+                    <pre class="examplecode">PARSER_BEGIN(JavaParser)
+
+package org.simplejava.jcclexer;
+
+public class JavaParser {}
+
+PARSER_END(JavaParser)</pre>
+                    <p class="notes"><b>Note:</b> Though the parser start and end lines remain, the body of the
+                        class should now be empty and have exactly the content shown above.</p>
+                    <p>Also delete everything from these lines down to the end of the file:</p>
+
+                    <pre class="examplecode">/*****************************************
+ * THE JAVA LANGUAGE GRAMMAR STARTS HERE *
+ *****************************************/</pre>
+
+
+                </li>
+
+                <li><p>The <tt>Java1.5.jj</tt> file is ready now and we can "compile" it
+                        from the command line. Do so by starting in the directory
+                        where the JavaCC file is found, then invoke the JavaCC executable,
+                        passing in the file:
+                    </p>
+
+                    <pre class="examplecode">C:\tutorials\SimpleJava\src\org\simplejava\jcclexer>C:\javacc\javacc-5.0\bin\javacc Java1.5.jj</pre>
+
+                    <p>On Unix systems:</p>
+
+                    <pre class="examplecode">cd /tutorials/simplejava/src/org/simplejava/jcclexer /myjavacc/bin/javacc Java1.5.jj</pre>
+
+                    <p>The command line should show the following:</p>
+                    <pre>Java Compiler Compiler Version 5.0 (Parser Generator)
+(type "javacc" with no arguments for help)
+Reading from file Java1.5.jj . . .
+File "TokenMgrError.java" does not exist.  Will create one.
+File "ParseException.java" does not exist.  Will create one.
+File "Token.java" does not exist.  Will create one.
+File "JavaCharStream.java" does not exist.  Will create one.
+Parser generated successfully.</pre>
+
+                    <p>The result should be as follows:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/javacc/72/javacc-3.png" alt="source."/></p>
+                    <br/>
+                    <p class="notes"><b>Note:</b> As you can see, JavaCC has generated
+                        several files, all of which should be compilable, that is,
+                        there should be no red error marks in any of the generated files.
+                    </p>
+                </li>
+            </ol>
+        </div>
+        <p>You've now completed the JavaCC part of the tutorial.
+            The time has come to use the generated files to create a new NetBeans Lexer plugin.</p>
+
+
+        <!-- ======================================================================================= -->
+
+        <h2><a name="integrating"></a>Integrating the JavaCC Lexer with NetBeans APIs</h2>
+        <p>In this section, we take the files generated in the previous section
+            and integrate them with the <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-lexer/overview-summary.html">NetBeans Lexer API</a>.</p>
+        <div class="indent">
+            <ol>
+                <li><p>In the Projects window, right-click the Libraries node, and choose
+                        Add Module Dependency, as shown below:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/javacc/72/add-lexer-1.png" alt="source."/></p>
+                    <br/>
+                    <p>Look for the "Lexer" module in the list:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/javacc/72/add-lexer-2.png" alt="source."/></p>
+                    <br/>
+                    <p>When you click OK, you should see the "Lexer" module is now
+                        a dependency in your module:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/javacc/72/add-lexer-3.png" alt="source."/></p>
+                    <br/>
+                </li>
+                <li><p>In your module, create a new package named <tt>org.simplejava.lexer</tt>.</p>
+                </li>
+                <li><p>The first class you need to implement is <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-lexer/org/netbeans/api/lexer/TokenId.html">org.netbeans.api.lexer.TokenId</a></tt>.
+                        <tt>TokenId</tt> represents one type of token.
+                        It has three properties:</p>
+                    <ul>
+                        <li><tt>name.</tt> Unique name of the token type, such as <tt>"KEYWORD_IF".</tt></li>
+                        <li><tt>id.</tt> Unique number.</li>
+                        <li><tt>primaryCategory.</tt> Used
+                            for sharing a token coloring
+                            among multiple token types.</li>
+                    </ul>
+                    <p>Create a class named <tt>SJTokenId</tt> and define it as follows:</p>
+                    <pre class="examplecode">package org.simplejava.lexer;
+
+import org.netbeans.api.lexer.TokenId;
+
+public class SJTokenId implements TokenId {
+
+    private final String name;
+    private final String primaryCategory;
+    private final int id;
+
+    SJTokenId(
+            String name,
+            String primaryCategory,
+            int id) {
+        this.name = name;
+        this.primaryCategory = primaryCategory;
+        this.id = id;
+    }
+
+    @Override
+    public String primaryCategory() {
+        return primaryCategory;
+    }
+
+    @Override
+    public int ordinal() {
+        return id;
+    }
+
+    @Override
+    public String name() {
+        return name;
+    }
+
+}</pre></li>
+                <li><p>The next class you need to implement is <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-lexer/org/netbeans/spi/lexer/LanguageHierarchy.html">org.netbeans.spi.lexer.LanguageHierarchy</a></tt>.
+                        <tt>LanguageHierarchy</tt> provides a list of token types for our language and creates a new
+                        instance of our lexer.</p>
+                    <p>Create a class named <tt>SJLanguageHierarchy</tt> and define it as follows:</p>
+                    <pre class="examplecode">package org.simplejava.lexer;
+
+import java.util.*;
+import org.netbeans.spi.lexer.LanguageHierarchy;
+import org.netbeans.spi.lexer.Lexer;
+import org.netbeans.spi.lexer.LexerRestartInfo;
+
+public class SJLanguageHierarchy extends LanguageHierarchy&lt;SJTokenId&gt; {
+
+    private static List&lt;SJTokenId&gt; tokens;
+    private static Map&lt;Integer, SJTokenId&gt; idToToken;
+
+    private static void init() {
+        tokens = Arrays.&lt;SJTokenId&gt;asList(new SJTokenId[]{
+            //[PENDING]
+        });
+        idToToken = new HashMap&lt;Integer, SJTokenId&gt;();
+        for (SJTokenId token : tokens) {
+            idToToken.put(token.ordinal(), token);
+        }
+    }
+
+    static synchronized SJTokenId getToken(int id) {
+        if (idToToken == null) {
+            init();
+        }
+        return idToToken.get(id);
+    }
+
+    @Override
+    protected synchronized Collection&lt;SJTokenId&gt; createTokenIds() {
+        if (tokens == null) {
+            init();
+        }
+        return tokens;
+    }
+
+    @Override
+    protected synchronized Lexer&lt;SJTokenId&gt; createLexer(LexerRestartInfo&lt;SJTokenId&gt; info) {
+        return new SJLexer(info);
+    }
+
+    @Override
+    protected String mimeType() {
+        return "text/x-sj";
+    }
+
+}</pre>
+                    <p class="notes"><b>Note:</b> Because the <tt>SJLexer</tt> class does not
+                        yet exist, a red error mark is shown in the NetBeans editor in the new
+                        declaration for the non-existent <tt>SJLexer</tt> class. You will define
+                        this class in the next step.</p>
+                </li>
+
+                <li><p>The last class you need to implement is <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-lexer/org/netbeans/spi/lexer/Lexer.html">org.netbeans.spi.lexer.Lexer</a></tt>.
+                        <tt>Lexer</tt> reads input text and returns tokens for it.
+                        In our case, the Lexer implementation needs to delegate
+                        to the lexer generated by JavaCC.</p>
+                    <p>Create a class named <tt>SJLexer</tt> and define it as follows:</p>
+                    <pre class="examplecode">package org.simplejava.lexer;
+
+import org.netbeans.spi.lexer.Lexer;
+import org.netbeans.spi.lexer.LexerRestartInfo;
+import org.simplejava.jcclexer.JavaCharStream;
+import org.simplejava.jcclexer.JavaParserTokenManager;
+import org.simplejava.jcclexer.Token;
+
+class SJLexer implements Lexer&lt;SJTokenId&gt; {
+
+    private LexerRestartInfo&lt;SJTokenId&gt; info;
+    private JavaParserTokenManager javaParserTokenManager;
+
+    SJLexer(LexerRestartInfo&lt;SJTokenId&gt; info) {
+        this.info = info;
+        JavaCharStream stream = new JavaCharStream(info.input());
+        javaParserTokenManager = new JavaParserTokenManager(stream);
+    }
+
+    @Override
+    public org.netbeans.api.lexer.Token&lt;SJTokenId&gt; nextToken() {
+        Token token = javaParserTokenManager.getNextToken();
+        if (info.input().readLength() &lt; 1) {
+            return null;
+        }
+        return info.tokenFactory().createToken(SJLanguageHierarchy.getToken(token.kind));
+    }
+
+    @Override
+    public Object state() {
+        return null;
+    }
+
+    @Override
+    public void release() {
+    }
+
+}</pre>
+                    <p class="notes"><b>Note:</b> The class above does not compile at the moment
+                        because  <tt>JavaCharStream</tt> has not been defined to receive
+                        a <tt>LexerInput</tt>. In the next step, we rewrite the
+                        <tt>JavaCharStream</tt> class generated by JavaCC.
+                        Our new version of <tt>JavaCharStream</tt>, listed in the next step,
+                        reads input characters from <tt><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-lexer/org/netbeans/spi/lexer/LexerInput.html">org.netbeans.spi.lexer.LexerInput</a></tt>, instead of the
+                        standard <tt>InputStream</tt>.</p>
+                </li>
+                <li><p>Because we are now using
+                        <tt>LexerInput</tt> instead of <tt>InputStream</tt>, another change
+                        in <tt>JavaCharStream</tt> is needed because
+                        the <tt>JavaParserTokenManager</tt> created by JavaCC is designed to
+                        work with a <tt>java.io.Reader</tt> and recognizes a &lt;EOF&gt;
+                        when the <tt>io.Reader</tt> throws an <tt>IOException</tt>.
+                        However, though the <tt>LexerInput</tt> class logically corresponds to
+                        <tt>java.io.Reader</tt>, its <tt>read()</tt>
+                        method does not throw a checked exception.
+                        Hence the <tt>BeginToken</tt> and the <tt>readChar</tt> methods below validate the
+                        returned character and throw the exception, if necesary.</p>
+
+                    <pre class="examplecode">package org.simplejava.jcclexer;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import org.netbeans.spi.lexer.LexerInput;
+
+public class JavaCharStream {
+
+    private LexerInput input;
+
+    static boolean staticFlag;
+
+    public JavaCharStream(LexerInput input) {
+        this.input = input;
+    }
+
+    JavaCharStream(Reader stream, int i, int i0) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    JavaCharStream(InputStream stream, String encoding, int i, int i0) throws UnsupportedEncodingException {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    char BeginToken() throws IOException {
+        return readChar();
+    }
+
+    String GetImage() {
+        return input.readText().toString();
+    }
+
+    public char[] GetSuffix(int len) {
+        if (len > input.readLength()) {
+            throw new IllegalArgumentException();
+        }
+        return input.readText(input.readLength() - len, input.readLength()).toString().toCharArray();
+    }
+
+    void ReInit(Reader stream, int i, int i0) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    void ReInit(InputStream stream, String encoding, int i, int i0) throws UnsupportedEncodingException {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    void backup(int i) {
+        input.backup(i);
+    }
+
+    int getBeginColumn() {
+        return 0;
+    }
+
+    int getBeginLine() {
+        return 0;
+    }
+
+    int getEndColumn() {
+        return 0;
+    }
+
+    int getEndLine() {
+        return 0;
+    }
+
+    char readChar() throws IOException {
+        int result = input.read();
+        if (result == LexerInput.EOF) {
+            throw new IOException("LexerInput EOF");
+        }
+        return (char) result;
+    }
+
+}</pre></li>
+                <li><p> After replacing the generated <tt>JavaCharStream</tt> with the
+                        code in the previous step, everything should compile and your module structure
+                        should be as follows:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/javacc/72/add-lexer-4.png" alt="source."/></p>
+                    <br/>
+                </li>
+            </ol>
+
+            <p>You now have an implementation of the NetBeans Lexer API based
+                on a JavaCC lexer generated from a JavaCC grammar definition. In
+                the next section, you register your NetBeans lexer so that the
+                NetBeans Platform infrastructure can find it and load it
+                into the application.</p>
+
+        </div>
+
+        <!-- ======================================================================================= -->
+
+        <h2><a name="registering"></a>Registering the NetBeans Lexer</h2>
+        <p>You now have a NetBeans lexer. We need to register it so that it can be used.</p>
+        <div class="indent">
+            <ol>
+                <li><p>In <tt>SJTokenId</tt>, define the following method,
+                        which returns an instance of <tt>org.netbeans.api.lexer.Language</tt>:</p>
+                    <pre class="examplecode">public static Language&lt;SJTokenId&gt; getLanguage() {
+    return new SJLanguageHierarchy().language();
+}</pre>
+                </li>
+                <li><p>The instance created statically above needs to be called from somewhere.
+                        The call
+                        is done from the <tt>layer.xml</tt> file, within the
+                        <tt>CslPlugins</tt>
+                        folder, where you register the class below as
+                        a language instance, via the class annotation <tt>@LanguageRegistration</tt>:</p>
+                    <pre class="examplecode">package org.simplejava;
+
+import org.netbeans.api.lexer.Language;
+import org.netbeans.modules.csl.spi.DefaultLanguageConfig;
+import org.netbeans.modules.csl.spi.LanguageRegistration;
+import org.simplejava.lexer.SJTokenId;
+
+@LanguageRegistration(mimeType = "text/x-sj")
+public class SJLanguage extends DefaultLanguageConfig {
+
+    @Override
+    public Language getLexerLanguage() {
+        return SJTokenId.getLanguage();
+    }
+
+    @Override
+    public String getDisplayName() {
+        return "SJ";
+    }
+
+}</pre>
+                    <p>For the class above to compile, you need a new dependency in your module:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/javacc/72/add-lexer-5.png" alt="source."/></p>
+                    <br/>
+                    <p class="tips"> When the module containing the above class is built,
+                        the <tt>generated-layer.xml</tt> file in the module's 'build' folder,
+                        which is visible in the Files window (Ctrl - 2), contains many new
+                        entries, providing many default features for your language:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/javacc/72/add-lexer-6.png" alt="source."/></p>
+                    <br/>
+                </li>
+            </ol>
+        </div>
+
+        <!-- ======================================================================================= -->
+
+        <h2><a name="enable"></a>Enabling Lexer Support in NetBeans Platform Applications</h2>
+        <p>In NetBeans IDE, lexer support is enabled via the "Lexer to NetBeans Bridge" module. This
+            module uses the <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-editor-mimelookup/org/netbeans/api/editor/mimelookup/MimeLookup.html">MIME Lookup API</a> to search for language descriptions registered by modules
+            such as the one you are creating in this tutorial. If you are creating lexer support for
+            your own application created on the NetBeans Platform, you explictly need to add the enablement
+            module yourself, as explained below.</p>
+        <div class="indent">
+
+            <ol>
+                <li>Right-click the application and choose Properties to open the
+                    Project Properties dialog.</li>
+                <li>In the Libraries
+                    tab of the Project Properties dialog, expand the "ide" cluster,
+                    and select "Lexer to NetBeans Bridge". The code name base
+                    for this module is <tt>org.netbeans.modules.lexer.nbbridge</tt>.</li>
+            </ol>
+        </div>
+        <p>Now your NetBeans Platform application will be able to find the lexer
+            support that you are creating in this tutorial.</p>
+
+        <!-- ======================================================================================= -->
+
+
+        <h2><a name="defining"></a>Defining Tokens and Assigning Colors</h2>
+        <p>Let's now work with the actual tokens that we're going to need. First,
+            we'll update the <tt>SJLanguageHierarchy</tt> with our tokens. After that,
+            we'll map the tokens to fonts and colors. Finally, we'll register our
+            new files in the virtual filesystem of the application we're working on.</p>
+        <div class="indent">
+            <ol>
+                <li><p>Look in the generated <tt>JavaParserConstants</tt> file
+                        and notice the tokens that have been generated by JavaCC.</p>
+
+                    <pre class="examplecode">
+public interface JavaParserConstants {
+
+  int EOF = 0;
+  int WHITESPACE = 1;
+  int SINGLE_LINE_COMMENT = 4;
+  int FORMAL_COMMENT = 5;
+  int MULTI_LINE_COMMENT = 6;
+  int ABSTRACT = 8;
+  int ASSERT = 9;
+  int BOOLEAN = 10;
+  int BREAK = 11;
+  int BYTE = 12;
+  ...
+  ...
+  ...</pre>
+                    <p>Now tweak and then
+                        copy the tokens above into your <tt>SJLanguageHierarchy</tt> file:</p>
+                    <pre class="examplecode">tokens = Arrays.asList(new SJTokenId[]{
+    new SJTokenId("EOF", "whitespace", 0),
+    new SJTokenId("WHITESPACE", "whitespace", 1),
+    new SJTokenId("SINGLE_LINE_COMMENT", "comment", 4),
+    new SJTokenId("FORMAL_COMMENT", "comment", 5),
+    new SJTokenId("MULTI_LINE_COMMENT", "comment", 6),
+    new SJTokenId("ABSTRACT", "keyword", 8),
+    new SJTokenId("ASSERT", "keyword", 9),
+    new SJTokenId("BOOLEAN", "keyword", 10),
+    new SJTokenId("BREAK", "keyword", 11),
+    new SJTokenId("BYTE", "keyword", 12),
+    ...
+    ...
+    ...</pre>
+
+                    <p class="tips">See the <a href="#appendix">Appendix</a> for the complete
+                        list of tokens. Copy them from the appendix into your module.</p>
+                </li>
+                <li><p>Next, we need to map the categories to fonts and colors. This is
+                        done declaratively, in an XML file, where we list the categories
+                        and then declare the fonts and colors that should be applied.
+                        In the main package
+                        of the module, that is, <tt>org.simplejava</tt>, create a new XML file
+                        named <tt>FontAndColors.xml</tt>, with the following content:</p>
+                    <pre class="examplecode">&lt;!DOCTYPE fontscolors PUBLIC
+    "-//NetBeans//DTD Editor Fonts and Colors settings 1.1//EN"
+    "https://netbeans.org/dtds/EditorFontsColors-1_1.dtd"&gt;
+&lt;fontscolors&gt;
+    &lt;fontcolor name="character" default="char"/&gt;
+    &lt;fontcolor name="errors" default="error"/&gt;
+    &lt;fontcolor name="identifier" default="identifier"/&gt;
+    &lt;fontcolor name="keyword" default="keyword" foreColor="red"/&gt;
+    &lt;fontcolor name="literal" default="keyword" /&gt;
+    &lt;fontcolor name="comment" default="comment"/&gt;
+    &lt;fontcolor name="number" default="number"/&gt;
+    &lt;fontcolor name="operator" default="operator"/&gt;
+    &lt;fontcolor name="string" default="string"/&gt;
+    &lt;fontcolor name="separator" default="separator"/&gt;
+    &lt;fontcolor name="whitespace" default="whitespace"/&gt;
+    &lt;fontcolor name="method-declaration" default="method"&gt;
+        &lt;font style="bold" /&gt;
+    &lt;/fontcolor&gt;
+&lt;/fontscolors&gt;</pre>
+
+                    <p>This file defines how to visualize the tokens produced by the lexer. The <tt>fontcolor</tt> tag properties are as follows:</p>
+                    <br/>
+                    <ul>
+                        <li>name: Name or primaryCategory of your token (or tokens).</li>
+                        <li>default: Name of default coloring. All properties that are not defined
+                            explicitly are inherited from this default coloring. Default coloring
+                            is customizable in the Options window.</li>
+                        <li>foreColor: Foreground color.</li>
+                        <li>bgColor: Background color.</li>
+                        <li>underline: Underlined color. Token will be underlined if specified.</li>
+                        <li>strikeThrough: Strike through color.</li>
+                        <li>waveUnderlined: Wave underlined color.</li>
+                    </ul>
+                    <p>The <tt>fontcolor</tt> tag can contain
+                        a nested font tag. The <tt>font</tt> tag has
+                        the following properties:</p>
+                    <br/>
+                    <ul>
+                        <li>name: Name of font.</li>
+                        <li>size: Font size.</li>
+                        <li>style: Bold or italic style.</li>
+                    </ul>
+
+                </li>
+                <li><p>Copy the following code into the <tt>SJTemplate.sj</tt> file. Not only will
+                        you use the template file, that is, <tt>SJTemplate.sj</tt>, as
+                        a template in the New File dialog, but also as example text to
+                        be shown in the Options window, where the user will be able to
+                        see the effect of their customized fonts and colors.</p>
+                    <pre class="examplecode">/**
+ * SimpleJavadoc comment for <code>SimpleJavaExample</code> class.
+ * @author Simple Joe Smith
+ */
+public class SimpleJavaExample {
+
+    @Deprecated public String method (int param) {
+        return "SimpleString " + '-' + 1.2;
+    }// line comment
+
+}</pre>
+                </li>
+
+                <li><p>Add the following key/value pairs into the <tt>Bundle.properties</tt>
+                        file of the main package, that is, the <tt>Bundle.properties</tt> file
+                        found in <tt>org.simplejava</tt>:</p>
+                    <pre class="examplecode">text/x-sj=Simple Java
+character=Character
+errors=Error
+identifier=Identifier
+keyword=Keyword
+literal=Literal
+comment=Comment
+number=Number
+operator=Operator
+string=String
+separator=Separator
+whitespace=Whitespace
+method-declaration=Method Declaration</pre>
+                    <p>The above values will be shown in the Options window, in the panel
+                        where the user will be able to change the predefined fonts
+                        and colors per category.</p>
+                </li>
+
+                <li><p>Right-click the <tt>org.simplejava</tt> node, choose New | Other,
+                        and then create a new layer file, from the category shown below:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/javacc/72/add-lexer-7.png" alt="source."/></p>
+                    <br/>
+                    <p>Click Next above and Finish. A new XML file is created and registered
+                        in the manifest file of the module. The XML file defines the contributions
+                        of the module to the virtual filesystem of the application of which it is a part.</p>
+                </li>
+
+                <li><p>Register the <tt>FontAndColors.xml</tt> file, as well as the
+                        example file into the <tt>layer.xml</tt> file, by replacing the
+                        default content of the file with the following:</p>
+                    <pre class="examplecode">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.2//EN" "https://netbeans.org/dtds/filesystem-1_2.dtd"&gt;
+&lt;filesystem&gt;
+
+    &lt;folder name="Editors"&gt;
+        &lt;folder name="text"&gt;
+            &lt;folder name="x-sj"&gt;
+                &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.simplejava.Bundle"/&gt;
+                &lt;folder name="FontsColors"&gt;
+                    &lt;folder name="NetBeans"&gt;
+                        &lt;folder name="Defaults"&gt;
+                            &lt;file name="FontAndColors.xml" url="FontAndColors.xml"&gt;
+                                &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.simplejava.Bundle"/&gt;
+                            &lt;/file&gt;
+                        &lt;/folder&gt;
+                    &lt;/folder&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+
+    &lt;folder name="OptionsDialog"&gt;
+        &lt;folder name="PreviewExamples"&gt;
+            &lt;folder name="text"&gt;
+                &lt;file name="x-sj" url="SJTemplate.sj"/&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+
+&lt;/filesystem&gt;</pre>
+                </li>
+                <li><p>Check that your module now has this content:</p>
+                    <br/>
+                    <p><img src="../images/tutorials/javacc/72/add-lexer-9.png" alt="source."/></p>
+                    <br/>
+                </li>
+            </ol>
+            <p>Run the module, open an SJ file, and you should see the correct coloring,
+                as defined in the files above:</p>
+            <p><img style="border:1px solid black" src="../images/tutorials/javacc/72/result-1.png" alt="editor."/></p>
+            <p>Look in the Options window, under the Tools menu,
+                and you should be able to change the fonts and colors for the file type.</p>
+            <p><img src="../images/tutorials/javacc/72/result-2.png" alt="editor."/></p>
+
+        </div>
+
+        <!-- ======================================================================================= -->
+
+        <p></p>
+        <div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20JavaCC%20Lexer%207.2%20Tutorial">Send Us Your Feedback</a></div>
+
+        <!-- ======================================================================================== -->
+
+        <h2><a name="nextsteps"></a>Next Steps</h2>
+        <p class="tips">This tutorial is the official version of
+            the first part of <a href="http://wiki.netbeans.org/How_to_create_support_for_a_new_language">http://wiki.netbeans.org/How_to_create_support_for_a_new_language</a>,
+            which, aside from being a rough draft, is partly
+            obsolete and out of date for NetBeans Platform 7.2.</p>
+        <p class="tips"> Part 2 of this tutorial, the <a href="nbm-javacc-parser.html">JavaCC Parser Generator Integration Tutorial</a>,
+            shows you how to create a parser that parses the same text
+            that the lexer in this tutorial lexes.</p>
+        <p>For more information about creating and developing NetBeans modules, see the following resources: </p>
+        <ul>
+            <li><a href="https://platform.netbeans.org/index.html">NetBeans Platform Homepage</a></li>
+            <li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API List (Current Development Version)</a></li>
+            <li><a href="https://netbeans.org/kb/trails/platform.html">Other Related Tutorials</a></li>
+        </ul>
+
+        <!-- ======================================================================================== -->
+
+        <h2><a name="appendix"></a>Appendix</h2>
+
+        <p>The complete list of tokens, referred to in step 1 of the
+            section <a href="#defining">Defining Tokens and Assigning Colors</a> above, is as follows: </p>
+
+        <pre class="examplecode">tokens = Arrays.asList(new SJTokenId[]{
+    new SJTokenId("EOF", "whitespace", 0),
+    new SJTokenId("WHITESPACE", "whitespace", 1),
+    new SJTokenId("SINGLE_LINE_COMMENT", "comment", 4),
+    new SJTokenId("FORMAL_COMMENT", "comment", 5),
+    new SJTokenId("MULTI_LINE_COMMENT", "comment", 6),
+    new SJTokenId("ABSTRACT", "keyword", 8),
+    new SJTokenId("ASSERT", "keyword", 9),
+    new SJTokenId("BOOLEAN", "keyword", 10),
+    new SJTokenId("BREAK", "keyword", 11),
+    new SJTokenId("BYTE", "keyword", 12),
+    new SJTokenId("CASE", "keyword", 13),
+    new SJTokenId("CATCH", "keyword", 14),
+    new SJTokenId("CHAR", "keyword", 15),
+    new SJTokenId("CLASS", "keyword", 16),
+    new SJTokenId("CONST", "keyword", 17),
+    new SJTokenId("CONTINUE", "keyword", 18),
+    new SJTokenId("_DEFAULT", "keyword", 19),
+    new SJTokenId("DO", "keyword", 20),
+    new SJTokenId("DOUBLE", "keyword", 21),
+    new SJTokenId("ELSE", "keyword", 22),
+    new SJTokenId("ENUM", "keyword", 23),
+    new SJTokenId("EXTENDS", "keyword", 24),
+    new SJTokenId("FALSE", "keyword", 25),
+    new SJTokenId("FINAL", "keyword", 26),
+    new SJTokenId("FINALLY", "keyword", 27),
+    new SJTokenId("FLOAT", "keyword", 28),
+    new SJTokenId("FOR", "keyword", 29),
+    new SJTokenId("GOTO", "keyword", 30),
+    new SJTokenId("IF", "keyword", 31),
+    new SJTokenId("IMPLEMENTS", "keyword", 32),
+    new SJTokenId("IMPORT", "keyword", 33),
+    new SJTokenId("INSTANCEOF", "keyword", 34),
+    new SJTokenId("INT", "keyword", 35),
+    new SJTokenId("INTERFACE", "keyword", 36),
+    new SJTokenId("LONG", "keyword", 37),
+    new SJTokenId("NATIVE", "keyword", 38),
+    new SJTokenId("NEW", "keyword", 39),
+    new SJTokenId("NULL", "keyword", 40),
+    new SJTokenId("PACKAGE", "keyword", 41),
+    new SJTokenId("PRIVATE", "keyword", 42),
+    new SJTokenId("PROTECTED", "keyword", 43),
+    new SJTokenId("PUBLIC", "keyword", 44),
+    new SJTokenId("RETURN", "keyword", 45),
+    new SJTokenId("SHORT", "keyword", 46),
+    new SJTokenId("STATIC", "keyword", 47),
+    new SJTokenId("STRICTFP", "keyword", 48),
+    new SJTokenId("SUPER", "keyword", 49),
+    new SJTokenId("SWITCH", "keyword", 50),
+    new SJTokenId("SYNCHRONIZED", "keyword", 51),
+    new SJTokenId("THIS", "keyword", 52),
+    new SJTokenId("THROW", "keyword", 53),
+    new SJTokenId("THROWS", "keyword", 54),
+    new SJTokenId("TRANSIENT", "keyword", 55),
+    new SJTokenId("TRUE", "keyword", 56),
+    new SJTokenId("TRY", "keyword", 57),
+    new SJTokenId("VOID", "keyword", 58),
+    new SJTokenId("VOLATILE", "keyword", 59),
+    new SJTokenId("WHILE", "keyword", 60),
+    new SJTokenId("INTEGER_LITERAL", "literal", 61),
+    new SJTokenId("DECIMAL_LITERAL", "literal", 62),
+    new SJTokenId("HEX_LITERAL", "literal", 63),
+    new SJTokenId("OCTAL_LITERAL", "literal", 64),
+    new SJTokenId("FLOATING_POINT_LITERAL", "literal", 65),
+    new SJTokenId("DECIMAL_FLOATING_POINT_LITERAL", "literal", 66),
+    new SJTokenId("DECIMAL_EXPONENT", "number", 67),
+    new SJTokenId("HEXADECIMAL_FLOATING_POINT_LITERAL", "literal", 68),
+    new SJTokenId("HEXADECIMAL_EXPONENT", "number", 69),
+    new SJTokenId("CHARACTER_LITERAL", "literal", 70),
+    new SJTokenId("STRING_LITERAL", "literal", 71),
+    new SJTokenId("IDENTIFIER", "identifier", 72),
+    new SJTokenId("LETTER", "literal", 73),
+    new SJTokenId("PART_LETTER", "literal", 74),
+    new SJTokenId("LPAREN", "operator", 75),
+    new SJTokenId("RPAREN", "operator", 76),
+    new SJTokenId("LBRACE", "operator", 77),
+    new SJTokenId("RBRACE", "operator", 78),
+    new SJTokenId("LBRACKET", "operator", 79),
+    new SJTokenId("RBRACKET", "operator", 80),
+    new SJTokenId("SEMICOLON", "operator", 81),
+    new SJTokenId("COMMA", "operator", 82),
+    new SJTokenId("DOT", "operator", 83),
+    new SJTokenId("AT", "operator", 84),
+    new SJTokenId("ASSIGN", "operator", 85),
+    new SJTokenId("LT", "operator", 86),
+    new SJTokenId("BANG", "operator", 87),
+    new SJTokenId("TILDE", "operator", 88),
+    new SJTokenId("HOOK", "operator", 89),
+    new SJTokenId("COLON", "operator", 90),
+    new SJTokenId("EQ", "operator", 91),
+    new SJTokenId("LE", "operator", 92),
+    new SJTokenId("GE", "operator", 93),
+    new SJTokenId("NE", "operator", 94),
+    new SJTokenId("SC_OR", "operator", 95),
+    new SJTokenId("SC_AND", "operator", 96),
+    new SJTokenId("INCR", "operator", 97),
+    new SJTokenId("DECR", "operator", 98),
+    new SJTokenId("PLUS", "operator", 99),
+    new SJTokenId("MINUS", "operator", 100),
+    new SJTokenId("STAR", "operator", 101),
+    new SJTokenId("SLASH", "operator", 102),
+    new SJTokenId("BIT_AND", "operator", 103),
+    new SJTokenId("BIT_OR", "operator", 104),
+    new SJTokenId("XOR", "operator", 105),
+    new SJTokenId("REM", "operator", 106),
+    new SJTokenId("LSHIFT", "operator", 107),
+    new SJTokenId("PLUSASSIGN", "operator", 108),
+    new SJTokenId("MINUSASSIGN", "operator", 109),
+    new SJTokenId("STARASSIGN", "operator", 110),
+    new SJTokenId("SLASHASSIGN", "operator", 111),
+    new SJTokenId("ANDASSIGN", "operator", 112),
+    new SJTokenId("ORASSIGN", "operator", 113),
+    new SJTokenId("XORASSIGN", "operator", 114),
+    new SJTokenId("REMASSIGN", "operator", 115),
+    new SJTokenId("LSHIFTASSIGN", "operator", 116),
+    new SJTokenId("RSIGNEDSHIFTASSIGN", "operator", 117),
+    new SJTokenId("RUNSIGNEDSHIFTASSIGN", "operator", 118),
+    new SJTokenId("ELLIPSIS", "operator", 119),
+    new SJTokenId("RUNSIGNEDSHIFT", "operator", 120),
+    new SJTokenId("RSIGNEDSHIFT", "operator", 121),
+    new SJTokenId("GT", "operator", 122)
+});</pre>
+
+        <!-- ======================================================================================== -->
+
+        <!--<h2><a name="version"></a>Versioning </h2>
+
+        <table width="76%" >
+            <tbody>
+                <tr>
+                    <td>
+                        <b>Version</b>
+                    </td>
+                    <td>
+                        <b>Date</b>
+                    </td>
+                    <td>
+                        <b>Changes</b>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        1
+                    </td>
+                    <td>
+                        3 January 2012
+                    </td>
+                    <td>
+                        <ul><li>Initial version.</li>
+                            <li>To do:
+                                <ul>
+                                    <li></li>
+                                    <li></li>
+                                    <li></li>
+                                    <li></li>
+                                    <li></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </td>
+                </tr>
+            </tbody>
+        </table>-->
+
+    </body>
+</html>

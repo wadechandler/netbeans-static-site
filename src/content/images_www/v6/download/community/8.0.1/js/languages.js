@@ -1,0 +1,22 @@
+
+add_language("en", "English", "", "English");
+add_language("ar_SA", "\u0639\u0631\u0628\u064a", "ar_SA", "Arabic&nbsp;(Saudi Arabia)");
+add_language("ca", "Catal\u00e0", "ca", "Catalan");
+add_language("cs", "\u010cesky", "cs", "Czech");
+add_language("de", "Deutsch", "de", "German");
+add_language("es", "Espa\u00f1ol", "es", "Spanish");
+add_language("fr", "Fran\u00e7ais", "fr", "French");
+add_language("gl_ES", "Galego", "gl_ES", "Galician");
+add_language("in_ID", "Bahasa Indonesia", "in_ID", "Indonesian");
+add_language("it", "Italiano", "it", "Italian");
+add_language("ko", "\ud55c\uad6d\uc5b4", "ko", "Korean");
+add_language("nl_NL", "Dutch (Netherlands)", "nl_NL", "Dutch&nbsp;(Netherlands)");
+add_language("pl", "Polski", "pl", "Polish");
+add_language("pt_PT", "Portugu\u00eas (Portugal)", "pt_PT", "Portuguese&nbsp;(Portugal)");
+add_language("ro", "Rom\u00e2n\u0103", "ro", "Romanian");
+add_language("sq", "Shqip", "sq", "Albanian");
+add_language("sv", "Svenska", "sv", "Swedish");
+add_language("tr", "T\u00fcrk\u00e7e", "tr", "Turkish");
+add_language("zh_TW", "\u6b63\u9ad4\u4e2d\u6587", "zh_TW", "Traditional&nbsp;Chinese");
+add_language("bg", "Bulgarian", "bg", "Bulgarian");
+add_language("si", "Sinhala", "si", "Sinhala");

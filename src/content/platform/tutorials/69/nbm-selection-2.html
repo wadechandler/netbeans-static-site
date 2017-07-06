@@ -1,0 +1,435 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <!-- -*- xhtml -*- -->
+        <title>NetBeans Selection Management Tutorial II&#8212;Using Nodes for NetBeans Platform 6.5</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+        <meta name="AUDIENCE" content="NBUSER"/>
+        <meta name="TYPE" content="ARTICLE"/>
+        <meta name="EXPIRES" content="N"/>
+        <meta name="developer" content="tboudreau@netbeans.org"/>
+        <meta name="indexed" content="y"/>
+        <meta name="description"
+        content="A short guide managing selection with the Nodes API."/>
+       <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+    <body>
+    <h1>NetBeans Selection Management Tutorial II&#8212;Using Nodes</h1>
+
+    <p>The <a href="nbm-selection-1.html">previous tutorial</a> covered the basics
+    of component-wide selection handling in NetBeans&#8212;how to provide objects from
+    a <code><a href="http://wiki.netbeans.org/wiki/view/DevFaqWindowsTopComponent">TopComponent</a></code>'s
+    <code><a href="http://wiki.netbeans.org/wiki/view/DevFaqLookup">Lookup</a></code>, and
+    how to write other components that are sensitive to the <code>Lookup</code> of whatever
+    component has focus.</p>
+    
+    <p>This tutorial focuses on the <a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/overview-summary.html">Nodes API</a>, which makes it possible to do more granular
+    views and selection than just component-level selection.  Of course, you could write
+    a component that reads and writes into its own Lookup whatever it wants, and 
+    provides more granular selection logic that way.  But the Nodes API makes it very
+    easy to do this, and offers a number of advantages over doing it yourself.</p>
+    
+   <p><b>Contents</b></p>
+   
+   <p><img  src="../images/articles/69/netbeans-stamp7-8-9.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.5, 6.7, 6.8" title="Content on this page applies to NetBeans IDE 6.5, 6.7, 6.8"/></p>
+      <ul class="toc">
+            <li><a href="#intro">Introduction to the Nodes API</a></li>
+            <li><a href="#explorer">Creating an Explorer View</a></li>
+            <li><a href="#nodes-and-children">Implementing Nodes and Node Children</a></li>
+            <li><a href="#running">Running the Tutorial</a></li>
+            <li><a href="#exploring">Exploring Explorer</a></li>
+            <li><a href="#handling">Handling Multi-Selection</a></li>
+            <li><a href="#review">Review of Concepts</a></li>
+            <li><a href="#next">Next Steps</a></li>
+       </ul>
+         
+<p><b>To follow this tutorial, you need the software and resources listed in the following 
+table.</b></p>
+
+  <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.7 or above</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Version 6 or<br/>version 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+  <p class="tips">Optionally, for troubleshooting purposes, you
+  can <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=3146">download the completed sample</a>.</p>
+  
+    <h2 class="tutorial"><a name="intro"></a>Introduction to the Nodes API</h2>
+    
+    <p>The first advantage is that the Nodes API provides a <i>presentation layer</i>&#8212;a 
+ layer between the data model being edited in some way, and the UI components
+    that expose the data model to the user.  This is quite useful and powerful, as
+    the same model may be presented in multiple ways, or with multiple UIs.</p>
+    
+    <p>The second advantage is the Explorer API&#8212;the module <code>org.openide.explorer</code>
+    provides a vast array of components&#8212;trees, lists, tree tables and more&#8212;which can
+    render a Node and its children.</p>
+    
+    <p>A <code>Node</code> is a generic hierarchical object&#8212;a <code>Node</code> has:</p>
+
+    <ul>
+        <li>Children&#8212;Nodes in a hierarchy underneath it, that can be displayed in a tree</li>
+        <li>Actions&#8212;An array of actions that can be displayed in a popup menu</li>
+        <li>Display Name&#8212;A human-readable, localized display name that can be shown in a UI component</li>
+        <li>Icon&#8212;An icon that can be shown in a UI component</li>
+    </ul>
+    
+    <p>and <code>Node</code>s can fire changes in any of the above, and the explorer UI components
+    will automatically update themselves.</p>
+    
+    <p>This is <i>not</i> to say that the content of the previous tutorial was useless&#8212;on 
+    the contrary, it is the reason the Nodes API can work.  The reason:  
+    <code>org.openide.nodes.Node</code> has a method, you guessed it, <code>getLookup()</code>.
+    In fact what is happening when you change selection in the Projects tab in the IDE,
+    for example, is...the Projects tab is a TopComponent.  It proxies the <code>Lookup</code>
+    of whatever object(s) are currently selected in the tree&#8212;just as the
+    <code>Utilities.actionsGlobalContext()</code> <code>Lookup</code> proxies whichever
+    component is focused and fires changes when focus changes.</p>
+    
+    <p>Thanks to the components in the Explorer API, it is very easy to create your own
+    views of a tree of <code>Node</code>s, and have this type of proxying in your
+    own components with very little code.  Viewer type components such as the 
+    <code>MyViewer</code> component in the previous tutorial do not have to do anything
+    special to be able to respond to selection changes in Explorer components&#8212;they
+    will automatically be notified as selection changes.</p>
+  
+        <h2 class="tutorial"><a name="explorer"></a>Creating an Explorer View</h2>
+        <p>The first thing you will do is some substantial modifications to your
+            <code>MyEditor</code> editor component.  This starts with opening it in the
+            editor.</p>
+            
+            <ol>
+            <li>First, bring up the properties dialog for the My Editor project.
+            On the Libraries tab, click the add button, and type &quot;BeanTreeView&quot;
+            in the dialog.  Click OK once you see the Explorer & Property Sheet API listed,
+            as shown below. This will add a dependency on the Explorer API module,
+        so you can use classes from it.
+        <p><img border="1" border="1" src="../images/tutorials/selection-2/add-deps-beantreeview-60.png"/></p>
+        </li>
+        
+        <li>Next, delete the body of the action handler method: 
+        <pre class=examplecode>
+private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {                                         
+}</pre>
+        and delete the call to it from the constructor.
+        This way, when you delete the button it is associated with, the handler method will be
+        deleted too.
+        </li>
+        
+        <li>Switch to the form designer, select all of the components, and 
+        delete them.</li>
+        
+        <li>In the Component Inspector, right click the <code>TopComponent</code>
+        node, and choose Set Layout &gt; BorderLayout, as shown below:
+    
+        <p><img border="1" border="1" src="../images/tutorials/selection-2/border-layout-60.png"/></p>
+       
+    </li>
+        
+        <li>Click the <code>JScrollPane</code> button in the Component 
+        Palette window and drop the scroll pane on the form&#8212;it will take
+        up the entire form.  The secret here is that all of the Explorer UI
+        components are subclasses of <code>JScrollPane</code>&#8212;so you can 
+        simply change the instantiation code to create an explorer view 
+        instead.</li>
+        
+        <li>Select your <code>JScrollPane</code>, right-click it,
+        and choose Customize Code. Customize the initial line
+        in the Code Customizer, by adding <code>new BeanTreeView()</code>
+        as shown below:
+        
+        <p><img border="1" border="1" src="../images/tutorials/selection-2/custom-creation-60.png"/></p>
+        
+        <p><code>BeanTreeView</code>
+        is a component from the Explorer API&#8212;a basic <code>JTree</code>-based
+        view over a <code>Node</code> and its children, with built-in handling
+        of popup menus, searching and more.</p></li>
+        
+        <li>Switch to the code editor and press Ctrl-Shift-I to import BeanTreeView, because
+        the import statement needs to be added, as indicated below:
+
+        <p><img border="1" src="../images/tutorials/selection-2/beantreeview-60.png"/></p>
+
+</li>
+        
+        <li>The next step is to give your tree something to show.  Explorer UI
+        components work like this:  When added to a container, they search that
+        container and their ancestors until they find one that implements 
+        <code>ExplorerManager.Provider</code>.  So you don't set the node to be viewed directly
+        on the component&#8212;you set it on the component's manager.  This makes
+        it possible to have multiple views, master/detail views and such, all
+        managed by a single manager.  Add to the signature of MyEditor as follows:
+        <pre class=examplecode>
+public class MyEditor extends TopComponent implements ExplorerManager.Provider {</pre>
+        Then press Ctrl-Shift-I to fix imports.  Keeping the caret in the signature
+        line, a lightbulb glyph should appear in the margin.  Press Alt-Enter, and
+        accept the hint &quot;Implement all abstract methods&quot;.  This will add one
+        method, <code>getExplorerManager()</code>.  Implement it as follows:
+        <pre class=examplecode>
+private final ExplorerManager mgr = new ExplorerManager();
+public ExplorerManager getExplorerManager() {
+    return mgr;
+}</pre>
+        </li>
+        
+        <li>Now, since the goal is one component that can display multiple
+        <code>APIObject</code>s, you need a <code>Node</code> or two to display in your component.
+        Each one will own its own instance of <code>APIObject</code>.  So,
+        right now you'll just add the code that will create a root node for
+        your tree view.  Add the following line to the constructor:
+        <pre class=examplecode>
+mgr.setRootContext(new AbstractNode(new MyChildren()));</pre>
+        This is the code that sets the root node for all of the explorer views
+        that are child components of <code>MyEditor</code>.
+        </li>
+        <li>If you tried Fix Imports, you may have seen the error dialog telling
+        you that neither <code>AbstractNode</code>, nor <code>MyChildren</code>
+        could be resolved.  To resolve <code>AbstractNode</code>, you need to add
+        one dependency, on the Nodes API module.  Right click the My Editor project,
+        go to the Libraries page and click Add Dependency.  Type &quot;AbstractNode&quot; in
+        the Add dialog, and when the item &quot;Nodes API&quot; in the list is
+        selected, click OK or press Enter.</li>
+        
+        <li>Now, back in the source editor, press Ctrl-Shift-I to Fix Imports.  You
+        will be notified that <code>MyChildren</code> could not be resolved.  That's
+        okay&#8212;you're about to write it.</li>
+    </ol>
+    
+    
+    <h2 class="tutorial"><a name="nodes-and-children"></a>Implementing Nodes and Node Children</h2>
+        <p>You'll notice you're using a class called <code>AbstractNode</code> above.  Despite
+        its name, it is not an abstract class!  It is a utility implementation of 
+        <code>org.openide.nodes.Node</code> which can save you some time and trouble&#8212;rather
+        than implement Node yourself, you can just create an AbstractNode and pass it a 
+        <code>Children</code> object which will provide child nodes for it, and then set
+        its icon and display name as needed.  So it is a simple way to get a <code>Node</code>
+        object to represent something, without needing to do any subclassing of <code>Node</code>
+    itself.</p>
+    
+    <p>The next step is to implement <code>MyChildren</code>, so that there are subnodes
+    underneath the initial node.</p>
+    
+    <ol>
+        <li>Right click the <code>org.myorg.myeditor</code> package in the My Editor 
+        project, and choose New &gt; Java Class from the popup menu</li>
+        
+        <li>In the New Java Class wizard, name the class &quot;MyChildren&quot;, and click
+        Finish or press Enter to create the class.</li>
+        
+        <li>Modify the signature of the class so it extends <code>Children.Keys</code>:
+        <pre class=examplecode>
+class MyChildren extends Children.Keys {</pre>
+        </li>
+        <li>Press Ctrl-Shift-I to Fix Imports</li>
+        <li>Position the caret in the class signature line.  When the lightbulb glyph appears
+        in the margin, press Alt-Enter and then Enter again to accept the hint &quot;Implement
+        all Abstract Methods&quot;.  This will add a <code>createNodes (Object key)</code>
+        method&#8212;this is where you will create the nodes that will be children of your root
+        node.</li>
+        <li>But first, you want to override one method&#8212;<code>addNotify</code>.  As with
+        the <code>addNotify()</code> pattern in Swing components, <code>Children.Keys.addNotify()</code>
+        is called the first time something pays attention to this Children object&#8212;the first
+        time it is asked for its child nodes.  So you can delay creation of child Nodes until
+        the user has really expanded the parent node in a view and needs to see them.  Position
+        the caret somewhere in the source file and press Alt-Insert. Then choose 'Override Method...'.
+        In the dialog that appears, expand 'Children', select the <code>addNotify()</code>
+        method, and click OK or press Enter.</li>
+        <li>Implement the <code>addNotify()</code> method as follows:
+        <pre class=examplecode>
+protected void addNotify() {
+    APIObject[] objs = new APIObject[5];
+    for (int i = 0; i < objs.length; i++) {
+        objs[i] = new APIObject();
+    }
+    setKeys (objs);
+}</pre>
+        As you may have guessed from the name <code>Children.Keys</code>, what your parent
+        class does is take an array or <code>Collection</code> of key objects, and act as a
+        factory for <code>Node</code>s for them.  So, you call <code>setKeys()</code> in
+        <code>addNotify()</code>, since <code>addNotify()</code> is telling you that something
+        is about to ask for the child nodes.  For each element in the array or collection
+        you pass to <code>setKeys()</code>, <code>createNodes()</code> will be called 
+        once (note this means that if you want, you can have more than one node to represent
+        one object).
+        </li>
+        <li>Now you need to implement the code that actually creates Node objects for all
+        of these.  Implement <code>createNodes()</code> as follows:
+        <pre class=examplecode>
+protected Node[] createNodes(Object o) {
+    APIObject obj = (APIObject) o;
+    AbstractNode result = new AbstractNode (new MyChildren(), Lookups.singleton(obj));
+    result.setDisplayName (obj.toString());
+    return new Node[] { result };
+}</pre>
+        </li>
+        <li>Press Ctrl-Shift-I to Fix Imports.</li>
+        <li>The last step is to install a bit of plumbing code that will wire up your
+        explorer manager to your TopComponent's lookup.  First, delete the line 
+        <pre class=examplecode>
+private final InstanceContent content = new InstanceContent();</pre>
+        from the head of the class definition&#8212;you will be using a utility to wire
+        up the selected <code>Node</code>'s <code>Lookup</code> to your component's
+        <code>Lookup</code>.
+        </li>
+        <li>Modify the constructor of <code>MyEditor</code> so it looks like this:
+        <pre class=examplecode>
+public MyEditor() {
+    initComponents();
+    associateLookup (ExplorerUtils.createLookup(mgr, getActionMap()));
+    mgr.setRootContext(new AbstractNode(new MyChildren()));
+    setDisplayName ("My Editor");
+}</pre>
+        </li>
+    </ol>
+    
+    <h2 class="tutorial"><a name="running"></a>Running the Tutorial</h2>
+    <p>You may have noticed that because you pass a new instance of <code>MyChildren</code>
+        to each <code>AbstractNode</code> you create, that you will end up with an infinitely
+        deep tree of <code>APIObjects</code>&#8212;each <code>Node</code> will have five child
+    <code>Node</code>s, each with its own <code>APIObject</code>.</p>
+    <p>
+        You are now ready to run, so right-click <code>SelectionSuite</code> and choose
+        Clean and Build, and then right-click again and choose Run from the popup menu.
+        When NetBeans starts, use your Open Editor action on the File menu to open an
+    instance of <code>MyEditor</code>.</p>
+    <p>
+    <img border="1" src="../images/tutorials/selection-2/result-2-60.png"/></p>
+    <p>
+    Notice that as you click and/or expand different nodes, the viewer and the property sheet update
+    themselves
+    to show the <code>APIObject</code> belonging to each node, as shown below:</p>
+    
+    <p>
+    <img border="1" src="../images/tutorials/selection-2/result-1-60.png"/>
+    </p>
+    
+    <h2 class="tutorial"><a name="exploring"></a>Exploring Explorer</h2>
+    <p>Now that you have the above code, it can be interesting to explore some of the
+    other components available in NetBeans, which can also render a <code>Node</code>
+    and it's children.  You can do this simply by opening <code>MyEditor</code> in
+    the form editor and changing the Custom Creation Code property to use a different
+    component.  For some of these you will need to replace the <code>JScrollPane</code> with
+    a different type of component (if it seems easier, just delete the <code>JScrollPane</code>
+    in the form editor, and add the code <code>add (new BeanTreeView(), BorderLayout.CENTER)</code>
+    to the constructor.</p>
+    
+    <p>Some of the options are:</p>
+    <ul>
+        <li><b>ListView</b>&#8212;display nodes in a JList (you can set how deep into the
+        Node hierarchy it should go)</li>
+        <li><b>TreeTableView</b>&#8212;a tree-table&#8212;a table whose leftmost column is
+        a tree</li>
+        <li><b>ChoiceView</b>&#8212;a combo-box view of a Node and its children</li>
+        <li><b>MenuView</b>&#8212;a <code>JButton</code> that pops up a menu of a Node and
+        its children</li>
+        <li><b>IconView</b>&#8212;a component that shows Node children in equally spaced
+        icons, rather like Windows Explorer</li>
+    </ul>
+    
+    <h2 class="tutorial"><a name="handling"></a>Handling Multi-Selection</h2>
+    <p>You may have noticed that <code>BeanTreeView</code>, the basic tree view for
+    Nodes, lets you select more than one Node at a time.  Therefore, it might be
+    desirable to modify your viewer component to display information about all of
+    the selected nodes:</p>
+    <ol>
+        <li>Open <code>org.myorg.myviewer.MyViewerTopComponent</code> from the My Viewer
+        project, in the editor.</li>
+            <li>Replace the <code>resultChanged()</code> listener method with the following
+                code:
+                <pre class=examplecode>
+public void resultChanged(LookupEvent lookupEvent) {
+    Lookup.Result r = (Lookup.Result) lookupEvent.getSource();
+    Collection c = r.allInstances();
+    if (!c.isEmpty()) {
+        StringBuffer text1 = new StringBuffer();
+        StringBuffer text2 = new StringBuffer();
+        for (Iterator i = c.iterator(); i.hasNext();) {
+            APIObject o = (APIObject) i.next();
+            text1.append (o.getIndex());
+            text2.append (o.getDate().toString());
+            if (i.hasNext()) {
+                text1.append (',');
+                text2.append (',');
+            }
+        }
+        jLabel1.setText (text1.toString());
+        jLabel2.setText (text2.toString());
+    } else {
+        jLabel1.setText("[no selection]");
+        jLabel2.setText ("");
+    }
+}</pre>
+            </li>
+        </ol>
+        <p>So you can see that, not only does the <code>Lookup</code> created by <code>ExplorerUtils</code>
+        handle proxying the <code>Lookup</code> of whatever <code>Node</code> is 
+        selected;  it also correctly proxies the <code>Lookup</code>s of multiple
+    <code>Node</code>s.</p>
+    <p>
+    <img border="1" src="../images/tutorials/selection-2/multi-selection-60.png"/></p>
+    
+    <h2 class="tutorial"><a name="review"></a>Review of Concepts</h2>
+    To review a few of the concepts you've covered here:
+    
+    <ul>
+        <li>A <code>Lookup</code> is like a <code>Map</code> where the keys are classes and the values are
+        instances of those classes.  It's also useful to think of a <code>Lookup</code>
+        as a <i>place</i> that objects swim into and out of, and you can subscribe to
+        be notified of the arrival and departure of specific types of object.</li>
+        
+        <li><code>Utilities.actionsGlobalContext()</code> is a <code>Lookup</code> which
+        proxies the <code>Lookup</code> of whichever <code>TopComponent</code> currently
+        has keyboard focus, and fires changes when focus moves to a different component.</li>
+        
+        <li><code>Node</code>s are presentation objects that can be displayed in
+        a tree, list or other component from the Explorer API.  Each <code>Node</code>
+        has its own <code>Lookup</code>.</li>
+        
+        <li>Just as <code>Utilities.actionsGlobalContext</code> proxies the <code>Lookup</code>
+        of TopComponents (so you can just ask that lookup for a result and listen for changes
+        in it, rather than having to track focus changes yourself), so also the <code>Lookup</code>
+        created by <code>ExplorerUtils.createLookup(ExplorerManager, ActionMap)</code> will
+        create a <code>Lookup</code> which automatically proxies the <code>Lookup</code> of
+        whatever <code>Node</code>(s) are selected in an Explorer component.
+        </li>
+    </ul>
+
+<!--    
+    <p><h2 class="perf"><a name="next"></a>Nodes and Performance/GUI Responsiveness</h2>
+    In general, Nodes are lightweight objects, and inexpensive to create.  However,
+    sometimes that is not true of the objects they model.  Here are two techniques to
+    overcome cases where fetching the data that needs to be displayed causes an 
+    unacceptable lag:
+
+    <h3 class="perf"><a name="next"></a>Background Initialization</h3>
+    If you control the root <code>Node</code>, try something like the following:
+    
+    <pre></pre>
+    -->
+    
+   <br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Selection%20Tutorial%20Part%202">Send Us Your Feedback</a></div>
+<br style="clear:both;" />
+
+    <h2 class="tutorial"><a name="next"></a>Next Steps</h2>
+    <p>So you now have a view that can display <code>Node</code>s that expose some
+    underlying model object (<code>APIObject</code> in your case).  In the
+    <a href="nbm-nodesapi2.html">next tutorial</a>, you will cover how to enhance
+    the Nodes you have already created with actions, properties and more 
+    colorful display names.</p>
+    
+    </body>
+</html>

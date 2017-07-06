@@ -1,0 +1,201 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+<HTML>
+<HEAD>
+<TITLE>Componentes personalizados do Visual Mobile Designer: criando um aplicativo gerenciador de informa&ccedil;&otilde;es pessoais - Tutorial do NetBeans Java ME</TITLE>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+<link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+<meta name="author" content="Karol Harelzak">
+</HEAD>
+<BODY>
+<a name="top"></a>
+<H1>Componentes personalizados do Visual Mobile Designer: Criando um aplicativo gerenciador de informa&ccedil;&otilde;es pessoais</H1>
+<P>O Visual Mobile Designer (VMD) &eacute; uma interface gr&aacute;fica do NetBeans Mobility que permite criar aplicativos m&oacute;veis usando componentes de arrastar e soltar. O VMD permite definir o fluxo do aplicativo e criar a GUI usando os componentes fornecidos pelo IDE ou componentes que voc&ecirc; mesmo criar. O VMD cont&eacute;m muitos componentes de Interface de usu&aacute;rio (IU) padr&atilde;o que voc&ecirc; pode usar para criar aplicativos como Listas, Alertas, Formul&aacute;rios e Imagens. Ele tamb&eacute;m inclui componentes personalizados que simplificam a cria&ccedil;&atilde;o de recursos mais complexos, tais como Telas de espera, Telas de abertura, Itens de tabela, etc. </P>
+
+<p>O Navegador PIM &eacute; um componente personalizado que fornece acesso f&aacute;cil a fun&ccedil;&otilde;es de dispositivos m&oacute;veis padr&atilde;o como calend&aacute;rio, bloco de endere&ccedil;os ou lista de tarefas. Voc&ecirc; pode usar o componente Navegador PIM para ativar aplicativos Java m&oacute;veis para acessar os bancos de dados de informa&ccedil;&otilde;es pessoais armazenados localmente. Este componente utiliza os Pacotes opcionais de PDA da API do PIM (Personal Information Management) que &eacute; uma parte da <a href="http://jcp.org/en/jsr/detail?id=75">especifica&ccedil;&atilde;o JSR-75s</a>  para a Plataforma
+Java ME. Como a JSR-75 n&atilde;o &eacute; uma parte da especifica&ccedil;&atilde;o MIDP 2.0, ela &eacute; por defini&ccedil;&atilde;o um componente personalizado e s&oacute; pode ser usada com os dispositivos ativados por JSR-75.</p>
+
+<P>Este tutorial mostra como usar o componente Navegador PIM em um aplicativo m&oacute;vel para dispositivos ativados por JSR-75. Ela demonstra os recursos b&aacute;sicos do componente , tal como a navega&ccedil;&atilde;o de conte&uacute;do de um banco de dados de contados, Calend&aacute;rio ou Lista de tarefas pendentes. Al&eacute;m do Navegador PIM, tamb&eacute;m precisamos usar tr&ecirc;s outros componentes: Tela de abertura, Caixa de texto e Alerta. 
+</P>
+<!--<p class="notes"><b>Observa&ccedil;&atilde;o:</b> Se voc&ecirc; estiver usando o NetBeans IDE 6.8, consulte o tutorial <a href="../../68/javame/pimbrowser.html">: criando um aplicativo gerenciador de informa&ccedil;&otilde;es pessoais no NetBeans IDE 6.8</a>.</p>-->
+<p><b>Conte&uacute;do</b></p>
+<img  src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" class="stamp" alt="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.9 e posterior" title="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.9 e posterior" >
+ <ul class="class">
+   <li><a href="#sample-app">Instalando e executando o aplicativo de amostra</a></li>
+   <li></a>Criando um aplicativo com o componente personalizado Navegador PIM<a href="#create-app"></li><div>
+<ul>
+	<LI><A HREF="#create">Criando o projeto PIMBrowserExample</A> </LI>
+	<LI><A HREF="#add">Adicionando pacotes e um MIDlet visual ao projeto</A> </LI>
+	<LI><A HREF="#addcomponent">Adicionando componentes ao projeto</A> </LI>
+	<LI><A HREF="#addcommands">Adicionando comandos ao projeto</A> </LI>
+	<LI><A HREF="#connect">Conectando os componentes para criar um fluxo de aplicativo</A> </LI>
+	<LI><A HREF="#storage">Adicionando contatos ao banco de dados de contatos do Wireless Toolkit</A></LI>
+	<LI><A HREF="#run">Executando o projeto</A> </LI>
+</ul></div>
+   <li><a href="#javadoc-pim">Javadoc do componente do Navegador PIM</a></li>
+   <li><a href="#see-also">Consulte tamb&eacute;m</a></li>
+</ul>
+<p><b>Para acompanhar este tutorial, s&atilde;o necess&aacute;rios os recursos e softwares listados abaixo.</b></p>
+<table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software ou recurso</th>
+                <th class="tblheader" scope="col">Vers&atilde;o necess&aacute;ria</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE com Java ME</a></td>
+                <td class="tbltd1">Vers&atilde;o 6.9 e posterior </td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit</a> (JDK)</td>
+                <td class="tbltd1">Vers&atilde;o 6 e 7 </td>
+            </tr>      
+        </tbody>
+</table>
+
+ <p>Se ainda n&atilde;o estiver familiarizado com o NetBeans Mobility, antes de continuar seria recomend&aacute;vel ler o <A HREF="../../docs/javame/quickstart.html">Guia de in&iacute;cio r&aacute;pido do NetBeans Java ME MIDP</A>.</p>
+
+<a name="sample-app"></a>
+<H2>Instalando e executando o aplicativo de amostra</H2>
+<P>Antes de come&ccedil;ar, talvez voc&ecirc; queira ver o resultado final do 
+tutorial. 
+</P>
+<P>Siga as etapas seguintes para instalar o aplicativo PIMBrowserExample:</P> 
+<OL>
+	<LI>Baixe <A HREF="https://netbeans.org/projects/samples/downloads/download/Samples/Mobile/PIMBrowserExample.zip">PIMBrowserExample.zip</A></LI>
+	<LI>Descompacte o arquivo.</LI>
+	<LI>No IDE, escolha <tt> Arquivo</tt> &gt; <tt>Abrir projeto</tt>e navegue at&eacute; a pasta que cont&eacute;m os arquivos descompactados com o projeto <tt>PIMBrowserExample</tt>.</li>
+	<li>Clique em Abrir projeto.<br>
+	
+	A janela Projetos deve ter uma apar&ecirc;ncia semelhante a esta: </li>
+	
+<p class="align-center"><img src="../../../images_www/articles/71/mobility/pimbrowser/pim-project.png" border=1 alt="Projeto com o exemplo do Navegador PIM aberto"> </p>
+    
+	<LI>Na janela Projetos, clique com o bot&atilde;o direito do mouse no n&oacute; do projeto e escolha Executar projeto (ou pressione F6). Conforme o aplicativo &eacute; executado, uma janela do emulador se abre e exibe o aplicativo que est&aacute; sendo executado no emulador do dispositivo padr&atilde;o. </LI> 
+	
+	<LI>Na janela Emulador, clique no bot&atilde;o abaixo de
+	&quot;Iniciar.&quot;<BR>O emulador exibe um componente Tela de abertura,
+	em seguida, Navegador PIM, como mostrado:</li>
+<p class="align-center"> <img src="../../../images_www/articles/71/mobility/pimbrowser/pim-emulator70.png" border=1 alt="Emulador SDK 3.0 exibindo o aplicativo Navegador PIM de amostra"></p>
+<li>Clique no bot&atilde;o superior direito do emulador para exibir os itens do menu como indicado abaixo:
+<p class="align-center"> <img src="../../../images_www/articles/71/mobility/pimbrowser/pim-emulator70-menu.png" border=1 alt="Emulador SDK 3.0 exibindo os &iacute;tems do menu"></p></li>
+<LI>Com o item Detalhes selecionado, clique no bot&atilde;o central no emulador para exibir os detalhes do contato: </li>
+<p class="align-center"><img src="../../../images_www/articles/71/mobility/pimbrowser/pim-emulator2-70.png" border=1 alt="Emulador WTK 2.5 exibindo o aplicativo Navegador PIM de amostra"></p>
+</OL>
+<UL>
+	<LI>Mova o cursor para cima e para baixo para
+	navegar pelas posi&ccedil;&otilde;es dispon&iacute;veis. </LI>
+	<LI>Clique no bot&atilde;o abaixo de &quot;Voltar&quot; para voltar para a lista de contatos. </LI>
+   <LI>Clique no bot&atilde;o abaixo de &quot;Sair&quot; para fechar o aplicativo. </LI>
+</UL>
+<p class="align-center"><a href="#top">in&iacute;cio</a></p>
+<a name="create-app"></a>
+<H2  >Criando um aplicativo com o componente personalizado Navegador PIM</H2>
+<P>Agora que voc&ecirc; viu o componente Navegador PIM em a&ccedil;&atilde;o, vamos
+voltar para o in&iacute;cio e criar essa aplicativo. Para criar o aplicativo, fa&ccedil;a o seguinte: </P>
+<OL>
+	<LI><A HREF="#create">Crie o projeto PIMBrowserExample</A> </LI>
+	<LI><A HREF="#add">Adicione pacotes e um MIDlet visual ao projeto</A> </LI>
+	<LI><A HREF="#addcomponent">Adicione componentes ao projeto</A> </LI>
+	<LI><A HREF="#addcommands">Adicione comandos ao projeto</A> </LI>
+	<LI><A HREF="#connect">Conecte os componentes para criar um fluxo de aplicativo</A> </LI>
+	<LI><A HREF="#storage">Adicionar contatos ao banco de dados de contatos do Wireless Toolkit</A></LI>
+	<LI><A HREF="#run">Executar o projeto</A> </LI>
+</OL>
+<H3  ><A NAME="create"></A>Criando o projeto
+PIMBrowserExample</H3>
+<OL>
+	<LI>Escolha <tt>Arquivo</tt> &gt; <tt>Novo projeto (Ctrl-Shift-N)</tt>. Em Categorias, selecione Java ME. Em Projetos, selecione Aplicativo m&oacute;vel e clique em Pr&oacute;ximo. </LI>
+	<LI>Indique <CODE>PIMBrowserExample</CODE>
+	no campo Nome do projeto. Altere a Localiza&ccedil;&atilde;o do projeto para um diret&oacute;rio em seu sistema. A partir de agora, vamos chamar esse diret&oacute;rio de <tt>$PROJECTHOME</tt>. </LI>
+	<LI>Desmarque a caixa de verifica&ccedil;&atilde;o Criar Hello MIDlet. Clique em Pr&oacute;ximo. </LI>
+	<LI>Selecione o Java (TM) Platform Micro Edition SDK 3.0 como a plataforma do emulador. Clique em Pr&oacute;ximo. </LI>
+	<LI>Na Sele&ccedil;&atilde;o de mais configura&ccedil;&otilde;es, clique em Terminar. </li>
+	<p class="notes"><b>Observa&ccedil;&atilde;o:</b> a pasta do projeto cont&eacute;m todos os c&oacute;digos-fonte e metadados do projeto, como o script Ant do projeto.</p> 
+	
+</OL>
+<H3  ><A NAME="add"></A>Adicionando pacotes e um 
+MIDlet visual ao projeto</H3>
+<OL>
+	<LI>Escolha o projeto <CODE>PIMBrowserExample</CODE> na vista do Projeto e, a seguir, escolha <tt>Arquivo</tt> &gt; <tt>Novo arquivo (Ctrl-N)</tt>. Em Categorias, selecione Java. Em Tipos de arquivo,
+	selecione Pacote Java. Clique em Pr&oacute;ximo.	</LI>
+	<LI>Indique <CODE>pimbrowserexample</CODE>
+	no campo Nome do pacote. Clique em Terminar. 
+	</LI>
+	<LI>Escolha o pacote <CODE>pimbrowserexample</CODE> na vista do Projeto e, a seguir, escolha <tt>Arquivo</tt> &gt; <tt>Novo arquivo (Ctrl-N)</tt>. Em Categorias, selecione MIDP. Em Tipos de arquivo, selecione
+	MIDlet visual. Clique em Pr&oacute;ximo. 
+	</LI>
+	<LI>Indique <CODE>PIMBrowserExample</CODE> nos campos Nome do MIDlet e Nome da classe MIDP. Clique em Terminar.<br> O aplicativo &eacute; exibida na janela Design de fluxo do Visual Mobile Designer. 
+	</LI>
+
+</OL>
+<H3><A NAME="addcomponent"></A>Adicionando componentes ao projeto </H3>
+<OL>
+	<LI>No Design de fluxo, arraste e solte os seguintes componentes da Paleta de componentes:	</LI>
+	<UL>
+		<li><tt>Tela de abertura</tt></li>
+		<li><tt>Alerta</tt></li>
+		<li><tt>Navegador PIM</tt></li>
+	</UL>
+	<LI>Clique em <tt>splashScreen</tt> e, na janela Propriedades, altere o valor <tt>Texto</tt> de <tt>null</tt> (nulo) para o <tt>PIM Browser Example</tt>.
+	<LI>Clique em <tt>alert</tt> e, na janela Propriedades, altere o valor da propriedade <tt>Sting</tt> para </tt>Contact selected<tt>.
+</OL>
+<H3><A NAME="addcommands"></A>Adicionando comandos ao projeto</H3>
+<OL> 
+	<li>No Design de fluxo Escolha o </tt>comando Sair<tt> na se&ccedil;&atilde;o comandos da Paleta do componente.</li>
+	<li>Arraste-o e solte-o no componente <tt>pimBrowser</tt>.</li>
+</OL>
+<H3><A NAME="connect"></A>Conectando os componentes para criar um fluxo de aplicativo </H3>
+
+	<p>No Design de fluxo, clique em <tt>Ponto de in&iacute;cio</tt> no Dispositivo m&oacute;vel e arraste-o para o componente </tt>splashScreen<tt>. Da mesma forma, conecte os componentes como mostrado no gr&aacute;fico seguinte. </p>
+	<p class="align-center"><img src="../../../images_www/articles/71/mobility/pimbrowser/pim-flow.png" border=1 alt="Mostra o Designer de fluxo com componentes conectados por linhas de comando"></p>
+ 
+
+
+<H3><A NAME="storage"></A>Adicionando contatos ao banco de dados de contatos do Wireless Toolkit</H3>
+
+<P> Copie o <A HREF="https://netbeans.org/files/documents/4/1613/SAMPLE.VCF">sample contact</A> para a pasta <tt>javame-sdk</tt> no diret&oacute;rio do usu&aacute;rio <tt>$JAVAME-SDKHOME/3.0/work/0/appdb/PIM/contacts/Contacts/</tt>.<br> 
+	Esta pasta cont&eacute;m os tr&ecirc;s seguintes m&eacute;todos como padr&atilde;o:
+	<li> 1.vcf</li>
+	<li> 2.vcf</li>
+	<li>categories.txt</li>
+	</P>
+	
+	
+<H3><A NAME="run"></A>Executando o projeto</H3>
+<div>
+	<p>Pressione F6 para executar o projeto principal ou selecione <tt>Executar</tt> &gt; <tt>Executar projeto principal</tt>.</p>
+</div>
+<p class="align-center"><a href="#top">in&iacute;cio</a></p>
+<a name="javadoc-pim"></a>
+
+<H2>Javadoc do componente do Navegador PIM</H2>
+<P>O NetBeans IDE oferece Javadocs de API do componente <tt>PIMBrowser</tt>, assim como outros componentes que voc&ecirc; pode usar no VMD. Para ler os Javadocs do componente <tt>pimBrowser</tt>, fa&ccedil;a o seguinte:
+</P>
+<OL>
+<li>Coloque o cursor no componente <tt>PIMBrowser</tt> no c&oacute;digo-fonte e pressione Ctr-Shift-Espa&ccedil;o (ou selecione <tt>C&oacute;digo-fonte</tt> &gt; <tt>Exibir documenta&ccedil;&atilde;o</tt>).<br>
+O Javadoc deste elemento &eacute; exibido em uma janela pop-up. </li>
+<li>Clique em Exibir documenta&ccedil;&atilde;o no &iacute;cone de navegador da Web externo (<img src="../../../images_www/articles/71/mobility/pimbrowser/show-doc-button.png" alt="Exibir documenta&ccedil;&atilde;o no navegador da Web externo">) na janela pop-up para obter informa&ccedil;&otilde;es detalhadas sobre o componente <tt>PIMBrowser</tt> em seu navegador.</li>
+
+	
+</OL>
+<p class="align-center"><a href="#top">in&iacute;cio</a></p>
+<div class="feedback-box"><a href="/about/contact_form.html?to=6&subject=NetBeans%20Java%20ME%20Custom%20Component:%20PIM%20Browser">Envie-nos seus coment&aacute;rios</a></div>
+<br style="clear:both;" >  
+<a name="see-also"></a>
+<H2>Consulte tamb&eacute;m</H2>
+<UL>
+ <li><a href="smscomposer.html">Componentes padr&atilde;o do Visual Mobile Designer: criando um aplicativo SMS Composer</a></li>
+ <li><a href="loginscreen.html">Componentes padr&atilde;o do Visual Mobile Designer: criando telas de logon no dispositivo m&oacute;vel</a></li>
+ <li><a href="filebrowser.html">Componentes padr&atilde;o do Visual Mobile Designer: criando um navegador de arquivo de dispositivo m&oacute;vel</a></li>
+ <li><a href="splashscreen.html">Componentes padr&atilde;o do Visual Mobile Designer: usando telas de splash em aplicativos Java ME</a></li>
+ <li><a href="waitscreen.html">Componentes personalizados do Visual Mobile Designer: Criando telas de espera para aplicativos m&oacute;veis</a></li>
+<li><a href="tableitem.html">Componentes padr&atilde;o do Visual Mobile Designer: usando itens de tabela em aplicativos Java ME</a></li>
+ <li><a href="http://wiki.netbeans.org/VisualMobileDesignerPalatteReference">Reference: Visual Mobile Designer Palette Guide</a></li>
+</UL>
+<p class="align-center"><a href="#top">in&iacute;cio</a></p>
+</BODY>
+</HTML>

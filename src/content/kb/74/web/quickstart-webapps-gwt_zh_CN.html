@@ -1,0 +1,670 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <meta name="author" content="geertjan.wielenga@sun.com, troy.giunipero@sun.com">
+        <meta name="description" content="A short guide to using the Google Web Toolkit in NetBeans IDE">
+        <meta name="keywords" content="NetBeans, IDE, integrated development environment,
+            GWT, Google Web Toolkit, framework, frameworks, web application">
+
+        <link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+        <link rel="stylesheet" type="text/css" href="../../../lytebox.css" media="screen">
+        <script type="text/javascript" src="../../../images_www/js/lytebox-compressed.js"></script>
+
+        <title>Google Web Toolkit 框架简介 - NetBeans IDE 6.x 教程</title>
+    </head>
+
+    <body>
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+
+        <h1>Google Web Toolkit 框架简介</h1>
+
+        <p>Google Web Toolkit (GWT) 是一个开放源代码 Web 开发框架，它允许开发人员使用 Java 轻松创建高性能的 AJAX 应用程序。使用 GWT，您能够在 Java 中编写前端，它会将源代码编译为高度优化且与浏览器兼容的 JavaScript 和 HTML。“从目前的情况来看，编写 Web 应用程序是一个沉闷且容易出错的过程。您需要花费 90% 的时间来解决浏览器的问题，JavaScript 缺少模块性使得共享、测试和重用 AJAX 组件变得很困难、易损坏。这种情况是完全可以避免的。”<a href="http://code.google.com/webtoolkit/">Google Web Toolkit 站点</a>如此陈述。</p>
+
+        <p>在本教程中，您将学习如何将上述原则应用于实际应用程序。同时，本课程还将介绍 NetBeans IDE 对 GWT 的支持，您将构建一个利用部分功能的简单应用程序。</p>
+
+        <p><strong>目录</strong></p>
+
+        <p><img alt="此页上的内容适用于 NetBeans IDE 6.x-7.0" class="stamp" height="114" src="../../../images_www/articles/71/netbeans-stamp-71-72-73.png" title="此页上的内容适用于 NetBeans IDE 6.x-7.0" width="114" /></p>
+
+        <ul class="toc">
+            <li><a href="#setup">设置环境</a>
+                <ul>
+                    <li><a href="#creating">创建 GWT 应用程序的源代码结构</a>
+                    <li><a href="#examining">检查 GWT 应用程序的源代码结构</a>
+                </ul></li>
+            <li><a href="#random-quote">创建 AJAX 随机报价生成器</a>
+                <ul>
+                    <li><a href="#generating-stubs">生成服务桩模块</a>
+                    <li><a href="#examining-stubs">检查生成的类</a>
+                    <li><a href="#extending-stubs">扩展生成的类</a>
+                    <li><a href="#customizing">定制外观</a>
+                </ul></li>
+            <li><a href="#compile-debug">编译和调试</a></li>
+            <li><a href="#conclusion">小结</a></li>
+            <li><a href="#seeAlso">另请参见</a></li>
+        </ul>
+
+        <p><strong>要学完本教程，您需要具备以下软件和资源。</strong></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">软件或资源</th>
+                    <th class="tblheader" scope="col">要求的版本</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE，Java 包</a></td>
+                    <td class="tbltd1">版本 6.x</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java 开发工具包 (JDK)</a></td>
+                    <td class="tbltd1">版本 5 或更高版本</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1">GlassFish Server <br><em class="indent margin-around">或</em> <br>Tomcat Servlet 容器</td>
+                    <td class="tbltd1">v3 或 Open Source Edition 3.0.1 <br><em class="margin-around indent"> </em> <br>版本 6.x</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://code.google.com/webtoolkit/">Google Web Toolkit (GWT)</a></td>
+                    <td class="tbltd1">版本 1.5 或更高版本</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://gwt4nb.dev.java.net/">NetBeans GWT 插件</a></td>
+                    <td class="tbltd1">版本 2.x</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong class="notes">注：</strong></p>
+
+        <ul>
+            <li>您可以使用 Java 下载包选择安装 GlassFish Server 和 Apache Tomcat Servlet 容器 6.0.x。您必须安装其中一个服务器才能完成本教程。</li>
+
+            <li>不必从 <a href="https://gwt4nb.dev.java.net/">https://gwt4nb.dev.java.net/</a> 中下载 NetBeans GWT 插件，您可以直接通过 IDE 的插件管理器下载和安装该插件。从主菜单中选择 "Tools"（工具）> "Plugins"（插件）并安装插件，如下所示： <br> <img alt="插件管理器中显示的 GWT 插件" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/plugin-manager.png" title="插件管理器中显示的 GWT 插件"> <br> 有关如何在 IDE 中安装框架插件的更详细说明，请参见：<a href="../../docs/web/framework-adding-support_zh_CN.html">添加对 Web 框架的支持</a>。</li>
+
+            <li>可为本教程<a href="https://netbeans.org/projects/samples/downloads/download/Samples%252FJava%2520Web%252FHelloGWT.zip">下载样例工作应用程序</a>以及使用 GWT 的<a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=4537">其他应用程序</a>。</li>
+
+            <li>有关 GWT 的详细信息，请参见 <a href="http://code.google.com/webtoolkit/">http://code.google.com/webtoolkit/</a>。有关 IDE 中对 GWT 的支持的详细信息，请参见 <a href="https://gwt4nb.dev.java.net/">https://gwt4nb.dev.java.net/</a>。如果您熟悉 GWT，欢迎您为 GWT 插件项目贡献代码。</li>
+
+            <li>本教程遵循 <a href="http://www.packtpub.com/google-web-toolkit-GWT-Java-AJAX/book">Google Web Toolkit：GWT Java AJAX 编程</a>中介绍的部分示例，该文由 Prabhakar Chaganti 撰写，由 <a href="http://www.packtpub.com/">Packt Publishing</a> 于 2007 年 2 月出版。</li>
+        </ul>
+
+
+        <br>
+        <h2 id="setup">设置环境</h2>
+
+        <p>首先使用 IDE 生成基本源代码结构。生成源代码结构后，可以详细地对其进行研究，以便了解 GWT 的工作原理。</p>
+
+        <ul>
+            <li><a href="#creating">创建 GWT 应用程序的源代码结构</a>
+            <li><a href="#examining">检查 GWT 应用程序的源代码结构</a>
+        </ul>
+
+        <div class="indent">
+
+            <h3 id="creating">创建 GWT 应用程序的源代码结构</h3>
+
+            <p>您所创建的应用程序的源代码结构必须包括 GWT JAR 文件、GWT 模块项目配置文件以及一些标准工件，如 Java 入口点。由于您使用的是 IDE，因此不需手动创建所有这些文件。可以让向导为您完成这些工作。尤需指出的是，新建 Web 应用程序向导的最终面板在创建 GWT 应用程序的上下文中非常有用。</p>
+
+            <ol>
+                <li>选择 "File"（文件）> "New Project"（新建项目）（Ctrl-Shift-N 组合键；在 Mac 上为 ⌘-Shift-N 组合键）。在 "Categories"（类别）下，选择 "Web"（或 "Java Web"）。在 "Projects"（项目）下，选择 "Web Application"（Web 应用程序）。单击 "Next"（下一步）。</li>
+
+                <li>在步骤 2 "Name and Location"（名称和位置）的 "Project Name"（项目名称）中键入 <code>HelloGWT</code>。还可以通过在 "Project Location"（项目位置）字段中键入计算机上的路径来指定项目的位置。单击 "Next"（下一步）。</li>
+
+                <li>在 "Server and Settings"（服务器和设置）步骤中，选择已在 IDE 中注册的任意服务器。如果在安装 IDE 时包括了 Tomcat 或 GlassFish Server，则会在下拉列表中显示这些服务器。<br><br> <span class="tips">要在 IDE 中注册服务器，请单击 "Add"（添加）按钮打开一个向导，以便按指导完成注册过程。</span></li>
+
+                <li>指定要使用的 Java 版本。单击 "Next"（下一步）。
+
+                    <p><strong class="notes">注：</strong>本教程支持 GWT 版本 1.5 和更高版本。GWT 1.4 不支持 Java EE 5，因此，如果您使用的是这一版本，则还必须将 Java EE 版本设置为 1.4。否则 Java EE 5 标注将导致出现编译错误（举例而言）。</p></li>
+
+                <li>在 "Frameworks"（框架）步骤中，选择 "GWT"。<br> <img alt="新建项目向导的 "Frameworks"（框架）面板中列出的 GWT" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/frameworks-panel.png" title="新建项目向导的 "Frameworks"（框架）面板中列出的 GWT"> <br> 在选择 GWT 框架时，以下字段将变为可用：
+
+                    <ul>
+                        <li><strong>GWT Installation Folder（GWT 安装文件夹）</strong>：指定您在本教程开始时下载 Google Web Toolkit 的文件夹的路径。如果指定错误路径，则会显示红色的错误消息，您将无法完成该向导。</li>
+
+                        <li><strong>GWT Module（GWT 模块）</strong>：指定在完成该向导时 IDE 将生成的项目模块的名称和位置。项目模块是用于配置 GWT 应用程序的 XML 文件。例如，它用于指定在加载模块时由 GWT 实例化的类。请注意，该向导中的这一字段还可确定应用程序的主包。默认情况下，主包为 <code>org.yournamehere</code>，项目模块为 <code>Main</code>。就本教程而言，请将默认条目保持不变。</li>
+                    </ul></li>
+
+                <li>单击 "Finish"（完成）。IDE 将创建 <code>HelloGWT</code> 项目。此项目包含所有源代码、库和项目元数据，例如项目的 Ant 构建脚本。此项目在 IDE 中打开。可在 "Files"（文件）窗口中查看其文件结构（按 Ctrl-2 组合键；在 Mac 上为 ⌘-2 组合键），在 "Projects"（项目）窗口中查看其逻辑结构（按 Ctrl-1 组合键；在 Mac 上为 ⌘-1 组合键）。 <br> <img alt="显示 HelloGWT 项目的 "Projects"（项目）窗口" class="margin-around" src="../../../images_www/articles/72/web/gwt/projects-win-init.png" title=""Projects"（项目）窗口将显示 HelloGWT 项目"></li>
+
+                <li>在 "Projects"（项目）窗口中，右键单击该项目节点并选择 "Run"（运行）。将构建应用程序并创建 Web 档案文件 (WAR)。将其部署到服务器上。将启动服务器（如果尚未运行）。将打开计算机的默认浏览器，并显示应用程序的欢迎页面。<br> <img alt="显示在浏览器中的 Hello GWT 消息" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/hello-gwt.png" title="Hello GWT 消息显示在浏览器中"> <br> 单击该按钮，其下面的文字将会消失。 <br> <img alt="按钮下面的文本消失" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/click-me.png" title="按钮下面的文本消失"></li>
+            </ol>
+
+            <p>在下一部分中，您将详细了解生成的每个文件，并检查上面的简单应用程序是如何创建的。</p>
+
+
+            <h3 id="examining">检查 GWT 应用程序的源代码结构</h3>
+
+            <p>IDE 的新建 Web 应用程序向导创建了若干个源文件。查看这些文件并了解这些文件在 GWT 应用程序的上下文内是如何彼此相关的。</p>
+
+            <ul>
+                <li><strong><code>Main.gwt.xml</code></strong>：项目模块 XML 文件，包含在项目的根包中，该 XML 文件保存 GWT 项目需要的完整应用程序配置。向导生成的默认项目模块显示如下：
+
+<pre class="examplecode">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;module&gt;
+        &lt;inherits name=&quot;com.google.gwt.user.User&quot;/&gt;
+        &lt;entry-point class=&quot;org.yournamehere.client.MainEntryPoint&quot;/&gt;
+        &lt;!-- Do not define servlets here, use web.xml --&gt;
+&lt;/module&gt;</pre>
+
+                    <p>默认项目模块中的元素显示如下：</p>
+
+                    <ul>
+                        <li><code><strong>inherits</strong></code>：指定此模块继承的模块。在此简单示例中，我们只继承 <code>User</code> 模块提供的功能，该功能内置到 GWT 框架中。当应用程序变得更加复杂时，通过模块继承性可以快速、有效地重用某些功能。</li>
+                        <li><code><strong>entry-point</strong></code>：引用在加载模块时将被 GWT 框架实例化的类。</li>
+                    </ul>
+
+                    <strong class="notes">注：</strong>有关详细信息，请参见：<a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideOrganizingProjects.html#DevGuideModuleXml">组织项目：模块 XML 文件</a>。</li>
+
+                <li><strong><code>MainEntryPoint.java</code></strong>：该类按照 <code>Main.gwt.xml</code> 中的指定来指定应用程序的主入口点。该类扩展 <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/core/client/EntryPoint.html"><code>EntryPoint</code></a> 类，在框架加载 GWT 模块时，将实例化此类，并自动调用其 <code>onModuleLoad()</code> 方法。向导生成的默认入口点显示如下。
+
+<pre class="examplecode">package org.yournamehere.client;
+
+import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.ClickListener;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.Widget;
+
+public class MainEntryPoint implements EntryPoint {
+
+    /** Creates a new instance of MainEntryPoint */
+    public MainEntryPoint() {
+    }
+
+    /**
+        The entry point method, called automatically by loading a module
+        that declares an implementing class as an entry-point
+    */
+    public void onModuleLoad() {
+        final Label label = new Label(&quot;Hello, GWT!!!&quot;);
+        final Button button = new Button(&quot;Click me!&quot;);
+
+        button.addClickListener(new ClickListener(){
+            public void onClick(Widget w) {
+                label.setVisible(!label.isVisible());
+            }
+        });
+
+        RootPanel.get().add(button);
+        RootPanel.get().add(label);
+    }
+
+}</pre>
+
+                    在上面的代码片段中，<a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/core/client/EntryPoint.html"><code>EntryPoint</code></a> 的默认 <code>onModuleLoad()</code> 方法会向应用程序中添加以下组件：
+
+                    <ul>
+                        <li><code><strong>Label</strong></code>：将创建一个新的 GWT <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/Label.html"><code>Label</code></a>，其中显示文本 "<code>Hello, GWT!!!</code>"。将通过最后一行代码 <code>RootPanel.get().add(label)</code> 将该标签添加到 <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/RootPanel.html"><code>RootPanel</code></a> 中。</li>
+
+                        <li><code><strong>Button</strong></code>：将创建一个新的 GWT <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/Button.html"><code>Button</code></a>，其中显示文本 "<code>Click me!</code>" 和由 <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/ClickListener.html"><code>ClickListener</code></a> 实现的按钮监听程序。该按钮监听程序指定在单击该按钮时隐藏标签。
+
+                            <pre class="examplecode">public void onClick(Widget w) {
+    label.setVisible(!label.isVisible());
+}</pre>
+                            通过倒数第二行代码将该按钮添加到 <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/RootPanel.html"><code>RootPanel</code></a> 中。
+
+                            <pre class="examplecode">RootPanel.get().add(button)</pre></li>
+                    </ul></li>
+
+                <li><strong><code>welcomeGWT.html</code></strong>：生成的 HTML 主机页面，这是为应用程序指定的欢迎文件。<code>web.xml</code> 文件使用 <code>welcome-file</code> 元素指定：主机页面是在部署应用程序时在浏览器中显示的初始页面。主机页面引用 JavaScript 源代码的路径，并可引用应用程序样式表。向导生成的默认主机页面显示如下：
+
+<pre class="examplecode">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot;&gt;
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;meta name='gwt:module' content='org.yournamehere.Main=org.yournamehere.Main'&gt;
+        &lt;title>Main&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;script language=&quot;javascript&quot; src=&quot;org.yournamehere.Main/org.yournamehere.Main.nocache.js&quot;&gt;&lt;/script&gt;
+    &lt;/body&gt;
+&lt;/html&gt;</pre>
+
+                    以上代码片段中的 <code>meta</code> 和 <code>script</code> 标记对于 GWT 而言具有特殊意义：
+
+                    <ul>
+                        <li><code><strong>meta</strong></code>：指向应用程序的项目目录。此标记提供 HTML 页面与应用程序之间的链接。</li>
+
+                        <li><code><strong>script</strong></code>：从 GWT 框架的 JavaScript 文件中导入代码。此文件包含引导 GWT 框架所需的代码。它使用项目模块中的配置，然后动态加载通过编译入口点创建的 JavaScript，以提供应用程序。当您在托管模式下运行应用程序时，或者当您编译应用程序时，由 GWT 框架生成 JavaScript 文件。</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+
+        <br>
+        <h2 id="random-quote">创建 AJAX 随机报价生成器</h2>
+
+        <p>在本部分，您将在 Web 页中显示随机报价。通过此示例应用程序，您可以熟悉 GWT 应用程序的各个组件。将从服务器上存储的报价列表中选择随机报价。每秒钟，应用程序都会检索服务器提供的随机报价，并以真正的 AJAX 样式（即没有需要刷新该页的用户）在 Web 页中显示该随机报价。</p>
+
+        <p>在创建此功能的过程中，将利用 GWT RPC（<a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideServerCommunication.html#DevGuideRemoteProcedureCalls">Remote Procedure Call，远程过程调用</a>）服务。</p>
+
+        <ul>
+            <li><a href="#generating-stubs">生成服务桩模块</a>
+            <li><a href="#examining-stubs">检查生成的类</a>
+            <li><a href="#extending-stubs">扩展生成的类</a>
+            <li><a href="#customizing">定制外观</a>
+        </ul>
+
+        <div class="indent">
+
+            <h3 id="generating-stubs">生成服务桩模块</h3>
+
+            <p>NetBeans GWT 插件提供用于创建 <a href="http://code.google.com/docreader/#p=google-web-toolkit-doc-1-5&s=google-web-toolkit-doc-1-5&t=DevGuideRemoteProcedureCalls">RPC</a> 服务的向导。该向导可为您生成基本服务类。此小节介绍 GWT RPC 服务向导。</p>
+
+            <ol>
+                <li>单击 IDE 主工具栏中的 "New File"（新建文件）(<img alt=""New File"（新建文件）图标" src="../../../images_www/articles/72/web/gwt/new-file-icon.png">) 图标。在新建文件向导中，Google Web Toolkit 类别显示一个名为 "GWT RPC Service"（GWT RPC 服务）的文件模板。<br> <img alt="GWT RPC 服务向导的第一个面板" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/gwt-service.png" title="GWT RPC 服务向导的第一个面板"> <br> 选择 "GWT RPC Service"（GWT RPC 服务）并单击 "Next"（下一步）。
+
+                <li>还可以填写一个将用于存储要生成的文件的子包。在本教程中，可在 "Subpackage"（子包）字段中键入 <code>sampleservice</code>。<br> <img alt="GWT RPC 服务向导的第二个面板" class="margin-around b-all" id="usageExample" src="../../../images_www/articles/72/web/gwt/gwt-service2.png" title="GWT RPC 服务向导的第二个面板"> <br> <strong class="notes">注：</strong>通过在此步骤中保持选择 "Create Usage Example Class"（创建用法示例类）选项，可使 IDE 生成 <a href="#GWTServiceUsageExample"><code>GWTServiceUsageExample</code></a> 类，该类可用于调用服务。
+
+                <li>单击 "Finish"（完成）。将生成上图所示的新建 GWT RPC 服务向导中列出的文件，"Projects"（项目）窗口会自动更新以反映所做的更改。 <br> <img alt=""Projects"（项目）窗口更新，包含新创建的文件" class="margin-around" src="../../../images_www/articles/72/web/gwt/projects-window.png" title=""Projects"（项目）窗口更新，包含新创建的文件">
+                </li>
+            </ol>
+
+
+            <h3 id="examining-stubs">检查生成的类</h3>
+
+            <p>GWT RPC 服务向导将创建若干个源文件。在此可查看这些文件并了解这些文件在 GWT 服务的上下文内是如何彼此相关的。</p>
+
+            <p class="tip">有关 GWT 服务类的扩展说明，请参见<a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideServerCommunication.html#DevGuideCreatingServices">创建服务</a>。</p>
+
+            <ul>
+                <li><a name="GWTService"></a><code><strong>GWTService</strong></code>：服务的客户端定义。此接口可扩展 <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/rpc/RemoteService.html">RemoteService</a> 标记接口。
+
+<pre class="examplecode">
+package org.yournamehere.client.sampleservice;
+
+import com.google.gwt.user.client.rpc.RemoteService;
+import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
+
+@RemoteServiceRelativePath(&quot;sampleservice/gwtservice&quot;)
+public interface GWTService extends RemoteService {
+    public String myMethod(String s);
+}</pre></li>
+
+                <li><a name="GWTServiceImpl"></a><code><strong>GWTServiceImpl</strong></code>：该 Servlet 实现 <code>GWTService</code> 接口并提供通过 RPC 检索随机报价的功能。
+
+<pre class="examplecode">
+package org.yournamehere.server.sampleservice;
+
+import com.google.gwt.user.server.rpc.RemoteServiceServlet;
+
+import org.yournamehere.client.sampleservice.GWTService;
+
+public class GWTServiceImpl extends RemoteServiceServlet implements GWTService {
+
+    public String myMethod(String s) {
+        // Do something interesting with 's' here on the server.
+        return &quot;Server says: &quot; + s;
+    }
+
+}</pre></li>
+
+                <li><a name="GWTServiceAsync"></a><code><strong>GWTServiceAsync</strong></code>：异步接口，它基于原始的 <code>GWTService</code> 接口。它提供允许在服务器与客户端之间进行异步通信的回调对象。
+
+<pre class="examplecode">
+package org.yournamehere.client.sampleservice;
+
+import com.google.gwt.user.client.rpc.AsyncCallback;
+
+public interface GWTServiceAsync {
+    public void myMethod(String s, AsyncCallback&lt;String&gt; callback);
+}</pre></li>
+
+                <li><a name="GWTServiceUsageExample"></a><code><strong>GWTServiceUsageExample</strong></code>：以测试客户端形式生成的样例用户界面。可用于调用服务。
+
+<pre class="examplecode">
+package org.yournamehere.client.sampleservice;
+
+import com.google.gwt.core.client.GWT;
+
+import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.rpc.ServiceDefTarget;
+
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.Widget;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.VerticalPanel;
+
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
+
+public class GWTServiceUsageExample extends VerticalPanel {
+    private Label lblServerReply = new Label();
+    private TextBox txtUserInput = new TextBox();
+    private Button btnSend = new Button(&quot;Send to server&quot;);
+
+    public GWTServiceUsageExample() {
+        add(new Label(&quot;Input your text: &quot;));
+        add(txtUserInput);
+        add(btnSend);
+        add(lblServerReply);
+
+        // Create an asynchronous callback to handle the result.
+        final AsyncCallback&lt;String&gt; callback = new AsyncCallback&lt;String&gt;() {
+            public void onSuccess(String result) {
+                lblServerReply.setText(result);
+            }
+
+            public void onFailure(Throwable caught) {
+                lblServerReply.setText(&quot;Communication failed&quot;);
+            }
+        };
+
+        // Listen for the button clicks
+        btnSend.addClickHandler(new ClickHandler(){
+            public void onClick(ClickEvent event) {
+                // Make remote call. Control flow will continue immediately and later
+                // 'callback' will be invoked when the RPC completes.
+                getService().myMethod(txtUserInput.getText(), callback);
+            }
+        });
+    }
+
+    public static GWTServiceAsync getService() {
+        // Create the client proxy. Note that although you are creating the
+        // service interface proper, you cast the result to the asynchronous
+        // version of the interface. The cast is always safe because the
+        // generated proxy implements the asynchronous interface automatically.
+
+        return GWT.create(GWTService.class);
+    }
+}</pre></li>
+            </ul>
+
+            <p>现在，修改入口点类，以通过实例化 <code>GWTServiceUsageExample</code> 对象来调用服务。回想上一小节，由于您<a href="#usageExample">在 GWT RPC 向导中选择了 "Create Usage Example Class"（创建用法示例类）选项</a>，因此生成了 <code>GWTServiceUsageExample</code> 类。</p>
+
+            <ol>
+                <li>在应用程序的主入口点 (<code>MainEntryPoint.java</code>) 的 <code>onModuleLoad()</code> 方法中，删除 GWT <code>Label</code> 和 <code>Button</code>，并将 <code>GWTServiceUsageExample</code> 的新实例添加到 <code>RootPanel</code> 中。
+
+<pre class="examplecode">
+public void onModuleLoad() {
+     RootPanel.get().add(new GWTServiceUsageExample());
+}</pre>
+
+                    <strong class="notes">注：</strong>在修改 <code>onModuleLoad()</code> 方法后，需要向 <code>sampleservice.GWTServiceUsageExample</code> 类中添加导入语句。为此，请单击左侧列中显示的提示（其中 <code>GWTServiceUsageExample()</code> 方法显示在编辑器中）并为 <code>org.yournamehere.client.sampleservice.GWTServiceUsageExample</code> 选择 "Add Import"（添加导入）。 <br> <img alt="显示在编辑器中的 "Fix Import"（修复导入）支持" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/fix-import.png" title=""Fix Import"（修复导入）支持显示在编辑器中"></li>
+
+                <li><a name="allYouNeed"></a>在 "Projects"（项目）窗口中，右键单击该项目节点并选择 "Run"（运行）。将启动服务器（如果尚未运行）。将编译（在此情况下为重新编译）该项目并将其部署到服务器。浏览器将打开，以显示文本字段。键入消息并单击按钮。将显示包含所发送消息的标签。 <br> <img alt="显示用户消息的浏览器输出" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/all-you-need.png" title="浏览器输出显示用户消息">
+                </li>
+            </ol>
+
+            <p>您已使用 IDE 的 GWT RPC 向导成功创建 GWT RPC 服务。然后，向应用程序的主入口点的 <code>onModuleLoad()</code> 方法中添加一个 <code>GWTServiceUsageExample</code> 实例，这会使应用程序在运行时调用该服务。在下一节中，将通过扩展生成的类来定制服务，并将样式表附加到 HTML 主机页面中。</p>
+
+
+            <h3 id="extending-stubs">扩展生成的类</h3>
+
+            <p>在本节中，您将调整并扩展在上一小节中检查的类。在本小节结束时，您将创建好 AJAX 随机报价生成器的正常运行版本。</p>
+
+            <ol>
+                <li>回想一下，<a href="#GWTServiceImpl"><code>GWTServiceImpl</code></a> 是实现您所创建服务的 Servlet。
+
+                    <p class="tips">如果打开应用程序的 <code>web.xml</code> 部署描述符，则会看到已添加 Servlet 声明和映射。</p>
+
+                    <pre class="examplecode">&lt;servlet&gt;
+    &lt;servlet-name&gt;GWTService&lt;/servlet-name&gt;
+    &lt;servlet-class&gt;org.yournamehere.server.sampleservice.GWTServiceImpl&lt;/servlet-class&gt;
+&lt;/servlet&gt;
+&lt;servlet-mapping&gt;
+    &lt;servlet-name&gt;GWTService&lt;/servlet-name&gt;
+    &lt;url-pattern&gt;/org.yournamehere.Main/sampleservice/gwtservice&lt;/url-pattern&gt;
+&lt;/servlet-mapping&gt;</pre>
+
+
+                    在 <code>GWTServiceImpl</code> 类中，实现具有服务特定逻辑的 <code>GWTService</code> 接口。要创建随机报价生成器，请向 <code>GWTServiceImpl</code> 中添加以下代码：
+
+<pre class="examplecode">
+public class GWTServiceImpl extends RemoteServiceServlet implements GWTService {
+
+    private Random randomizer = new Random();
+    private static final long serialVersionUID = -15020842597334403L;
+    private static List quotes = new ArrayList();
+
+    static {
+        quotes.add(&quot;No great thing is created suddenly - Epictetus&quot;);
+        quotes.add(&quot;Well done is better than well said - Ben Franklin&quot;);
+        quotes.add(&quot;No wind favors he who has no destined port - Montaigne&quot;);
+        quotes.add(&quot;Sometimes even to live is an act of courage - Seneca&quot;);
+        quotes.add(&quot;Know thyself - Socrates&quot;);
+    }
+
+    public String myMethod() {
+        return (String) quotes.get(randomizer.nextInt(5));
+    }
+
+}</pre>
+
+                    <strong class="notes">注：</strong>请在 IDE 编辑器中的任意位置单击鼠标右键，然后选择 "Fix Imports"（修复导入），以便让 IDE 创建正确的导入语句。在执行此操作时，请务必选择 <code>java.util.Random</code> 而非 <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/Random.html"><code>com.google.gwt.user.client.Random</code></a>： <br> <img alt=""Fix All Imports"（修复所有导入）对话框" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/fix-all-imports.png" title=""Fix All Imports"（修复所有导入）对话框"></li>
+
+
+                <li>不让生成的用法示例类 (<a href="#GWTServiceUsageExample"><code>GWTServiceUsageExample</code></a>) 调用服务，而是从应用程序的入口点类 (<code>MainEntryPoint</code>) 中直接调用该服务。首先复制 <code>GWTServiceUsageExample</code> 的 <code>getService()</code> 方法并将其粘贴到 <code>MainEntryPoint</code> 中。（更改内容以<strong>粗体</strong>显示。）
+
+<pre class="examplecode">public class MainEntryPoint implements EntryPoint {
+
+    /**
+     * Creates a new instance of MainEntryPoint
+     */
+    public MainEntryPoint() {
+    }
+
+    <strong>public static GWTServiceAsync getService() {
+        // Create the client proxy. Note that although you are creating the
+        // service interface proper, you cast the result to the asynchronous
+        // version of the interface. The cast is always safe because the
+        // generated proxy implements the asynchronous interface automatically.
+
+        return GWT.create(GWTService.class);
+    }</strong>
+
+    ...</pre></li>
+
+                <li>在编辑器中单击鼠标右键并选择 "Fix Imports"（修复导入）。将向 <code>MainEntryPoint</code> 中添加以下三个导入语句。
+
+        <pre class="examplecode">import com.google.gwt.core.client.GWT;
+import org.yournamehere.client.sampleservice.GWTService;
+import org.yournamehere.client.sampleservice.GWTServiceAsync;</pre></li>
+
+                <li>将入口点类中的 <code>onModuleLoad()</code> 方法更改为以下方法：
+
+<pre class="examplecode">/**
+ * The entry point method, called automatically by loading a module
+ * that declares an implementing class as an entry-point
+ */
+
+public void onModuleLoad() {
+
+    final Label quoteText = new Label();
+
+    Timer timer = new Timer() {
+
+        public void run() {
+            //create an async callback to handle the result:
+            AsyncCallback callback = new AsyncCallback() {
+
+                public void onFailure(Throwable arg0) {
+                    //display error text if we can't get the quote:
+                    quoteText.setText("Failed to get a quote");
+                }
+
+                public void onSuccess(Object result) {
+                    //display the retrieved quote in the label:
+                    quoteText.setText((String) result);
+                }
+            };
+            getService().myMethod(callback);
+        }
+    };
+
+    timer.scheduleRepeating(1000);
+    RootPanel.get().add(quoteText);
+
+}</pre></li>
+
+                <li>在编辑器中单击鼠标右键并选择 "Fix Imports"（修复导入）。执行此操作时，请务必选择 <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/Timer.html"><code>com.google.gwt.user.client.Timer</code></a> 和 <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/index.html?com/google/gwt/user/client/ui/Label.html"><code>com.google.gwt.user.client.ui.Label</code></a>。 <br> <img alt=""Fix All Imports"（修复所有导入）对话框" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/fix-all-imports2.png" title=""Fix All Imports"（修复所有导入）对话框">
+
+                    
+                    </li>
+                <li>删除 <code>GWTServiceUsageExample</code> 类。它将不再编译。由于应用程序能够从其主入口点类中调用服务，因此不再需要 <code>GWTServiceUsageExample</code> 用法示例类来调用该服务。</li>
+
+                <li>尽管为 <a href="#GWTService"><code>GWTService</code></a> 和 <a href="#GWTServiceAsync"><code>GWTServiceAsync</code></a> 生成的桩模块提供了用于 <code>myMethod()</code> 的 String 参数，但无需将其用于随机报价生成器。<br><br> 在 <code>GWTService</code> 类中，从 <code>myMethod()</code> 中删除 String 参数，使接口显示如下。
+
+<pre class="examplecode">
+public interface GWTService extends RemoteService {
+    public String myMethod();
+}</pre></li>
+
+                <li>异步服务 (<code>GWTServiceAsync</code>) 的方法签名必须与 <code>GWTService</code> 的方法签名匹配（但包括 <code>AsyncCallback</code> 对象作为最终参数）。因此，请从 <code>myMethod()</code> 中删除 String 参数，使接口显示如下。
+
+<pre class="examplecode">
+public interface GWTServiceAsync {
+    public void myMethod(AsyncCallback callback);
+}</pre>
+
+                    <span class="tips">有关异步服务接口的详细信息，请参见正式 GWT 文档中的 <a href="http://code.google.com/webtoolkit/doc/latest/tutorial/clientserver.html">Making Asynchronous Calls</a>（进行异步调用）和 <a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideServerCommunication.html#DevGuideGettingUsedToAsyncCalls">Getting Used to Asynchronous Calls</a>（习惯异步调用）。</span></li>
+
+                <li>运行项目。在部署应用程序并打开浏览器后，您会看到每一秒钟都会从服务器收到一条新报价： <br> <img alt="显示在浏览器中的 AJAX 报价生成器" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/browser-quote.png" title="AJAX 报价生成器显示在浏览器中">
+                </li>
+            </ol>
+
+            <p>在下一节中，您将应用样式表来更改报价的外观。</p>
+
+            <a name="customizing"></a>
+            <h3>定制外观</h3>
+
+            <p>在本节中，您将向 HTML 主机页面中附加一个样式表。您还将在入口点类中引用它。尤需指出的是，需要将入口点类中标签的样式名称设置为样式表中的样式名称。运行时，GWT 会将样式连接至标签，并在浏览器中显示定制的标签。</p>
+
+            <ol>
+                <li>创建名为 <code>welcomeGWT.css</code> 的样式表。要创建文件，请在 "Projects"（项目）窗口中右键单击 "Web Pages"（Web 页）节点，然后选择 "New"（新建）> "Other"（其他）。此时将显示新建文件向导。</li>
+
+                <li>在 "Categories"（类别）下，选择 "Web"，然后在 "File Types"（文件类型）下选择 "Cascading Style Sheet"（级联样式表）。完成该向导后，新的空文件在编辑器中打开。</li>
+
+                <li>为新样式表创建以下 <code>quoteLabel</code> 选择器。
+
+<pre class="examplecode">
+.quoteLabel {
+    color: white;
+    display: block;
+    width: 450px;
+    padding: 2px 4px;
+    text-decoration: none;
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    border: 1px solid;
+    border-color: black;
+    background-color: #704968;
+    text-decoration: none;
+}</pre>
+
+                    现在，样式表编辑器应显示以下内容。 <br> <img alt="显示在编辑器中的 CSS 预览" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/css-preview.png" title="CSS 预览显示在编辑器中">
+
+                    <p class="tips">要显示 CSS 预览和样式构建器，请从主菜单中选择 "Window"（窗口）> "Other"（其他）。</p></li>
+
+                <li>从应用程序欢迎页 (<code>welcomeGWT.html</code>) 链接至样式表。同时请添加一些文本，向用户介绍应用程序。下面用<strong>粗体</strong>突出显示了 HTML 页面的新增部分内容。
+
+<pre class="examplecode">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot;&gt;
+
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;meta name='gwt:module' content='org.yournamehere.Main=org.yournamehere.Main'&gt;
+        <strong>&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;welcomeGWT.css&quot;&gt;</strong>
+
+        &lt;title&gt;Main&lt;/title&gt;
+    &lt;/head&gt;
+
+    &lt;body&gt;
+        &lt;script language=&quot;javascript&quot; src=&quot;org.yournamehere.Main/org.yournamehere.Main.nocache.js&quot;&gt;&lt;/script&gt;
+
+        <strong>&lt;p&gt;This is an AJAX application that retrieves a random quote from
+            the Random Quote service every second. The data is retrieved
+            and the quote updated without refreshing the page!&lt;/p&gt;</strong>
+
+    &lt;/body&gt;
+&lt;/html&gt;</pre></li>
+
+                <li>在入口点类 (<code>MainEntryPoint.java</code>) 的 <code>onModuleLoad()</code> 方法中，指定一旦成功，便将在样式表中定义的样式应用于标签。下面将用<strong>粗体</strong>突出显示新行。
+
+<pre class="examplecode">public void onSuccess(Object result) {
+    //display the retrieved quote in the label:
+    quoteText.setText((String) result);
+    <strong>quoteText.setStyleName(&quot;quoteLabel&quot;);</strong>
+}</pre>
+
+                    在键入时，按 Ctrl-空格键以启用 IDE 的内置代码完成功能。代码完成的工作原理是触发弹出窗口，其中建议了完成代码并显示相关 Javadoc 的方法。<br> <img alt="在编辑器中提供的代码完成支持" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/code-completion.png" title="在编辑器中提供代码完成支持"> <br> <span class="tips">如果您希望在 IDE 中工作时能够持续访问 GWT 文档，则也可打开 IDE 的 Javadoc 窗口。为此，请从主菜单中选择 "Window"（窗口）> "Other"（其他）> "Javadoc"。请注意，在编辑器中键入内容时，Javadoc 窗口中的文档将根据光标的位置进行更新。</span> <br> <img alt=""Javadoc" 窗口" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/javadoc.png" title="在 "Javadoc" 窗口中提供文档支持"></li>
+
+                <li>在 "Projects"（项目）窗口中，右键单击该项目节点并选择 "Run"（运行）。此时，将使用您在本小节中创建的样式表来定制样式显示标签。 <br> <img alt="显示在浏览器中的样式表效果" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/final.png" title="样式表效果显示在浏览器中">
+                </li>
+            </ol>
+        </div>
+
+        <a name="compile-debug"></a>
+        <h2>编译和调试</h2>
+
+        <p>打开 "Files"（文件）窗口（Ctrl-2 组合键；在 Mac 上为 ⌘-2 组合键）并展开 <code>build</code> 文件夹。（如果不存在 <code>build</code> 文件夹，则需再次构建该项目，以便让 IDE 重新构建 <code>build</code> 文件夹。）您应看到类似以下的内容： <br> <img alt="显示在 "Files"（文件）窗口中的 build 文件夹" class="margin-around" src="../../../images_www/articles/72/web/gwt/build-folder.png" title="build 文件夹显示在 "Files"（文件）窗口中"> <br> 在编译应用程序时，此文件夹由 GWT 自动生成。此文件夹包含客户端应用程序的准备部署版本。有关这些文件所表示含义的说明，请参见 <a href="http://code.google.com/support/bin/answer.py?answer=77858&topic=13006">Google 代码常见问题解答 - 所有缓存/无缓存内容和不正常文件名是什么含义？</a></p>
+
+        <p>还请注意，在使用 GWT 应用程序时，可以利用 IDE 的内置<a href="https://netbeans.org/features/java/debugger.html">调试器</a>。这样您便可以<a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideCompilingAndDebugging.html">在 GWT 的托管模式中调试</a>。GWT 和托管模式主窗口以及 Web 浏览器将自动打开。</p>
+
+        <p><strong class="notes">Mac OS X 用户注意事项：</strong>GWT 的托管模式是针对 Mac OS X 上的 32 位体系结构编译的，仅对于 Java 1.5 存在。如果您正在运行 Java 1.6 的 64 位版本，则需要切换为 32 位版本。您可以使用 OS X 中的 "Java Preferences"（Java 首选项）面板来执行此操作。切换 Java 版本后，应重新启动 IDE。</p>
+            
+            <!--Also, if you are using the GlassFish server
+            3.0.1 (which requires Java 6 to run), you'll need to explicitly set the path to your JDK 6 executable.
+            You can do this in the IDE by opening the Servers window (Tools &gt; Servers), and selecting the
+            Java tab of your the GlassFish server 3.0.1 server. Enter the path in the Java Executable field. The default
+            location for this is:
+            <code>/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Home/bin/java</code>.</p> -->
+
+        <p>通过单击 IDE 编辑器的左旁注在源文件中设置字段、方法和行断点。<br> <img alt="显示行断点的编辑器" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/line-breakpoint.png" title="在编辑器中设置的行断点"> <br> 然后，只需像通常对任何 Web 项目所做的那样，选择 "Debug"（调试）即可（例如，右键单击项目节点并选择 "Debug"（调试），或单击 "Debug Project"（调试项目）图标 (<img alt=""Debug Project"（调试项目）图标" src="../../../images_www/articles/72/web/gwt/debug-icon.png">)）。应用程序将在您设置的任何断点冻结，允许您逐句执行代码并检查变量和表达式值；例如，选择 "Window"（窗口）> "Debugging"（调试）> "Local Variables"（局部变量），以查看 "Local Variables"（局部变量）窗口中的值。<br> <img alt="在断点处停止的调试器" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/line-breakpoint2.png" title="调试器在源文件中设置的断点处停止"> <br> <span class="tips">还可以将光标悬停于编辑器中的表达式或值的上方，调试器将使用弹出窗口向您通知当前值（如上图所示）。</span><br> GWT 的托管模式主窗口和 Web 浏览器将会打开。浏览器将显示应用程序的运行版本。 <br> <img alt="GWT 托管模式浏览器" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/hosted-mode.png" title="当运行 IDE 的调试器时 GWT 托管模式浏览器显示"></p>
+
+
+        <a name="conclusion"></a>
+        <h2>小结</h2>
+
+        <p>在本教程中，您已学习以下内容：</p>
+
+        <ul>
+            <li>典型的应用程序源代码结构在 Google Web Toolkit 应用程序中的样子。</li>
+
+            <li>Google Web Toolkit 工件彼此的相关方式。</li>
+
+            <li>如何设置 IDE 以使用 Google Web Toolkit。</li>
+
+            <li>在 IDE 中为您提供的具体工具，特别是使用 Google Web Toolkit 时所需的工具。</li>
+        </ul>
+
+        <p>由于 GWT 框架处理与浏览器相关的代码生成以及较低级别的 <code>XmlHttpRequest</code> API 代码的创建，因此您可以利用该框架来关注您希望应用程序提供的功能。因此，如简介所述，GWT 使您可以避免与浏览器兼容性关联的难题，同时允许您为用户提供与 Web 2.0 世界相同的、符合标准的动态体验。如本教程所述，您可以应用 GWT 框架在 Java 中编写完整前端，因为您知道，您可以让 GWT 编译器将 Java 类转换为与浏览器兼容的 JavaScript 和 HTML。而且，如前所述，IDE 提供了一套完整的工具来简化这一切并改进其效率，无需对 GWT 应用程序的基础结构进行手动编码。</p>
+
+        <div class="feedback-box">
+            <a href="/about/contact_form.html?to=3&amp;subject=Feedback: Introduction to the GWT Web Framework">请将您的反馈意见发送给我们</a></div>
+
+        <br style="clear:both;">
+
+        <a name="seeAlso"></a>
+        <h2>另请参见</h2>
+
+        <p>“Google Web Toolkit 框架简介”教程到此结束。有关更多相关的高级材料，请参见以下资源：</p>
+
+        <h4>GWT 资源</h4>
+
+        <ul>
+            <li><a href="http://code.google.com/webtoolkit/doc/1.6/DevGuide.html">Google Web Toolkit 开发人员指南</a></li>
+            <li><a href="https://gwt4nb.dev.java.net/">NetBeans Google Web Toolkit 项目页</a></li>
+            <li><a href="https://gwt4nb.dev.java.net/manual/impl_details.html">GWT4NB 高级选项</a></li>
+            <li><a href="http://googlewebtoolkit.blogspot.com/2007/12/developing-gwt-applications-with.html">NetBeans Google Web Toolkit 博客</a></li>
+        </ul>
+
+        <h4>用于 Java Web 框架的 NetBeans 文档</h4>
+
+        <ul>
+            <li><a href="../../docs/web/jsf20-intro_zh_CN.html">JavaServer Faces 2.0 简介</a></li>
+            <li><a href="../../docs/web/quickstart-webapps-spring_zh_CN.html">Spring 框架简介</a></li>
+            <li><a href="../../docs/web/quickstart-webapps-struts_zh_CN.html">Struts Web 框架简介</a></li>
+            <li><a href="../../docs/web/grails-quickstart_zh_CN.html">Grails Web 框架简介</a></li>
+        </ul>
+
+    </body>
+</html>

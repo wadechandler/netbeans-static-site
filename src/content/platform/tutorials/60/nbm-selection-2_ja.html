@@ -1,0 +1,216 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+           
+ 
+ <head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+ <script src="/branding/scripts/tigris.js" type="text/javascript"></script>
+ <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+ 
+                                                  <title>NetBeans Platform 6.0 セレクション管理のチュートリアル II—ノードを使う方法</title>
+
+ <link rel="shortcut icon" href="https://netbeans.org/favicon.ico" type="image/x-icon" >
+
+
+        
+        
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+        <meta name="AUDIENCE" content="NBUSER">
+        <meta name="TYPE" content="ARTICLE">
+        <meta name="EXPIRES" content="N">
+        <meta name="developer" content="tboudreau@netbeans.org">
+        <meta name="indexed" content="y">
+        <meta name="description"
+        content="A short guide managing selection with the Nodes API.">
+        
+        
+</head> 
+    <body>
+    <h1>NetBeans セレクション管理のチュートリアル II—ノードを使う方法</h1>
+    <img  src="../../images/articles/60/netbeans-stamp60-61.gif" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.1" title="Content on this page applies to NetBeans IDE 6.1"> </p>
+ 
+    <p><a href="nbm-selection-1_ja.html">前回のチュートリアル</a>では、 <code><a href="http://wiki.netbeans.org/wiki/view/DevFaqWindowsTopComponent">TopComponent</a></code> の <code><a href="http://wiki.netbeans.org/wiki/view/DevFaqLookup">Lookup</a></code> からセレクト可能なオブジェクトを提供する方法や、フォーカス中のコンポーネントの <code>Lookup</code> に応じて変化するコンポーネントの実装方法など、コンポーネント間のセレクション管理の基礎について学びました。</p><p>今回は、より詳細なビューや、単にコンポーネントレベルにとどまらないセレクションを可能にするために、<a href="https://netbeans.org/download/dev/javadoc/org-openide-nodes/overview-summary.html">ノード API</a> について学びます。もちろん Lookup を読み書きするコンポーネントを書き、より詳細なセレクションロジックを持たせることもできないわけではありません。しかし、ノード API はそのようなことが簡単に実現できるだけでなく、多くの利点を持っています。</p><p>１つ目の利点はノード API が提供する<i>プレゼンテーションレイヤー</i>です。このレイヤーは何らかの形で編集中のデータモデルと、このデータモデルをユーザーに見せる UI コンポーネントの間にある層です。これは、あるモデルを様々な形で、もしくは様々な UI で表現する上で、とても便利で強力なのです。</p><p>２つ目の利点はエクスプローラ API です。<code>org.openide.explorer</code> モジュールは、ツリーやリスト、ツリーテーブルなどの、ノードや、その子ノードを扱うことのできるコンポーネントを数多く提供しています。</p><p>ノードは、階層的なオブジェクトです。ノードは以下のものを持っています。</p><ul>
+        <li>子ノード—ツリーに表示することができる、階層的に配下にあるノード</li>
+        <li>アクション—ポップアップメニューに表示することができるアクション</li>
+        <li>表示名—UI コンポーネントに表示することができる、判読可能 (human-readable) で、ローカライズされた名前</li>
+        <li>アイコン—UI コンポーネントに表示することができるアイコン</li>
+    </ul>
+    
+    <p>ノードは上のどれに対しても変更通知を発行することができ、エクスプローラ UI コンポーネントの表示は自動的に更新されるでしょう。</p>
+    
+    <p>決して前回のチュートリアルが無意味だというわけではありません。むしろ、ノード API が動作可能な理由がそこにあるのですから。お察しの通り、<code>org.openide.nodes.Node</code> の <code>getLookup()</code> というメソッドがその理由です。事実、 IDE のプロジェクトタブで選択を変更した時何が起きているかというと...例えば、プロジェクトタブはトップコンポーネントです。<code>Utilities.actionsGlobalContext()</code> で取得した <code>Lookup</code> がフォーカス中の様々なコンポーネントの代わり (proxy) になり、フォーカスが移動する際に変更通知を発行するように、ツリー内で選択中のオブジェクトの <code>Lookup</code> の代わりとして使えます。</p><p>エクスプローラ API のコンポーネントのおかげで非常に簡単にツリーノードの体裁を整え、とても少ないコードでこのような代用 (proxying) を行うことができます。前回のチュートリアルに出てきた MyViewer のようなビューアタイプのコンポーネントは、自動的に選択変更を通知されるので、 エクスプローラコンポーネントで起きた選択変更に対応するために特に何かする必要はありません。</p><p></p><h2 class="tutorial"><a name="setup"></a>はじめに</h2>
+    <p>あなたがその内容をよく知っているものとして、<a href="nbm-selection-1_ja.html">前回のチュートリアル</a>のサンプルコードから始めます。</p>
+    
+    <p>サンプルをダウンロードするには<a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=3146">ここ</a>をクリックしてください。</p><p></p><h2 class="tutorial"><a name="explorer"></a>エクスプローラビューの作成</h2>まず最初にすることは、エディタコンポーネント <code>MyEditor</code> の大幅な変更です。<code>MyEditor</code> をエディタで開きます。<ol>
+            <li>まず My Editor プロジェクトのプロパティーダイアログを開きます。「ライブラリ」カテゴリの「依存関係を追加」をクリックし、ダイアログに "BeanTreeView" と入力します。以下のように「エクスプローラおよびプロパティーシート API」が表示されるのを確認して「了解」をクリックします。これでエクスプローラ API モジュールへの依存関係が追加され、モジュールのクラスを使用することができます。</p>
+        <p>
+        <img border="1" border="1" src="../../images/tutorials/selection-2/add-deps-beantreeview-60_ja.png"/>
+        </p></li>
+        
+        <li>次にアクションハンドラメソッドの中身を削除します:<pre class=examplecode>
+private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {                                         
+}</pre>さらにコンストラクタからこのメソッドの呼び出しを削除します。こうしておけば、このハンドラメソッドが関連付けされているボタンを削除した時、ハンドラメソッドも一緒に削除されるでしょう。</li>
+        
+        <li>フォームデザイナーに切り替え、コンポーネントのすべての部品を選択し、削除します。</li>
+        
+        <li>コンポーネントインスペクタで <code>TopComponent</code> のノードを右クリックし、「レイアウトを設定」&gt;「BorderLayout」を選択します:</p>
+    
+     <img border="1" border="1" src="../../images/tutorials/selection-2/border-layout-60_ja.png"/>
+       
+    </li>
+        
+        <li>パレットウィンドウの Swing コンテナの「スクロール区画」をクリックし、フォーム上にスクロールペインをドロップします。すると、このスクロールペインはフォーム全体に配置されるでしょう。ここでの秘密は、すべてのエクスプローラ UI コンポーネントは <code>JScrollPane</code> のサブクラスであるということです。そのため、その生成コードを変更するだけでエクスプローラビューを作成することができます。</li>
+        
+        <li>追加した <code>JScrollPane</code> を右クリックし、「コードのカスタマイズ」を選択します。コードカスタマイザで、 <code>new BeanTreeView()</code> を追加して、最初の行を変更します:<p><img border="1" border="1" src="../../images/tutorials/selection-2/custom-creation-60_ja.png"/>
+        
+        </p><p><code>BeanTreeView</code> はエクスプローラ API のコンポーネントで、ポップアップメニューや検索機能などが内臓された、ノードとその子ノードを表示する基本的な <code>JTree</code> ベースのビューです。</p></li>
+        
+        <li>下のようにインポート文の追加が必要になるので、ソースエディタに切り替え、 Ctrl-Shift-I キーを押して BeanTreeView をインポートします:</p>
+
+<img border="1" src="../../images/tutorials/selection-2/beantreeview-60_ja.png"/>
+
+</li>
+        
+        <li>次にツリーに何か表示するものを追加します。エクスプローラ UI コンポーネントは、コンテナに追加されると、コンテナやそのスーパークラスが <code>ExplorerManager.Provider</code> を実装していないか探します。ですから直接コンポーネントに表示するノードを追加するのではなくて、コンポーネントマネージャーに追加します。こうすることでマスター/詳細ビューなど、１つのマネージャーが管理する複数のビューに表示することが可能になります。MyEditor のシグネチャに以下のように追加します:<pre class=examplecode>
+public class MyEditor extends TopComponent implements ExplorerManager.Provider {</pre>Ctrl-Shift-I キーを押してインポートを修正します。シグネチャの行にカーソルを置いたままにしていると、欄外に電球が現れるはずです。Alt-Enter キーを押して、「すべての抽象メソッドの実装」を実行します。すると、 <code>getExplorerManager()</code> というメソッドが追加されるでしょう。これを以下のように実装します:<pre class=examplecode>
+private final ExplorerManager mgr = new ExplorerManager();
+public ExplorerManager getExplorerManager() {
+    return mgr;
+}</pre>
+        </li>
+        
+        <li>ゴールは複数の <code>APIObject</code> を表示できるコンポーネントなのですから、１つか２つのノードが必要です。それぞれ <code>APIObject</code> インスタンスを所有することになるでしょう。まずはツリービューにルートノードを作成するコードを追加します。コンストラクタに以下の行を追加します:<pre class=examplecode>
+mgr.setRootContext(new AbstractNode(new MyChildren()));</pre>このコードでは <code>MyEditor</code> のすべてのエクスプローラビューのルートノードを設定しています。</li>
+        <li>インポートを修正しようとすると、 <code>AbstractNode</code> も <code>MyChildren</code> も見つけられないとのエラーダイアログが表示されるでしょう。<code>AbstractNode</code> を解決するためには、ノード API への依存関係を追加する必要があります。My Editor プロジェクトを右クリックし、 「プロパティー」を選択して、「ライブラリ」カテゴリの「依存関係を追加」をクリックします。追加ダイアログで "AbstractNode" と入力し、リスト中で「ノード API」を選択して、「了解」をクリックするか Enter キーを押します 。</li>
+        
+        <li>ソースエディタに戻り、 Ctrl-Shift-I キーを押してインポートを修正します。依然 <code>MyChildren</code> が見つからないとのエラーが出るでしょう。このクラスは今から作成しますから問題ありません。</li>
+    </ol>
+    
+    
+    <p></p><h2 class="tutorial"><a name="nodes-and-children"></a>ノードと子ノードの実装</h2>
+        <p>上で <code>AbstractNode</code> というクラスを使っていますね。これは名前の通りの抽象クラスではありません！これはいくらかの時間と手間を省くための <code>org.openide.nodes.Node</code> のユーティリティー実装クラスです。１から Node を実装するのではなく、ただ AbstractNode を作成して子ノードを提供する <code>Children</code> オブジェクトを渡し、必要に応じてアイコンと表示名を設定するだけでよいのです。これが <code>Node</code> そのもののサブクラスを作成することなく、何かを表す <code>Node</code> オブジェクトを作成するための簡単な方法です。</p>
+    
+    <p>これより、 <code>MyChildren</code> を実装して、先頭ノードの下に子ノードを作成します。</p><ol>
+        <li>My Editor プロジェクトの <code>org.myorg.myeditor</code> パッケージを右クリックし、ポップアップメニューから「新規」&gt;「Java クラス」を選択します。</li>
+        
+        <li>「新規 Java クラス 」ウィザードで、「クラス名」を "MyChildren" とし、「完了」をクリックするか Enter キーを押します。</li>
+        
+        <li><code>Children.Keys</code> を拡張するようにクラスのシグネチャを変更します:<pre class=examplecode>
+class MyChildren extends Children.Keys {</pre>
+        </li>
+        <li>Ctrl-Shift-I キーを押してインポートを修正します。</li>
+        <li>シグネチャの行にカーソルを移動します。欄外に電球が表示されたら、Alt-Enter キーを押して、「すべての抽象メソッドの実装」を実行します。これで <code>createNodes (Object key)</code> メソッドが追加されます。ここでルートノードの子ノードを作成します。</li>
+        <li>まずは先に、 <code>addNotify</code> をオーバーライドします。Swing コンポーネントの <code>addNotify()</code> と同じで、 <code>Children.Keys.addNotify()</code> は子ノードへの注意が最初に向けられた時、つまり子ノードについて最初に尋ねられた時に呼ばれます。ですから、ユーザーが親ノードを展開し表示が必要になる瞬間まで、子ノードの作成を遅らせることができます。ソースコード上にカーソルを置いて、 Alt-Insert キーを押します。そして「メソッドをオーバーライド...」を選択します。
+出てきたダイアログで「Children」を展開し、 <code>addNotify()</code> メソッドを選択して、「生成」をクリックするか Enter キーを押します。</li>
+        <li><code>addNotify()</code> メソッドを以下のように実装します:<pre class=examplecode>
+protected void addNotify() {
+    APIObject[] objs = new APIObject[5];
+    for (int i = 0; i &lt; objs.length; i++) {
+        objs[i] = new APIObject();
+    }
+    setKeys (objs);
+}</pre><code>Children.Keys</code> という名前から想像したかもしれませんが、親ノードはキーオブジェクトの配列または <code>Collection</code> を持ち、それらに対する <code>Node</code> を生成するファクトリのように振る舞います。<code>addNotify()</code> は何かが子ノードを必要としていることを知らせているので、 <code>setKeys()</code> を呼びます。<code>setKeys()</code> に渡す配列またはコレクションの各要素に対して、 <code>createNodes()</code> を１度呼びます (あなたが望むなら１つのオブジェクトに対して複数のノードを割り当てることもできます) 。</li>
+        <li>実際にノードを作成するためのコードを実装する必要があります。<code>createNodes()</code> を以下のように実装します:<pre class=examplecode>
+protected Node[] createNodes(Object o) {
+    APIObject obj = (APIObject) o;
+    AbstractNode result = new AbstractNode (new MyChildren(), Lookups.singleton(obj));
+    result.setDisplayName (obj.toString());
+    return new Node[] { result };
+}</pre>
+        </li>
+        <li>Ctrl-Shift-I キーを押してインポートを修正します。</li>
+        <li>最後に、エクスプローラマネージャーを TopComponent の Lookup につなぐための配線コードを少し追加します。まずクラス定義の先頭から以下の行を削除します。<pre class=examplecode>
+private final InstanceContent content = new InstanceContent();</pre>そして、選択されたノードの Lookup を TopComponent の Lookup につなぐために、ユーティリティを使用します。</li>
+        <li><code>MyEditor</code> のコンストラクタを以下のように修正します:<pre class=examplecode>
+public MyEditor() {
+    initComponents();
+    associateLookup (ExplorerUtils.createLookup(mgr, getActionMap()));
+    mgr.setRootContext(new AbstractNode(new MyChildren()));
+    setDisplayName ("My Editor");
+}</pre>
+        </li>
+    </ol>
+    
+    <p></p><h2 class="tutorial"><a name="running"></a>サンプルの実行</h2>
+    <p>お気づきでしょうが、それぞれの <code>AbstractNode</code> に対し <code>MyChildren</code> のインスタンスを生成するので、無限に <code>APIObjects</code> が作られ、それぞれのノードは <code>APIObject</code> を持つ５つの子ノードを持つことになります。</p>
+    <p>準備が整ったので、 <code>SelectionSuite</code> を右クリックしてポップアップメニューから「生成物を削除してすべてを構築」を選択し、再度右クリックして「実行」を選択します。NetBeans が起動したら、ファイルメニューの「Open Editor」アクションで <code>MyEditor</code> インスタンスを開きます。</p>
+    <p>
+    <img border="1" src="../../images/tutorials/selection-2/result-2-60_ja.png"/>
+    </p><p>ノードをクリックまたは展開すると、ビューアとプロパティーシートの内容が、以下のように選択したノードの <code>APIObject</code> の情報に更新されることに注目してください:</p><p>
+    <img border="1" src="../../images/tutorials/selection-2/result-1-60_ja.png"/>
+    </p><p>
+    
+    </p><p></p><h2 class="tutorial"><a name="exploring"></a>エクスプローラの探検</h2>以上のサンプルコードを使って、ノードと子ノードを表示するために NetBeans で使用可能な他のコンポーネントを探検したらおもしろいでしょう。探検するには、 <code>MyEditor</code> をフォームエディタで開き、「カスタム作成コード」プロパティーのコードを他のコンポーネントを使うように変更します。あるコンポーネントに対しては、 <code>JScrollPane</code> を他のコンポーネントに変更する必要があるでしょう。(単に <code>JScrollPane</code> をフォームエディタで削除してしまって、コンストラクタに <code>(new BeanTreeView(), BorderLayout.CENTER)</code> と追加してしまってもよいでしょう。) 例えば以下のようなオプションがあります:<ul>
+        <li><b>ListView</b>—ノードを JList に表示する (階層の深さを設定することができる)</li>
+        <li><b>TreeTableView</b>—一番左の列がツリーになっているツリーテーブル</li>
+        <li><b>ChoiceView</b>—ノードとその子ノードのコンボボックスビュー</li>
+        <li><b>MenuView</b>—ノードとその子ノードのポップアップメニューを表示する <code>JButton</code></li>
+        <li><b>IconView</b>—Windows エクスプローラのように子ノードをアイコン表示するコンポーネント</li>
+    </ul>
+    
+    <p></p><h2 class="multi-selection"><a name="running"></a>複数オブジェクトの選択</h2>基本的なツリービューである <code>BeanTreeView</code> では、同時に複数のノードを選択できることに気づいたかもしれません。ですから、選択中のすべてのノードの情報が表示できるようにビューアコンポーネントを修正したほうが望ましいでしょう:<ol>
+        <li>My Viewer プロジェクトの <code>org.myorg.myviewer.MyViewerTopComponent</code> をエディタで開きます。</li>
+            <li>リスナーメソッドの <code>resultChanged()</code> を次のコードに置き換えます:<pre class=examplecode>
+public void resultChanged(LookupEvent lookupEvent) {
+    Lookup.Result r = (Lookup.Result) lookupEvent.getSource();
+    Collection c = r.allInstances();
+    if (!c.isEmpty()) {
+        StringBuffer text1 = new StringBuffer();
+        StringBuffer text2 = new StringBuffer();
+        for (Iterator i = c.iterator(); i.hasNext();) {
+            APIObject o = (APIObject) i.next();
+            text1.append (o.getIndex());
+            text2.append (o.getDate().toString());
+            if (i.hasNext()) {
+                text1.append (',');
+                text2.append (',');
+            }
+        }
+        jLabel1.setText (text1.toString());
+        jLabel2.setText (text2.toString());
+    } else {
+        jLabel1.setText("[no selection]");
+        jLabel2.setText ("");
+    }
+}</pre>
+            </li>
+        </ol>
+        <p>これで、<code>ExplorerUtils</code> によって作成された <code>Lookup</code> が様々なノードの <code>Lookup</code> のプロキシとして使用できるだけでなく、複数のノードの <code>Lookup</code> をも正確にプロキシすることがわかるでしょう。</p>
+    <p>
+    <img border="1" src="../../images/tutorials/selection-2/multi-selection-60_ja.png"/>
+    
+    </p><p></p><h2 class="review"><a name="running"></a>コンセプトのおさらい</h2>ここで学んだコンセプトをいくつかおさらいします:<ul>
+        <li><code>Lookup</code> はキーはクラスで値はクラスインスタンスである <code>Map</code> のようなものでした。<code>Lookup</code> は オブジェクトが出入りする<i>場所</i>であり、特定の型のオブジェクトが出入りした時に通知してもらうように設定できると考えてもよいでしょう。 </li>
+        
+        <li><code>Utilities.actionsGlobalContext()</code> により、フォーカス中の多様な <code>TopComponent</code> の <code>Lookup</code> のプロキシ <code>Lookup</code> を取得できます。この <code>Lookup</code> は、フォーカスが別のコンポーネントに移動すると変更通知を発行します。</li>
+        
+        <li>ノードは、ツリーやリストなどのエクスプローラ API のコンポーネントで表示することができるプレゼンテーションオブジェクトです。それぞれのノードは自身の <code>Lookup</code> を持っています。</li>
+        
+        <li><code>Utilities.actionsGlobalContext()</code> で取得した <code>Lookup</code> が TopComponent の <code>Lookup</code> のプロキシとして使用できるように、 <code>ExplorerUtils.createLookup(ExplorerManager, ActionMap)</code> によって作成される <code>Lookup</code> は エクスプローラ内で選択された様々な <code>Node</code> の <code>Lookup</code> のプロキシとして使用できます。</li>
+    </ul><!--    
+    <p><h2 class="perf"><a name="next"></a>Nodes and Performance/GUI Responsiveness</h2>
+    In general, Nodes are lightweight objects, and inexpensive to create.  However,
+    sometimes that is not true of the objects they model.  Here are two techniques to
+    overcome cases where fetching the data that needs to be displayed causes an 
+    unacceptable lag:
+
+    <h3 class="perf"><a name="next"></a>Background Initialization</h3>
+    If you control the root <code>Node</code>, try something like the following:
+    
+    <pre></pre>
+    -->
+
+
+    
+    
+   <br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Selection%20Tutorial%20Part%202%20for%206.0">ご意見をお寄せください</a></div>
+<br style="clear:both;" />
+
+    <p></p><h2 class="review"><a name="next"></a>次の手順</h2>これで、配下にモデルオブジェクト (<code>APIObject</code>) を持つノードを表示するビューができました。<a href="nbm-nodesapi2_ja.html">次のチュートリアル</a>では、これまでに作成したノードにアクションやプロパティー、そしてカラフルな表示名などを付け足していきます。
+    <br><br>
+    <hr>
+    <h3>この翻訳は、nora さんに提供していただきました。</h3>
+    <br>
+</body>
+</html>

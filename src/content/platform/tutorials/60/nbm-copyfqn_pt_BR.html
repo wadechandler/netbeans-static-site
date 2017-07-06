@@ -1,0 +1,579 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<!-- -*- xhtml -*- -->
+<title>Tutorial de infra-estrutura da linguagem NetBeans Java para a Plataforma NetBeans 6.0</title>
+    <link rel="stylesheet" type="text/css" href="../../../netbeans.css"> 
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="geertjan.wielenga@sun.com">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A walk-through of the Retouche approach.">
+<!--      Copyright (c) 2007 Sun Microsystems, Inc. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>Tutorial Infra-estrutura da linguagem Java</h1>
+
+<p>Neste tutorial, voc&ecirc; ser&aacute; apresentado aos aspectos das novas APIs de &quot;Retouche&quot; do NetBeans 6.0, que fornecem acesso ao editor NetBeans Java.
+
+   </p><p><b>Conte&uacute;do</b></p>
+   
+      <img  src="../../images/articles/60/netbeans-stamp60-61.gif" class="stamp" width="114" height="114" alt="O conte&uacute;do desta p&aacute;gina se aplica ao IDE NetBeans 6.1 " title="O conte&uacute;do desta p&aacute;gina se aplica ao IDE NetBeans 6.1"> </p>
+      <ul class="toc">
+            <li><a href="#intro">Introdu&ccedil;&atilde;o &agrave; infra-estrutura da linguagem Java</a></li>
+            <li><a href="#setting-up-the-module">Configurando o m&oacute;dulo</a></li>
+            <li><a href="#creating-a-context-sensitive-toolbar-button">Criando um bot&atilde;o de barra de ferramentas sens&iacute;vel ao contexto</a></li>
+            <li><a href="#identifying-java-source-files">Editando os arquivos-fonte Java</a></li>
+            <li><a href="#determining-open-state">Determinando o estado aberto</a></li>
+            <li><a href="#detecting-the-element-under-the-caret">Detectando o elemento sob o cursor</a></li>
+            <li><a href="#doing-something-useful">Fazendo algo &uacute;til</a></li>
+       </ul>
+         
+<p><b>Para seguir este tutorial, voc&ecirc; preciso dos softwares e recursos listados na tabela seguinte.</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software ou recurso</th>
+                <th class="tblheader" scope="col">Vers&atilde;o necess&aacute;ria</th>
+            </tr> 
+             <tr>
+                <td class="tbltd1">NetBeans IDE</td>
+                <td class="tbltd1">vers&atilde;o <a href="http://download.netbeans.org/netbeans/6.1/final/">vers&atilde;o 6.1</a> ou<br>
+                vers&atilde;o 6.0</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">Java Developer Kit (JDK)</td>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">vers&atilde;o 6</a> ou<br>
+                vers&atilde;o 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+      <p class="tips">Opcionalmente, para fins de solu&ccedil;&atilde;o de problemas, voc&ecirc; pode <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=2753">baixar a amostra completa</a> e inspecionar os c&oacute;digos-fonte.
+
+</p><p></p><h2><a name="intro"> </a>Introdu&ccedil;&atilde;o &agrave; infra-estrutura da linguagem Java</h2>
+
+ <p>Antes do NetBeans IDE 6.0, a infra-estrutura da linguagem Java que oferecia suporte ao Editor Java, incluindo a gera&ccedil;&atilde;o de c&oacute;digo Java e a refatora&ccedil;&atilde;o para Java, era baseada em JMI para Java (tamb&eacute;m conhecido como MDR). O JMI para Java tinha alguns problemas de arquitetura como o bloqueio exclusivo de leitura. Em outras palavras, um bloqueio tinha que ser adquirido apenas para ler informa&ccedil;&otilde;es de seu modelo, embora isso normalmente seja necess&aacute;rio apenas em a&ccedil;&otilde;es de grava&ccedil;&atilde;o. Durante alguns anos, o JMI foi depurado e aprimorado em termos de desempenho. Mas outro problema era que ele usava a pr&oacute;pria c&oacute;pia interna do analisador de Java, o que significava que ele tinha sua pr&oacute;pria abordagem da interpreta&ccedil;&atilde;o do c&oacute;digo-fonte Java, o que diferia do compilador Java do JDK. Com a introdu&ccedil;&atilde;o dos gen&eacute;ricos no JDK 5, o que introduziu constru&ccedil;&otilde;es Java mais complicadas e sutis, o gerenciamento dessa diverg&ecirc;ncia ficou mais dif&iacute;cil. Portanto, devido aos problemas de desempenho do JMI e como um modelo de linguagem formal foi desenvolvido para tornar o compilador JDK Java uma ferramenta programaticamente acess&iacute;vel, o JMI para Java foi substitu&iacute;do por uma nova abordagem, baseada no compilador JDK Java. 
+ 
+ </p><p>Foi assim que Retouche , uma palavra francesa que significa &quot;corre&ccedil;&atilde;o&quot;, surgiu. Retouche &eacute; a nova e r&aacute;pida infra-estrutura de linguagem Java no NetBeans IDE, capaz de suportar todos os recursos interessantes do editor Java que foram aprendidos no NetBeans 6.0. Em sua ess&ecirc;ncia, Retouche delimita uma inst&acirc;ncia do compilador JDK Java e consome seus artefatos, como a &aacute;rvore de sintaxe abstrata (tamb&eacute;m conhecida como &quot;AST&quot;) e as resolu&ccedil;&otilde;es simb&oacute;licas emitidas em v&aacute;rias fases da an&aacute;lise. Ao trabalhar com Retouche, voc&ecirc; precisar&aacute; lidar com alguns destes artefatos. A <a href="http://java.sun.com/javase/6/docs/jdk/api/javac/tree/index.html">API da &aacute;rvore do compilador</a>, por exemplo, &eacute; um deles. A nomea&ccedil;&atilde;o de pacotes das classes na API da &aacute;rvore do compilador &eacute; <tt>com.sun.*</tt>. Assim, tecnicamente, esta &eacute; uma API n&atilde;o-JDK, mas que vem do compilador JDK Java. Outro exemplo de artefatos do compilador JDK Java com os quais voc&ecirc; trabalha em rela&ccedil;&atilde;o &agrave; Retouche &eacute; o modelo de linguagem formal nas APIs JDK, fornecido pelos pacotes <tt>javax.language.model.*</tt>.
+ 
+
+</p><p></p><h2><a name="setting-up-the-module"></a>Configurando o m&oacute;dulo</h2>
+
+     <p>Nesta se&ccedil;&atilde;o, utilizamos assistentes para criar um projeto de m&oacute;dulo e para definir depend&ecirc;ncias em m&oacute;dulos relevantes do NetBeans. 
+         
+         </p><ol>
+         
+         <li>Escolha Arquivo &gt; Novo projeto. No assistente para Novo projeto. escolha M&oacute;dulos do NetBeans em Categorias e Projeto de m&oacute;dulo em Projetos e clique em Pr&oacute;ximo. 
+     
+     </li><li>Digite <tt>CopyFQN</tt> em Nome do projeto e defina Localiza&ccedil;&atilde;o do projeto como uma pasta apropriada no disco. Se n&atilde;o estiverem selecionadas, selecione M&oacute;dulo independente e Definir como projeto principal. Clique em Pr&oacute;ximo.
+     
+     </li><li>Digite <tt>org.netbeans.modules.copyfqn</tt> em Nome de base de c&oacute;digo e <tt>CopyFQN</tt> em Nome de exibi&ccedil;&atilde;o do m&oacute;dulo. Clique em Terminar.
+     
+     </li><li>Clique com o bot&atilde;o direito do mouse no projeto, escolha Propriedades, clique em Bibliotecas na caixa de di&aacute;logo Propriedades do projeto e declare uma depend&ecirc;ncia nas seguintes APIs:
+     
+     <p></p><ul>
+         <li>API de sistema de dados
+         </li><li>Biblioteca 2 do editor
+         </li><li>API do sistema de arquivos
+         </li><li>Wrapper da API Javac
+         </li><li>Fonte Java
+         </li><li>API de n&oacute;s
+         </li><li>API de texto
+         </li><li>API de utilit&aacute;rios para UI
+         </li><li>API de utilit&aacute;rios
+         </li><li>API do sistema de janelas
+     </li></ul>
+     
+     <p>O seguinte dever&aacute; ser exibido:
+     
+</p><p align="left"><img border="1" src="../../images/tutorials/copyfqn/proj-props-copyfqn-60.png" alt="copy fqn">
+     
+     
+     
+     </p><p>Clique em OK.
+     
+ </p></li>
+ 
+ <p></p><h2><a name="creating-a-context-sensitive-toolbar-button"> </a>Criando um bot&atilde;o de barra de ferramentas sens&iacute;vel ao contexto</h2>
+
+ <p>Nesta se&ccedil;&atilde;o, criaremos um bot&atilde;o com reconhecimento de contexto na barra de ferramentas. Isto n&atilde;o tem nada a ver com as novas APIs de Retouche, mas fornece um elemento de interface do usu&aacute;rio para interagir com a implementa&ccedil;&atilde;o das APIs de Retouche, posteriormente neste tutorial.
+ 
+ </p><ol>
+     <li>Voc&ecirc; pode abrir o projeto do m&oacute;dulo, escolhendo Novo &gt; Outro e selecionando A&ccedil;&atilde;o na categoria Desenvolvimento do m&oacute;dulo. Clique em Pr&oacute;ximo.
+     
+     </li><li>Escolha Habilitada condicionalmente e mantenha todos os padr&otilde;es, conforme mostrado abaixo, para que a a&ccedil;&atilde;o seja sens&iacute;vel a <tt>DataObjects</tt> e para que s&oacute; seja habilitada quando um <tt>DataObject</tt> for selecionado.</p>
+     
+     
+     <p align="left"><img border="1" src="../../images/tutorials/copyfqn/cookie-action-60.png" alt="a&ccedil;&atilde;o de cookie">
+     
+     </p><p>Clique em Pr&oacute;ximo. 
+     
+     </p></li><li>Escolha Editar em Categoria e Editar na Barra de ferramentas. </p>
+     
+     <p>Agora voc&ecirc; deve ver o seguinte:
+     
+     </p><p align="left"><img border="1" src="../../images/tutorials/copyfqn/gui-registration-60.png" alt="registro da gui">
+     
+     </p><p>Clique em Pr&oacute;ximo.</p> 
+     
+     </li><li>Digite <tt>CopyFQNAction</tt> em Nome da classe e <tt>CopyFQN</tt> em Nome de exibi&ccedil;&atilde;o. 
+         
+         </li><li>V&aacute; at&eacute; um &iacute;cone que ser&aacute; exibido no bot&atilde;o da barra de ferramentas. Por exemplo, use o que ser&aacute; utilizado neste tutorial:</p>
+     
+     <p align="left"><img border="1" src="../../images/tutorials/copyfqn/icon.png" alt="&iacute;cone ">
+     
+     </p><p>Clique em Terminar.</p>
+     
+     <p>Voc&ecirc; ver&aacute; o seguinte c&oacute;digo na sua nova classe <tt>CopyFQNAction.java</tt>:
+     
+</p><pre class="examplecode">public final class CopyFQNAction extends CookieAction {
+    
+    protected void performAction(Node[] activatedNodes) {
+        DataObject dataObject = activatedNodes[0].getLookup().lookup(org.openide.loaders.DataObject.class);
+        // TODO use dataObject
+    }
+    
+    protected int mode() {
+        return CookieAction.MODE_EXACTLY_ONE;
+    }
+    
+    public String getName() {
+        return NbBundle.getMessage(CopyFQNAction.class, &quot;CTL_CopyFQNAction&quot;);
+    }
+    
+    protected Class[] cookieClasses() {
+        return new Class[] {
+            DataObject.class
+        };
+    }
+    
+    protected String iconResource() {
+        return &quot;org/netbeans/modules/copyfqn/icon.png&quot;;
+    }
+    
+    public HelpCtx getHelpCtx() {
+        return HelpCtx.DEFAULT_HELP;
+    }
+    
+    protected boolean asynchronous() {
+        return false;
+    }
+    
+}</pre>     
+     
+     <p><b class="notes">Observa&ccedil;&atilde;o:</b> todo o trabalho feito no restante deste tutorial ser&aacute; focalizado no m&eacute;todo <tt>performAction()</tt> acima.</p>
+
+     <p>Voc&ecirc; criou uma a&ccedil;&atilde;o sens&iacute;vel a objetos de dados. Vejamos o que isso significa. 
+     
+     </p></li><li>Clique com o bot&atilde;o direito do mouse no m&oacute;dulo e escolha Instalar.</p>
+     
+     <p>Depois que o m&oacute;dulo for instalado, voc&ecirc; ver&aacute; um novo bot&atilde;o na barra de ferramentas. 
+     
+          </p></li><li>Selecione um n&oacute; na janela Projetos e procure o bot&atilde;o na barra de ferramentas. Se voc&ecirc; selecionar um n&oacute; representando um arquivo ou uma pasta (incluindo um pacote), o bot&atilde;o ser&aacute; habilitado, conforme mostrado aqui:</p>
+         
+          <p align="left"><img border="1" src="../../images/tutorials/copyfqn/ctx-sensitive-on.png" alt="&iacute;cone ">
+    
+          </p><p>Entretanto, se voc&ecirc; selecionar um n&oacute; representando um projeto, o bot&atilde;o ser&aacute; desabilitado, conforme mostrado abaixo:</p>
+         
+          <p align="left"><img border="1" src="../../images/tutorials/copyfqn/ctx-sensitive-off.png" alt="&iacute;cone ">
+         
+     </p></li>
+ </ol>
+ <p>Na pr&oacute;xima se&ccedil;&atilde;o, iremos fazer mais que distinguir entre n&oacute;s de projeto e n&oacute;s de arquivo/pasta: iremos distinguir entre n&oacute;s de arquivo para classes Java versus todos os outros tipos de n&oacute;s de arquivo.
+  
+  
+ </p><p></p><h2><a name="identifying-java-source-files"></a>Identificando arquivos do c&oacute;digo-fonte Java</h2>
+
+ <p>Nesta se&ccedil;&atilde;o, come&ccedil;aremos usando uma das novas APIs de &quot;Retouche&quot;, chamada de <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/overview-summary.html">C&oacute;digo-fonte Java</a>. Aqui usamos a classe <a href="http://www.netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/JavaSource.html">JavaSource</a>, que representa um arquivo de c&oacute;digo-fonte Java. Retornamos uma inst&acirc;ncia desta classe para o objeto de arquivo associado ao objeto de dados. Se for retornado um valor nulo, o objeto de arquivo n&atilde;o &eacute; um arquivo de c&oacute;digo-fonte Java. O resultado &eacute; exibido na barra de status, quando o bot&atilde;o &eacute; clicado enquanto um arquivo &eacute; selecionado.
+ 
+ </p><ol>
+     
+     <li>Preencha o m&eacute;todo <tt>performAction()</tt> adicionando as linhas destacadas abaixo:
+     
+     <pre class="examplecode">protected void performAction(Node[] activatedNodes) {
+    DataObject dataObject = activatedNodes[0].getLookup().lookup(org.openide.loaders.DataObject.class);
+    // TODO use dataObject
+
+    <b>FileObject fileObject = dataObject.getPrimaryFile();
+
+    <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/JavaSource.html">JavaSource</a> javaSource = <a href="http://www.netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/JavaSource.html#forFileObject(org.openide.filesystems.FileObject)">JavaSource.forFileObject(fileObject)</a>;
+    if (javaSource == null) {
+        StatusDisplayer.getDefault().setStatusText(&quot;Not a Java file: &quot; + fileObject.getPath());
+    } else {
+        StatusDisplayer.getDefault().setStatusText(&quot;Hurray! Um arquivo Java: &quot; + fileObject.getPath());
+    }</b>
+}</pre>
+      
+</li><li>Certifique-se de que os comandos import sejam os seguintes:
+
+<pre class="examplecode">import org.netbeans.api.java.source.JavaSource;
+import org.openide.awt.StatusDisplayer;
+import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.nodes.Node;
+import org.openide.util.HelpCtx;
+import org.openide.util.NbBundle;
+import org.openide.util.actions.CookieAction;</pre>
+
+     </li><li>Instale o m&oacute;dulo novamente.
+     
+     </li><li>Selecione um n&oacute; de arquivo e pressione o bot&atilde;o.</p> 
+     
+     <p>Observe que a mensagem &quot;Hurray!&quot; aparece somente quando voc&ecirc; seleciona um arquivo Java, conforme mostrado abaixo:
+     
+</p><p align="left"><img border="1" src="../../images/tutorials/copyfqn/message-java-file-60.png" alt="message-java-file-60">
+     
+
+</p><p>Uma abordagem alternativa seria <i>habilitar o bot&atilde;o somente quando um arquivo Java for selecionado</i>. Para implementar isto, substitua o m&eacute;todo <tt>CookieAction.enable()</tt> da seguinte maneira:
+
+</p><pre class="examplecode">@Override
+protected boolean enable(Node[] activatedNodes) {
+    if (super.enable(activatedNodes)) {
+        DataObject dataObject = activatedNodes[0].getLookup().lookup(org.openide.loaders.DataObject.class);
+        FileObject fileObject = dataObject.getPrimaryFile();
+        JavaSource javaSource = JavaSource.forFileObject(fileObject);
+        if (javaSource == null) {
+            return false;
+        }
+        return true;
+    }
+    return false;
+}</pre>
+
+<p>O m&eacute;todo acima filtra qualquer arquivo que <i>n&atilde;o</i> seja um arquivo Java. Como resultado, o bot&atilde;o s&oacute; ser&aacute; habilitado se o arquivo atual for Java.
+
+ </p></li>
+
+
+ <p></p><h2><a name="determining-open-state"></a>Determinando o estado aberto</h2>
+
+ <p>Nesta se&ccedil;&atilde;o, seremos apresentados &agrave; nossa primeira tarefa de &quot;Retouche&quot; chamada explicitamente. Essa tarefa &eacute; fornecida pelo m&eacute;todo <tt>runUserActionTask</tt> da classe JavaSource. Uma tarefa deste tipo permite que voc&ecirc; controle as fases de um processo de an&aacute;lise, que &eacute; aplic&aacute;vel quando voc&ecirc; deseja responder imediatamente &agrave; entrada do usu&aacute;rio. Tudo feito na tarefa &eacute; feito como uma unidade &uacute;nica. No nosso caso, desejamos que a chamada da a&ccedil;&atilde;o, representada por um bot&atilde;o na barra de ferramentas, seja imediatamente seguida pela exibi&ccedil;&atilde;o de um texto na barra de status.
+ 
+ </p><ol>
+     
+     <li>Substitua a mensagem &quot;Hurray!&quot; no m&eacute;todo <tt>performAction()</tt> por esta linha:
+
+<pre class="examplecode"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/JavaSource.html#runUserActionTask(org.netbeans.api.java.source.Task,%20boolean)">javaSource.runUserActionTask</a>(new <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/Task.html">Task</a>&lt;<a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/CompilationController.html">CompilationController</a>&gt;());</pre>       
+
+<p>Voc&ecirc; ver&aacute; uma l&acirc;mpada na barra esquerda do editor, conforme mostrado aqui:
+      
+ </p><p align="left"><img border="1" src="../../images/tutorials/copyfqn/runuserasactiontask-60.png" alt="&iacute;cone ">
+         
+      </p></li><li>Clique na l&acirc;mpada. Como alternativa, coloque o cursor na linha e pressione Alt-Enter. Em seguida, deixe que o IDE implemente o m&eacute;todo.
+      
+      </li><li>Ajuste o m&eacute;todo ligeiramente, adicionando um valor booleano <tt>true</tt> ao final do m&eacute;todo e permitindo que o IDE quebre o retalho em um bloco try/catch. No final, o resultado deve ser o seguinte:
+      
+     <pre class="examplecode">protected void performAction(Node[] activatedNodes) {
+    DataObject dataObject = activatedNodes[0].getLookup().lookup(org.openide.loaders.DataObject.class);
+    // TODO use dataObject
+
+    FileObject fileObject = dataObject.getPrimaryFile();
+
+    JavaSource javaSource = JavaSource.forFileObject(fileObject);
+    if (javaSource == null) {
+        StatusDisplayer.getDefault().setStatusText(&quot;Not a Java file: &quot; + fileObject.getPath());
+     } else {
+     
+            <b>try {
+                javaSource.runUserActionTask(new Task&lt;CompilationController&gt;() {
+
+                    public void run(CompilationController arg0) throws Exception {
+                        throw new UnsupportedOperationException(&quot;Not supported yet.&quot;);
+                    }
+                }, true);
+            } catch (IOException ex) {
+                Exceptions.printStackTrace(ex);
+            }</b>
+            
+     }
+
+}</pre>
+
+      </li><li>Implemente o m&eacute;todo <tt>run()</tt> da seguinte maneira:
+     
+     <pre class="examplecode">public void run(CompilationController compilationController) throws Exception {
+     
+      <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/CompilationController.html#toPhase(org.netbeans.api.java.source.JavaSource.Phase)">compilationController.toPhase(Phase.ELEMENTS_RESOLVED)</a>;
+      
+      <a href="http://java.sun.com/j2se/1.5.0/docs/api/javax/swing/text/Document.html">Document</a> document = <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/CompilationController.html#getDocument()">compilationController.getDocument()</a>;
+      if (document != null) {
+         StatusDisplayer.getDefault().setStatusText(&quot;Hurray, the Java file is open!&quot;);
+      } else {
+         StatusDisplayer.getDefault().setStatusText(&quot;The Java file is closed!&quot;);
+      }
+      
+}</pre>
+
+</li><li>Certifique-se de que os comandos import sejam os seguintes:
+
+<pre class="examplecode">import java.io.IOException;
+import javax.swing.text.Document;
+import org.netbeans.api.java.source.CompilationController;
+import org.netbeans.api.java.source.JavaSource;
+import org.netbeans.api.java.source.JavaSource.Phase;
+import org.netbeans.api.java.source.Task;
+import org.openide.awt.StatusDisplayer;
+import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.nodes.Node;
+import org.openide.util.Exceptions;
+import org.openide.util.HelpCtx;
+import org.openide.util.NbBundle;
+import org.openide.util.actions.CookieAction;</pre>
+
+     </li><li>Instale o m&oacute;dulo novamente.
+     
+     </li><li>Selecione um n&oacute; de arquivo e pressione o bot&atilde;o.</p> 
+     
+     <p>Observe que a mensagem &quot;Hurray!&quot; aparece somente quando voc&ecirc; seleciona um arquivo Java que est&aacute; aberto no Editor Java, conforme mostrado aqui:
+     
+     </p><p align="left"><img border="1" src="../../images/tutorials/copyfqn/message-java-file-open-60.png" alt="message-java-file-open-60">
+
+ </p></li>
+
+
+ <p></p><h2><a name="detecting-the-element-under-the-caret"></a>Detectando o elemento sob o cursor</h2>
+
+ <p>Nesta se&ccedil;&atilde;o, agora que sabemos que estamos lidando com um arquivo Java e que ele est&aacute; aberto, podemos come&ccedil;ar a detectar o tipo de elemento sob o cursor a qualquer momento espec&iacute;fico.
+ 
+ </p><ol>
+     
+     <li>Comece declarando uma depend&ecirc;ncia nas APIs de E/S, para que possamos imprimir nossos resultados na janela Sa&iacute;da.
+     
+     </li><li>Substitua a mensagem &quot;Hurray!&quot; no m&eacute;todo <tt>run()</tt> pelas linhas destacadas abaixo:
+  
+ <pre class="examplecode">public void run(CompilationController compilationController) throws Exception {
+    
+    compilationController.toPhase(Phase.ELEMENTS_RESOLVED);
+    Document document = compilationController.getDocument();
+    
+    if (document != null) {
+        <b>new MemberVisitor(compilationController).scan(compilationController.getCompilationUnit(), null);</b>
+    } else {
+        StatusDisplayer.getDefault().setStatusText(&quot;The Java file is closed!&quot;);
+    }
+    
+}</pre>   
+ 
+    
+<p></p></li><li>E aqui est&aacute; a classe <tt>MemberVisitor</tt>, definida como uma classe interna da classe <tt>CopyFQNAction</tt>:
+    
+                                                                                                                                                                                       
+ <pre class="examplecode">private static class MemberVisitor extends TreePathScanner&lt;Void, Void&gt; {
+
+    private CompilationInfo info;
+
+    public MemberVisitor(CompilationInfo info) {
+        this.info = info;
+    }
+
+    @Override
+    public Void visitClass(ClassTree t, Void v) {
+        Element el = info.getTrees().getElement(getCurrentPath());
+        if (el == null) {
+            StatusDisplayer.getDefault().setStatusText(&quot;Cannot resolve class!&quot;);
+        } else {
+            TypeElement te = (TypeElement) el;
+            List<? extends Element> enclosedElements = te.getEnclosedElements();
+            InputOutput io = IOProvider.getDefault().getIO(&quot;Analysis of &quot;  
+                        + info.getFileObject().getName(), true);
+            for (int i = 0; i &lt; enclosedElements.size(); i++) {
+            Element enclosedElement = (Element) enclosedElements.get(i);
+                if (enclosedElement.getKind() == ElementKind.CONSTRUCTOR) {
+                    io.getOut().println(&quot;Constructor: &quot; 
+                        + enclosedElement.getSimpleName());
+                } else if (enclosedElement.getKind() == ElementKind.METHOD) {
+                    io.getOut().println(&quot;Method: &quot; 
+                        + enclosedElement.getSimpleName());
+                } else if (enclosedElement.getKind() == ElementKind.FIELD) {
+                    io.getOut().println(&quot;Field: &quot; 
+                        + enclosedElement.getSimpleName());
+                } else {
+                    io.getOut().println(&quot;Other: &quot; 
+                        + enclosedElement.getSimpleName());
+                }
+            }
+            io.getOut().close();
+        }
+        return null;
+    }
+
+}</pre>
+    
+    </li><li>Instale o m&oacute;dulo novamente, e abra uma classe Java. Em seguida, clique no bot&atilde;o e observe que os construtores, m&eacute;todos e campos s&atilde;o gravados na janela Sa&iacute;da, conforme mostrado abaixo:</p>
+     
+ 
+ <p align="left"><img border="1" src="../../images/tutorials/copyfqn/output-window-60.png" alt="message-constructor-60">
+         
+  
+ </p></li><li>Em seguida, em vez de imprimir todos os elementos na janela Sa&iacute;da, iremos imprimir somente o elemento sob o cursor. Substitua somente o m&eacute;todo <tt>visitClass</tt>, pelo c&oacute;digo destacado abaixo:
+                                                                                                                                                        
+ <pre class="examplecode">private static class MemberVisitor extends TreePathScanner&lt;Void, Void&gt; {
+
+    private CompilationInfo info;
+
+    public MemberVisitor(CompilationInfo info) {
+        this.info = info;
+    }
+
+    <b>@Override
+    public Void visitClass(ClassTree t, Void v) {
+        try {
+            JTextComponent editor = EditorRegistry.lastFocusedComponent();
+            if (editor.getDocument() == info.getDocument()) {
+                int dot = editor.getCaret().getDot();
+                TreePath tp = info.getTreeUtilities().pathFor(dot);
+                Element el = info.getTrees().getElement(tp);
+                if (el == null) {
+                    StatusDisplayer.getDefault().setStatusText(&quot;Cannot resolve class!&quot;);
+                } else {
+                    InputOutput io = IOProvider.getDefault().getIO(&quot;Analysis of &quot; 
+                            + info.getFileObject().getName(), true);
+                    if (el.getKind() == ElementKind.CONSTRUCTOR) {
+                        io.getOut().println(&quot;Hurray, this is a constructor: &quot; 
+                            + el.getSimpleName());
+                    } else if (el.getKind() == ElementKind.METHOD) {
+                        io.getOut().println(&quot;Hurray, this is a method: &quot; 
+                            + el.getSimpleName());
+                    } else if (el.getKind() == ElementKind.FIELD) {
+                        io.getOut().println(&quot;Hurray, this is a field: &quot; 
+                            + el.getSimpleName());
+                    } else {
+                        io.getOut().println(&quot;Hurray, this is something else: &quot; 
+                            + el.getSimpleName());
+                    }
+                    io.getOut().close();
+                }
+            }
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+        return null;
+    }</b>
+
+}</pre>  
+   
+      </li><li>Instale o m&oacute;dulo.
+    
+    </li><li>Coloque o cursor em qualquer lugar no c&oacute;digo Java e pressione o bot&atilde;o. A janela Sa&iacute;da exibe informa&ccedil;&otilde;es sobre o c&oacute;digo sob o cursor, se aplic&aacute;vel. Por exemplo, se voc&ecirc; pressionar o bot&atilde;o ap&oacute;s colocar o cursor em um m&eacute;todo, conforme mostrado abaixo, a janela Sa&iacute;da informa que o cursor est&aacute; em um m&eacute;todo:</p> 
+ 
+   <p align="left"><img border="1" src="../../images/tutorials/copyfqn/message-constructor-60.png" alt="message-constructor-60">
+
+   
+   </p></li><li>Mas podemos detectar muito mais que somente o nome do elemento sob o cursor. No m&eacute;todo <tt>visitClass</tt>, substitua as linhas em negrito abaixo:
+     
+    
+   <pre class="examplecode">@Override
+public Void visitClass(ClassTree t, Void v) {
+    try {
+        JTextComponent editor = EditorRegistry.lastFocusedComponent();
+        if (editor.getDocument() == info.getDocument()) {
+            int dot = editor.getCaret().getDot();
+            TreePath tp = info.getTreeUtilities().pathFor(dot);
+            Element el = info.getTrees().getElement(tp);
+            if (el == null) {
+                StatusDisplayer.getDefault().setStatusText(&quot;Cannot resolve class!&quot;);
+            } else {
+                InputOutput io = IOProvider.getDefault().getIO(&quot;Analysis of &quot; 
+                    + info.getFileObject().getName(), true);
+                <b>String te = null;
+                if (el.getKind() == ElementKind.CONSTRUCTOR) {
+                    te = ((TypeElement) ((ExecutableElement) el).getEnclosingElement()).getQualifiedName().toString();
+                    io.getOut().println(&quot;Hurray, this is a constructor's qualified name: &quot; + te);
+                } else if (el.getKind() == ElementKind.METHOD) {
+                    te = ((ExecutableElement) el).getReturnType().toString();
+                    io.getOut().println(&quot;Hurray, this is a method's return type: &quot; + te);
+                } else if (el.getKind() == ElementKind.FIELD) {
+                    te = ((VariableElement) el).asType().toString();
+                    io.getOut().println(&quot;Hurray, this is a field's type: &quot; + te);
+                }</b> else {
+                    io.getOut().println(&quot;Hurray, this is something else: &quot; 
+                        + el.getSimpleName());
+                }
+                io.getOut().close();
+            }
+        }
+    } catch (IOException ex) {
+        Exceptions.printStackTrace(ex);
+    }
+    return null;
+}</pre>
+    
+</li><li>Instale o m&oacute;dulo novamente. Desta vez, quando voc&ecirc; clicar no bot&atilde;o enquanto o cursor estiver sobre um construtor, m&eacute;todo ou campo, mais informa&ccedil;&otilde;es detalhadas sobre o elemento ser&atilde;o impressas na janela Sa&iacute;da.
+    
+ </li></ol>
+
+<p>Neste est&aacute;gio, conseguimos detectar se estamos lidando com um arquivo Java, se o documento est&aacute; aberto e o tipo de elemento que est&aacute; sob o cursor. Mas o que podemos fazer com estas informa&ccedil;&otilde;es? Na pr&oacute;xima se&ccedil;&atilde;o, ser&aacute; apresentado um simples cen&aacute;rio no qual seu conhecimento rec&eacute;m-adquirido mostrar&aacute; sua utilidade.</p>
+
+
+<p></p><h2><a name="doing-something-useful"> </a>Fazendo algo &uacute;til</h2>
+
+<p>Nesta se&ccedil;&atilde;o, definiremos o conte&uacute;do da &aacute;rea de transfer&ecirc;ncia, fornecido por <tt>java.awt.datatransfer.Clipboard</tt>, com base no elemento sob o cursor. Quando voc&ecirc; pressionar o bot&atilde;o, o elemento sob o cursor ser&aacute; colocado na &aacute;rea de transfer&ecirc;ncia para que voc&ecirc; possa colar o conte&uacute;do em qualquer lugar do c&oacute;digo. 
+ 
+ </p><ol>
+     
+     <li>Comece declarando a &aacute;rea de transfer&ecirc;ncia e definindo um construtor:
+     
+     <pre class="examplecode">private Clipboard clipboard;
+
+public CopyFQNAction() {
+    clipboard = Lookup.getDefault().lookup(ExClipboard.class);
+    if (clipboard == null) {
+        clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+    }
+}</pre>
+      
+     </li><li>Em seguida, substitua cada linha &quot;Hurray!&quot; do c&oacute;digo por uma linha que envie o elemento como uma string para um m&eacute;todo que ser&aacute; definido na pr&oacute;xima etapa. Chamaremos o m&eacute;todo de <tt>setClipboardContents</tt>. Assim, substitua, por exemplo, a primeira linha &quot;Hurray!&quot; pelo seguinte:
+     
+<pre class="examplecode">setClipboardContents(te);</pre>
+
+<p>Fa&ccedil;a o seguinte nas outras linhas &quot;Hurray!&quot;, certificando-se de passar a string correta para o m&eacute;todo.
+
+     </p><p><b class="notes">Observa&ccedil;&atilde;o:</b> como voc&ecirc; ainda n&atilde;o definiu o m&eacute;todo <tt>setClipboardContents</tt>, cada linha adicionada nesta etapa ficar&aacute; sublinhada em vermelho. Na pr&oacute;xima etapa, adicionaremos o novo m&eacute;todo.
+
+     </p></li><li>Finalmente, adicione o seguinte ao final da classe. Este m&eacute;todo recebe a string e a coloca na &aacute;rea de transfer&ecirc;ncia:
+     
+     <pre class="examplecode">private void setClipboardContents(String content) {
+    if (clipboard != null) {
+        if (content == null) {
+            StatusDisplayer.getDefault().setStatusText(&quot;&quot;);
+            clipboard.setContents(null, null);
+        } else {
+            StatusDisplayer.getDefault().setStatusText(&quot;Clipboard: &quot; + content);
+            clipboard.setContents(new StringSelection(content), null);
+        }
+    }
+}</pre>
+
+
+ </li></ol>
+ 
+<br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Java%20Language%20Infrastructure%20Tutorial%20Part%201">Envie-nos seus coment&aacute;rios</a></div>
+<br style="clear:both;" />
+
+    
+ <!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Veja tamb&eacute;m</h2>
+
+<p>Para obter mais informa&ccedil;&otilde;es sobre a cria&ccedil;&atilde;o e o desenvolvimento de m&oacute;dulos do NetBeans, consulte os seguintes recursos: 
+  </p><ul>
+	  <li><a href="http://wiki.netbeans.org/Java_DevelopersGuide">Guia do desenvolvedor de Java</a></li>
+	  <li><a href="http://wiki.netbeans.org/RetoucheDeveloperFAQ">Perguntas freq&uuml;entes do desenvolvedor de Retouche</a></li>
+	  <li><a href="https://netbeans.org/kb/trails/platform.html">Outros tutoriais relacionados</a></li>
+	  <li><a href="https://netbeans.org/download/dev/javadoc/">Javadoc da API da NetBeans </a></li>
+  </ul>
+  
+  <hr>
+    
+    <!-- ======================================================================================== -->
+
+    </ol></ol></ol></body>
+</html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta name="Title" content="NetBeans Platform Development with Maven 2"/>
+        <meta name="Author" content="Emilian Bold, emilian.bold.public@gmail.com"/>
+        <meta name="description" content="Creating a Module Suite with Apache Maven and Mevenide – from basic Platform API features to JavaHelp support and brandingl"/>
+        <meta name="copyright" content="© 2007 NetBeans"/>
+        <meta name="Designer" content="pH Design"/>
+        <link rel="stylesheet" type="text/css" href="../magazine.css" media="screen"/>
+<title>NetBeans Magazine, Issue 4 . NetBeans Platform Development with Maven 2</title>
+
+</head>
+	<body>
+		<div id="nb04-maven-platform">
+			<div class="image"><img src="../../../../images_www/magazine/issue04/top-maven.jpg" alt=" NetBeans Platform Development with Maven 2" width="770" height="200" /></div>
+      <div class="story">
+				<p class="nb-body">Apache Maven, you all know, is widely used as a build system and for many other activities. A great thing about Maven is that its “build script” is actually no script at all but a completely declarative configuration file called a POM (Project Object Model). Maven’s design will look familiar to NetBeans Platform developers: it’s basically constructed from a core “platform” supporting versioned plugins that can be automatically downloaded from a central repository.</p>
+				<p class="nb-body">This article will show that NetBeans is starting to have excellent Maven support, and how to use this as an alternative to the IDE’s built-in Ant integration – for every aspect of NetBeans Platform development. We start from simple issues like dependency declaration and go all the way to the building of module suites, branding, and help module construction.</p>
+				<p class="nb-section">Meet Mevenide</p>
+				<p class="nb-body">NetBeans does not yet support Maven 2 projects out of the box. Luckily though, we have Mevenide, a certified NetBeans plugin that provides extensive Maven integration. You can use existing Maven projects directly from the IDE as Mevenide provides execution and debugging support, auto-completion for many Maven-specific files, and more. All projects created with Mevenide will be standard Maven 2 projects that can also be built with the command-line <span class="nb-techtext-bold">mvn</span><span class="nb-body-bold"> </span>command. </p>
+				<p class="nb-body">But if your projects will be standard Maven 2 projects, there’s nothing actually forcing you to use the NetBeans IDE; so what’s to gain as a Platform developer? Well, by standardizing on Maven, members of your team could use different IDEs or even plain text editors to do the development. In particular, you can build NetBeans Platform applications with whatever tools you prefer.<span class="nb-body-bold"> </span></p>
+				<p class="nb-body">The downside to using Mevenide and Maven 2 projects is that, while you do get independence from the IDE and an arguably better build system than Ant, you lose some IDE integration. For example, some of the wizards are gone regardless of the project type. For Platform development in particular, you’ll have to hand-edit some of the properties or XML files (the layer.xml file being the prime candidate). In some cases the loss of integration is partial; for example, the form editor will work but you won’t be able to edit the layer using drag and drop.</p>
+				<div class="story">
+                  <p class="nb-eye">All that said, keep an eye on the update center as the missing wizards are slowly coming to Maven-based projects.</p>
+			  </div>
+				<p class="nb-body">Mevenide can be easily installed by selecting Tools|Plugin, choosing “Maven” from the list of plugins (see <span class="nb-body-bold">Figure 1</span>), and going through the normal installation steps.<br />
+				  <br />
+				  <span class="image"><a href="../../../../images_www/magazine/issue04/image23427_opt-small.jpg"><img src="../../../../images_www/magazine/issue04/image23427_opt-small.jpg" style="border: 0px;"  alt="Figure (click for full size)" /></a></span><br />
+		          <span class="nb-image-legend"><strong>Figure 1. </strong>		            The Plugins window after manual selection</span><br />
+			  </p>
+			  <p class="nb-section">The first module</p>
+				<p class="nb-body">Let’s start creating a Maven-based NetBeans module. The first steps are the same for any Maven project: select File&gt;New Project, open the Maven category and choose Maven Project. We’ll use the Quickstart Archetype (see <span class="nb-body-bold">Figure 2</span>) for this module.<br />
+				  <br />
+				  <span class="image"><a href="../../../../images_www/magazine/issue04/image23433_opt-small.jpg"><img src="../../../../images_www/magazine/issue04/image23433_opt-small.jpg" style="border: 0px;"  alt="Figure (click for full size)" /></a></span><br />
+			    <span class="nb-image-legend"><strong>Figure 2.</strong>			    Selecting a Maven Archetype</span></p>
+				<div class="story">
+                  <p class="nb-eye1">An Archetype is basically a project generator in the Maven world. It produces the initial folder layout and the files to build upon.</p>
+			  </div>
+				<p class="nb-body">In the final step, we define the Group Id, Artifact Id, and Version, as well as the project name (see<span class="nb-body-bold"> Figure 3</span>).<span class="nb-body-bold"> </span>These pieces of information together identify each artifact generated and manipulated by Maven (including the project itself), and will go into the project’s POM. The Group Id is basically a namespace – it’s common practice to use company, domain or application names here. The Artifact Id is the name for this particular module. The Version is used for example for configuration management.<br />
+				  <br />
+				  <span class="image"><a href="../../../../images_www/magazine/issue04/image23439_opt-small.jpg"><img src="../../../../images_www/magazine/issue04/image23439_opt-small.jpg" style="border: 0px;"  alt="Figure (click for full size)" /></a></span><br />
+			    <span class="nb-image-legend"><strong>Figure 3.</strong>			    Artifact id, Group id and Version definition</span></p>
+			  <p class="nb-body">As a result, we have a new project in NetBeans, shown as “tutorial (jar)”. You will also notice a package under the Source Packages node and another under Test Packages (see <span class="nb-body-bold">Figure 4</span>). Additionally, you’ll have a simple example class and a test, JUnit as a test library (a dependency), and the pom.xml file under Project Files.<br />
+			    <br />
+			    <span class="image"><img src="../../../../images_www/magazine/issue04/image23451_opt.jpeg" alt="Figure" /></span><br />
+		      <span class="nb-image-legend"><strong>Figure 4.</strong>		      New Maven project, with errors that will be solved with the first build</span></p>
+			  <p class="nb-body">The first strange thing you’ll notice if you’ve never used Maven before is that the project seems to have some errors. The reason in this case is that Maven doesn’t come by default with JUnit. JUnit is treated like any other dependency and will need to be downloaded from a repository. Maven takes care of this and any all other dependencies the first time you build the project. It will download the needed artifacts and cache them locally <br />(the default repository being repo1.maven.org).</p>
+				<p class="nb-sub-section">The POM</p>
+				<p class="nb-body">Let’s now open the Project Files/pom.xml file, through which you can control all aspects of the project. Changes in the POM will be reflected in the project in the IDE. For example, by changing the <span class="nb-techtext-bold">&lt;name/&gt;</span> element and saving the file, you’ll notice that the name of the project changes. </p>
+				<p class="nb-body">Next we need to change the <span class="nb-techtext-bold">&lt;packaging/&gt;</span> element (whose value is shown in parentheses to the right of the project name). That’s because, of course, a NetBeans module isn’t distributed as a simple JAR file but as a NBM. So change the packaging to nbm and try to build the project. You’ll see that it fails miserably. The reason is that no default Maven plugin knows how to handle the nbm packaging. We need to add the <span class="nb-techtext-bold">nbm-maven-plugin</span> (which I’ll call “NBM Plugin” from now on) inside the <span class="nb-techtext-bold">&lt;build/&gt;</span> element in the POM. See <span class="nb-body-bold">Listing 1</span>.<br />
+				</p>
+		    <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                  <tbody>
+                    <tr>
+                      <td bgcolor="#660066"><span class="nb-codelist-title">Listing 1. Build configuration for the NBM Plugin</span></td>
+                    </tr>
+                    <tr>
+                      <td valign="top"><pre><div class="nb-codelist-body">&lt;project&gt;<br />  ...<br />  &lt;build&gt;<br />    &lt;plugins&gt;<br />      &lt;plugin&gt;<br />        &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;<br />        &lt;artifactId&gt;nbm-maven-plugin&lt;/artifactId&gt;<br />        &lt;version&gt;RELEASE&lt;/version&gt;<br />        &lt;extensions&gt;true&lt;/extensions&gt;<br />      &lt;/plugin&gt;<br />    &lt;/plugins&gt;<br />  &lt;/build&gt;<br />  ...<br /> &lt;/project&gt;</div></pre></td></tr></tbody></table>
+				<p class="nb-body">Now the project will build successfully. After the build, switch to the Files tab and you’ll notice in the target folder all the extra artifacts, including the generated NBM file (see <span class="nb-body-bold">Figure 5</span>). At this point we have a working module project; by clicking Run you’ll get a new IDE running, which should include our module among many others.<br />
+				  <br />
+				  <span class="image"><img src="../../../../images_www/magazine/issue04/image23457_opt.jpeg" alt="Figure" /></span><br />
+	            <span class="nb-image-legend"><strong>Figure 5. </strong>		            NBM artifact in target folder</span></p>
+				<div class="story">
+                  <p class="nb-eye">You might get errors related to Windows paths while trying to run the project. Make sure you don’t have spaces in these paths, as these are usually the culprits.</p>
+			  </div>
+			  <p class="nb-sub-section">Adding an Action</p>
+				<p class="nb-body">We will now create a new Platform Action using the New Action wizard. The purpose of this Action will be just to inspect that a given service exists and show a dialog. The wizard automatically generates the Bundle.properties file in the proper Maven-friendly folder, as well as the Action class. It also changes the layer file and adds the corresponding dependency to the POM.</p>
+				<p class="nb-body">At this point, any build using Platform APIs will fail, as the Maven project doesn’t have a dependency on the needed Platform-specific artifacts. First we need to declare the repository where the NetBeans artifacts are located; see <span class="nb-body-bold">Listing 2</span>. Next we include a dependency on <span class="nb-techtext-bold">org-openide-util</span>, which is the module providing the Platform’s Actions API. See <span class="nb-body-bold">Listing 3</span>. This is equivalent to a dependency added to a normal Platform module. The NBM Plugin will detect that this artifact is a module and configure the proper dependency in the generated build artifact. As before, the project won’t initially compile without the dependency; this will be resolved when the files are downloaded on the first build.<br />
+				</p>
+	        <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                  <tbody>
+                    <tr>
+                      <td bgcolor="#660066"><span class="nb-codelist-title">Listing 2. Declaring a default repository for NetBeans artifacts</span></td>
+                    </tr>
+                    <tr>
+              <td valign="top"><pre><div class="nb-codelist-body">&lt;project&gt;<br />...<br />  &lt;repositories&gt;<br />    &lt;repository&gt;<br />      &lt;id&gt;netbeans&lt;/id&gt;<br />        &lt;name&gt;Repository for hosting NetBeans API artifacts&lt;/name&gt;<br />        &lt;url&gt;http://deadlock.netbeans.org/maven2/&lt;/url&gt;<br />        &lt;releases&gt;<br />          &lt;enabled&gt;true&lt;/enabled&gt;<br />        &lt;/releases&gt;<br />        &lt;snapshots&gt;<br />          &lt;enabled&gt;false&lt;/enabled&gt;<br />        &lt;/snapshots&gt;<br />      &lt;/repository&gt;<br />  &lt;/repositories&gt;<br />&lt;/project&gt;<br /></div></pre></td></tr></tbody></table>
+	            <br />
+                <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                  <tbody>
+                    <tr>
+                      <td bgcolor="#660066"><span class="nb-codelist-title">Listing 3. Adding openide-util as a dependency</span></td>
+                    </tr>
+                    <tr>
+                      <td valign="top"><pre><div class="nb-codelist-body">&lt;project&gt;<br />...<br />&lt;dependencies&gt;<br />...<br />  &lt;dependency&gt;<br />     &lt;groupId&gt;org.netbeans.api&lt;/groupId&gt;<br />     &lt;artifactId&gt;org-openide-util&lt;/artifactId&gt;<br />     &lt;version&gt;RELEASE60&lt;/version&gt;<br />   &lt;/dependency&gt;<br />  &lt;/dependencies&gt;<br />...<br />&lt;/project&gt;</div></pre></td></tr></tbody></table>
+                <div class="story">
+                <p class="nb-eye">Regarding Listing 3, if the version RELEASE60 doesn’t work for you, try RELEASE60-BETA2 as the new bits might not yet have reached the Maven repository when you read this.</p>
+              </div>
+              <p class="nb-body">Now right click on the project node and create an Action with default options. Upon building the project, you might get a warning about Java sources being 1.4 due to some <span class="nb-techtext-bold">@Override</span> annotations which are 1.5 specific. You can just delete the annotations.</p>
+              <div class="story">
+                <p class="">All the basic Platform modules have the groupId org.netbeans.api and the JAR name as the artifactId. If you don’t know the groupId/artifactId for a module, you can try finding it in the repository at <span class="nb-body-italico">http://deadlock.netbeans.org/maven2.</span></p>
+              </div>
+              <p class="nb-section">Other NetBeans Platform specific settings</p>
+				<p class="nb-body">So far our module does little to interact with the NetBeans Platform. Sure, by adding a dependency on <span class="nb-techtext-bold">org-openide-util </span>we can already use the lookup service for example, but we can’t yet declare a service in the global lookup.</p>
+				<p class="nb-body">The standard NetBeans way in this case is to place a text file under META-INF/services. Luckily this is almost the same under Maven, with a twist: while the Java source files sit under src/main/java, all resources must be under src/main/resources.</p>
+				<div class="story">
+                  <p class="">This Maven-specific separation of resource files from Java source files means extra work if you plan to migrate an existing project to Maven. You’ll have to write a script that splits the files that were together in the older project (or do it by hand).</p>
+			  </div>
+		    <p class="nb-body">The resources folder may be created outside the IDE, or inside it from the Files tab (under src/main). It will also be automatically created by the Actions wizard. After this, you should see another node in the Projects window called Other Sources, containing your resource files (see <span class="nb-body-bold">Figure 6</span>).<br />
+				  <br />
+				  <span class="image"><img src="../../../../images_www/magazine/issue04/image23445_opt.jpeg" alt="Figure" /></span><br />
+			    <span class="nb-image-legend"><strong>Figure 6. </strong>			    Other Sources node</span></p>
+			  <div class="story">
+                <p class="">The resources folder only holds resources that belong to the artifact. It does not contain for example the POM file or other Maven configuration files.</p>
+		      </div>
+			  <p class="nb-body">The contents and name of the file under META-INF/services are the same as usual. Respectively: the service base class or interface; and the fully qualified name of the implementing classes, each in its own line.</p>
+			  <p class="nb-sub-section">The layer file</p>
+				<p class="nb-body">Now, in order to have menu items or toolbars we need a layer file. The necessary configuration task is letting the build plugin know which is your layer file. In order to do this, you need to create a plugin configuration file (an NBM descriptor), which defines the module metadata you’d expect: cluster name, module type, update center URL, codebase, manifest, etc.</p>
+				<p class="nb-body">First, create the src/main/nbm folder. This is where you’ll put the descriptor as a special configuration file (and not in the resources folder). In the new folder, create a file called module.xml with contents similar to <span class="nb-body-bold">Listing 4</span>.<br />
+				</p>
+		        <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                  <tbody>
+                    <tr>
+                      <td bgcolor="#660066"><span class="nb-codelist-title">Listing 4. NBM Plugin descriptor file: module.xml</span></td>
+                    </tr>
+                    <tr>
+                      <td valign="top"><pre><div class="nb-codelist-body">&lt;nbm&gt;<br />   &lt;moduleType&gt;normal&lt;/moduleType&gt;<br />   &lt;codeNameBase&gt;ro.emilianbold.nbmagazine.tutorial/1&lt;/codeNameBase&gt;<br />   &lt;cluster&gt;nbmagazine&lt;/cluster&gt;<br />   &lt;manifest&gt;src/main/nbm/manifest.mf&lt;/manifest&gt;<br />   &lt;distributionUrl&gt;http://emilianbold.ro/nbmagazine/&lt;/distributionUrl&gt;<br />   &lt;licenseName&gt;GNU GPL 3&lt;/licenseName&gt;<br />   &lt;licenseFile&gt;src/main/nbm/license.txt&lt;/licenseFile&gt;<br />&lt;/nbm&gt;<br /></div></pre></td></tr></tbody></table>
+                <div class="story">
+                <p class="nb-eye">The NBM descriptor is capable of holding a lot more data. Please see the NBM Plugin documentation for the full schema.</p>
+		      </div>
+			  <p class="nb-body">Next we have to edit the manifest file and declare the layer in the OpenIDE-Module-Layer section. While the NBM Plugin lets you declare some module metadata, it currently supports only the manifest file but not the layer. Thus, the src/main/nbm/MANIFEST.MF file<span class="nb-body-bold"> </span>defined in module.xml should be created with this line content (in a single line):</p>
+			  <p class="nb-code-body">OpenIDE-Module-Layer:<br /> ro/emilianbold/nbmagazine/tutorial/layer.xml</p>
+				<p class="nb-body">We know that anything that isn’t a Java source class must be placed in the resources folder; the layer file is no exception as it will also be part of the final build artifact. Now it’s time to rebuild and re-run the project. You’ll be happy to notice that the layer is properly registered, that our Action is working, and also that we can declare services in META-INF/services. </p>
+				<p class="nb-body">With the configuration done so far, the manifest, layer and NBM descriptor files, plus some dependencies, we have covered about 90% of the Platform development cases. Next we’ll talk about JavaHelp modules, branding and suites, which should bring us to 100%.</p>
+				<p class="nb-section">Help modules</p>
+				<p class="nb-body">The NetBeans Platform has excellent JavaHelp support via NetBean’s standard build harness; the NBM Plugin also supports building modules with JavaHelp documentation.</p>
+				<p class="nb-body">First, you’ll need a new empty Maven project configured like the previous one (but without the Action), containing a NBM descriptor and an empty layer file. I’ll assume “ro.emilianbold.nbmagazine.tutorial” as groupId and “help” as artifactId. Also, the layer must declare the reference to the JavaHelp docs (see <span class="nb-body-bold">Listing 5</span>).<br />
+				</p>
+			    <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                  <tbody>
+                    <tr>
+                      <td bgcolor="#660066"><span class="nb-codelist-title">Listing 5. layer.xml</span></td>
+                    </tr>
+                    <tr>
+                      <td valign="top"><pre><div class="nb-codelist-body">&lt;?xml version=”1.0” encoding=”UTF-8”?&gt;<br />&lt;!DOCTYPE filesystem PUBLIC “-<br />		//NetBeans//DTD Filesystem 1.1//EN”   <br />    “https://netbeans.org/dtds/filesystem-1_1.dtd”&gt;<br />&lt;filesystem&gt;<br />  &lt;folder name=”Services”&gt;<br />    &lt;folder name=”JavaHelp”&gt;<br />       &lt;file name=”helpset.xml” url=”helpset.xml”&gt;<br />         &lt;attr name=”position” stringvalue=”1000”/&gt;<br />       &lt;/file&gt;<br />    &lt;/folder&gt;<br />  &lt;/folder&gt;<br />&lt;/filesystem&gt;</div></pre></td></tr></tbody></table>
+		      <p class="nb-body">The helpset.xml file (see <span class="nb-body-bold">Listing 6</span>) just contains a reference to the location of the helpset configuration. The reason for doing this is that the documentation won’t actually be in the main JAR artifact but in a separate JAR (the kind of JAR you see in the docs folder in the cluster).<br />
+		      </p>
+				<table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                  <tbody>
+                    <tr>
+                      <td bgcolor="#660066"><span class="nb-codelist-title">Listing 6.  helpset.xml</span></td>
+                    </tr>
+                    <tr>
+                      <td valign="top"><pre><div class="nb-codelist-body">&lt;?xml version=”1.0” encoding=”UTF-8”?&gt;<br />&lt;!DOCTYPE helpsetref PUBLIC “-<br />		//NetBeans//DTD JavaHelp Help Set Reference 1.0<br />		//EN” “https://netbeans.org/dtds/helpsetref-1_0.dtd”&gt;<br />&lt;helpsetref url=”nbdocs:/ro/emilianbold/nbmagazine/tutorial/help/docs/hs.xml”/&gt;</div></pre></td></tr></tbody></table>
+				<p class="nb-body">Now we get to the actual JavaHelp files. First we need to create a new folder: src/main/javahelp/${groupId}/${artifactId}/docs (with our groupId/artifactId, that would be src/main/javahelp/ro/emilianbold/nbmagazine/tutorial/help/docs.) Then create the various JavaHelp files (see <span class="nb-body-bold">Listing 7</span>). Compile and run the project, and you’ll see that the help works (see <span class="nb-body-bold">Figure 7</span>).<br />
+			  </p>
+	        <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                  <tbody>
+                    <tr>
+                      <td bgcolor="#660066"><span class="nb-codelist-title">Listing 7. JavaHelp files</span></td>
+                    </tr>
+                    <tr>
+                      <td valign="top"><pre><div class="nb-codelist-body"><strong>Map (map.xml)</strong>____________________________________<br />&lt;!-- ... XML/DOCTYPE header --&gt;<br />&lt;map version=”2.0”&gt;<br />  &lt;mapID target=”about” url=”about.html”/&gt;<br />&lt;/map&gt;<br /><br />
+<br /><strong>Table of contents (toc.xml)</strong>_______________________<br />...<br />&lt;toc version=”2.0”&gt;<br />  &lt;tocitem text=”Maven2 in NetBeans ?”&gt;<br />    &lt;tocitem text=”About” target=”about”/&gt;<br />  &lt;/tocitem&gt;<br />&lt;/toc&gt;<br />
+<br /><br /><strong>Index (idx.xml)</strong>____________________________________<br />...<br />&lt;index version=”2.0”&gt;<br />  &lt;indexitem text=”About Maven2 Javahelp” target=”about”/&gt;<br />&lt;/index&gt;
+<br /><br /><br /><strong>Helpset (hs.xml)</strong>____________________________________<br />...<br />&lt;helpset version=”2.0”&gt;<br />  &lt;title&gt;Help&lt;/title&gt;<br />  &lt;maps&gt;<br />    &lt;homeID&gt;about&lt;/homeID&gt;<br />       &lt;mapref location=”map.xml”/&gt;<br />  &lt;/maps&gt;<br />  &lt;view mergetype=”javax.help.AppendMerge”&gt;<br />    &lt;name&gt;TOC&lt;/name&gt;<br />      &lt;label&gt;Table of Contents&lt;/label&gt;<br />      &lt;type&gt;javax.help.TOCView&lt;/type&gt;<br />      &lt;data&gt;toc.xml&lt;/data&gt;<br />  &lt;/view&gt;<br />  &lt;view mergetype=”javax.help.AppendMerge”&gt;<br />    &lt;name&gt;Index&lt;/name&gt;<br />    &lt;label&gt;Index&lt;/label&gt;<br />    &lt;type&gt;javax.help.IndexView&lt;/type&gt;<br />    &lt;data&gt;idx.xml&lt;/data&gt;<br />  &lt;/view&gt;<br />  &lt;view&gt;<br />    &lt;name&gt;Search&lt;/name&gt;<br />    &lt;label&gt;Search&lt;/label&gt;<br />    &lt;type&gt;javax.help.SearchView&lt;/type&gt;<br />    &lt;data <br />       engine=”com.sun.java.help.search.DefaultSearchEngine”&gt;<br />       JavaHelpSearch<br />    &lt;/data&gt;<br />  &lt;/view&gt;<br />&lt;/helpset&gt;</div></pre></td></tr></tbody></table>
+			    <p class="nb-body"><br />
+			    <span class="image"><a href="../../../../images_www/magazine/issue04/image23469_opt-small.jpg"><img src="../../../../images_www/magazine/issue04/image23469_opt-small.jpg" style="border: 0px;"  alt="Figure (click for full size)" /></a></span><br />
+		          <span class="nb-image-legend"><strong>Figure 7. </strong>			    Our help content registered in the main Platform help</span></p>
+		      <div class="story">
+                <p class="nb-eye">OK, remember you shouldn’t copy-and-paste? This is exactly what I did to bootstrap this module and get the JavaHelp files. After you obtain the base files, you just need to add the new HTML files and entries to the map.</p>
+	          </div>
+		      <p class="nb-section">Library wrappers</p>
+				<p class="nb-body">So far we’ve seen how to declare a normal module and add dependencies. However, a module may also “wrap” an existing JAR and export part or all of its packages. Let’s see how to do this.</p>
+			  <p class="nb-body">Adding a dependency to a third-party JAR can be done the normal Maven 2 way (see <span class="nb-body-bold">Listing 8</span>). You just need to remember to have a repository declared in the POM if the JAR is not in the standard repository. <br />
+				</p>
+			    <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                  <tbody>
+                    <tr>
+                      <td bgcolor="#660066"><span class="nb-codelist-title">Listing 8. A non-NBM (plain JAR) dependency</span></td>
+                    </tr>
+                    <tr>
+                      <td valign="top"><pre><div class="nb-codelist-body">&lt;project ...&gt;<br />  ...<br />  &lt;dependencies&gt;<br />    &lt;dependency&gt;<br />       &lt;groupId&gt;net.java.dev.swing-layout&lt;/groupId&gt;<br />          &lt;artifactId&gt;swing-layout&lt;/artifactId&gt;<br />          &lt;version&gt;1.0&lt;/version&gt;<br />    &lt;/dependency&gt;<br />  &lt;/dependencies&gt;<br />  ...<br />&lt;/project&gt;</div></pre></td></tr></tbody></table>
+		      <p class="nb-body">The NBM Plugin will automatically add the JAR to the NBM, but there will be no public packages so far, so it can only be used internally. Sadly, the public packages will have to be manually added to the manifest (see <span class="nb-body-bold">Listing 9</span>), which is quite painful but should be a one-time job.<br />
+		      </p>
+			  <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                <tbody>
+                  <tr>
+                    <td bgcolor="#660066"><span class="nb-codelist-title">Listing 9. MANIFEST.MF for holding the public packages</span></td>
+                  </tr>
+                  <tr>
+                    <td valign="top"><pre><div class="nb-codelist-body">Manifest-Version: 1.0<br />...<br />OpenIDE-Module-Public-Packages: org.jdesktop.layout.*<br />...</div></pre></td></tr></tbody></table>
+			  <p class="nb-body">Remember that the manifest file is quite finicky with line lengths, so you might need to break it into multiple lines (each one starting with a single space).</p>
+			  <div class="story">
+                <p class="nb-eye">Normally leaving an empty OpenIDE-Module-Public-Packages means that all packages will be public. Note that though this is good for normal modules, it won’t work 
+                for library wrappers.</p>
+		      </div>
+			  <p class="nb-section">The module suite</p>
+				<p class="nb-body">We’ve already seen how to create individual modules, module wrappers and documentation modules, but we still need to put them somehow in a suite. The solution is to rely on Maven again and use an aggregating project. This must have the POM packaging and list each of the contained sub-modules (see <span class="nb-body-bold">Listing 10</span>). <br />
+				</p>
+	        <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                  <tbody>
+                    <tr>
+                      <td bgcolor="#660066"><span class="nb-codelist-title">Listing 10. Aggregating project</span></td>
+                    </tr>
+                    <tr>
+                      <td valign="top"><pre>&lt;project ...&gt;<br />  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;<br />  &lt;groupId&gt;ro.emilianbold.nbmagazine&lt;/groupId&gt;<br />  &lt;artifactId&gt;suite&lt;/artifactId&gt;<br />  &lt;packaging&gt;pom&lt;/packaging&gt;<br />  &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;<br />  &lt;name&gt;suite&lt;/name&gt;  <br />  &lt;modules&gt;<br />    &lt;module&gt;../help&lt;/module&gt;<br />    &lt;module&gt;../tutorial&lt;/module&gt;<br />  &lt;/modules&gt;<br />...<br />&lt;/project&gt;</pre></td></tr></tbody></table>
+		      <p class="nb-body">While the NBM Plugin is able to generate the whole suite cluster with the <span class="nb-techtext-bold">cluster</span> goal, you still have to configure it to run during the build project (see <span class="nb-body-bold">Listing 11</span>). Note that the <span class="nb-techtext-bold">&lt;module/&gt;</span> elements point to the actual disk folders, as opposed to the normal way of using groupId:artifactId:version for dependencies.<br />
+		      </p>
+			  <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                  <tbody>
+                    <tr>
+                      <td bgcolor="#660066"><span class="nb-codelist-title">Listing 11. NBM Plugin configuration</span></td>
+                    </tr>
+                    <tr>
+              <td valign="top"><pre><div class="nb-codelist-body">&lt;project ...&gt;<br />...<br />  &lt;build&gt;<br />     &lt;plugins&gt;<br />       &lt;plugin&gt;<br />         &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;<br />         &lt;artifactId&gt;nbm-maven-plugin&lt;/artifactId&gt;<br />         &lt;version&gt;LATEST&lt;/version&gt;<br />         &lt;extensions&gt;true&lt;/extensions&gt;<br />         &lt;inherited&gt;false&lt;/inherited&gt;<br />         &lt;configuration&gt;<br />            &lt;keystorealias&gt;nbmagazine&lt;/keystorealias&gt;<br />            &lt;brandingToken&gt;nbmagazine&lt;/brandingToken&gt;<br />            &lt;enabledClusters&gt;<br />              &lt;enabledCluster&gt;platform7<br />   		     &lt;/enabledCluster&gt;<br />              &lt;enabledCluster&gt;nbmagazine<br />              &lt;/enabledCluster&gt;<br />            &lt;/enabledClusters&gt;<br />          &lt;/configuration&gt;<br />          &lt;executions&gt;<br />            &lt;execution&gt;<br />              &lt;id&gt;cluster&lt;/id&gt;<br />              &lt;phase&gt;process-resources&lt;/phase&gt;<br />              &lt;goals&gt;<br />                &lt;goal&gt;cluster&lt;/goal&gt;<br />              &lt;/goals&gt;<br />            &lt;/execution&gt;<br />          &lt;/executions&gt;<br />       &lt;/plugin&gt;<br />     &lt;/plugins&gt;<br />  &lt;/build&gt;<br />&lt;/project&gt;</div></pre></td></tr></tbody></table><p class="nb-body">In the configuration file in <span class="nb-body-bold">Listing 11,</span> I first register the NBM Plugin as a build plugin extension. Then I define the enabled clusters, as well as the brandingToken (needed for branding) and <span class="nb-body-italico">keystorealias</span>. All this information is used by the <span class="nb-techtext-bold">cluster</span> goal, which is responsible for generating the Platform-compatible cluster. Next, with the <span class="nb-techtext-bold">&lt;execution/&gt;</span> element, I register the plugin to run during the build and execute the <span class="nb-techtext-bold">cluster</span> goal.</p>
+				<p class="nb-body">This way, the plugin will run each time I build the aggregating project and generate the proper cluster. You can run the application now and notice that it’s quite simple (it only uses the Platform cluster), has the help working, and even our little Action which uses the Lookup service works (see <span class="nb-body-bold">Figure 8</span>).<br />
+				  <br />
+				  <span class="image"><a href="../../../../images_www/magazine/issue04/image23475_opt-small.jpg"><img src="../../../../images_www/magazine/issue04/image23475_opt-small.jpg" style="border: 0px;"  alt="Figure (click for full size)" /></a></span><br />
+			    <span class="nb-image-legend"><strong>Figure 8. </strong>			    Module suite with Help</span></p>
+			  <p class="nb-section">Branding</p>
+				<p class="nb-body">The last piece of the puzzle is branding. Support via actual wizards is totally missing to this date, so it’s back to manual work or copy-pasting from another project. You’ll need a src/main/nbm-branding folder where all the branding sources will reside. The folder’s structure should be the same as the one used by the Ant-based build harness. Also, the POM must be changed to configure the <span class="nb-techtext-bold">nbm:branding</span> goal as in <span class="nb-body-bold">Listing 12</span>. The end result is a branded application as seen in <span class="nb-body-bold">Figure 9</span>.<br />
+			    </p>
+			    <table width="100%" border="1" cellpadding="10" cellspacing="0" bordercolor="#660066">
+                  <tbody>
+                    <tr>
+                      <td bgcolor="#660066"><span class="nb-codelist-title">Listing 12. Running the branding goal in the process-resources phase</span></td>
+                    </tr>
+                    <tr>
+                      <td valign="top"><pre><div class="nb-codelist-body">&lt;project ...&gt;<br />  &lt;build&gt;<br />    &lt;plugins&gt;<br />       &lt;plugin&gt;<br />         &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;<br />            &lt;artifactId&gt;nbm-maven-plugin&lt;/artifactId&gt;<br />            &lt;version&gt;RELEASE&lt;/version&gt;<br />            &lt;extensions&gt;true&lt;/extensions&gt;<br />          &lt;configuration&gt;<br />            &lt;brandingSources&gt;${basedir}/src/main/nbm-branding&lt;/brandingSources&gt;<br />            &lt;brandingToken&gt;nbmagazine&lt;/brandingToken&gt;<br />            &lt;cluster&gt;nbmagazine&lt;/cluster&gt;<br />            &lt;nbmBuildDir&gt;${project.build.directory}/nbm&lt;/nbmBuildDir&gt;<br />          &lt;/configuration&gt;<br />          &lt;executions&gt;<br />            &lt;execution&gt;<br />            &lt;id&gt;branding&lt;/id&gt;<br />            &lt;phase&gt;process-resources&lt;/phase&gt;<br />            &lt;goals&gt;<br />            &lt;goal&gt;branding&lt;/goal&gt;<br />            &lt;/goals&gt;<br />            &lt;/execution&gt;<br />          &lt;/executions&gt;<br />        &lt;/plugin&gt;<br />			...<br />		&lt;/plugins&gt;<br />  &lt;/build&gt;<br />	...<br />&lt;/project&gt;</div></pre></td></tr>
+                  </tbody>
+                </table>
+			    <p class="nb-body"><br />
+			      <span class="image"><img src="../../../../images_www/magazine/issue04/image23463_opt.jpeg" alt="Figure" /></span><br />
+		          <span class="nb-image-legend"><strong>Figure 9. </strong>			    The branded splash screen</span></p>
+		      <p class="nb-section">Conclusions</p>
+				<p class="nb-body">Using Maven to build NetBeans Platform applications is no longer an obscure task. The current integration makes Maven-based projects almost on par with standard IDE projects and the gap is narrowing. So, if you like Maven but couldn’t use it before with NetBeans IDE, or you do NetBeans Platform development but can’t use the IDE for some reason, rest assured that there’s a good and rapidly improving solution now.</p>
+		  </div>
+			<div class="image">
+			  <table width="100%" border="1" cellpadding="0" cellspacing="0" bordercolor="#660066">
+                <tbody>
+                  <tr>
+                    <td height="30" bgcolor="#660066"><p class="NB-Listagenstitulos"><span class="nb-codelist-title">Links</span></p></td>
+                  </tr>
+                  <tr>
+                    <td valign="top"><div class="group">
+                        <div class="story">
+                          <p class="nb-link-legend-url1"><br />
+                            <a href="http://mojo.codehaus.org/nbm-maven-plugin/descriptor.html">http://mojo.codehaus.org/nbm-maven-plugin/descriptor.html</a></p>
+                      </div>
+                      <div class="story">
+                          <p class="nb-link-legend">Sample NBM Maven Plugin descriptors</p>
+                      </div>
+                    </div>
+                        <div class="group">
+                          <div class="story">
+                            <p class="nb-link-legend-url1"><a href="http://bits.netbeans.org/dev/javadoc/">http://bits.netbeans.org/dev/javadoc/</a></p>
+                          </div>
+                          <div class="story">
+                            <p class="nb-link-legend">Bleeding edge NetBeans API docs<br />
+                            </p>
+                            <div class="group">
+                              <div class="story">
+                                <p class="nb-link-legend-url2"><a href="http://mevenide.codehaus.org/m2-site/index.html">http://mevenide.codehaus.org/m2-site/index.html</a></p>
+                              </div>
+                              <div class="story">
+                                <p class="nb-link-legend">Mevenide NetBeans integration modules</p>
+                              </div>
+                            </div>
+                            <div class="group">
+                              <div class="story">
+                                <p class="nb-link-legend-url3"><a href="http://www.emilianbold.ro/">http://www.emilianbold.ro/</a></p>
+                              </div>
+                              <div class="story">
+                                <p class="nb-link-legend">The author’s homepage</p>
+                              </div>
+                            </div>
+                            <p class="nb-link-legend"></p>
+                          </div>
+                        </div></td>
+                  </tr>
+                </tbody>
+              </table>
+			  <br />
+			</div>
+	        <div class="image">
+			  <table width="100%" border="1" cellpadding="0" cellspacing="0" bordercolor="#660066">
+                <tr>
+                  <td><img src="../../../../images_www/magazine/issue04/emilian_bold_opt.jpeg" alt="Emilian Bold" width="115" height="121" /></td>
+                  <td><div class="story">
+                    <p class="nb-minibio"><span class="nb-autor-name">Emilian Bold </span>is a Java and NetBeans Platform consultant from Timisoara, Romania, as well as member of the NetBeans Dream Team. He has been working with the NetBeans Platform since version 3.6, starting with a project at Alcatel Romania (now Alcatel-Lucent) and owns a NetBeans Platform-focused consulting company.</p>
+                  </div></td>
+                </tr>
+              </table>
+			</div>
+	  <div class="image"></div>
+	  <div class="image"></div>
+	  <div class="story"></div>
+			<div class="image"></div>
+	  <div class="image"></div>
+	  <div class="image"></div>
+	    </div>
+	</body>
+</html>

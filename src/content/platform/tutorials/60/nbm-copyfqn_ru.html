@@ -1,0 +1,579 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<!-- -*- xhtml -*- -->
+<title>Руководство по инфраструктуре языка Java для платформы NetBeans 6.0</title>
+    <link rel="stylesheet" type="text/css" href="../../../netbeans.css"> 
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="geertjan.wielenga@sun.com">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A walk-through of the Retouche approach.">
+<!--      Copyright (c) 2007 Sun Microsystems, Inc. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>Руководство по инфраструктуре языка Java в среде NetBeans</h1>
+
+<p>В этом руководстве описываются аспекты новых интерфейсов API инфраструктуры &quot;Retouche&quot; в среде NetBeans 6.0, которые предоставляют доступ к редактору Java, предусмотренному в этой среде.
+
+   </p><p><b>Содержание</b></p>
+   
+      <img  src="../../images/articles/60/netbeans-stamp60-61.gif" class="stamp" width="114" height="114" alt="Содержимое на этой странице относится к среде IDE NetBeans 6.1" title="Содержимое на этой странице относится к среде IDE NetBeans 6.1"> </p>
+      <ul class="toc">
+            <li><a href="#intro">Введение в инфраструктуру языка Java</a></li>
+            <li><a href="#setting-up-the-module">Настройка модуля</a></li>
+            <li><a href="#creating-a-context-sensitive-toolbar-button">Создание контекстно-зависимой кнопки на панели инструментов</a></li>
+            <li><a href="#identifying-java-source-files">Идентификация исходных файлов Java</a></li>
+            <li><a href="#determining-open-state">Определение состояния открытия</a></li>
+            <li><a href="#detecting-the-element-under-the-caret">Обнаружение элемента под курсором</a></li>
+            <li><a href="#doing-something-useful">Применение на практике</a></li>
+       </ul>
+         
+<p><b>Для работы с этим руководством требуется программное обеспечение и ресурсы, перечисленные в следующей таблице. </b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Программное обеспечение или ресурс</th>
+                <th class="tblheader" scope="col">Требуемая версия</th>
+            </tr> 
+             <tr>
+                <td class="tbltd1">Среда IDE NetBeans</td>
+                <td class="tbltd1">версия <a href="http://download.netbeans.org/netbeans/6.1/final/">версия 6.1</a> или<br>
+                версия 6.0</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">Комплект для разработчика на языке Java (JDK)</td>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">версия 6</a> или<br>
+                версия 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+      <p class="tips">Дополнительно, в целях поиска и устранения ошибок, можно <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=2753">загрузить готовые примеры</a> и изучить исходный код.
+
+</p><p></p><h2><a name="intro"></a>Введение в инфраструктуру языка Java</h2>
+
+ <p>До появления среды IDE NetBeans 6.0 инфраструктура языка Java, поддерживавшая редактор Java, включая создание и реорганизацию кода Java, была основана на так называемом &quot;JMI для Java&quot; (Java Metadata Interface &ndash; интерфейс метаданных Java), также известном как &quot;MDR&quot; (MetaData Repository &ndash; хранилище метаданных). В JMI для Java имелся ряд архитектурных проблем, например, блокировка для единственной операции чтения. Другими словами, блокировка применялась просто для чтения информации из модели, в то время как обычно она требуется только для записи. В течение нескольких лет проводилась отладка и улучшение производительности JMI.  Еще одна проблема состояла в использовании внутренней копии синтаксического анализатора Java, что предполагало собственный подход к интерпретации исходного кода Java, который отличался от компилятора Java в JDK. После появления общих объектов в JDK 5, в результате чего в языке Java появились намного более сложные и тонкие конструкции, преодолеть это расхождение стало еще труднее. Поэтому из-за проблем с производительностью JMI и из-за того, что благодаря разработке формальной модели языка компилятор Java из JDK стал программно доступным средством, JMI для Java был заменен новым подходом, основанным на компиляторе Java из JDK. 
+ 
+ </p><p>Именно тогда появилась инфраструктура &quot;Retouche&quot; (французское слово, означающее &quot;мелкий ремонт&quot; или &quot;доработку&quot;). &quot;Retouche&quot; &ndash; это новая и быстрая инфраструктура языка Java в среде IDE NetBeans, способная к поддержке всех превосходных компонентов редактора Java, реализованных в среде NetBeans 6.0. Суть состоит в том, что &quot;Retouche&quot; обеспечивает обертку экземпляра компилятора Java в JDK и использует его артефакты, такие как абстрактное синтаксическое дерево (также известное как &quot;AST&quot;) и разрешение символических ссылок, производимое на различных этапах процесса синтаксического анализа. При работе с &quot;Retouche&quot; необходимо иметь дело с некоторыми из этих артефактов. Одним из них, например, является <a href="http://java.sun.com/javase/6/docs/jdk/api/javac/tree/index.html">интерфейс API дерева компиляции</a>. Пакеты классов в интерфейсе API дерева компиляции начинаются с <tt>com.sun.*</tt>. Поэтому технически этот интерфейс не является интерфейсом API JDK, но фактически происходит из компилятора Java в JDK. Другим примером артефактов компилятора Java в JDK, используемых при работе с инфраструктурой &quot;Retouche&quot;, является формальная модель языка в интерфейсах API в JDK, представленная пакетами <tt>javax.language.model.*</tt>.
+ 
+
+</p><p></p><h2><a name="setting-up-the-module"></a>Настройка модуля</h2>
+
+     <p>Этот раздел посвящен созданию проекта модуля и настройке зависимостей от соответствующих модулей NetBeans с помощью программ-мастеров. 
+         
+         </p><ol>
+         
+         <li>Выберите &quot;File &gt; New Project&quot;. В мастере создания проекта выберите &quot;NetBeans Modules&quot; в области &quot;Categories&quot; и &quot;Module Project&quot; в области &quot;Projects&quot;, а затем нажмите кнопку &quot;Next&quot;. 
+     
+     </li><li>Введите <tt>CopyFQN</tt> в поле &quot;Project Name&quot; и укажите соответствующую папку на диске в поле &quot;Project Location&quot;. Выберите &quot;Standalone Module&quot; и &quot;Set as Main Project&quot;, если эти параметры не выбраны. Нажмите кнопку &quot;Next&quot;.
+     
+     </li><li>Введите <tt>org.netbeans.modules.copyfqn</tt> в поле &quot;Code Name Base&quot; и <tt>CopyFQN</tt> в поле &quot;Module Display Name&quot;. Нажмите кнопку &quot;Finish&quot;.
+     
+     </li><li>Щелкните проект правой кнопкой мыши, выберите &quot;Properties&quot;, щелкните &quot;Libraries&quot; в диалоговом окне &quot;Project Properties&quot; и установите зависимость от следующих интерфейсов API:
+     
+     <p></p><ul>
+         <li>Datasystems API
+         </li><li>Editor Library 2
+         </li><li>File System API
+         </li><li>Javac API Wrapper
+         </li><li>Java Source
+         </li><li>Nodes API
+         </li><li>Text API
+         </li><li>UI Utilities API
+         </li><li>Utilities API
+         </li><li>Window System API
+     </li></ul>
+     
+     <p>Экран должен выглядеть следующим образом:
+     
+</p><p align="left"><img border="1" src="../../images/tutorials/copyfqn/proj-props-copyfqn-60.png" alt="CopyFQN">
+     
+     
+     
+     </p><p>Нажмите кнопку &quot;OK&quot;.
+     
+ </p></li>
+ 
+ <p></p><h2><a name="creating-a-context-sensitive-toolbar-button"></a>Создание контекстно-зависимой кнопки на панели инструментов</h2>
+
+ <p>В этом разделе будет рассмотрено создание контекстно-зависимой кнопки на панели инструментов. Это не связано с новыми интерфейсами API инфраструктуры &quot;Retouche&quot;, но позволяет создать элемент интерфейса пользователя для взаимодействия с нашей реализацией этих интерфейсов, описанных далее в настоящем руководстве.
+ 
+ </p><ol>
+     <li>Щелкните проект модуля правой кнопкой мыши, выберите &quot;New &gt; Other&quot;, затем выберите &quot;Action&quot; из категории &quot;Module Development&quot;. Нажмите кнопку &quot;Next&quot;.
+     
+     </li><li>Выберите &quot;Conditionally Enabled&quot; и сохраните все значения по умолчанию, как показано ниже. Действие должно зависеть от <tt>DataObjects</tt>, и его выполнение должно быть возможно только при выборе какого-либо <tt>DataObject</tt>.</p>
+     
+     
+     <p align="left"><img border="1" src="../../images/tutorials/copyfqn/cookie-action-60.png" alt="CookieAction">
+     
+     </p><p>Нажмите кнопку &quot;Next&quot;. 
+     
+     </p></li><li>Выберите &quot;Edit&quot; в поле &quot;Category&quot; и &quot;Edit&quot; в поле &quot;Toolbar&quot;. </p>
+     
+     <p>Экран должен выглядеть следующим образом:
+     
+     </p><p align="left"><img border="1" src="../../images/tutorials/copyfqn/gui-registration-60.png" alt="Экран &quot;GUI Registration&quot;">
+     
+     </p><p>Нажмите кнопку &quot;Next&quot;.</p> 
+     
+     </li><li>Введите <tt>CopyFQNAction</tt> в поле &quot;Class Name&quot; и <tt>CopyFQN</tt> в поле &quot;Display Name&quot;. 
+         
+         </li><li>Найдите значок, который должен отображаться на кнопке панели инструментов. Например, выберите значок, который используется в этом руководстве:</p>
+     
+     <p align="left"><img border="1" src="../../images/tutorials/copyfqn/icon.png" alt="Значок">
+     
+     </p><p>Нажмите кнопку &quot;Finish&quot;.</p>
+     
+     <p>В новом классе <tt>CopyFQNAction.java</tt> должен быть представлен следующий код:
+     
+</p><pre class="examplecode">public final class CopyFQNAction extends CookieAction {
+    
+    protected void performAction(Node[] activatedNodes) {
+        DataObject dataObject = activatedNodes[0].getLookup().lookup(org.openide.loaders.DataObject.class);
+        // Добавить: использование dataObject
+    }
+    
+    protected int mode() {
+        return CookieAction.MODE_EXACTLY_ONE;
+    }
+    
+    public String getName() {
+        return NbBundle.getMessage(CopyFQNAction.class, &quot;CTL_CopyFQNAction&quot;);
+    }
+    
+    protected Class[] cookieClasses() {
+        return new Class[] {
+            DataObject.class
+        };
+    }
+    
+    protected String iconResource() {
+        return &quot;org/netbeans/modules/copyfqn/icon.png&quot;;
+    }
+    
+    public HelpCtx getHelpCtx() {
+        return HelpCtx.DEFAULT_HELP;
+    }
+    
+    protected boolean asynchronous() {
+        return false;
+    }
+    
+}</pre>     
+     
+     <p><b class="notes">Примечание:</b> В оставшейся части этого руководства описывается метод <tt>performAction()</tt>.</p>
+
+     <p>Было создано действие, зависящее от объектов данных.  Теперь выясним, что это означает.  
+     
+     </p></li><li>Щелкните модуль правой кнопкой мыши и выберите &quot;Install&quot;.</p>
+     
+     <p>После установки модуля на панели инструментов должна появиться новая кнопка.  
+     
+          </p></li><li>Выберите узел в окне &quot;Projects&quot; и проверьте кнопку на панели инструментов. При выборе узла, соответствующего файлу или папке (в том числе пакет), кнопка активна, как показано ниже:</p>
+         
+          <p align="left"><img border="1" src="../../images/tutorials/copyfqn/ctx-sensitive-on.png" alt="Значок">
+    
+          </p><p>Однако при выборе узла, соответствующего проекту, кнопка отключается, как показано ниже:</p>
+         
+          <p align="left"><img border="1" src="../../images/tutorials/copyfqn/ctx-sensitive-off.png" alt="Значок">
+         
+     </p></li>
+ </ol>
+ <p>В следующем разделе будут рассмотрены не только различия между узлами проекта и узлами файла/папки, но и различия между узлами файлов для классов Java и всеми остальными видами узлов файлов.
+  
+  
+ </p><p></p><h2><a name="identifying-java-source-files"></a>Идентификация исходных файлов Java</h2>
+
+ <p>В этом разделе рассматривается использование одного из новых интерфейсов API инфраструктуры &quot;Retouche&quot;, называемого <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/overview-summary.html">Java Source</a>. Здесь используется класс <a href="http://www.netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/JavaSource.html">JavaSource</a>, представляющий исходный файл Java. Возвращается экземпляр этого класса для объекта файла, связанного с объектом данных. Если возвращается пустое значение, объект файла не является исходным файлом Java. При нажатии кнопки после выбора файла в строке состояния отображается результат.
+ 
+ </p><ol>
+     
+     <li>Заполните метод <tt>performAction()</tt> путем добавления строк, выделенных ниже:
+     
+     <pre class="examplecode">protected void performAction(Node[] activatedNodes) {
+    DataObject dataObject = activatedNodes[0].getLookup().lookup(org.openide.loaders.DataObject.class);
+    // Добавить: использование dataObject
+
+    <b>FileObject fileObject = dataObject.getPrimaryFile();
+
+    <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/JavaSource.html">JavaSource</a> javaSource = <a href="http://www.netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/JavaSource.html#forFileObject(org.openide.filesystems.FileObject)">JavaSource.forFileObject(fileObject)</a>;
+    if (javaSource == null) {
+        StatusDisplayer.getDefault().setStatusText(&quot;Not a Java file: &quot; + fileObject.getPath());
+    } else {
+        StatusDisplayer.getDefault().setStatusText(&quot;Hurray! A Java file: &quot; + fileObject.getPath());
+    }</b>
+}</pre>
+      
+</li><li>Проверьте, что используются следующие операторы импорта:
+
+<pre class="examplecode">import org.netbeans.api.java.source.JavaSource;
+import org.openide.awt.StatusDisplayer;
+import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.nodes.Node;
+import org.openide.util.HelpCtx;
+import org.openide.util.NbBundle;
+import org.openide.util.actions.CookieAction;</pre>
+
+     </li><li>Установите модуль еще раз.
+     
+     </li><li>Выберите узел файла и нажмите кнопку.</p> 
+     
+     <p> Обратите внимание, что сообщение &quot;Hurray!&quot; появляется только при выборе файла Java, как показано ниже:
+     
+</p><p align="left"><img border="1" src="../../images/tutorials/copyfqn/message-java-file-60.png" alt="message-java-file-60">
+     
+
+</p><p>Альтернативный подход заключается во <i>включении кнопки только при выборе файла Java</i>. Для этого необходимо переопределить метод <tt>CookieAction.enable()</tt> следующим образом:
+
+</p><pre class="examplecode">@Override
+protected boolean enable(Node[] activatedNodes) {
+    if (super.enable(activatedNodes)) {
+        DataObject dataObject = activatedNodes[0].getLookup().lookup(org.openide.loaders.DataObject.class);
+        FileObject fileObject = dataObject.getPrimaryFile();
+        JavaSource javaSource = JavaSource.forFileObject(fileObject);
+        if (javaSource == null) {
+            return false;
+        }
+        return true;
+    }
+    return false;
+}</pre>
+
+<p>Показанный выше метод отфильтровывает любой файл, <i>не</i> являющийся файлом Java. В результате кнопка включается только тогда, когда текущий файл является файлом Java.
+
+ </p></li>
+
+
+ <p></p><h2><a name="determining-open-state"></a>Определение состояния открытия</h2>
+
+ <p>В этом разделе мы обратимся к нашей первой явно вызываемой задаче в инфраструктуре &quot;Retouche&quot;. Такая задача представлена методом <tt>runUserActionTask</tt> класса JavaSource. Задача этого вида позволяет управлять этапами процесса синтаксического анализа и применяется при необходимости немедленной реакции на пользовательский ввод. Все действия задачи выполняются единым блоком.  В данном случае необходимо, чтобы действие, представленное кнопкой на панели инструментов, немедленно сопровождалось появлением текста в строке состояния.
+ 
+ </p><ol>
+     
+     <li> Замените сообщение &quot;Hurray!&quot; в методе <tt>performAction()</tt> следующей строкой:
+
+<pre class="examplecode"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/JavaSource.html#runUserActionTask(org.netbeans.api.java.source.Task,%20boolean)">javaSource.runUserActionTask</a>(new <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/Task.html">Task</a>&lt;<a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/CompilationController.html">CompilationController</a>&gt;());</pre>       
+
+<p>Теперь в левом столбце редактора должен появиться значок лампочки, показанный ниже:
+      
+ </p><p align="left"><img border="1" src="../../images/tutorials/copyfqn/runuserasactiontask-60.png" alt="Значок">
+         
+      </p></li><li>Щелкните значок лампочки. В качестве альтернативы можно установить курсор на строку и нажать Alt-Enter. Теперь позволим среде IDE реализовать метод. 
+      
+      </li><li>Незначительно измените метод путем добавления в его конец логической переменной <tt>true</tt>. Среда IDE перенесет фрагмент в блок try/catch. Конечный результат должен выглядеть следующим образом:
+      
+     <pre class="examplecode">protected void performAction(Node[] activatedNodes) {
+    DataObject dataObject = activatedNodes[0].getLookup().lookup(org.openide.loaders.DataObject.class);
+    // Добавить: использование dataObject
+
+    FileObject fileObject = dataObject.getPrimaryFile();
+
+    JavaSource javaSource = JavaSource.forFileObject(fileObject);
+    if (javaSource == null) {
+        StatusDisplayer.getDefault().setStatusText(&quot;Not a Java file: &quot; + fileObject.getPath());
+     } else {
+     
+            <b>try {
+                javaSource.runUserActionTask(new Task&lt;CompilationController&gt;() {
+
+                    public void run(CompilationController arg0) throws Exception {
+                        throw new UnsupportedOperationException(&quot;Not supported yet.&quot;);
+                    }
+                }, true);
+            } catch (IOException ex) {
+                Exceptions.printStackTrace(ex);
+            }</b>
+            
+     }
+
+}</pre>
+
+      </li><li>Реализуйте метод <tt>run()</tt> следующим образом:
+     
+     <pre class="examplecode">public void run(CompilationController compilationController) throws Exception {
+     
+      <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/CompilationController.html#toPhase(org.netbeans.api.java.source.JavaSource.Phase)">compilationController.toPhase(Phase.ELEMENTS_RESOLVED)</a>;
+      
+      <a href="http://java.sun.com/j2se/1.5.0/docs/api/javax/swing/text/Document.html">Document</a> document = <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/CompilationController.html#getDocument()">compilationController.getDocument()</a>;
+      if (document != null) {
+         StatusDisplayer.getDefault().setStatusText(&quot;Hurray, the Java file is open!&quot;);
+      } else {
+         StatusDisplayer.getDefault().setStatusText(&quot;The Java file is closed!&quot;);
+      }
+      
+}</pre>
+
+</li><li>Проверьте, что используются следующие операторы импорта:
+
+<pre class="examplecode">import java.io.IOException;
+import javax.swing.text.Document;
+import org.netbeans.api.java.source.CompilationController;
+import org.netbeans.api.java.source.JavaSource;
+import org.netbeans.api.java.source.JavaSource.Phase;
+import org.netbeans.api.java.source.Task;
+import org.openide.awt.StatusDisplayer;
+import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.nodes.Node;
+import org.openide.util.Exceptions;
+import org.openide.util.HelpCtx;
+import org.openide.util.NbBundle;
+import org.openide.util.actions.CookieAction;</pre>
+
+     </li><li>Установите модуль еще раз.
+     
+     </li><li>Выберите узел файла и нажмите кнопку.</p> 
+     
+     <p> Обратите внимание, что сообщение &quot;Hurray!&quot; появляется только при выборе файла Java, открытого в редакторе Java (см. ниже):
+     
+     </p><p align="left"><img border="1" src="../../images/tutorials/copyfqn/message-java-file-open-60.png" alt="message-java-file-open-60">
+
+ </p></li>
+
+
+ <p></p><h2><a name="detecting-the-element-under-the-caret"></a>Обнаружение элемента под курсором</h2>
+
+ <p>В этом разделе, зная, что мы имеем дело с открытым файлом Java, можно приступить к обнаружению типа элемента, находящегося под курсором в любой определенный период времени.
+ 
+ </p><ol>
+     
+     <li>Начните с объявления зависимости от интерфейсов API ввода/вывода, чтобы результаты выводились в окне &quot;Output&quot;.
+     
+     </li><li> Замените сообщение &quot;Hurray!&quot; в методе <tt>run()</tt> выделенными строками, как показано ниже:
+  
+ <pre class="examplecode">public void run(CompilationController compilationController) throws Exception {
+    
+    compilationController.toPhase(Phase.ELEMENTS_RESOLVED);
+    Document document = compilationController.getDocument();
+    
+    if (document != null) {
+        <b>new MemberVisitor(compilationController).scan(compilationController.getCompilationUnit(), null);</b>
+    } else {
+        StatusDisplayer.getDefault().setStatusText(&quot;The Java file is closed!&quot;);
+    }
+    
+}</pre>   
+ 
+    
+<p></p></li><li>Здесь представлен класс <tt>MemberVisitor</tt>, определенный как внутренний класс класса <tt>CopyFQNAction</tt>:
+    
+                                                                                                                                                                                       
+ <pre class="examplecode">private static class MemberVisitor extends TreePathScanner&lt;Void, Void&gt; {
+
+    private CompilationInfo info;
+
+    public MemberVisitor(CompilationInfo info) {
+        this.info = info;
+    }
+
+    @Override
+    public Void visitClass(ClassTree t, Void v) {
+        Element el = info.getTrees().getElement(getCurrentPath());
+        if (el == null) {
+            StatusDisplayer.getDefault().setStatusText(&quot;Cannot resolve class!&quot;);
+        } else {
+            TypeElement te = (TypeElement) el;
+            List<? extends Element> enclosedElements = te.getEnclosedElements();
+            InputOutput io = IOProvider.getDefault().getIO(&quot;Analysis of &quot;  
+                        + info.getFileObject().getName(), true);
+            for (int i = 0; i &lt; enclosedElements.size(); i++) {
+            Element enclosedElement = (Element) enclosedElements.get(i);
+                if (enclosedElement.getKind() == ElementKind.CONSTRUCTOR) {
+                    io.getOut().println(&quot;Constructor: &quot; 
+                        + enclosedElement.getSimpleName());
+                } else if (enclosedElement.getKind() == ElementKind.METHOD) {
+                    io.getOut().println(&quot;Method: &quot; 
+                        + enclosedElement.getSimpleName());
+                } else if (enclosedElement.getKind() == ElementKind.FIELD) {
+                    io.getOut().println(&quot;Field: &quot; 
+                        + enclosedElement.getSimpleName());
+                } else {
+                    io.getOut().println(&quot;Other: &quot; 
+                        + enclosedElement.getSimpleName());
+                }
+            }
+            io.getOut().close();
+        }
+        return null;
+    }
+
+}</pre>
+    
+    </li><li>Установите модуль еще раз и откройте класс Java. Затем нажмите кнопку и обратите внимание на то, что конструкторы, методы и поля отображаются в окне &quot;Output&quot;, как показано ниже:</p>
+     
+ 
+ <p align="left"><img border="1" src="../../images/tutorials/copyfqn/output-window-60.png" alt="message-constructor-60">
+         
+  
+ </p></li><li>Затем вместо того, чтобы выводить все элементы в окне &quot;Output&quot;, выведем в это окно только тот элемент, на котором установлен курсор. Просто замените метод <tt>visitClass</tt> выделенным кодом, показанным ниже:
+                                                                                                                                                        
+ <pre class="examplecode">private static class MemberVisitor extends TreePathScanner&lt;Void, Void&gt; {
+
+    private CompilationInfo info;
+
+    public MemberVisitor(CompilationInfo info) {
+        this.info = info;
+    }
+
+    <b>@Override
+    public Void visitClass(ClassTree t, Void v) {
+        try {
+            JTextComponent editor = EditorRegistry.lastFocusedComponent();
+            if (editor.getDocument() == info.getDocument()) {
+                int dot = editor.getCaret().getDot();
+                TreePath tp = info.getTreeUtilities().pathFor(dot);
+                Element el = info.getTrees().getElement(tp);
+                if (el == null) {
+                    StatusDisplayer.getDefault().setStatusText(&quot;Cannot resolve class!&quot;);
+                } else {
+                    InputOutput io = IOProvider.getDefault().getIO(&quot;Analysis of &quot; 
+                            + info.getFileObject().getName(), true);
+                    if (el.getKind() == ElementKind.CONSTRUCTOR) {
+                        io.getOut().println(&quot;Hurray, this is a constructor: &quot; 
+                            + el.getSimpleName());
+                    } else if (el.getKind() == ElementKind.METHOD) {
+                        io.getOut().println(&quot;Hurray, this is a method: &quot; 
+                            + el.getSimpleName());
+                    } else if (el.getKind() == ElementKind.FIELD) {
+                        io.getOut().println(&quot;Hurray, this is a field: &quot; 
+                            + el.getSimpleName());
+                    } else {
+                        io.getOut().println(&quot;Hurray, this is something else: &quot; 
+                            + el.getSimpleName());
+                    }
+                    io.getOut().close();
+                }
+            }
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+        return null;
+    }</b>
+
+}</pre>  
+   
+      </li><li>Установите модуль.
+    
+    </li><li>Установите курсор в любом месте кода Java и нажмите кнопку. В окне &quot;Output&quot; появится информация о коде под курсором (если применимо). Например, при нажатии кнопки после помещения курсора на метод, как показано ниже, в окне &quot;Output&quot; сообщается, что курсор установлен на данном методе:</p> 
+ 
+   <p align="left"><img border="1" src="../../images/tutorials/copyfqn/message-constructor-60.png" alt="message-constructor-60">
+
+   
+   </p></li><li>Однако в это окно можно вывести гораздо больше информации, чем название элемента под курсором. В методе <tt>visitClass</tt> замените выделенные полужирным строки, показанные ниже:
+     
+    
+   <pre class="examplecode">@Override
+public Void visitClass(ClassTree t, Void v) {
+    try {
+        JTextComponent editor = EditorRegistry.lastFocusedComponent();
+        if (editor.getDocument() == info.getDocument()) {
+            int dot = editor.getCaret().getDot();
+            TreePath tp = info.getTreeUtilities().pathFor(dot);
+            Element el = info.getTrees().getElement(tp);
+            if (el == null) {
+                StatusDisplayer.getDefault().setStatusText(&quot;Cannot resolve class!&quot;);
+            } else {
+                InputOutput io = IOProvider.getDefault().getIO(&quot;Analysis of &quot; 
+                    + info.getFileObject().getName(), true);
+                <b>String te = null;
+                if (el.getKind() == ElementKind.CONSTRUCTOR) {
+                    te = ((TypeElement) ((ExecutableElement) el).getEnclosingElement()).getQualifiedName().toString();
+                    io.getOut().println(&quot;Hurray, this is a constructor's qualified name: &quot; + te);
+                } else if (el.getKind() == ElementKind.METHOD) {
+                    te = ((ExecutableElement) el).getReturnType().toString();
+                    io.getOut().println(&quot;Hurray, this is a method's return type: &quot; + te);
+                } else if (el.getKind() == ElementKind.FIELD) {
+                    te = ((VariableElement) el).asType().toString();
+                    io.getOut().println(&quot;Hurray, this is a field's type: &quot; + te);
+                }</b> else {
+                    io.getOut().println(&quot;Hurray, this is something else: &quot; 
+                        + el.getSimpleName());
+                }
+                io.getOut().close();
+            }
+        }
+    } catch (IOException ex) {
+        Exceptions.printStackTrace(ex);
+    }
+    return null;
+}</pre>
+    
+</li><li>Установите модуль еще раз. На этот раз после нажатия кнопки при условии, что курсор находится на конструкторе, методе или поле, в окне &quot;Output&quot; отображается более подробная информация об этом элементе.
+    
+ </li></ol>
+
+<p>На данном этапе можно определить, является ли текущий файл файлом Java, открыт ли документ и к какому типу относится элемент под курсором. Как можно использовать эту информацию? В следующем разделе представлен простой сценарий, при работе с которым приобретенное знание окажется полезным.</p>
+
+
+<p></p><h2><a name="doing-something-useful"></a>Применение на практике</h2>
+
+<p>В этом разделе описано определение содержимого буфера обмена, представленного <tt>java.awt.datatransfer.Clipboard</tt>, в соответствии с элементом под курсором. При нажатии кнопки элемент под курсором помещается в буфер обмена, после чего его можно переместить в другое место кода. 
+ 
+ </p><ol>
+     
+     <li>Сначала необходимо объявить буфер обмена и определить конструктор:
+     
+     <pre class="examplecode">private Clipboard clipboard;
+
+public CopyFQNAction() {
+    clipboard = Lookup.getDefault().lookup(ExClipboard.class);
+    if (clipboard == null) {
+        clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+    }
+}</pre>
+      
+     </li><li> Затем замените каждую строку &quot;Hurray!&quot; в коде строкой, передающей элемент в качестве строки методу, который будет определен на следующем этапе. Дадим методу имя <tt>setClipboardContents</tt>.  Затем, например, замените первую строку &quot;Hurray!&quot; на следующую:
+     
+<pre class="examplecode">setClipboardContents(te);</pre>
+
+<p> Выполните аналогичные операции для других строк &quot;Hurray!&quot;, убедившись в том, что в метод была передана корректная строка. 
+
+     </p><p><b class="notes">Примечание:</b> Поскольку метод <tt>setClipboardContents</tt> еще не определен, каждая из добавляемых на этом этапе строк подчеркивается красным цветом.  На следующем этапе мы добавим новый метод.
+
+     </p></li><li>Добавьте следующий код (вплоть до конца класса). Этот метод получает строку и помещает ее в буфер обмена:
+     
+     <pre class="examplecode">private void setClipboardContents(String content) {
+    if (clipboard != null) {
+        if (content == null) {
+            StatusDisplayer.getDefault().setStatusText(&quot;&quot;);
+            clipboard.setContents(null, null);
+        } else {
+            StatusDisplayer.getDefault().setStatusText(&quot;Clipboard: &quot; + content);
+            clipboard.setContents(new StringSelection(content), null);
+        }
+    }
+}</pre>
+
+
+ </li></ol>
+ 
+<br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Java%20Language%20Infrastructure%20Tutorial%20Part%201">Мы ждем ваших отзывов</a></div>
+<br style="clear:both;" />
+
+    
+ <!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Дополнительная информация</h2>
+
+<p>Для получения дополнительной информации о создании и разработке модуля NetBeans см. следующие материалы: 
+  </p><ul>
+	  <li><a href="http://wiki.netbeans.org/Java_DevelopersGuide">Руководство разработчика Java</a></li>
+	  <li><a href="http://wiki.netbeans.org/RetoucheDeveloperFAQ">Часто задаваемые вопросы по разработке в инфраструктуре &quot;Retouche&quot; </a></li>
+	  <li><a href="https://netbeans.org/kb/trails/platform.html">Другие связанные руководства</a></li>
+	  <li><a href="https://netbeans.org/download/dev/javadoc/">Документация Javadoc по интерфейсам API в среде NetBeans</a></li>
+  </ul>
+  
+  <hr>
+    
+    <!-- ======================================================================================== -->
+
+    </ol></ol></ol></body>
+</html>

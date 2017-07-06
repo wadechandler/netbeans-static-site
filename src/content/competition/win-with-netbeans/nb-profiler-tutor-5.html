@@ -1,0 +1,438 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>NetBeans IDE 4.0 Profiler Tutorial</title>
+<META NAME="description" CONTENT="NetBeans IDE 4.0 Profiler Tutorial">
+<link rel="stylesheet" type="text/css" href="../../netbeans.css">
+<META NAME="EXPIRES" CONTENT="N">
+<meta name="author" content=""/>
+<meta name="indexed" content="y"/>
+<meta name="description" content="NetBeans IDE 4.0 Profiler Tutorial"/>
+</head>
+<body>
+<h1>NetBeans IDE 4.0 Profiler Tutorial</h1>
+<div class="articledate" style="margin-left:0px;">Contributed by  Gregg Sporar as part of the <a href="../win-with-netbeans.html">Win With NetBeans</a> comptetition</div>
+<p>This article is intended to be used in conjuction with NetBeans Profiler, Milestone 5. 
+
+<p>The NetBeans Profiler is a powerful tool that provides important information about
+the runtime behavior of your application.  While imposing relatively little overhead,
+the NetBeans Profiler tracks CPU performance and memory usage.
+This tutorial will show you how to use the Profiler with NetBeans 4.0 to:</p>
+
+<ul>
+  <li><a href="#runtime">Monitor the runtime behavior of a web application</a></li>
+  <li><a href="#cpu">Determine the CPU time used by an application's methods</a></li>
+  <li><a href="#createObjects">Monitor the creation of objects by an application.</a></li>
+</ul>
+
+<p>Portions of this tutorial originally appeared in a June, 2004 <i>Java Developer's Journal</i> article
+(http://sys-con.com/story/?storyid=45081&DE=1) about JFluid,
+the underlying technology used by the NetBeans Profiler.  All reprinted material is used
+by permission of the publisher of <i>Java Developer's Journal</i>.</p>
+
+<p><a name="top"></a>This tutorial should take approximately one hour to complete.</p>
+
+<h2><a name="genericsetup"></a>Setting Up Your Environment</h2></br><br />
+<div class="indent">
+<h3 class="tutorial">Installing the Profiler</h3>
+<p>
+
+The NetBeans Profiler is in beta and is available as a separate download.
+To use this tutorial you must install the most recent version of the NetBeans
+Profiler.  Be sure to follow the NetBeans Profiler <a href="http://profiler.netbeans.org/index.html">
+Download & Install instructions</a>.
+</p>
+<h3 class="tutorial"><a name="tomcat"></a>Configuring Tomcat</h3>
+<p>
+
+Profiling a web application requires that the web server be run with
+the JDK that is included with the NetBeans Profiler.  So to use
+the Profiler with the Tomcat server that is bundled with NetBeans
+a small change to the way Tomcat starts is necessary.  The easiest way to do this is to
+ modify the script that
+ starts Tomcat.  The script is catalina.bat (on Windows) or catalina.sh (on Unix).
+ These scripts are located in Tomcat's bin folder; a typical location on
+ a Windows system would be: <br>
+  <pre class="examplecode">
+  C:\Program Files\netbeans-4.0\nb4.0\jakarta-tomcat-5.0.28\bin\catalina.bat</pre>
+  And on Unix the location will be something like:
+  <pre class="examplecode">
+  /export/home/gs/tools/netbeans/40/nb4.0/jakarta-tomcat-5.0.28/bin/catalina.sh</pre>
+  <ol>
+     <li>Save a copy of the script as a backup.</li>
+     <p><li>Right below the large block of comments that is at the top of the file,
+     add a line that sets <tt>JAVA_HOME</tt> to the folder that contains the JDK included
+     with the NetBeans Profiler.  Choose Profiler > Help > About Profiler in NetBeans
+     to display the folder name.  Example value on Windows:
+     <pre class="examplecode">
+    set JAVA_HOME=c:\Documents and Settings\gs\.netbeans\4.0\modules\profiler-ea-vm\</pre>
+     Example value on Unix:
+     <pre class="examplecode">
+    JAVA_HOME="/home/gs/.netbeans/4.0/modules/profiler-ea-vm/"
+</pre></li>
+  </ol>
+</p>
+<h3 class="tutorial">Obtaining the required source files</h3>
+<p>
+This tutorial uses a web application based on the
+HelloWeb project created in the
+<a href="../../kb/archive/index.html">
+NetBeans IDE 4.0 Quick Start Guide for Web Applications</a>.  The modifications
+for this tutorial include the addition of a servlet that handles the
+incoming request.  It creates a Java bean and then dispatches to the JSP
+that creates the response.  The servlet has been poorly written on purpose in order
+to highlight features of the NetBeans Profiler.
+
+<p>You get all application files from the <tt>ProfilingTutorial.zip</tt> file.</p>
+<ol>
+  <li>In your file system, create a folder for the unzipped application files. From now on,
+  this folder will be referred to as <tt><i>&#36;</i><i>UNZIPHOME</i></tt>.</li>
+  <p><li>Click <tt><a href="https://netbeans.org/files/documents/4/387/ProfilingTutorial.zip">here</a></tt>
+  to download the <tt>ProfilingTutorial.zip</tt> file.</li><p></p>
+  <p><li>Use an application that unzips files to unzip the <tt>ProfilingTutorial.zip</tt>
+  file to <tt><i>&#36;</i><i>UNZIPHOME</i></tt>.</li><p></p>
+  <p><tt><i>&#36;</i><i>UNZIPHOME</i></tt> now has <tt>web</tt> and <tt>src</tt> folders. The
+  <tt>web</tt> folder contains the two JSP files and the deployment descriptors.  The
+  <tt>src</tt> folder contains the source files for the servlet and Java bean classes.</p>
+</ol>
+</div>
+
+<h2><a name="create"></a>Creating a Project</h2></br><br />
+<div class="indent">
+<h3 class="tutorial">Creating a web project from the
+ provided source files</h3>
+ <ol>
+  <li>Choose File &gt; New Project (Ctrl-Shift-N). Under Categories, select Web.
+  Under Projects, select Web Project with Existing Sources. Click Next.</li><p>
+  <li>In Location, click Browse to select the web application's document root. The
+  document root is <tt><i>&#36;</i><i>UNZIPHOME</i></tt>, the folder to which you
+  unzipped the <tt>ProfilingTutorial.zip</tt> file.</li><p>
+  <li>In Project Name, type <tt>ProfilingTutorial</tt>. Click Next.</li><p>
+  <li>Click Finish. The IDE creates the <tt><i>&#36;</i><i>UNZIPHOME/nbproject</i></tt>
+  project folder and the <tt><i>&#36;</i><i>UNZIPHOME/build.xml</i></tt> file.
+  The ProfilingTutorial project opens in the
+  IDE. You can view its logical structure in the Projects window and its file
+  structure in the Files window.</li><p>
+  <li>This final step is only required when NetBeans is configured to use JDK v5 as
+  the default Java Platform. <p>
+    <ol type="i">
+    <li>The current Profiler only supports .class files created by
+  JDK v1.4.2, so if you have not installed a v1.4.2 JDK and configured it as a NetBeans
+  Java Platform, you will need to do so. Note that in its beta release the NetBeans Profiler installs
+  a JDK based on v1.4.2 - you set it as <tt>JAVA_HOME</tt> up in the <a href="#tomcat">
+     Configuring Tomcat</a> step.  For more information refer to the online <a href="http://profiler.netbeans.org/docs/help/index.html">
+  Profiler help</a>.<p>
+    <li>In the Projects window right-click the <tt>ProfilingTutorial</tt>
+  entry and choose Properties.  Select a Java Platform that uses the v.1.4.2 JDK and then
+  click the OK button.  </li><p>
+     <li>In the Tomcat bin folder, make a backup copy of catalina.50.bat (on
+     Windows) or catalina.50.sh (on Unix).</li><p>
+     <li>Make the same edit to catalina.50.bat (on Windows) or catalina.50.sh (on Unix) that
+     you made in the <a href="#tomcat">
+     Configuring Tomcat</a> step.</li><p>
+     </ol>
+</li>
+  </ol>
+  </div>
+<h3 class="tutorial">Running the Project</h3>
+
+<ol>
+<li>In the Projects window right-click the <tt>ProfilingTutorial</tt> entry and choose
+Clean and Build Project.  Then right-click the <tt>ProfilingTutorial</tt> entry again
+and choose Run Project.  This will cause the IDE to build the project, start Tomcat, and then
+display the index.jsp page in a browser window.</li><p>
+<li>Verify that Tomcat started correctly by clicking the Bundled Tomcat
+tab in the IDE's Output window.  Scroll to the top of the Tomcat output to verify
+that Tomcat was started with the NetBeans Profiler JVM.  Examine the line
+that begins with <tt>Using JAVA_HOME</tt>; the Java home should be the folder
+that contains the NetBeans Profiler JVM.  If Tomcat does not start or the <tt>JAVA_HOME</tt>
+is not the directory that contains the NetBeans Profiler JVM, then verify that you
+followed the instructions in the <a href="#tomcat">Configuring Tomcat</a> step.
+Sample output for Windows is illustrated below.
+
+<p><a href="../../images_www/articles/win-with-netbeans/tomcat.png" title="View Tomcat output - click for full size image"><img src="../../images_www/articles/win-with-netbeans/tomcat-small.png" width="500" height="121" alt="View Tomcat output - click for full size image" vspace="5" hspace="5" class="b-none" style="display: block; margin-left:auto; margin-right:auto;"></a></li>
+
+<p><li>A browser window should have opened and displayed the
+<tt>http://localhost:8084/ProfilingTutorial/</tt> page.  Verify that the web application is working by
+typing <tt>NetBeans User</tt> into
+the name field and clicking the OK button.  The result should be similar to the
+illustration below.
+<img src="../../images_www/articles/win-with-netbeans/hello.png" class="align-center" alt="View Application Output" vspace="5" style="display: block; margin-left:auto; margin-right:auto;"></li><p>
+</ol>
+</div>
+
+<h2><a name="runtime"></a>Monitoring Runtime Behavior</h2></br><br />
+<div class="indent">
+<h3 class="tutorial">Attaching to a Running Application</h3>
+ <p>
+ Now that you have verified that Tomcat is using the JVM included with the NetBeans
+ Profiler you can attach the IDE's profiling tools to that JVM and monitor its runtime
+ behavior.
+  <ol>
+ <li>Choose Profile &gt; Attach Profiler.  The Specify Attach Settings dialog is
+ displayed.</li>
+ <p><li>For Attach To: choose J2EE Web/App Server</li>
+ <p><li>For Running on: click the This Computer radio button</li>
+ <p><li>For Attach Settings click the Dynamic Attachment radion button and then click
+ the Select Running VM radio button.  Select
+ the Tomcat entry (typically <tt>org.apache.catalina.startup.Bootstrap start</tt>) from the list of
+ VMs.</li>
+ <p><li>In Working Directory type the fully
+ qualified name of Tomcat's bin folder.  As an example, a typical value on
+ a Windows system would be: <br>
+  <pre class="examplecode">
+  C:\Program Files\netbeans-4.0\nb4.0\jakarta-tomcat-5.0.28\bin</pre>
+  And on Unix the value will be something like:
+  <pre class="examplecode">
+  /export/home/gs/tools/netbeans/40/nb4.0/jakarta-tomcat-5.0.28/bin</pre>
+  </li>
+  <p><li>Click the OK button. The Attach and Profile dialog is displayed.</li>
+  <p><li>Click the large Monitor Application button.
+  Make sure that the Enable Threads
+  Monitoring option is <i>not</i> checked.  </li><p>
+  <li>Click the Attach button.</li>
+ </ol>
+
+ <h3 class="tutorial"><a name="interpretingMonitor">Interpreting the Monitor Graphs</a></h3>
+ The NetBeans Profiler displays three graphs in the output window, as illustrated below.
+
+<p><a href="../../images_www/articles/win-with-netbeans/monitorGraphs.png" title="View Monitor Graphs - click for full size image"><img src="../../images_www/articles/win-with-netbeans/monitorGraphs-small.png" width="500" height="110" class="align-center" alt="View Monitor Graphs - click for full size image" vspace="5" hspace="5" class="b-none" style="display: block; margin-left:auto; margin-right:auto;"></a>
+
+ <p>The graph on the left is the easiest to understand.  The red shading indicates the allocated
+ size of the JVM heap, updated approximately once per second.  The purple
+ overlay indicates the amount of heap space actually in  use.  In the example above the
+ allocated heap size at the last update was almost 14 megabytes.  Of that 14 megabytes
+ a little over 4 megabytes is actually being used to hold Java objects.</p>
+ <p>The graph on the right is also easy to understand.  It merely shows the count of active
+ threads in the JVM, updated approximately once per second.</p>
+ <p>The graph in the center is the most interesting.  It shows two important heap
+ statistics.
+ <ul>
+ <li>The blue line is the percentage of execution time spent by
+ the JVM doing garbage collection and is graphed against the y-axis on the right
+ edge of the graph. Time spent by the JVM doing garbage collection is time that is
+ not available for it to run your application.  So if the blue line indicates a large
+ percentage you may want to consider tuning the JVM by configuring a larger heap
+ size (refer to the -Xmx parameter
+ <a href="http://java.sun.com/j2se/1.5.0/">documentation</a>)
+ or perhaps switching to a different garbage collection
+ <a href="http://java.sun.com/docs/hotspot/gc1.4.2/">algorithm</a>.</li><p>
+<li>
+ The red line is surviving generations and is graphed against the y-axis scale
+ on the left edge of the graph.  The count of surviving generations is the number of different
+ ages of all the Java objects on the JVM's heap, where "age" is defined as the number of
+ garbage collections that an object has survived.  When the value for surviving generations is low it
+ indicates that most of the objects on the heap have been around about the same amount of time.
+ If, however, the value for surviving generations is increasing at a high rate over time then it
+ indicates your application is allocating new objects while maintaining references to many
+ of the older objects it already allocated.  If those older objects are in fact no longer
+ needed then your application is wasting (or "leaking") memory.
+ </li>
+ </ul>
+ Clicking the <img src="../../images_www/articles/win-with-netbeans/telemetryGraphsButton.png" alt="View Telemetry Graphs Button" > button will
+ cause the IDE to display  larger versions of the three graphs in the main display window.<p>
+</div>
+
+<h2><a name="cpu"></a>Determining CPU Time Used by a Method</h2></br><br />
+<div class="indent">
+<h3 class="tutorial">Switching to Performance Analysis Mode</h3>
+<p>
+
+ The Profiler is attached to the Tomcat JVM, but is only monitoring high level statistics.  To
+ find out detailed information about the performance of a specific method (or methods) in
+ the application you will need to modify the Profiler's settings.
+ <ol>
+ <li>Click the <img src="../../images_www/articles/win-with-netbeans/modifyProfilingButton.png" alt="View Modify Profiling Button" > button or
+ choose Profile &gt; Modify Profiling.<p></li>
+ <li>Click the Analyze Performance button.<p></li>
+ <li>Select the Part of Application radio button.  Then click the
+ Select button that is next to the Part of Application radio button.<p></li>
+ <li>Click the Add button.<p></li>
+ <li>Click the Select button.  The Profiler displays the Select Class tree.<p></li>
+ <li>Expand the ProfilingTutorial entry by clicking its plus sign icon.<p></li>
+ <li>Expand the Source Packages entry by clicking its plus sign icon.<p></li>
+ <li>Expand the org.me.hello entry.<p></li>
+ <li>Expand the RequestHandler.java entry.<p></li>
+ <li>Click the RequestHandler entry and then click the OK button.<p></li>
+ <li>The methods in the RequestHandler class are now displayed in the Select Methods dialog
+ as illustrated below.  Click the <tt>processRequest</tt> method and then click the OK button.
+
+<p><img src="../../images_www/articles/win-with-netbeans/selectMethods.png" alt="View Select Methods Dialog" vspace=5 style="display: block; margin-left:auto; margin-right:auto;"></li>
+
+<p><li>Select the <tt>processRequest</tt> method by clicking on it in the list of
+ Root Methods and then click the OK button.
+ You have just selected <tt>processRequest</tt> as the root method for performance analysis.  This means
+ that the <tt>processRequest</tt> method and all methods that it calls, and all methods that they
+ in turn call (and so on) will be monitored.  Starting
+ from <tt>processRequest</tt>, the
+ Profiler does analysis of the method call graph to determine which methods need profiling.
+ Only those methods are profiled - the rest of your application will continue to run at full
+ speed with no profiling overhead.<p></li>
+ <li>Click the OK button on the Modify Profiling dialog.<p></li>
+ </ol>
+<h3 class="tutorial">Running the Profiled Method</h3>
+<p>
+
+ Now that you have chosen <tt>processRequest</tt> as a root method you need to use the
+ portion of the web application that causes that root method to run.  This is easy to do
+ because the <tt>processRequest</tt> method handles all requests from the index.jsp page.
+ <ol>
+ <li>In your web browser click the Back button to return to the
+ <tt>http://localhost:8084/ProfilingTutorial/</tt> page.<p></li>
+ <li>Click the OK button to resubmit "NetBeans User" as your user name.  It will take a bit
+ longer before the response appears because the Profiler is monitoring performance of the
+ <tt>processRequest</tt> method.
+ <li>After <b>Hello, NetBeans User!</b> displays in your browser, click the
+ <img src="../../images_www/articles/win-with-netbeans/currentResultsButton.png" alt="View CurrentResults Button"> button or
+ choose Profile &gt; Get Current Results.
+ </ol>
+
+
+ <h3 class="tutorial">Interpreting the Performance Analysis Graphs</h3>
+  <p>
+
+
+
+ The Profiler displays the latest performance results, as illustrated below.
+
+ <p><a href="../../images_www/articles/win-with-netbeans/performanceResults.png" title="View Performance Results - click for full size image"><img src="../../images_www/articles/win-with-netbeans/performanceResults-small.png" width="500" height="352" class="align-center" alt="View Performance Results - click for full size image" class="b-none" style="display: block; margin-left:auto; margin-right:auto;"></a>
+
+ <p>The top window shows the complete method call graph beginning with the root method.
+ The <tt>processRequest</tt> method ran for 168 milliseconds (ms).  Note, however, that very
+ little time was spent running the instructions of the <tt>processRequest</tt> method itself -
+ the sixth line in the window shows the "self time" for <tt>processRequest</tt> to be only 0.421 ms.
+ The vast majority of the time was spent in methods called by <tt>processRequest</tt>.  In particular,
+ the <tt>forward</tt> method took up 84.7% of the execution time.  This is not surprising
+ given the amount of work the <tt>forward</tt> method has been given to do.</p>
+ <p>The power of the NetBeans Profiler is it helps you identify bottlenecks in your code
+ that were not expected or that will prevent your application from scaling well.
+ Note that the <tt>createUniqueID</tt> method took up 11.3% of the execution time. You can
+ click the plus sign next to the <tt>createUniqueID</tt> entry to investigate exactly where
+ the time went.  If you
+ examine the source code for <tt>createUniqueID</tt> you will discover it uses a hideously
+ inefficient algorithm that should be redesigned.
+ <p>The bottom window is a flatter depiction - it shows the "self time" for each
+ method in the call graph.</p>
+
+</div>
+<br />
+
+<h2><a name="createObjects"></a>Monitoring the Creation of Objects
+</h2></br><br />
+<div class="indent">
+<h3 class="tutorial">Switching to Memory Analysis Mode</h3>
+<p>
+
+ The Profiler can do detailed analysis (also referred to as <i>instrumentation</i>) of CPU performance or memory
+ usage, but it cannot do both at the same time.  To
+ find out detailed information about the allocation and garbage collection of
+ objects on the JVM's heap you will need to modify the Profiler's settings.
+ <ol>
+ <li>Click the <img src="../../images_www/articles/win-with-netbeans/modifyProfilingButton.png" alt="View Modify Profiling Button" > button
+ or choose Profile &gt; Modify Profiling.<p></li>
+ <li>Click the Analyze Memory Usage button.<p></li>
+ <li>Select the Record both object creation and garbage collection radio button.<p></li>
+ <li>Click the OK button.<p></li>
+ </ol>
+
+ <h3 class="tutorial">Running the Profiled Application</h3>
+ <p>
+
+ Now that you have chosen analyze memory usage you need to use the
+ web application in order to determine whether it is using memory efficiently.
+ <ol>
+ <li>In your web browser click the Back button to return to the
+ <tt>http://localhost:8084/ProfilingTutorial/</tt> page.<p></li>
+ <li>Click the OK button to resubmit "NetBeans User" as your user name.<p></li>
+ <li>After <b>Hello, NetBeans User!</b> displays in your browser, click the browser's Back button
+     to return to the previous page.<p></li>
+ <li>Repeat steps 2 through 3 nine times.  Repeated submission of the same user name is
+ necessary for this demonstration.<p></li>
+ <li>Click the
+ <img src="../../images_www/articles/win-with-netbeans/currentResultsButton.png" alt="View CurrentResults Button"> button  or
+ choose Profile &gt; Get Current Results.<p></li>
+ <li>The Profiler displays the latest memory analysis results in a table.  Click
+ the Class Name column to sort the rows by class name.<p></li>
+ <li>Scroll down through the table rows until the row for the
+ <tt>org.me.hello.NameHandler</tt> class is displayed.<p></li>
+ </ol>
+
+ <h3 class="tutorial">Interpreting the Memory Analysis Graphs</h3>
+<p>
+ The illustration below shows the statistics for the <tt>org.me.hello.NameHandler</tt> class.
+
+<p><a href="../../images_www/articles/win-with-netbeans/liveObjects.png" title="View Memory Results - click for full size image"><img src="../../images_www/articles/win-with-netbeans/liveObjects-small.png" class="align-center" width="500" height="273" alt="View Memory Results - click for full size image" vspace=5 class="b-none" style="display: block; margin-left:auto; margin-right:auto;"></a>
+
+ <p>The columns provide object allocation and memory usage information.
+ <ul>
+ <li>Total alloc. obj. (on the far right) is easiest to understand.  This is the total count
+ of all objects of this class that have been created. For the <tt>NameHandler</tt> class this value is
+ 10, which is the number of times you pressed the Ok button on the web application's form.<p></li>
+ <li>Allocated Objects is the number of objects that the Profiler is actually monitoring.
+ In this example, of the 10 instances of <tt>NameHandler</tt> that have been created
+ the Profiler is only monitoring 1 of those instances.
+ By default
+ this number will be approximately ten percent of the value of total allocated objects (so the
+ numbers you see might vary a bit from the illustration).  By monitoring
+ only a subset of the created objects the Profiler is able to dramatically reduce the overhead
+ it places on the JVM, which then allows your application to run at close to full speed.<p></li>
+ <li>Live Objects is the number of the Allocated Objects that are still on the JVM's heap and
+ are therefore taking up memory.<p></li>
+ <li>The two Live Bytes columns show the amount of heap memory being used by the Live Objects.
+ One column displays a graph, the other displays text.<p></li>
+ <li>The Age Average value is calculated using the Live Objects.  The age of each object is the number
+ of garbage collections that it has survived.  The sum of the ages divided by the number
+ of Live Objects is the Age Average.<p></li>
+ <li>The Generations value is calculated using the Live Objects.  As with Age Average, the
+ age of an object is the number of garbage collections it has survived.  The Generations value
+ is the number of different ages for the Live Objects.<p></li>
+ </ul>
+ <p>You can use this information to help track down memory leaks.  The value for Generations
+ is the same as the Surviving Generations value described in the <a href="#interpretingMonitor">Interpreting the
+ Monitor Graphs</a> section, but restricted to the objects of a single class.  This finer granularity
+ of monitoring can help you find the specific objects that are wasting heap space.  </p>
+
+ <p>In this example,
+ though, you do not even need Generations to see a problem with the <tt>NameHandler</tt> class.  The Total
+ alloc. obj. value is 10.  The intent of the servlet code was to reuse <tt>NameHandler</tt> objects
+ when the same user name is entered.  Clearly, that is not happening.  The bug is in the
+ <tt>processRequest</tt> method: the key used to check for an entry in the <tt>Map</tt> is not
+ the same as the key used to store the entry.  The result is a pretty typical Java memory
+ leak: an object is placed into a <tt>Map</tt> and then forgotten.</p>
+
+ <p>Another handy tool for understanding application behavior is to see where in your code
+ the objects of a particular class are being allocated.  This can often provide clues about
+ why an object is still on the heap. The NetBeans Profiler will display stack traces for any
+ class if you right-click the class's entry in the table and choose Show Allocations Stack Traces.
+ </p>
+ <p>To end the profiling session, choose Profile &gt; Detach.</p>
+  </div>
+ <br />
+
+
+<h2><a name="exploring"></a>Exploring Further</h2></br><br />
+<div class="indent">
+<p>
+   This tutorial has just scratched the surface of the Profiler's many powerful features.
+   Refer to the NetBeans Profiler help file for more information on these topics.
+   <ul>
+  <li>When profiling CPU usage a class filter can be defined to prevent the profiling
+  of methods outside your application (for example all methods in java.*).  This helps keep your application
+  running at closer to full speed.</li><p>
+  <li>Profiling CPU usage can interfere with the JVM's bytecode optimizations, causing
+  the reported CPU times to not match real world performance.  Techniques are available
+  though for minimizing the Profiler's affect.</li><p>
+ <li>The Analyze Memory Usage feature can be limited to monitoring just object allocation.
+ This will decrease the Profiler's impact on performance.</li><p>
+  <li>If when analyzing memory usage you discover that only a few classes seem to be
+  causing problems, you can disable the monitoring of objects of all other classes.</li><p>
+  <li>Features are available that will monitor your application's startup time
+  or a specific code fragment in your application.</li><p>
+  <li>Detailed thread statistics are available.</li><p>
+  <li>Remote profiling - profile an application that is running on a different machine.</li>
+ </ol>
+ </div>
+</body>
+
+</html>
+

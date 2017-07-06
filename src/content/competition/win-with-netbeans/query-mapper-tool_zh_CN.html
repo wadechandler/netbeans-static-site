@@ -1,0 +1,236 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <title>NetBeans 大赛 - 查询映射器教程</title>
+<META NAME="description" CONTENT="Query Mapper Tool">
+<META NAME="AUDIENCE" CONTENT="NBUSER">
+<META NAME="TYPE" CONTENT="ARTICLE">
+<META NAME="TOPIC" CONTENT="BASIC">
+<link rel="stylesheet" type="text/css" href="../../netbeans.css">
+</head>
+<body >
+<h1>查询映射器工具</h1>
+<div class="articledate" style="margin-left:0px;">撰稿人：Zsolt Kiss，</a>与 NetBeans 共赢<a href="../../competition/win-with-netbeans.html">参赛作品</div></p>
+<p><a href="https://netbeans.org/projects/www/downloads?action=download&dlID=478">下载文件和源代码</a></p>
+<div id="contentLeft">
+<table >
+  <tbody>
+    <tr>
+
+      <td>
+      <p>作为 Web 程序员，我经常为项目资源变为混乱不堪而一筹莫展。最后，我决定制作一个小巧智能的工具以帮助查找源文件，并将它们与其他相关资源相匹配。 </p>
+      <p>在开发强大的数据库驱动应用程序时，最好将数据库语句以键 = 值对的形式保存在单个属性文件中，例如， </p>
+      <pre class="examplecode">		sql.t_machine.insert=insert into t_machine (id, mcname, headnum) values (?,?,?)<br>	</pre>
+要使用这种形式，您只需将该属性文件读取到 Java 代码中，便可轻松创建 PreparedStatement 对象实例，然后使用从 HTML 窗体接收的值完成所需的参数化工作。
+      <pre class="examplecode">		Properties props = new Properties();<br>		FileInputStream in = new FileInputStream(&quot;./query.properties&quot;);<br>		props.load(in);<br>		....<br>		Connection con = DriverManager.getConnection(dbURL);<br>		String sqlUpdate = props.getProperty(&quot;sql.employees.update&quot;);<br>		PreparedStatement pstm = con.preparedStatement(sqlUpdate);<br>		pstm.setString(1, &quot;Jacob&quot;);		//updates firstname field<br>		pstm.setString(2, &quot;Nielsen&quot;);		//updates lastname field<br>		pstm.setInt(3, 47);			//sets record id in 'where' clause of update statement<br>	</pre>
+
+      <p>到目前为止，一切都很顺利。但如果属性文件中包含数百条语句，而其中的某些语句又出现在多个 Java 类中，该怎么办呢？如果您或参与项目工作的任何其他人更改了某些内容（例如，SQL 语句等待提供的参数个数或顺序），您应该知道所有相关 Java 类、与该语句有关的 JSP 和 HTML 页都要进行相应的更改。 </p>
+      <p>大家都知道，数据库程序员经常需要更改表和查询，就像 Java 开发者去喝杯咖啡一样频繁。更不用说客户需求总是不断发生变化。因此，我敢肯定属性文件绝不是一个静态的文件。在 SQL 语句发生变化时，必须更改您的代码！稍后，您需要从属性文件以及处理和参数化语句的 Java 类中逐个查找这些语句。 </p>
+      <p>我想您开始明白了为什么需要使用智能简便的查询映射工具了... </p>
+      <p>让我们看看所讨论的工具！ </p>
+      <p>让我们创建一个仅包含几个 JSP 的小样例 Web 应用程序，以便为用户提供用于将 insert、update 和 select 语句发送到数据库的窗体。当用户请求页面时（通常单击链接、图标、菜单栏元素等），可能会在后台执行一些操作。例如，数据库 select 语句，它在即将显示的屏幕上生成一个列表或表格。在页面上完成工作后（通常在表单元素中添加一些数据），用户将单击提交以将新请求发送到 Web 服务器。其中的一个 Java 类可能会再次执行某种数据库操作。 </p>
+      <p>下面是一个编写得很差的 Web GUI，您可以发挥自己的想象力以找出其中的不足之处： </p>
+
+      <p> <img src="../../images_www/articles/win-with-netbeans/pic2.gif"  hspace="15" vspace="15"></p><p>用户单击左侧的 'Newly Ones' Blackboard' 菜单项（以红色突出显示），将在右侧显示答案页。右侧框架中的上面表格及其数据是数据库操作生成的。现在，用户可以从列表中选择一个记录以覆盖数据。在完成后，他或她单击 'Record' 按钮以将数据保存到数据库中。<br>
+如果您的应用程序要显示许多页面，而每个页面都包含后台数据库工作，到一定时候，您就会发现整个开发过程变得无法管理。如果在一个或两个语句和文件中更改了某些内容，您需要在 GUI 和菜单项、JSP、HTML 页面和 Java 代码与相关 SQL 语句之间进行交叉引用。 </p>
+      </td>
+    </tr>
+    <tr>
+      <td height="20">&nbsp;</td>
+    </tr>
+
+    <tr>
+      <td>
+      <h2>工具</h2>
+      <p>查询映射器工具在包含 JTabbedPane 的 JFrame 上具有四个视图，每个视图有一个标签。这些标签依次为： </p>
+      <ul>
+        <li>应用程序视图</li>
+        <li>属性视图 </li>
+
+        <li>代码视图 </li>
+        <li>表视图 </li>
+      </ul>
+</p>
+<p>
+<img src="../../images_www/articles/win-with-netbeans/appview.gif"  hspace="15" vspace="15" width="" height=""></p><p>
+&quot;Application View&quot;（应用程序视图）可以包含应用程序的一些逻辑顺序。<b></b>我选择了菜单层次结构，但程序员可以选择任意顺序。如果要根据应用程序菜单图查找内容，或只能从此处查找功能，请从应用程序视图中开始工作。您可以看到应用程序视图的第一级节点与我们前面介绍的 &quot;Two Storks Fly &amp; Drive&quot; 样例应用程序的菜单结构相匹配。如果单击某个节点，则会看到两种类型的子节点：在请求页和提交表单上。我们可以根据这些子节点，将 SQL 语句分为两组：一组语句在呈现之前执行<i></i>，并在即将出现的页面上显示其结果；另一组语句在提交表单后运行<i></i>。树中的叶节点是属性文件中的 SQL 属性字符串。开发者可以在整个视图中查看在应用程序的哪个部分中调用了给定语句，以及哪些用户交互（请求页面或提交表单）导致运行查询。
+
+</p>
+<br clear="all">
+<p>
+&quot;Property View&quot;（属性视图）显示属性文件中的 SQL 语句的键，Java 代码也使用这些键。<b></b></p>
+<p><img src="../../images_www/articles/win-with-netbeans/propview.gif"  hspace="15" vspace="15" width="" height=""></p>
+<p>
+如果展开此处的节点，则会显示相关的逻辑条目（用户单击以启动某项功能的菜单栏名称）。下一级包含三种与给定语句相关的源文件。这三种类型为：
+<ul>
+	<li>数据源</li>
+	<li>setter</li>
+	<li>处理程序</li>
+
+</ul>
+
+“数据源”可以由任何 HTML、JSP 甚至 Servlet 表示（如果 Servlet 生成“没有名称的”动态 HTML）。<b></b>数据源通常是为语句提供输入的那些文件（页面），即，用户可以在其中输入值以将其发送到服务器端。根本没有数据源的情况也是很常见的（例如，没有任何 where 子句的 'select' 语句不需要任何输入，等等）。<br><br>
+在我看来，<b>setter</b> 就是来自数据源的 Java 或 JSP 文件，用于处理从用户表单中接收的值。setter 可能会执行验证，但它们每次都会<i></i>将 PreparedStatement 的问号替换为用户输入。<br><br>
+最后一点也很重要，<b></b>“处理程序”是用于处理给定语句的那些 Java 类（甚至 JSP 页），它们包含 <i>executeQuery()、executeUpdate()、executeBatch()</i> 等方法调用。
+
+</p>
+<br clear="all">
+<p>
+&quot;Code View&quot;（代码视图）显示按文件类型分组的应用程序完整文件列表。<b></b>在每个文件名下面，您可以看到包含相关语句的展开节点。
+</p><p>
+<img src="../../images_www/articles/win-with-netbeans/codeview.gif"  hspace="15" vspace="15" width="" height=""></p><p>
+如果从应用程序视图入手，单击一个菜单项，选择菜单相关的 SQL 语句，然后进入属性视图，则会看到突出显示了选定的语句。展开其子节点，选择一个资源文件，单击该文件，然后更改为代码视图。然后，代码视图将显示选定的资源以及所有影响该资源的语句。通过逐个视图进行查看，您可以过滤出感兴趣的信息或从开发者角度分析项目的结构。
+</p>
+<br clear="all">
+<p>
+<img src="../../images_www/articles/win-with-netbeans/tableview.gif"  hspace="15" vspace="15" width="" height=""></p><p>
+如果我们无法检查哪些真正 SQL 语句<i></i>隐藏在属性文件的键下面，所有内容都变得毫无意义。这就是为什么我们使用<b>表视图</b>的原因。表视图按照表名称显示应用程序的所有 SQL 语句组。当然啦，主引用也是此处的属性键，但在单击该键后，将显示真正的语句。
+
+</p>
+<br clear="all">
+<p>
+如果您继续阅读，我将指导您完成使用 <span style="color:red;font.weight:bold;">NetBeans 4.0</span> 开发该应用程序的过程。
+</p>
+
+	</td>
+    </tr>
+    <tr>
+	<td>
+<p>其中包含以下主题：
+
+</p>
+<ul>
+  <li><a href="#setup">使用 NetBeans IDE 4.0 设置新的应用程序</a></li>
+  <li><a href="#createxml">为项目创建 XML 和属性文件</a></li>
+  <li><a href="#javaclasses">创建 Java 类</a></li>
+  <li><a href="#compileandrun">编译和运行项目</a></li>
+  <li><a href="#runwithargs">如何使用命令行参数运行项目</a></li>
+
+ </ul>
+<p>
+<h2><a name="setup"></a>使用 NetBeans IDE 4.0 设置新的应用程序</h2>
+
+<ol>
+	<li>
+<p>
+选择 &quot; File&quot;（文件）&gt; &quot;New Project&quot;（新建项目）&gt; &quot;General&quot;（常规）&gt; &quot;Java Application&quot;（Java 应用程序），然后单击（下一步）。
+</p>
+	</li>
+	<li>
+<p>
+
+项目名称：QueryMapperTool。浏览到您希望 NetBeans 放置项目文件夹的某个位置。确保选中了 &quot;Set asMain Project&quot;（设置为主项目）和 &quot;Create Main Class&quot;（创建主类）复选框。键入具有所需完整包名的主类名称，我使用的是 com.zsoltkiss.qmt.QueryMapper。此时，选择权在您自己手里。单击 &quot;Finish&quot;（完成），NetBeans 将在给定路径中创建一个项目文件夹。确保在 IDE 中激活了 &quot;Project&quot;（项目）和 &quot;File&quot;（文件）视图：按 Ctrl+1 和 Ctrl+2 组合键。您可以随时在这些视图中检查项目文件、包结构、类，等等。
+</p>
+	</li>
+	<li>
+<p>
+应用程序使用 JDOM API，您可以从 <a href="http://www.jdom.org">http://www.jdom.org</a> 中进行下载。
+</p>
+	</li>
+<p>
+如果下载了 JDOM API，您必须让 NetBeans 知道该 API 并且您的项目需要使用该 API。在 IDE 中，单击 &quot;Project&quot;（项目）标签或按 Ctrl+1 组合键（如果隐藏），右键单击项目的名称，然后选择 &quot;Properties&quot;（属性）。在 &quot;Build&quot;（生成）部分中，选择 &quot;Compiling Sources&quot;（编译源代码）。单击 &quot;Add JAR/Folder&quot;（添加 JAR/文件夹）。现在，您必须向 NetBens 指示 JDOM 的安装文件夹。在 JDOM 安装目录下的 build 子文件夹中，单击以打开 jdom.jar。只要将第三方或您自己的 .jar 文件添加到项目资源中，就必须按照这些步骤进行操作。
+</p>
+	</li>
+
+	<li>
+<p>
+您还需要一些 .gif 文件、一个属性文件以及一个 XML 文件。Gif 用作包含 JTree 对象的叶节点图标。您可以生成自己的图像文件，也可以使用本教程附带的图像文件。正如您随后看到的一样，可以通过 NetBeans 方便地生成 XML 和属性文件。如果已有这些文件，请将其复制到项目文件夹中。在复制后，在项目的 &quot;File&quot;（文件）视图中检查这些文件是否存在。
+</p>
+	</li>
+
+</ol>
+</p>
+<h2><a name="createxml"></a>为项目创建 XML 和属性文件</h2>
+
+<ol>
+	<li>
+<p>
+
+在 IDE 的 &quot;Project&quot;（项目）标签中，右键单击项目的名称，然后选择 &quot;New&quot;（新建）&gt; &quot;File/Folder&quot;（文件/文件夹）。在 &quot;Categories&quot;（类别）中，选择 &quot;Xml&quot;，然后单击 &quot;Xml Document&quot;（Xml 文档）以将其作为文件类型。单击 &quot;Next&quot;（下一步）。键入 querymapping 作为文件名并将位置保留空白。因此，该文件将直接放在项目文件夹中。单击 &quot;Next&quot;（下一步）。在 &quot;Select Document Type&quot;（选择文档类型）页中，将 &quot;Well-formed document&quot;（格式规范的文档）保持选中状态。单击 &quot;Finish&quot;（完成）。
+</p>
+	</li>
+	<li>
+<p>
+如果一切正常，现在将在编辑器框架中显示 XML 文档。该文档对我们的应用程序非常重要。因此，在编辑时，一定要小心。先按以下方式更改根元素： <pre>&lt;query-mapping&gt;</pre> 为了简便起见，您可以使用本教程附带的 xml。下面是其中的一小部分：
+<pre class="examplecode">
+&lt;query-mapping&gt;
+	&lt;query name=&quot;sql.crosstable.afterdate&quot; desc=&quot;Select users entered after a specified date&quot;&gt;
+
+		&lt;app-section name=&quot;Newly Ones' Blackboard&quot; call=&quot;on-submit-form&quot;&gt;
+                    	&lt;datasource src=&quot;Parameterizer.java&quot; /&gt;
+                    	&lt;setter src=&quot;DoQuery.java&quot; /&gt;
+                    	&lt;processor src=&quot;DoQuery.java&quot; /&gt;
+                &lt;/app-section&gt;
+ 	&lt;/query&gt;
+
+		...
+
+	</pre>
+在编辑时，不要忘记随时进行保存。此 XML 文档描述了应用程序的各个部分（即菜单结构）及其与 SQL 语句、Java、JSP 和 HTML 文件之间的关系。请花点时间好好看看 - 从名称上就能判断出其用途。
+</p>
+	</li>
+	<li>
+<p>
+现在，我们将创建属性文件，其中的 SQL 语句与符号属性名称相匹配。您可以使用本教程附带的属性文件。在 &quot;Project&quot;（项目）标签中，右键单击项目的名称，单击 &quot;New&quot;（新建）&gt; &quot;File/Folder&quot;（文件/文件夹），在 &quot;Categories&quot;（类别）中单击 &quot;Other&quot;“其他”，然后将文件类型指定为 &quot;Properties File&quot;（属性文件）。单击 &quot;Next&quot;（下一步）。键入 query 作为文件名，并将 &quot;Folder&quot;（文件夹）输入框保留空白。单击 &quot;Finish&quot;（完成）。将直接在项目文件夹下面创建属性文件。在 IDE 的 &quot;File&quot;（文件）视图中，您可以双击该文件的名称并开始编辑。右键单击缺省语言，然后单击 &quot;Add Property&quot;（添加属性）。在即将出现的弹出式菜单中，您可以为 SQL 语句创建所需的键值对。不要忘记随时保存您的工作。
+</p>
+	</li>
+
+</ol>
+<a name="javaclasses">创建 Java 类</a>
+
+
+<ol>
+	<li>
+<p>
+您可以选择在项目中添加现有的源文件。如果要深入了解代码，您可以使用本教程附带的源文件。在这种情况下，您只需将所需的文件及其包含目录复制到项目的 src 文件夹中。但在复制包及其匹配的目录结构时，一定要小心。要创建新类，一种更安全稳妥的方法是，双击项目的名称，选择 &quot;New&quot;（新建）&gt; &quot;File/Folder&quot;（文件/文件夹），然后在 &quot;Categories&quot;（类别）中单击 &quot;Java Class&quot;（Java 类）并将文件类型指定为 Java 类。在此屏幕中，我们每次都可以选择在新包中创建类。我们的项目使用两个自己定义的包：com.zsoltkiss.qmt 和 com.zsoltkiss.qmt.util。与这些分层结构匹配的文件夹结构始终是在项目的 src 文件夹中创建的。
+</p>
+	</li>
+	<li>
+<p>
+如果要创建所需的类，您可以键入源代码，或从本教程附带的源文件中复制粘贴这些源代码。
+</p>
+	</li>
+
+</ol>
+<h2><a name="compileandrun"></a>编译和运行项目</h2>
+
+<ol>
+	<li>
+<p>
+对我来说，最快捷的编译方法是 &quot;Clean And Build&quot;（清理并生成），我始终使用 Shift+F11 组合键。但具体使用哪种方法因开发者而异。对于那些喜欢使用鼠标而不愿意使用键盘键入的开发者来说，他们可以在 IDE 菜单栏中单击 &quot;Clean And Build&quot;（清理并生成）图标或通过 &quot;Build&quot;（生成）菜单触发该功能。您可以在 &quot;Output&quot;（输出）窗口中查看 IDE 编译时消息，可随时按 Ctrl+4 组合键来激活该窗口（如果隐藏）。
+</p>
+	</li>
+	<li>
+<p>
+如果编译和生成成功，则可以使用 F6 键运行项目，当然啦，也可以单击图标或从 &quot;Run&quot;（运行）菜单中进行选择来运行项目。
+</p>
+
+	</li>
+
+</ol>
+<h2><a name="runwithargs"></a>如何使用命令行参数运行项目</h2>
+<ol>
+	<li>
+<p>
+使用位于项目自己的文件夹中的属性和 XML 文件并不总是一个很好的解决方案。如果将文件放在更改的路径中，则必须使用命令行参数运行项目的主类。自己试一试！从项目的文件夹中删除 query.properties 和/或 querymapping.xml，然后尝试运行应用程序。没有成功，对吧？
+</p>
+	</li>
+	<li>
+<p>
+现在，将以前删除的文件放在硬盘驱动器上的某个位置的目录中，而不是放在项目的文件夹中。在 NetBeans IDE 的 &quot;Project&quot;（项目）窗口中，右键单击项目的名称，选择 &quot;Properties&quot;（属性），然后选择 &quot;Running Project&quot;（运行项目）。在窗口的右窗格中，在 &quot;Arguments&quot;（参数）中键入将属性和 XML 文件移动到的目录的相应路径。先键入属性文件的路径，然后键入一个空格，最后键入 XML 文件的路径。单击 &quot;OK&quot;（确定），然后按 F6 键以运行项目。现在，您一定成功了。
+</p>
+	</li>
+</ol>
+</td>
+    </tr>
+    <tr>
+	<td>
+我希望您按照上述步骤成功构建了查询映射器工具应用程序，现在，您可以开始使用该应用程序了。我尝试编写了完全注释的代码，因此，不需要深入了解详细信息。通过使用该工具，您可以很容易地了解代码说明；通过使用属性和 XML 文件，您可以根据需要开发自己的版本。由于人们总是力求创建完美的应用程序，我这里只是抛砖引玉而已。请充分发挥您的想象力，一切皆有可能。例如，可以轻松将其与编辑器合并在一起，以便用户可以直接从中打开文件以进行编辑。<br>  但无论如何，终归会存在一些问题的，我们每天不是都要面对各种各样的问题吗？或许有一天，确实值得花些时间，编写一个功能更强大、使用更简便的工具以解决该问题，或将此类工具包含在 NetBeans 中也说不定。<br><br></td>
+    </tr>
+  </tbody>
+
+</table>
+</div>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+<HTML>
+<HEAD>
+<TITLE>ビジュアルモバイルデザイナのカスタムコンポーネント: PIM (Personal Information Manager) アプリケーションの作成 - NetBeans Java ME チュートリアル</TITLE>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+<link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+<meta name="author" content="Karol Harelzak">
+</HEAD>
+<BODY>
+<a name="top"></a>
+<H1>ビジュアルモバイルデザイナのカスタムコンポーネント: PIM (Personal Information Manager) アプリケーションの作成</H1>
+<P>ビジュアルモバイルデザイナ (VMD) は NetBeans Mobility に含まれるグラフィカルインタフェースで、コンポーネントのドラッグ＆ドロップを使用することでモバイルアプリケーションをデザインできます。VMD を使用すると、IDE に含まれるコンポーネントまたは独自にデザインしたコンポーネントを使用して、アプリケーションフローを定義し、GUI をデザインできます。VMD には、リスト、警告、フォーム、画像など、アプリケーションの作成に使用できる標準のユーザーインタフェース (UI) コンポーネントが多数含まれます。また、待機画面、スプラッシュ画面、表項目など、より複雑な機能を簡単に作成できるカスタムコンポーネントも含まれます。 </P>
+
+<p>PIM ブラウザは、カレンダ、アドレス帳、タスクリストなどの標準的なモバイルデバイス機能への簡単なアクセスを提供するカスタムコンポーネントです。PIM ブラウザコンポーネントを使用して、モバイル Java アプリケーションから、ローカルに保存された個人情報データベースにアクセスできます。このコンポーネントでは PIM (Personal Information Management) API が使用されます。これは <a href="http://jcp.org/en/jsr/detail?id=75">JSR-75 (PDA Optional Packages
+for the Java ME Platform) 仕様</a>の一部です。JSR-75 は MIDP 2.0 仕様の一部ではないので、このコンポーネントはカスタムコンポーネントと定義され、JSR-75 対応のデバイスだけに使用できます。</p>
+
+<P>このチュートリアルでは、JSR-75 対応デバイス用モバイルアプリケーションで PIM ブラウザコンポーネントを使用する方法を示します。デバイスの連絡先データベース、カレンダ、または To Do リストなどの内容の参照など、コンポーネントの基本機能を使用します。PIM ブラウザに加えて、スプラッシュ画面、テキストボックス、および警告の 3 つのコンポーネントを使用します。 
+</P>
+<!--<p class="notes"><b>注:</b> NetBeans IDE 6.8 を使用している場合、<a href="../../68/javame/pimbrowser.html">「PIM (Personal Information Manager) アプリケーションの作成」(NetBeans IDE 6.8)</a> チュートリアルを参照してください。</p>-->
+<p><b>目次</b></p>
+<img  src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" class="stamp" alt="このページの内容は NetBeans IDE 6.9 以降が対象です" title="このページの内容は NetBeans IDE 6.9 以降が対象です" >
+ <ul class="class">
+   <li><a href="#sample-app">サンプルアプリケーションのインストールと実行</a></li>
+   <li><a href="#create-app">「PIM ブラウザ」カスタムコンポーネントを使用したアプリケーションの作成</a></li><div>
+<ul>
+	<LI><A HREF="#create">PIMBrowserExample プロジェクトの作成</A> </LI>
+	<LI><A HREF="#add">プロジェクトへのパッケージとビジュアル MIDlet の追加</A> </LI>
+	<LI><A HREF="#addcomponent">プロジェクトへのコンポーネントの追加</A> </LI>
+	<LI><A HREF="#addcommands">プロジェクトへのコマンドの追加</A> </LI>
+	<LI><A HREF="#connect">コンポーネントを接続してアプリケーションフローを作成する</A> </LI>
+	<LI><A HREF="#storage">Wireless Toolkit 連絡先データベースへの連絡先の追加</A></LI>
+	<LI><A HREF="#run">プロジェクトの実行</A> </LI>
+</ul></div>
+   <li><a href="#javadoc-pim">PIM ブラウザコンポーネントの Javadoc</a></li>
+   <li><a href="#see-also">関連項目</a></li>
+</ul>
+<p><b>このチュートリアルに従うには、次に示すソフトウェアとリソースが必要です。</b></p>
+<table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                <th class="tblheader" scope="col">必須バージョン</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE と Java ME</a></td>
+                <td class="tbltd1">version 6.9 以降 </td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit</a> (JDK)</td>
+                <td class="tbltd1">version 6 および 7 </td>
+            </tr>      
+        </tbody>
+</table>
+
+ <p>NetBeans Mobility に習熟していない場合、次に進む前に「<A HREF="../../docs/javame/quickstart.html">NetBeans Java ME MIDP 開発のクイックスタートガイド</A>」から始めることをお勧めします。</p>
+
+<a name="sample-app"></a>
+<H2>サンプルアプリケーションのインストールと実行</H2>
+<P>始める前に、チュートリアルの最終結果を確認します。 
+</P>
+<P>次の手順で PIMBrowserExample アプリケーションをインストールします。</P> 
+<OL>
+	<LI><A HREF="https://netbeans.org/projects/samples/downloads/download/Samples/Mobile/PIMBrowserExample.zip">PIMBrowserExample.zip</A> をダウンロードします。</LI>
+	<LI>ファイルを展開します。</LI>
+	<LI>IDE で、「<tt>ファイル</tt>」&gt;「<tt>プロジェクトを開く</tt>」を選択し、<tt>PIMBrowserExample</tt> プロジェクトの展開したファイルがあるフォルダを参照します。</li>
+	<li>「プロジェクトを開く」をクリックします。<br>
+	
+	「プロジェクト」ウィンドウは次のようになります。 </li>
+	
+<p class="align-center"><img src="../../../images_www/articles/71/mobility/pimbrowser/pim-project.png" border=1 alt="PIM ブラウザの例を開いた「プロジェクト」ウィンドウ"> </p>
+    
+	<LI>「プロジェクト」ウィンドウでプロジェクトノードを右クリックし、「プロジェクトを実行」を選択します (または F6 キーを押す)。アプリケーションが実行されると、エミュレータウィンドウが開き、デフォルトのデバイスエミュレータでアプリケーションが実行されるところが表示されます。 </LI> 
+	
+	<LI>「エミュレータ」ウィンドウで「起動」の下のボタンをクリックします。<BR>エミュレータにスプラッシュ画面コンポーネントが表示されてから、次に示す PIM ブラウザが表示されます。</li>
+<p class="align-center"> <img src="../../../images_www/articles/71/mobility/pimbrowser/pim-emulator70.png" border=1 alt="サンプルの PIM ブラウザアプリケーションが表示された SDK 3.0 エミュレータ"></p>
+<li>エミュレータの右上のボタンをクリックすると、次に示すようなメニュー項目が表示されます。
+<p class="align-center"> <img src="../../../images_www/articles/71/mobility/pimbrowser/pim-emulator70-menu.png" border=1 alt="メニュー項目が表示された SDK 3.0 エミュレータ"></p></li>
+<LI>「Details」項目が選択された状態で、エミュレータの中央のボタンをクリックすると、連絡先の詳細が表示されます。 </li>
+<p class="align-center"><img src="../../../images_www/articles/71/mobility/pimbrowser/pim-emulator2-70.png" border=1 alt="サンプルの PIM ブラウザアプリケーションが表示された WTK 2.5 エミュレータ"></p>
+</OL>
+<UL>
+	<LI>位置を移動するにはカーソルを上下に移動します。 </LI>
+	<LI>連絡先リストに戻るには「Back」の下のボタンをクリックします。 </LI>
+   <LI>アプリケーションを終了するには、「Exit」の下のボタンをクリックします。 </LI>
+</UL>
+<p class="align-center"><a href="#top">ページの先頭へ</a></p>
+<a name="create-app"></a>
+<H2  >「PIM ブラウザ」カスタムコンポーネントを使用したアプリケーションの作成</H2>
+<P>PIM ブラウザコンポーネントが実際に動作するところを確認できたので、最初に戻ってこのアプリケーションを作成します。アプリケーションを作成するには、次の手順を実行します。 </P>
+<OL>
+	<LI><A HREF="#create">PIMBrowserExample プロジェクトを作成する</A> </LI>
+	<LI><A HREF="#add">プロジェクトにパッケージとビジュアル MIDlet を追加する</A> </LI>
+	<LI><A HREF="#addcomponent">プロジェクトにコンポーネントを追加する</A> </LI>
+	<LI><A HREF="#addcommands">プロジェクトにコマンドを追加する</A> </LI>
+	<LI><A HREF="#connect">コンポーネントを接続してアプリケーションフローを作成する</A> </LI>
+	<LI><A HREF="#storage">Wireless Toolkit の連絡先データベースに連絡先を追加する</A></LI>
+	<LI><A HREF="#run">プロジェクトを実行する</A> </LI>
+</OL>
+<H3  ><A NAME="create"></A>PIMBrowserExample プロジェクトの作成</H3>
+<OL>
+	<LI>「<tt>ファイル</tt>」&gt;「<tt>新規プロジェクト</tt>」(Ctrl-Shift-N) を選択します。「カテゴリ」から「Java ME」を選択します。「プロジェクト」で「モバイルアプリケーション」を選択して、「次へ」をクリックします。 </LI>
+	<LI>「プロジェクト名」フィールドに <CODE>PIMBrowserExample</CODE> と入力します。「プロジェクトの場所」をシステム上の任意のディレクトリに変更します。以降、この例では、このディレクトリを <tt>$PROJECTHOME</tt> とします。 </LI>
+	<LI>「Hello MIDlet を作成」チェックボックスの選択を解除します。「次へ」をクリックします。 </LI>
+	<LI>「エミュレータプラットフォーム」は、「Java (TM) Platform Micro Edition SDK 3.0」を選択したままにしておきます。「次へ」をクリックします。 </LI>
+	<LI>「その他の構成の選択」で、「完了」をクリックします。 </li>
+	<p class="notes"><b>注:</b> このプロジェクトフォルダには、ソースおよび、プロジェクトの Ant スクリプトなどのプロジェクトメタデータのすべてが含まれます。</p> 
+	
+</OL>
+<H3  ><A NAME="add"></A>プロジェクトへのパッケージとビジュアル MIDlet の追加</H3>
+<OL>
+	<LI>「プロジェクト」ビューで <CODE>PIMBrowserExample</CODE> プロジェクトを選択し、「<tt>ファイル</tt>」&gt;「<tt>新規ファイル</tt>」(Ctrl-N) を選択します。「カテゴリ」から「Java」を選択します。「ファイルの種類」として「Java パッケージ」を選択します。「次へ」をクリックします。	</LI>
+	<LI>「パッケージ名」フィールドに <CODE>pimbrowserexample</CODE> と入力します。「完了」をクリックします。 
+	</LI>
+	<LI>「プロジェクト」ビューで <CODE>pimbrowserexample</CODE> パッケージを選択し、「<tt>ファイル</tt>」&gt;「<tt>新規ファイル</tt>」(Ctrl-N) を選択します。「カテゴリ」にある「MIDP」を選択します。「ファイルの種類」として「ビジュアル MIDIlet」を選択します。「次へ」をクリックします。 
+	</LI>
+	<LI>「MIDlet 名」フィールドと「MIDP クラス名」フィールドに <CODE>PIMBrowserExample</CODE> と入力します。「完了」をクリックします。<br> アプリケーションはビジュアルモバイルデザイナの「フロー」ビューに表示されます。 
+	</LI>
+
+</OL>
+<H3><A NAME="addcomponent"></A>プロジェクトへのコンポーネントの追加 </H3>
+<OL>
+	<LI>フローデザイナで、コンポーネントパレットから次のコンポーネントをドラッグ＆ドロップします。	</LI>
+	<UL>
+		<li><tt>スプラッシュ画面</tt></li>
+		<li><tt>警告</tt></li>
+		<li><tt>PIM ブラウザ</tt></li>
+	</UL>
+	<LI><tt>splashScreen</tt> をクリックし、「プロパティー」ウィンドウで、「<tt>テキスト</tt>」の値を「<tt>null</tt>」から「<tt>PIM Browser Example</tt>」に変更します。
+	<LI><tt>alert</tt> をクリックし、「プロパティー」ウィンドウで、「<tt>文字列</tt>」プロパティーの値を「<tt>選択された連絡先</tt>」に変更します。
+</OL>
+<H3><A NAME="addcommands"></A>プロジェクトへのコマンドの追加</H3>
+<OL> 
+	<li>フローデザイナで、コンポーネントパレットの「コマンド」セクションから<tt>終了コマンド</tt>を選択します。</li>
+	<li>これを <tt>pimBrowser</tt> コンポーネントにドラッグ＆ドロップします。</li>
+</OL>
+<H3><A NAME="connect"></A>コンポーネントを接続してアプリケーションフローを作成する </H3>
+
+	<p>フローデザイナで、モバイルデバイスの「<tt>起動</tt>」をクリックし、<tt>splashScreen</tt> コンポーネントまでドラッグします。同様に、次の図に示すようにコンポーネントを接続します。 </p>
+	<p class="align-center"><img src="../../../images_www/articles/71/mobility/pimbrowser/pim-flow.png" border=1 alt="フローデザイナでコンポーネントをコマンドの線で接続したところ"></p>
+ 
+
+
+<H3><A NAME="storage"></A>Wireless Toolkit の連絡先データベースへの連絡先の追加</H3>
+
+<P> <A HREF="https://netbeans.org/files/documents/4/1613/SAMPLE.VCF">サンプルの連絡先</A>を、ユーザーディレクトリ <tt>$JAVAME-SDKHOME/3.0/work/0/appdb/PIM/contacts/Contacts/</tt> の <tt>javame-sdk</tt> フォルダにコピーします。<br> 
+	このフォルダには、次の 3 つのファイルがデフォルトで格納されています。
+	<li> 1.vcf</li>
+	<li> 2.vcf</li>
+	<li>categories.txt</li>
+	</P>
+	
+	
+<H3><A NAME="run"></A>プロジェクトの実行</H3>
+<div>
+	<p>F6 キーを押して主プロジェクトを実行するか、「<tt>実行</tt>」&gt;「<tt>主プロジェクトを実行</tt>」を選択します。</p>
+</div>
+<p class="align-center"><a href="#top">ページの先頭へ</a></p>
+<a name="javadoc-pim"></a>
+
+<H2>PIM ブラウザコンポーネントの Javadoc</H2>
+<P>NetBeans IDE には、<tt>PIMBrowser</tt> コンポーネントや、VMD で使用できるその他のコンポーネントに関する API Javadoc が用意されています。<tt>PIMBrowser</tt> コンポーネントの Javadoc を表示するには、次を実行します。
+</P>
+<OL>
+<li>ソースコードの <tt>PIMBrowser</tt> コンポーネントにカーソルを合わせ、Ctr-Shift- スペースキーを押します (または「<tt>ソース</tt>」&gt;「<tt>ドキュメントを表示</tt>」を選択します)。<br>
+この要素の Javadoc がポップアップウィンドウに表示されます。 </li>
+<li>ポップアップウィンドウで「外部 Web ブラウザにドキュメントを表示」アイコン (<img src="../../../images_www/articles/71/mobility/pimbrowser/show-doc-button.png" alt="「外部 Web ブラウザにドキュメントを表示」">) をクリックすると、<tt>PIMBrowser</tt> コンポーネントについての詳細な情報がブラウザに表示されます。</li>
+
+	
+</OL>
+<p class="align-center"><a href="#top">ページの先頭へ</a></p>
+<div class="feedback-box"><a href="/about/contact_form.html?to=6&subject=NetBeans%20Java%20ME%20Custom%20Component:%20PIM%20Browser">ご意見をお寄せください</a></div>
+<br style="clear:both;" >  
+<a name="see-also"></a>
+<H2>関連項目</H2>
+<UL>
+ <li><a href="smscomposer.html">ビジュアルモバイルデザイナのカスタムコンポーネント: SMS コンポーザアプリケーション</a></li>
+ <li><a href="loginscreen.html">ビジュアルモバイルデザイナのカスタムコンポーネント: モバイルログイン画面の作成</a></li>
+ <li><a href="filebrowser.html">ビジュアルモバイルデザイナのカスタムコンポーネント: モバイルデバイスのファイルブラウザの作成</a></li>
+ <li><a href="splashscreen.html">ビジュアルモバイルデザイナのカスタムコンポーネント: Java ME アプリケーションでのスプラッシュ画面の使用</a></li>
+ <li><a href="waitscreen.html">ビジュアルモバイルデザイナのカスタムコンポーネント: モバイルアプリケーション用の待機画面の作成</a></li>
+<li><a href="tableitem.html">ビジュアルモバイルデザイナのカスタムコンポーネント: Java ME アプリケーションでの表項目の使用</a></li>
+ <li><a href="http://wiki.netbeans.org/VisualMobileDesignerPalatteReference">参照: ビジュアルモバイルデザイナのパレットのガイド</a></li>
+</UL>
+<p class="align-center"><a href="#top">ページの先頭へ</a></p>
+</BODY>
+</HTML>

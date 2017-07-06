@@ -1,0 +1,670 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <meta name="author" content="geertjan.wielenga@sun.com, troy.giunipero@sun.com">
+        <meta name="description" content="A short guide to using the Google Web Toolkit in NetBeans IDE">
+        <meta name="keywords" content="NetBeans, IDE, integrated development environment,
+            GWT, Google Web Toolkit, framework, frameworks, web application">
+
+        <link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+        <link rel="stylesheet" type="text/css" href="../../../lytebox.css" media="screen">
+        <script type="text/javascript" src="../../../images_www/js/lytebox-compressed.js"></script>
+
+        <title>Введение в веб-платформу Google Web Toolkit – учебный курс по IDE NetBeans 6.x</title>
+    </head>
+
+    <body>
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+
+        <h1>Введение в платформу веб-инструментария Google Web Toolkit</h1>
+
+        <p>Веб-инструментарий Google Web Toolkit (GWT) — платформа разработки с открытым исходным кодом, позволяющая разработчикам просто создавать высокопроизводительные приложения AJAX с использованием Java.  GWT позволяет создавать интерфейсную часть на Java; он компилирует исходный код в код JavaScript и HTML, совестимый с браузерами, и с высокой оптимизацией.  &quot;Сегодня создание веб-приложений — это утомительный и подверженный ошибкам процесс.  Вы тратите 90% времени на решением проблем браузера, а отсутствие модульности JavaScript делает совместный доступ, тестирование и повторное использование компонентов AJAX сложным и нестабильным.  Это не обязательно должно быть так&quot;. См. <a href="http://code.google.com/webtoolkit/">веб-сайт Google Web Toolkit</a>.</p>
+
+        <p>В этом учебном курсе вы узнаете, как указанные выше принципы применяются к реальным приложениям.  Одновременно описывается поддержка IDE NetBeans для GWT и создается простое приложение, в котором используется некоторые из этих функций.</p>
+
+        <p><strong>Содержание</strong></p>
+
+        <p><img alt="Содержимое на этой странице применимо к IDE NetBeans 6.x-7.0" class="stamp" height="114" src="../../../images_www/articles/71/netbeans-stamp-71-72-73.png" title="Содержимое на этой странице применимо к IDE NetBeans 6.x-7.0" width="114" /></p>
+
+        <ul class="toc">
+            <li><a href="#setup">Настройка среды</a>
+                <ul>
+                    <li><a href="#creating">Создание исходной структуры приложения GWT</a>
+                    <li><a href="#examining">Рассмотрение исходной структуры приложения GWT</a>
+                </ul></li>
+            <li><a href="#random-quote">Создание средства случайных цитат AJAX</a>
+                <ul>
+                    <li><a href="#generating-stubs">Создание заглушек службы</a>
+                    <li><a href="#examining-stubs">Проверка созданных классов</a>
+                    <li><a href="#extending-stubs">Расширение созданных классов</a>
+                    <li><a href="#customizing">Настройка внешнего вида</a>
+                </ul></li>
+            <li><a href="#compile-debug">Компиляция и отладка</a></li>
+            <li><a href="#conclusion">Заключение</a></li>
+            <li><a href="#seeAlso">Дополнительные сведения</a></li>
+        </ul>
+
+        <p><strong>Для работы с этим учебным курсом требуются программное обеспечение и ресурсы, перечисленные ниже.</strong></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Программное обеспечение или материал</th>
+                    <th class="tblheader" scope="col">Требуемая версия</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">IDE NetBeans, комплект Java</a></td>
+                    <td class="tbltd1">версия 6.x</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Комплект для разработчика на языке Java (JDK)</a></td>
+                    <td class="tbltd1">версия 5 или более поздняя</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1">Сервер GlassFish <br><em class="indent margin-around">или</em> <br>Контейнер сервлетов Tomcat</td>
+                    <td class="tbltd1">v3 или Open Source Edition 3.0.1 <br><em class="margin-around indent"> </em> <br>версия 6.x</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://code.google.com/webtoolkit/">Веб-инструментарий Google Web Toolkit (GWT)</a></td>
+                    <td class="tbltd1">версия 1.5 или более поздняя</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://gwt4nb.dev.java.net/">Подключаемый модуль NetBeans GWT</a></td>
+                    <td class="tbltd1">версия 2.x</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong class="notes">Примечания:</strong></p>
+
+        <ul>
+            <li>Пакет загрузки Java позволяет установить сервер GlassFish и контейнер сервлетов Apache Tomcat 6.0.x. Их необходимо установить для работы с этим учебным курсом.</li>
+
+            <li>Вместо загрузки подключаемого модуля NetBeans GWT с веб-сайта <a href="https://gwt4nb.dev.java.net/">https://gwt4nb.dev.java.net/</a> его необходимо загрузить и установить непосредственно из диспетчере подключаемых модулей IDE.  Выберите &quot;Сервис &gt; Подключаемые модули&quot; в главном меню и установите подключаемый модуль, как показано ниже: <br> <img alt="Подключаемый модуль GWT отображается в диспетчере подключаемых модулей" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/plugin-manager.png" title="Подключаемый модуль GWT отображается в диспетчере подключаемых модулей"> <br> Более подробные инструкции по установке подключаемого модуля в платформы в IDE приведены в разделе <a href="../../docs/web/framework-adding-support_ru.html">Добавление поддержки веб-платформы</a>.</li>
+
+            <li>Можно <a href="https://netbeans.org/projects/samples/downloads/download/Samples%252FJava%2520Web%252FHelloGWT.zip">загрузить пример рабочего приложения</a> для этого учебного курса, а также <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=4537">другие приложения</a> с использованием GWT.</li>
+
+            <li>Дополнительные сведения о GWT приведены на веб-сайте <a href="http://code.google.com/webtoolkit/">http://code.google.com/webtoolkit/</a>.  Сведения о поддержке GWT в среде IDE приведены на веб-сайте <a href="https://gwt4nb.dev.java.net/">https://gwt4nb.dev.java.net/</a>.  Если вы знакомы с GWT, вы можете отправить свой код для проекта подключаемого модуля GWT.</li>
+
+            <li>В этом учебном курсе используются некоторые примеры, представленные в книге &quot;<a href="http://www.packtpub.com/google-web-toolkit-GWT-Java-AJAX/book">Google Web Toolkit: GWT Java AJAX Programming</a>&quot; Прабхакара Чаганти, издательство <a href="http://www.packtpub.com/">Packt Publishing</a>, февраль 2007 г..</li>
+        </ul>
+
+
+        <br>
+        <h2 id="setup">Установка среды</h2>
+
+        <p>Для начала использования IDE необходимо создать основную структуру исходных кодов. После создания ее можно подробно изучить для понимания внутренней работы GWT.</p>
+
+        <ul>
+            <li><a href="#creating">Создание исходной структуры приложения GWT</a>
+            <li><a href="#examining">Рассмотрение исходной структуры приложения GWT</a>
+        </ul>
+
+        <div class="indent">
+
+            <h3 id="creating">Создание исходной структуры приложения GWT</h3>
+
+            <p>Исходная структура создаваемого приложения должна включать файлы JAR GWT, файл настройки проекта модуля GWT, а также некоторые стандартные артефакты, такие как точка входа Java.  Поскольку используется среда IDE, не требуется создавать все эти файлы вручную.  Вместо этого всю работу выполнит мастер.  В частности, последняя панель мастера нового веб-приложения очень полезна в контексте создания приложения GWT.</p>
+
+            <ol>
+                <li>Выберите команды Файл &gt; Новый проект (Ctrl-Shift-N; &amp;#8984-Shift-N для Mac). В разделе &quot;Категории&quot; выберите &quot;Веб&quot; (или &quot;Java Web&quot;).  В области &quot;Projects&quot; выберите &quot;Web Application&quot;.  Нажмите кнопку &quot;Далее&quot;.</li>
+
+                <li>В действии 2, &quot;Имя и местоположение&quot;, введите <code>HelloGWT</code> для имени проекта.  Также можно указать расположение проекта, введя путь в поле &quot;Местоположение проекта&quot;.  Нажмите кнопку &quot;Далее&quot;.</li>
+
+                <li>В шаге &quot;Сервер и параметры&quot; выберите сервер, зарегистрированный в IDE.  При установке среды IDE были включены серверы Tomcat и GlassFish, они отображаются в раскрывающемся списке. <br><br> <span class="tips">Чтобы зарегистрировать сервер в среде IDE, нажмите кнопку &quot;Добавить&quot;, чтобы открыть мастер выполнения процесса регистрации.</span></li>
+
+                <li>Укажите используемую версию Java.  Нажмите кнопку &quot;Далее&quot;.
+
+                    <p><strong class="notes">Примечание. </strong>Этот учебный курс поддерживает GWT версии 1.5 и более поздние версии. GWT 1.4 не поддерживает Java EE 5, поэтому при использовании этой версии необходимо также задать для версии Java EE значение 1.4. В противном случае, например, аннотации Java EE 5 вызовут ошибки компиляции.</p></li>
+
+                <li>В действии &quot;Платформы&quot; выберите GWT. <br> <img alt="GWT, указанный на панели 'Платформы' мастера создания проектов" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/frameworks-panel.png" title="GWT, указанный на панели 'Платформы' мастера создания проектов"> <br> При выборе платформы GWT становятся доступными следующие поля:
+
+                    <ul>
+                        <li><strong>GWT Installation Folder (Папка установки GWT)</strong>: указывается путь к папке, в которую был загружен веб-инструментарий Google Web Toolkit в начале этого курса.  Если указан неверный путь, отображается красное сообщение об ошибке, и работу мастера нельзя завершить.</li>
+
+                        <li><strong>GWT Module (Модуль GWT)</strong>: указывается имя и расположение модуля проекта, который будет создан средой IDE пир завершении работы мастера.  Модуль проекта — это файл XML для настройки приложения GWT.  Например, он используется для указания класса, экземпляр которого создается GWT при загрузке модуля.  Обратите внимание, что это поле в мастере также определяет основной пакет приложения.  По умолчанию основной пакет — <code>org.yournamehere</code>, а модуль проекта — <code>Main</code>.  Для целей этого учебного курса оставьте поля по умолчанию без изменений.</li>
+                    </ul></li>
+
+                <li>Нажмите кнопку &quot;Завершить&quot;. Средой IDE будет создан проект <code>HelloGWT</code>.  Проект содержит все исходные файлы, библиотеки и метаданные проекта, такие как  сценарий сборки Ant проекта.  Проект откроется в среде IDE. Можно просмотреть его файловую структуру в окне &quot;Файлы&quot; (Ctrl-2; &amp;#8984-2 в Mac) и логическую структуру в окне &quot;Проекты&quot; (Ctrl-1; &amp;#8984-1 в Mac). <br> <img alt="В окне 'Проекты' отображается проект HelloGWT" class="margin-around" src="../../../images_www/articles/72/web/gwt/projects-win-init.png" title="В окне 'Проекты' отображается проект HelloGWT"></li>
+
+                <li>В окне &quot;Проекты&quot; щелкните правой кнопкой мыши узел проекта и выберите команду &quot;Выполнить&quot;. Создается приложение и веб-архив (WAR).  Выполняется его развертывание на сервере.  Запустится сервер, если он еще не был запущен.  Откроется браузер компьютера по умолчанию, и отобразится страница приветствия приложения. <br> <img alt="В браузере отображается сообщения приветствия GWT" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/hello-gwt.png" title="В браузере отображается сообщения приветствия GWT"> <br> Нажмите кнопку, текст под ней исчезнет. <br> <img alt="Текст ниже кнопки перестает отображаться" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/click-me.png" title="Текст ниже кнопки перестает отображаться"></li>
+            </ol>
+
+            <p>В следующем разделе будут подробно рассмотрены созданные файлы и созданное выше простое приложение.</p>
+
+
+            <h3 id="examining">Рассмотрение исходной структуры приложения GWT</h3>
+
+            <p>Мастер создания нового веб-приложения IDE создал несколько исходных файлов.  Взгляните на файлы и посмотрите, как они соотносятся в контексте приложения GWT.</p>
+
+            <ul>
+                <li><strong><code>Main.gwt.xml</code></strong>: файл XML модуля проекта, содержащийся в корневом пакете проекта, это файл XML, содержащий всю настройку приложения, необходимую для проекта GWT.  Модуль проекта по умолчанию, созданный мастером, выглядит следующим образом:
+
+<pre class="examplecode">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;module&gt;
+        &lt;inherits name=&quot;com.google.gwt.user.User&quot;/&gt;
+        &lt;entry-point class=&quot;org.yournamehere.client.MainEntryPoint&quot;/&gt;
+        &lt;!-- Do not define servlets here, use web.xml --&gt;
+&lt;/module&gt;</pre>
+
+                    <p>Ниже приведены элементы в модуле проекта по умолчанию:</p>
+
+                    <ul>
+                        <li><code><strong>inherits</strong></code>: указывает модули, наследуемые этим модулем.  В этом простом случае наследуется только функциональность, предоставленная модулем <code>User</code>, который встроен в платформу GWT.  Когда приложение становится более сложным, наследование модуля позволяет быстро и просто повторно использовать части функций.</li>
+                        <li><code><strong>entry-point</strong></code>: ссылается на класс, экземпляр которого будет создан платформой GWT при загрузке модуля.</li>
+                    </ul>
+
+                    <strong class="notes">Примечание. </strong>Дополнительные сведения см. в разделе <a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideOrganizingProjects.html#DevGuideModuleXml">Структурирование проектов: файлы модуля XML</a>.</li>
+
+                <li><strong><code>MainEntryPoint.java</code></strong>: класс соответствует основной точке входа приложения, как указано в <code>Main.gwt.xml</code>.  Он расширяет класс <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/core/client/EntryPoint.html"><code>EntryPoint</code></a>, и при загрузке модуля GWT платформой создается экземпляр класса, затем автоматически вызывается его метод <code>onModuleLoad()</code>.  Точка входа проекта по умолчанию, созданная мастером, выглядит следующим образом:
+
+<pre class="examplecode">package org.yournamehere.client;
+
+import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.ClickListener;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.Widget;
+
+public class MainEntryPoint implements EntryPoint {
+
+    /** Creates a new instance of MainEntryPoint */
+    public MainEntryPoint() {
+    }
+
+    /**
+        The entry point method, called automatically by loading a module
+        that declares an implementing class as an entry-point
+    */
+    public void onModuleLoad() {
+        final Label label = new Label(&quot;Hello, GWT!!!&quot;);
+        final Button button = new Button(&quot;Click me!&quot;);
+
+        button.addClickListener(new ClickListener(){
+            public void onClick(Widget w) {
+                label.setVisible(!label.isVisible());
+            }
+        });
+
+        RootPanel.get().add(button);
+        RootPanel.get().add(label);
+    }
+
+}</pre>
+
+                    В приведенном выше фрагменте кода метод <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/core/client/EntryPoint.html"><code>EntryPoint</code></a> по умолчанию <code>onModuleLoad()</code> добавляет к приложению следующие компоненты:
+
+                    <ul>
+                        <li><code><strong>Метка</strong></code>: Создается новая <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/Label.html"><code>метка</code></a> GWT, в которой отображается текст '<code>Hello, GWT!!!</code>'. Метка добавляется к <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/RootPanel.html"><code>RootPanel</code></a> в последней строке кода, <code>RootPanel.get().add(label)</code>.</li>
+
+                        <li><code><strong>Кнопка</strong></code>: создается новая <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/Button.html"><code>кнопка</code></a> GWT, на которой отображается текст &quot;<code>Click me!</code>&quot;, вместе с прослушивающим процессом кнопки, реализуемым <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/ClickListener.html"><code>ClickListener</code></a>.  Прослушиватель кнопки указывает, что при нажатии кнопки скрывается метка.
+
+                            <pre class="examplecode">public void onClick(Widget w) {
+    label.setVisible(!label.isVisible());
+}</pre>
+                            Кнопка добавляется к <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/ui/RootPanel.html"><code>RootPanel</code></a> в предпоследней строке кода.
+
+                            <pre class="examplecode">RootPanel.get().add(button)</pre></li>
+                    </ul></li>
+
+                <li><strong><code>welcomeGWT.html</code></strong>: созданная страница узла HTML, являющаяся специальным файлом приветствия для приложения.  Файл <code>web.xml</code> использует элемент <code>welcome-file</code> для указания на то, что главная страница — это исходная страница, отображаемая в браузере при развертывании приложения. Главная страница ссылается на путь к исходному коду JavaScript и может ссылаться на таблицу стилей приложения.  Главная страница по умолчанию, созданная мастером, выглядит следующим образом:
+
+<pre class="examplecode">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot;&gt;
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;meta name='gwt:module' content='org.yournamehere.Main=org.yournamehere.Main'&gt;
+        &lt;title>Main&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;script language=&quot;javascript&quot; src=&quot;org.yournamehere.Main/org.yournamehere.Main.nocache.js&quot;&gt;&lt;/script&gt;
+    &lt;/body&gt;
+&lt;/html&gt;</pre>
+
+                    Теги <code>meta</code> и <code>script</code> во фрагменте кода выше имеют особое значение для GWT:
+
+                    <ul>
+                        <li><code><strong>meta</strong></code>: указывает на каталог проекта приложения.  Этот тег предоставляет ссылку между страницей HTML и приложением.</li>
+
+                        <li><code><strong>script</strong></code>: импорт кода для файла JavaScript платформы GWT.  Этот код содержит необходимый код для начальной загрузки платформы GWT.  Он использует настройку в модуле проекта, а затем динамически загружает код JavaScript, созданный путем компиляции точки входа, для представления приложения.  Файл JavaScript создается платформой GWT при запуске приложения в размещенном режиме или при компиляции приложения.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+
+        <br>
+        <h2 id="random-quote">Создание средства случайных цитат AJAX</h2>
+
+        <p>В этом разделе на веб-странице будет отображена случайная цитата.  Этот пример приложения предназначен для ознакомления с различными компонентами приложения GWT.  Случайная цитата будет выбрана из списка цитат, хранящегося на сервере.  Каждую секунду приложение получает случайную цитату, предоставленную сервером, и отображает ее на веб-странице в подлинном стиле AJAX, то есть, без необходимости обновления пользователем страницы.</p>
+
+        <p>При создании этой функции используется служба RPC (<a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideServerCommunication.html#DevGuideRemoteProcedureCalls">удаленный вызов процедуры</a>) GWT.</p>
+
+        <ul>
+            <li><a href="#generating-stubs">Создание заглушек службы</a>
+            <li><a href="#examining-stubs">Проверка созданных классов</a>
+            <li><a href="#extending-stubs">Расширение созданных классов</a>
+            <li><a href="#customizing">Настройка внешнего вида</a>
+        </ul>
+
+        <div class="indent">
+
+            <h3 id="generating-stubs">Создание заглушек службы</h3>
+
+            <p>Подключаемый модуль GWT в NetBeans предоставляет мастер для создания службы <a href="http://code.google.com/docreader/#p=google-web-toolkit-doc-1-5&s=google-web-toolkit-doc-1-5&t=DevGuideRemoteProcedureCalls">RPC</a>.  Мастер создает основные классы службы.  В этом подразделе описывается мастер службы RPC GWT.</p>
+
+            <ol>
+                <li>Щелкните значок 'Создать файл' (<img alt="Значок 'Создать файл'" src="../../../images_www/articles/72/web/gwt/new-file-icon.png">) на главной панели инструментов IDE. В мастере нового файла в категории Google Web Toolkit отображается шаблон файла с именем GWT RPC Service. <br> <img alt="Первая панель мастера службы RPC GWT." class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/gwt-service.png" title="Первая панель мастера службы RPC GWT."> <br> Выберите службу RPC GWT и нажмите кнопку &quot;Далее&quot;.
+
+                <li>Дополнительно можно заполнить дочерний пакет, где будут сохранены созданные файлы.  Для целей этого учебного курса в поле &quot;Дочерний пакет&quot; введите <code>sampleservice</code>. <br> <img alt="Вторая панель мастера службы RPC GWT." class="margin-around b-all" id="usageExample" src="../../../images_www/articles/72/web/gwt/gwt-service2.png" title="Вторая панель мастера службы RPC GWT."> <br> <strong class="notes">Примечание. </strong>Если оставить параметр 'Создать класс примера использования' выделенным в этом шаге, то в IDE будет включена поддержка создания класса <a href="#GWTServiceUsageExample"><code>GWTServiceUsageExample</code></a>, который можно использовать для вызова службы.
+
+                <li>Нажмите кнопку &quot;Завершить&quot;. Создаются файлы, перечисленные в мастере создания новой службы RPC GWT (показан на изображении выше), окно &quot;Проекты&quot; автоматически обновляется для отражения изменений. <br> <img alt="В окне 'Проекты' обновляются содержащиеся в нем новые созданные файлы" class="margin-around" src="../../../images_www/articles/72/web/gwt/projects-window.png" title="В окне 'Проекты' обновляются содержащиеся в нем новые созданные файлы">
+                </li>
+            </ol>
+
+
+            <h3 id="examining-stubs">Проверка созданных классов</h3>
+
+            <p>Мастер службы RPC GWT создает несколько исходных файлов.  Взгляните на файлы и посмотрите, как они соотносятся в контексте службы GWT.</p>
+
+            <p class="tip">Расширенное описание классов службы GWT приведено в разделе <a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideServerCommunication.html#DevGuideCreatingServices">Создание служб</a>.</p>
+
+            <ul>
+                <li><a name="GWTService"></a><code><strong>GWTService</strong></code>: определение службы на стороне клиента.  Этот интерфейс расширяет интерфейс тега <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/rpc/RemoteService.html">RemoteService</a>.
+
+<pre class="examplecode">
+package org.yournamehere.client.sampleservice;
+
+import com.google.gwt.user.client.rpc.RemoteService;
+import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
+
+@RemoteServiceRelativePath(&quot;sampleservice/gwtservice&quot;)
+public interface GWTService extends RemoteService {
+    public String myMethod(String s);
+}</pre></li>
+
+                <li><a name="GWTServiceImpl"></a><code><strong>GWTServiceImpl</strong></code>: сервлет, реализующий интерфейс <code>GWTService</code> и предоставляющий возможность получения случайной цитаты с помощью RPC.
+
+<pre class="examplecode">
+package org.yournamehere.server.sampleservice;
+
+import com.google.gwt.user.server.rpc.RemoteServiceServlet;
+
+import org.yournamehere.client.sampleservice.GWTService;
+
+public class GWTServiceImpl extends RemoteServiceServlet implements GWTService {
+
+    public String myMethod(String s) {
+        // Do something interesting with 's' here on the server.
+        return &quot;Server says: &quot; + s;
+    }
+
+}</pre></li>
+
+                <li><a name="GWTServiceAsync"></a><code><strong>GWTServiceAsync</strong></code>: асинхронный интерфейс, основанный на исходном интерфейсе <code>GWTService</code>.  Он предоставляет объект обратного вызова, обеспечивающий асинхронную связь между сервером и клиентом.
+
+<pre class="examplecode">
+package org.yournamehere.client.sampleservice;
+
+import com.google.gwt.user.client.rpc.AsyncCallback;
+
+public interface GWTServiceAsync {
+    public void myMethod(String s, AsyncCallback&lt;String&gt; callback);
+}</pre></li>
+
+                <li><a name="GWTServiceUsageExample"></a><code><strong>GWTServiceUsageExample</strong></code>: пример пользовательского интерфейса, созданный как тестовый клиент.  Он может использоваться для вызова службы.
+
+<pre class="examplecode">
+package org.yournamehere.client.sampleservice;
+
+import com.google.gwt.core.client.GWT;
+
+import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.rpc.ServiceDefTarget;
+
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.Widget;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.VerticalPanel;
+
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
+
+public class GWTServiceUsageExample extends VerticalPanel {
+    private Label lblServerReply = new Label();
+    private TextBox txtUserInput = new TextBox();
+    private Button btnSend = new Button(&quot;Send to server&quot;);
+
+    public GWTServiceUsageExample() {
+        add(new Label(&quot;Input your text: &quot;));
+        add(txtUserInput);
+        add(btnSend);
+        add(lblServerReply);
+
+        // Create an asynchronous callback to handle the result.
+        final AsyncCallback&lt;String&gt; callback = new AsyncCallback&lt;String&gt;() {
+            public void onSuccess(String result) {
+                lblServerReply.setText(result);
+            }
+
+            public void onFailure(Throwable caught) {
+                lblServerReply.setText(&quot;Communication failed&quot;);
+            }
+        };
+
+        // Listen for the button clicks
+        btnSend.addClickHandler(new ClickHandler(){
+            public void onClick(ClickEvent event) {
+                // Make remote call. Control flow will continue immediately and later
+                // 'callback' will be invoked when the RPC completes.
+                getService().myMethod(txtUserInput.getText(), callback);
+            }
+        });
+    }
+
+    public static GWTServiceAsync getService() {
+        // Create the client proxy. Note that although you are creating the
+        // service interface proper, you cast the result to the asynchronous
+        // version of the interface. The cast is always safe because the
+        // generated proxy implements the asynchronous interface automatically.
+
+        return GWT.create(GWTService.class);
+    }
+}</pre></li>
+            </ul>
+
+            <p>Теперь измените класс точки входа для вызова службы путем создания экземпляра объекта <code>GWTServiceUsageExample</code>.  Как указывалось в предыдущем подразделе, класс <code>GWTServiceUsageExample</code> был создан из-за выбора <a href="#usageExample">параметра &quot;Create Usage Example Class&quot; (Создать класс примера использования) в мастере GWT RPC</a>.</p>
+
+            <ol>
+                <li>В методе <code>onModuleLoad()</code> основной точки входа приложения (<code>MainEntryPoint.java</code>) удалите <code>Метку</code> и <code>Кнопку</code> GWT и добавьте новый экземпляр <code>GWTServiceUsageExample</code> к <code>RootPanel</code>.
+
+<pre class="examplecode">
+public void onModuleLoad() {
+     RootPanel.get().add(new GWTServiceUsageExample());
+}</pre>
+
+                    <strong class="notes">Примечание. </strong>После изменения метода <code>onModuleLoad()</code> необходимо добавить оператор импорта к классу <code>sampleservice.GWTServiceUsageExample</code>. Для этого щелкните подсказку в левом столбце, где метод <code>GWTServiceUsageExample()</code> отображается в редакторе, и выберите &quot;Добавить импорт&quot; для <code>org.yournamehere.client.sampleservice.GWTServiceUsageExample</code>. <br> <img alt="Поддержка 'Исправить выражения импорта',отображаемая в редакторе" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/fix-import.png" title="В редакторе отображается поддержка 'Исправить выражения импорта'"></li>
+
+                <li><a name="allYouNeed"></a>В окне 'Проекты' щелкните правой кнопкой мыши узел проекта и выберите 'Выполнить'. Запустится сервер, если он еще не был запущен.  Выполняется компиляция (в данном случае перекомпиляция) и развертывание проекта на сервере.  Открывается браузер, в котором отображается текстовое поле.  Введите сообщение и нажмите кнопку.  Появится метка с отправленным сообщением. <br> <img alt="Окно вывода браузера, в котором отображается сообщение пользователя" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/all-you-need.png" title="В окне вывода браузера отображается сообщение пользователя">
+                </li>
+            </ol>
+
+            <p>Была успешно создана служба RPC GWT с помощью мастера RPC GWT среды IDE.  После этого был добавлен экземпляр <code>GWTServiceUsageExample</code> к методу <code>onModuleLoad()</code> главной точки входа приложения для вызова приложением службы при выполнении.  В следующем разделе выполняется настройка службы путем расширения созданных классов и прикрепления таблицы стилей к странице узла HTML.</p>
+
+
+            <h3 id="extending-stubs">Расширение созданных классов</h3>
+
+            <p>В этом разделе выполняется расширение классов, проверенных в предыдущем подразделе.  В конце этого подраздела будет создана работающая версия средства создания случайных цитат AJAX.</p>
+
+            <ol>
+                <li>Как вы помните, <a href="#GWTServiceImpl"><code>GWTServiceImpl</code></a> — это сервлет, реализующий создаваемую службу.
+
+                    <p class="tips">Если открыть дескриптор развертывания <code>web.xml</code> приложения, можно увидеть, что описание и сопоставление сервлета уже добавлены.</p>
+
+                    <pre class="examplecode">&lt;servlet&gt;
+    &lt;servlet-name&gt;GWTService&lt;/servlet-name&gt;
+    &lt;servlet-class&gt;org.yournamehere.server.sampleservice.GWTServiceImpl&lt;/servlet-class&gt;
+&lt;/servlet&gt;
+&lt;servlet-mapping&gt;
+    &lt;servlet-name&gt;GWTService&lt;/servlet-name&gt;
+    &lt;url-pattern&gt;/org.yournamehere.Main/sampleservice/gwtservice&lt;/url-pattern&gt;
+&lt;/servlet-mapping&gt;</pre>
+
+
+                    В классе <code>GWTServiceImpl</code> реализуется интерфейс <code>GWTService</code> с логикой для вашей службы.  Для создания средства создания случайных цитат добавьте следующий код к <code>GWTServiceImpl</code>:
+
+<pre class="examplecode">
+public class GWTServiceImpl extends RemoteServiceServlet implements GWTService {
+
+    private Random randomizer = new Random();
+    private static final long serialVersionUID = -15020842597334403L;
+    private static List quotes = new ArrayList();
+
+    static {
+        quotes.add(&quot;No great thing is created suddenly - Epictetus&quot;);
+        quotes.add(&quot;Well done is better than well said - Ben Franklin&quot;);
+        quotes.add(&quot;No wind favors he who has no destined port - Montaigne&quot;);
+        quotes.add(&quot;Sometimes even to live is an act of courage - Seneca&quot;);
+        quotes.add(&quot;Know thyself - Socrates&quot;);
+    }
+
+    public String myMethod() {
+        return (String) quotes.get(randomizer.nextInt(5));
+    }
+
+}</pre>
+
+                    <strong class="notes">Примечание. </strong>Щелкните правой кнопкой мыши в любом месте в редакторе IDE и выберите 'Исправить импорт', чтобы создать в IDE правильные операторы импорта. При этом необходимо выбрать <code>java.util.Random</code> вместо <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/Random.html"><code>com.google.gwt.user.client.Random</code></a>: <br> <img alt="Диалоговое окно 'Исправить все выражения импорта'" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/fix-all-imports.png" title="Диалоговое окно 'Исправить все выражения импорта'"></li>
+
+
+                <li>Вместо того, чтобы служба вызывалась созданным классом примером использования (<a href="#GWTServiceUsageExample"><code>GWTServiceUsageExample</code></a>), вызовите ее напрямую из класса точки входа приложения (<code>MainEntryPoint</code>).  Начните с копирования метода <code>getService()</code> <code>GWTServiceUsageExample</code> и вставьте его в <code>MainEntryPoint</code>.  (Изменения <strong>выделены полужирным шрифтом</strong>.)
+
+<pre class="examplecode">public class MainEntryPoint implements EntryPoint {
+
+    /**
+     * Creates a new instance of MainEntryPoint
+     */
+    public MainEntryPoint() {
+    }
+
+    <strong>public static GWTServiceAsync getService() {
+        // Create the client proxy. Note that although you are creating the
+        // service interface proper, you cast the result to the asynchronous
+        // version of the interface. The cast is always safe because the
+        // generated proxy implements the asynchronous interface automatically.
+
+        return GWT.create(GWTService.class);
+    }</strong>
+
+    ...</pre></li>
+
+                <li>Щелкните в редакторе правой кнопкой мыши и выберите &quot;Исправить операторы импорта&quot;.  К <code>MainEntryPoint</code> добавляются три следующих оператора импорта.
+
+        <pre class="examplecode">import com.google.gwt.core.client.GWT;
+import org.yournamehere.client.sampleservice.GWTService;
+import org.yournamehere.client.sampleservice.GWTServiceAsync;</pre></li>
+
+                <li>Измените метод <code>onModuleLoad()</code> в классе точки входа на следующее:
+
+<pre class="examplecode">/**
+ * The entry point method, called automatically by loading a module
+ * that declares an implementing class as an entry-point
+ */
+
+public void onModuleLoad() {
+
+    final Label quoteText = new Label();
+
+    Timer timer = new Timer() {
+
+        public void run() {
+            //create an async callback to handle the result:
+            AsyncCallback callback = new AsyncCallback() {
+
+                public void onFailure(Throwable arg0) {
+                    //display error text if we can't get the quote:
+                    quoteText.setText("Failed to get a quote");
+                }
+
+                public void onSuccess(Object result) {
+                    //display the retrieved quote in the label:
+                    quoteText.setText((String) result);
+                }
+            };
+            getService().myMethod(callback);
+        }
+    };
+
+    timer.scheduleRepeating(1000);
+    RootPanel.get().add(quoteText);
+
+}</pre></li>
+
+                <li>Щелкните в редакторе правой кнопкой мыши и выберите &quot;Исправить операторы импорта&quot;.  При этом необходимо выбрать <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/com/google/gwt/user/client/Timer.html"><code>com.google.gwt.user.client.Timer</code></a> и <a href="http://google-web-toolkit.googlecode.com/svn/javadoc/1.6/index.html?com/google/gwt/user/client/ui/Label.html"><code>com.google.gwt.user.client.ui.Label</code></a>. <br> <img alt="Диалоговое окно 'Исправить все выражения импорта'" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/fix-all-imports2.png" title="Диалоговое окно 'Исправить все выражения импорта'">
+
+                    
+                    </li>
+                <li>Удалите класс <code>GWTServiceUsageExample</code>.  Он больше не будет компилироваться.  Поскольку приложение может вызвать службу из класса основной точки входа, класс примера использования <code>GWTServiceUsageExample</code> больше не требуется для вызова службы.</li>
+
+                <li>Хотя созданные заглушки для <a href="#GWTService"><code>GWTService</code></a> и <a href="#GWTServiceAsync"><code>GWTServiceAsync</code></a> предоставляют параметр String для <code>myMethod()</code>, он не требуется для средства создания случайных цитат. <br><br> В классе <code>GWTService</code> удалите параметр String из <code>myMethod()</code>, чтобы интерфейс выглядел следующим образом.
+
+<pre class="examplecode">
+public interface GWTService extends RemoteService {
+    public String myMethod();
+}</pre></li>
+
+                <li>Сигнатура метода для асинхронной службы (<code>GWTServiceAsync</code>) должна соответствовать сигнатуре <code>GWTService</code> (но включать объект <code>AsyncCallback</code> как окончательный параметр).  Поэтому удалите параметр String из <code>myMethod()</code>, чтобы интерфейс выглядел следующим образом.
+
+<pre class="examplecode">
+public interface GWTServiceAsync {
+    public void myMethod(AsyncCallback callback);
+}</pre>
+
+                    <span class="tips">Дополнительные сведения об интерфейсе асинхронной службы приведены в разделах  <a href="http://code.google.com/webtoolkit/doc/latest/tutorial/clientserver.html">Выполнение асинхронных вызовов</a> и <a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideServerCommunication.html#DevGuideGettingUsedToAsyncCalls">Знакомство с асинхронными вызовами</a> официальной документации GWT.</span></li>
+
+                <li>Выполните проект.  При развертывании приложения и открытия браузера каждую секунду с сервера будет получаться новая цитата: <br> <img alt="Средство создания цитат AJAX, отображаемое в браузере" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/browser-quote.png" title="Средство создания цитат AJAX отображается в браузере">
+                </li>
+            </ol>
+
+            <p>В следующем разделе будет применена таблица стилей для изменения внешнего вида цитат.</p>
+
+            <a name="customizing"></a>
+            <h3>Настройка внешнего вида</h3>
+
+            <p>В этой разделе к странице узла HTML прикрепляется таблица стилей.  На нее также создается ссылка в классе точки входа.  В частности, для названия стиля метки в классе точки входа необходимо установить название стиля в таблице стилей.  Во время выполнения GWT соединяет стиль с меткой и отображает настроенную метку в браузере.</p>
+
+            <ol>
+                <li>Создайте таблицу стилей <code>welcomeGWT.css</code>.  Для создания файла щелкните правой кнопкой мыши узел 'Веб-страницы' в окне 'Проекты' и выберите 'Создать' > 'Другие'. Появится мастер создания нового файла.</li>
+
+                <li>В &quot;Категории&quot; выберите &quot;Web&quot;, затем в &quot;Типы файлов&quot; выберите &quot;Каскадная таблица стилей&quot;.  По завершении работы мастера новый пустой файл откроется в редакторе.</li>
+
+                <li>Создайте следующий селектор <code>quoteLabel</code> для новой таблицы стилей.
+
+<pre class="examplecode">
+.quoteLabel {
+    color: white;
+    display: block;
+    width: 450px;
+    padding: 2px 4px;
+    text-decoration: none;
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    border: 1px solid;
+    border-color: black;
+    background-color: #704968;
+    text-decoration: none;
+}</pre>
+
+                    Теперь в редакторе таблицы стилей должно отображаться следующее. <br> <img alt="Окно предварительного просмотра CSS, которое отображается в редакторе" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/css-preview.png" title="В редакторе отображается окно предварительного просмотра CSS">
+
+                    <p class="tips">Для отображения предварительного просмотра CSS и конструктора стилей выберите &quot;Окно &gt; Другое&quot; в главном меню.</p></li>
+
+                <li>На странице приветствия приложения создайте ссылку на таблицу стилей (<code>welcomeGWT.html</code>).  Одновременно с этим добавьте некоторый текст, чтобы представить приложение пользователю.  Новые части страницы HTML выделены ниже <strong>полужирным шрифтом</strong>.
+
+<pre class="examplecode">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot;&gt;
+
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;meta name='gwt:module' content='org.yournamehere.Main=org.yournamehere.Main'&gt;
+        <strong>&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;welcomeGWT.css&quot;&gt;</strong>
+
+        &lt;title&gt;Main&lt;/title&gt;
+    &lt;/head&gt;
+
+    &lt;body&gt;
+        &lt;script language=&quot;javascript&quot; src=&quot;org.yournamehere.Main/org.yournamehere.Main.nocache.js&quot;&gt;&lt;/script&gt;
+
+        <strong>&lt;p&gt;This is an AJAX application that retrieves a random quote from
+            the Random Quote service every second. The data is retrieved
+            and the quote updated without refreshing the page!&lt;/p&gt;</strong>
+
+    &lt;/body&gt;
+&lt;/html&gt;</pre></li>
+
+                <li>В методе <code>onModuleLoad()</code> класса точки входа (<code>MainEntryPoint.java</code>) укажите, что при успешном выполнении стиль, определенный в таблице стилей, должен быть применен к метке.  Новая строка выделена <strong>полужирным шрифтом</strong> ниже.
+
+<pre class="examplecode">public void onSuccess(Object result) {
+    //display the retrieved quote in the label:
+    quoteText.setText((String) result);
+    <strong>quoteText.setStyleName(&quot;quoteLabel&quot;);</strong>
+}</pre>
+
+                    При вводе нажмите сочетание клавиш Ctrl-ПРОБЕЛ для включения функции автозавершения кода среды IDE.  Функция автозавершения кода работает путем вызова всплывающего окна с предложениями по завершению кода и отображением связанной документации Javadoc. <br> <img alt="В редакторе реализована поддержка автозавершения кода" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/code-completion.png" title="В редакторе реализована поддержка автозавершения кода"> <br> <span class="tips">Также можно открыть окно &quot;Документация&quot; среды IDE, если требуется постоянный доступ к документации GWT при работе в среде IDE.  Для этого выберите &quot;Окно &gt; Другое &gt; Документация&quot; в главном меню.  Обратите внимание, что при вводе в редакторе документация в окне документации Javadoc обновляется в соответствии с положением курсора.</span> <br> <img alt="Окно Javadoc" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/javadoc.png" title="В окне Javadoc предоставлена поддержк документации"></li>
+
+                <li>В окне &quot;Проекты&quot; щелкните правой кнопкой мыши узел проекта и выберите команду &quot;Выполнить&quot;. В этот раз метка отображается с пользовательским стилем, используя созданную в этом подразделе таблицу стилей. <br> <img alt="Эффекты таблицы стилей отображаются в браузере" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/final.png" title="Эффекты таблицы стилей отображаются в браузере">
+                </li>
+            </ol>
+        </div>
+
+        <a name="compile-debug"></a>
+        <h2>Компиляция и отладка</h2>
+
+        <p>Откройте окно &quot;Файлы&quot; (Ctrl-2; &amp;#8984-2 в Mac) и разверните папку <code>build</code>.  (Если папка <code>build</code> отсутствует, необходимо снова выполнить сборку проекта, чтобы среда IDE снова создала папку <code>build</code>.)  Должно появиться следующее: <br> <img alt="Папка 'Сборка', отображаемая в окне 'Файлы'" class="margin-around" src="../../../images_www/articles/72/web/gwt/build-folder.png" title="Папка 'Сборка' отображается в окне 'Файлы'"> <br> Эта папка создается GWT автоматически при компиляции приложения.  Папка содержит готовую к развертыванию версию клиентского приложения.  Описание того, что именно представляют эти файлы см. в разделе <a href="http://code.google.com/support/bin/answer.py?answer=77858&topic=13006">Часто задаваемые вопросы по кодам Google - зачем нужны операции с кэшем и нелепые имена файлов?</a>.</p>
+
+        <p>Также имейте в виду, что при работе с приложением GWT можно использовать встроенный <a href="https://netbeans.org/features/java/debugger.html">отладчик</a> среды IDE'.  Это позволяет <a href="http://code.google.com/webtoolkit/doc/1.6/DevGuideCompilingAndDebugging.html">выполнять отладку в размещенном режиме GWT</a>.  Автоматически откроются GWT, главное окно основного режиме и веб-браузер.</p>
+
+        <p><strong class="notes">Примечания для пользователей for Mac OS X. </strong>Размещенный режим GWT скомпилирован для 32-разрядной архитектуры в Mac OS X, которая существует только для Java 1.5. Если запущена 64-разрядная версия Java 1.6, необходимо переключиться на 32-разрядную версию. Для этого используется панели 'Предпочтения Java' в OS X. После переключения версий Java необходимо перезапустить среду IDE.</p>
+            
+            <!--Also, if you are using the GlassFish server
+            3.0.1 (which requires Java 6 to run), you'll need to explicitly set the path to your JDK 6 executable.
+            You can do this in the IDE by opening the Servers window (Tools &gt; Servers), and selecting the
+            Java tab of your the GlassFish server 3.0.1 server. Enter the path in the Java Executable field. The default
+            location for this is:
+            <code>/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Home/bin/java</code>.</p> -->
+
+        <p>Установите точки останова поля, метода и строки в исходных файлах, щелкнув левое поле редактора IDE. <br> <img alt="В редакторе отображается точка останова на строке" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/line-breakpoint.png" title="Точка останова на строке задана в редакторе"> <br> Затем просто выберите 'Отладка' как это обычно делается для любого веб-проекта (например, щелкните правой кнопкой узел проекта и выберите 'Отладка' или щелкните значок 'Отладка проекта) ( <img alt="Значок 'Отладка проекта'" src="../../../images_www/articles/72/web/gwt/debug-icon.png"> ). Выполнение приложения приостанавливается во всех установленных точках останова, позволяя выполнить код пошагово и проверить значения переменных и выражений (например, выберите &quot;Окно &gt; Отладка &gt; Локальные переменные&quot;, чтобы просмотреть значения в окне &quot;Локальные переменные&quot;). <br> <img alt="Отладчик остановится по достижении точки останова" class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/line-breakpoint2.png" title="Отладчик остановится по достижении точек останова, заданных в исходных файлах"> <br> <span class="tips">Также можно навести курсор мыши на выражение или значение в редакторе, после чего появится всплывающее окно с текущим значением (как показано на изображении выше).</span> <br> Открытые главное окно размещенного режима GWT и веб-браузер.  В браузере отображается работающая версия приложения. <br> <img alt="Браузер размещенного режима GWT " class="margin-around b-all" src="../../../images_www/articles/72/web/gwt/hosted-mode.png" title="Браузер размещенного режима GWT отображается при запуске отладчика IDE"></p>
+
+
+        <a name="conclusion"></a>
+        <h2>Заключение</h2>
+
+        <p>В этом учебном курсе вы изучили следующее.</p>
+
+        <ul>
+            <li>Как выглядит исходная структура обычного приложения в приложении Google Web Toolkit.</li>
+
+            <li>Как соотносятся друг с другом артефакты Google Web Toolkit.</li>
+
+            <li>Как настроить среду IDE на использование Google Web Toolkit.</li>
+
+            <li>Какие инструменты доступны в среде IDE, в частности, для использования Google Web Toolkit.</li>
+        </ul>
+
+        <p>Поскольку платформа GWT обрабатывает создание кода, связанное с браузером, а также создание кода API <code>XmlHttpRequest</code> нижнего уровня, можно использовать платформу для работы с функциями, которые должно предоставлять приложение.  Поэтому как было указано во введении, GWT позволяет избежать трудностей обеспечения совместимости с браузерами, одновременно предоставляя пользователям динамичную соответствующую работу, обычно обеспечиваемую Web 2.0.  Как было продемонстрировано в учебном курсе, можно применить платформу GWT для создания всей интерфейсной части на Java, поскольку известно, что компилятор GWT может преобразовать классы Java в код JavaScript и HTML, совместимый с браузером.  Как также было продемонстрировано, среда IDE предоставляет полный набор инструментов для упрощения и повышения эффективности этого процесса без необходимости создания кода основной инфраструктуры приложения GWT вручную.</p>
+
+        <div class="feedback-box">
+            <a href="/about/contact_form.html?to=3&amp;subject=Feedback: Introduction to the GWT Web Framework">Мы ждем ваших отзывов</a></div>
+
+        <br style="clear:both;">
+
+        <a name="seeAlso"></a>
+        <h2>Дополнительные сведения</h2>
+
+        <p>Это заключительный раздел введения в учебный курс по платформе Google Web Toolkit.  Связанные и дополнительные материалы доступны в следующих источниках:</p>
+
+        <h4>Ресурсы GWT</h4>
+
+        <ul>
+            <li><a href="http://code.google.com/webtoolkit/doc/1.6/DevGuide.html">Руководство разработчика Google Web Toolkit</a></li>
+            <li><a href="https://gwt4nb.dev.java.net/">Страница проекта NetBeans Google Web Toolkit</a></li>
+            <li><a href="https://gwt4nb.dev.java.net/manual/impl_details.html">Внутреннее устройство GWT4NB</a></li>
+            <li><a href="http://googlewebtoolkit.blogspot.com/2007/12/developing-gwt-applications-with.html">Блог по NetBeans Google Web Toolkit</a></li>
+        </ul>
+
+        <h4>Документация NetBeans для платформ Java Web</h4>
+
+        <ul>
+            <li><a href="../../docs/web/jsf20-intro_ru.html">Введение в JavaServer Faces 2.0</a></li>
+            <li><a href="../../docs/web/quickstart-webapps-spring_ru.html">Введение в платформу Spring</a></li>
+            <li><a href="../../docs/web/quickstart-webapps-struts_ru.html">Введение в веб-платформу Grails</a></li>
+            <li><a href="../../docs/web/grails-quickstart_ru.html">Введение в веб-платформу Grails</a></li>
+        </ul>
+
+    </body>
+</html>

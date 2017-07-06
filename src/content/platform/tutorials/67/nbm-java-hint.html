@@ -1,0 +1,359 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>NetBeans Java Hint Module Tutorial for NetBeans Platform 6.5</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="gwielenga@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A short guide to using the Java Hint API.">
+<!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>NetBeans Java Hint Module Tutorial</h1>
+
+<p>This tutorial demonstrates how to create a NetBeans module that provides
+ one or more Java hints. In this particular scenario, whenever the user
+ types "<tt>showMessageDialog</tt>", a Java hint will appear, with the reminder that
+ using the NetBeans Debugger is more effective than using calls to <tt>JOptionPane</tt>:
+
+<p><img  src="../images/tutorials/hint/hint-result.png"/>
+
+   <p><b class="notes">Note:</b> The APIs used in this tutorial have not
+    been finalized. Many of them are not mentioned in the NetBeans API Javadoc.
+    Therefore, be aware that some of them are very likely to change without being
+    backward compatible.
+ 
+   <p><b>Contents</b></p>
+   
+       <img  src="../images/articles/65/netbeans-stamp65.gif" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.5" title="Content on this page applies to NetBeans IDE 6.5"> </p>
+      <ul class="toc">
+<li><a href="#creatingthemoduleproject">Setting Up the Module Project</a>
+</li>
+
+<li><a href="#coding-module">Creating the Java Hint</a>
+
+<li><a href="#registering-module">Declaring and Registering the Java Hint</a>
+</li>
+
+<li><a href="#building">Building and Installing the Java Hint</a>
+<ul>
+<li><a href="#try-plugin">Trying Out the Java Hint</a>
+<li><a href="#share-plugin">Creating a Shareable Module Binary</a>
+</ul>
+
+</ul>
+         
+<p><b>To follow this tutorial, you need the software and resources listed in the following 
+table.</b></p>
+
+     <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.5</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Version 6 or<br/>version 5</td>
+            </tr>
+        </tbody>
+    </table>
+
+      <p class="tips">Optionally, for troubleshooting purposes, you
+  can <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=14274">download the completed sample</a>.
+
+<h2 class="tutorial"><a name="creatingthemoduleproject"></a>Setting up the Module Project</h2>
+<p>Before you start writing the module, you have to make sure you
+  that your project is set up correctly. The IDE provides a wizard that sets up all the basic files
+ needed for a module.</p>
+
+<ol>
+    <li>Choose File &gt; New Project (Ctrl+Shift+N). Under Categories, select NetBeans Modules.
+        Under Projects, select Module. Click Next.</li>
+    <li>In the Name and Location panel, type <tt>HintDemo</tt> in the Project Name field.
+        Change the Project Location to any directory on your computer. Leave the Standalone Module option
+        and Set as Main Project checkbox selected. Click Next.</li>
+    <li>In the Basic Module Configuration panel, type <tt>org.nb.hintdemo</tt>
+     in Code Name Base.
+    <li>Select "Generate XML Layer". Leave the
+        locations of both the localizing bundle and the XML layer file
+        so that they will be stored in a package with
+        the name <tt>org/nb/hintdemo</tt>. Click Finish.</li>
+</ol>
+
+<p> The IDE creates the <tt>HintDemo</tt>
+project. The project contains all of your sources and
+project metadata, such as the project's Ant build script. The project
+opens in the IDE. You can view its logical structure in the Projects window (Ctrl-1) and its
+file structure in the Files window (Ctrl-2).</p>
+
+      <br />
+
+<!-- ===================================================================================== -->
+<h2><a name="coding-module"></a>Creating the Java Hint</h2>
+
+<p>In this section, you provide the Java code for the Java hint.
+
+ <br />
+
+<div class="indent">
+
+<ol>
+
+     <li><p>Right-click the HintDemo project node and
+      choose Properties. In the Libraries panel, you need
+     to set dependencies on the following modules:</p>
+      <p><img  src="../images/tutorials/hint/hint-deps.png"/></p>
+
+	  <p><p><b class="notes">Note:</b> You need to set implementation
+       dependencies on two of the above because they are still
+       under development:
+       <ul>
+           <li>Editor Hints (Experimental)
+           <li>Java Hints
+       </ul>
+       <p>For the above two, select the display name in the list that
+        you see above, click Edit, and then select the 'Implementation
+       Version' checkbox.</p>
+    
+	 <li>Right-click the <tt>org.nb.hintdemo</tt> package node and
+	      choose New &gt; Java Class.
+          Click Next.
+     <li>Type <tt>DemoHint</tt>
+     and click Finish.</li>
+
+   <li>Replace the default content of the <tt>DemoHint.java</tt> file with the following:
+
+<p><pre class="examplecode">import <a href="http://java.sun.com/javase/6/docs/jdk/api/javac/tree/com/sun/source/tree/Tree.html">com.sun.source.tree.Tree</a>;
+import <a href="http://java.sun.com/javase/6/docs/jdk/api/javac/tree/com/sun/source/tree/Tree.Kind.html">com.sun.source.tree.Tree.Kind</a>;
+import <a href="http://java.sun.com/javase/6/docs/jdk/api/javac/tree/com/sun/source/util/class-use/TreePath.html">com.sun.source.util.TreePath</a>;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
+import javax.lang.model.element.Element;
+import <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/CompilationInfo.html">org.netbeans.api.java.source.CompilationInfo</a>;
+import org.netbeans.modules.java.hints.spi.AbstractHint;
+import <a href="http://kickjava.com/src/org/netbeans/spi/editor/hints/ErrorDescription.java.htm">org.netbeans.spi.editor.hints.ErrorDescription</a>;
+import <a href="http://kickjava.com/src/org/netbeans/spi/editor/hints/ErrorDescriptionFactory.java.htm">org.netbeans.spi.editor.hints.ErrorDescriptionFactory</a>;
+import <a href="http://kickjava.com/src/org/netbeans/spi/editor/hints/Fix.java.htm">org.netbeans.spi.editor.hints.Fix</a>;
+
+public class DemoHint extends AbstractHint {
+
+    <b>//This hint does not enable the IDE to fix the problem:</b>
+    private static final List&lt;Fix&gt; NO_FIXES = Collections.&lt;Fix&gt;emptyList();
+
+    <b>//This hint applies to method invocations:</b>
+    private static final Set&lt;Tree.Kind&gt; TREE_KINDS =
+            EnumSet.&lt;Tree.Kind&gt;of(Tree.Kind.METHOD_INVOCATION);
+
+
+    public DemoHint() {
+        super(true, true, AbstractHint.HintSeverity.WARNING);
+    }
+
+    <b>//Specify the kind of code that the hint applies to, in this case,
+    //the hint applies to method invocations:</b>
+    @Override
+    public Set&lt;Kind&gt; getTreeKinds() {
+        return TREE_KINDS;
+    }
+
+    @Override
+    public List&lt;ErrorDescription&gt; run(CompilationInfo info, TreePath treePath) {
+
+        Tree t = treePath.getLeaf();
+
+        Element el = info.getTrees().getElement(treePath);
+        String name = el.getSimpleName().toString();
+
+        <b>//This is where it all happens: if the method invocation is 'showMessageDialog',
+        //then the hint infrastructure kicks into action:</b>
+        if (name.equals("showMessageDialog")) {
+            return Collections.&lt;ErrorDescription&gt;singletonList(
+                    ErrorDescriptionFactory.createErrorDescription(
+                    getSeverity().toEditorSeverity(),
+                    getDisplayName(),
+                    NO_FIXES,
+                    info.getFileObject(),
+                    (int) info.getTrees().getSourcePositions().getStartPosition(info.getCompilationUnit(), t),
+                    (int) info.getTrees().getSourcePositions().getEndPosition(info.getCompilationUnit(), t)));
+
+        }
+
+        return null;
+
+    }
+
+    <b>//This is called if/when the hint processing is cancelled:</b>
+    @Override
+    public void cancel() {
+    }
+
+    <b>//Message that the user sees in the left sidebar:</b>
+    @Override
+    public String getDisplayName() {
+        return "Hey buddy, shouldn't you be using the NetBeans Debugger instead?";
+    }
+
+    <b>//Name of the hint in the Options window:</b>
+    @Override
+    public String getId() {
+        return "Demo Hint";
+    }
+
+    <b>//Description of the hint in the Options window:</b>
+    @Override
+    public String getDescription() {
+        return "This is a dummy description for the Demo hint!";
+    }
+
+}</pre>
+
+<p>Right-click in the Source Editor and choose Format (Alt-Shift-F) and then save the file.
+
+
+</ol>
+
+ </div>
+      <br />
+
+
+<h2><a name="registering-module"></a>Declaring and Registering the Java Hint</h2>
+
+
+
+<p>Hints are registered in the <tt>layer.xml</tt> file for
+ the category to which they apply.
+  
+ <p>Add the following tags to the <tt>layer.xml</tt> file, between the <tt>&lt;filesystem&gt;</tt> tags:
+
+<pre class="examplecode">&lt;folder name="org-netbeans-modules-java-hints"&gt;
+    &lt;folder name="rules"&gt;
+        &lt;folder name="hints"&gt;
+            &lt;folder name="general"&gt;
+                &lt;file name="org-nb-hintdemo-DemoHint.instance"/&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;
+</pre>
+      <br />
+      
+<!-- ======================================================================================= -->
+
+<h2><a name="building"></a>Building and Installing the Java Hint</h2>
+<p>Now we need to think about installation and distribution.
+ In the first section below, we install the Java hint,
+ next we create an NBM file and examine distribution channels.</p>
+<div class="indent">
+
+	<h3 class="tutorial"><a name="try-plugin"></a>Trying Out the Java Hint</h3>
+
+        
+              <p>Install and try out the Java hint,
+               by following the steps below.
+                  <ol>
+                  <li><p>In the Projects window, right-click the <tt>HintDemo</tt> project and choose Run. </p>
+	      <p>The module is built and installed in the target platform. The target platform opens so that you
+	      can try out your new module. The default target platform is the 
+          installation used by the current instance of the development IDE.</p>
+
+    
+    <li><p>Open a Java source file and call '<tt>showMessageDialog</tt>' on <tt>JOptionPane</tt>.
+     Notice the hint that is created in the left sidebar or press Alt-Enter to invoke it.
+    <li><p>Open the Options window under the Tools menu and go to Editor &gt; Hints &gt; Java.
+     There you should see that your hint has been registered, as shown below. The user can
+     modify the severity level in the drop-down list.
+           <p><img border="1" src="../images/tutorials/hint/hint-options-window.png"/></p>
+
+</ol>
+
+ <h3 class="tutorial"><a name="share-plugin"></a>Creating a Shareable Module Binary</h3>
+  
+              <p>An NBM file is the binary version of the module that
+                  provides the Java hint. Below, using one menu item, we create
+                  the NBM file.
+                  
+                  <ol>
+              <li><p>In the Projects window, right-click the <tt>HintDemo</tt> project and choose Create NBM.</p>
+
+	      <p>The NBM file is created and you can view it in the Files window (Ctrl-2).</p>
+	      <li>Make the module available to others via, for example, the
+              <a href="http://plugins.netbeans.org/PluginPortal/">Plugin Portal</a>.
+	      <li>The recipient can install the module by using their IDE's Plugin Manager. They
+               would choose Tools &gt; Plugins
+	       from the main menu.
+       </ol>
+</div>
+      <br />
+<br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Java%20Hint%20Module%20Tutorial">Send Us Your Feedback</a></div>
+<br style="clear:both;" />
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Next Steps</h2>
+
+<p>For more information about creating and developing NetBeans Java hints, see the following resources:
+  <ul>
+      <li>Learn about how you can let the IDE fix the problem that is identified
+       by the hint, in <a href="http://blogs.oracle.com/geertjan/entry/fixable_hint">Fixable Hint</a>
+       in Geertjan's blog.
+      <li>Check out the NetBeans sources from Mercurial and then look at the code in
+       the 'java.hints' folder:
+      <p><p><img  border="1" src="../images/tutorials/hint/hint-sources.png"/></p>
+	  <li><a href="https://netbeans.org/kb/trails/platform.html">Other Related Tutorials</a></li>
+	  <li><a href="http://bits.netbeans.org/dev/javadoc/index.html">NetBeans API Javadoc</a></li>
+  </ul>
+  
+  <hr>
+<!-- ======================================================================================== -->
+
+<h2><a name="version"></a>Versioning </h2>
+  
+<p>
+
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+</td>
+<td>
+	<div align="left"><b>Open Issues</b></div>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+	      15 November 2008
+      </td>
+      <td>
+         Initial version
+ </td>
+<td>
+...
+      </td>
+  </tr>
+  </tbody>
+</table>
+</body>
+</html>

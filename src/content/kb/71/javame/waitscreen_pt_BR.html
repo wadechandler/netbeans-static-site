@@ -1,0 +1,296 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+
+<html>
+<head>
+   <title>Componentes padr&atilde;o do Visual Mobile Designer: criando telas de espera para aplicativos m&oacute;veis - Tutorial do - NetBeans Java ME</title>
+   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+   <link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+   <meta name="author" content="Karol Harezlak">
+</head>
+<body>
+<a name="top"></a>
+<h1>Componentes padr&atilde;o do Visual Mobile Designer: criando telas de espera para aplicativos m&oacute;veis</h1>
+  <p> Os aplicativos Java ME oferecem com frequ&ecirc;ncia conex&otilde;es para uma rede para funcionarem corretamente. Infelizmente, as redes sem-fio ainda s&atilde;o relativamente lentas. Uma tarefa em segundo plano esperando por uma conex&atilde;o de rede ou a transfer&ecirc;ncia de dados pode pausar seu aplicativo e fazer com que os se perguntem se a tela est&aacute; indefinidamente congelada ou se &eacute; melhor desligar e tentar novamente mais tarde (ou n&atilde;o voltar a conectar). Portanto, como os desenvolvedores evitam esta experi&ecirc;ncia desagrad&aacute;vel, mas muito comum? </p>
+<p>A resposta para isso &eacute; adicionar uma &quot;tela de espera&quot;. As telas de espera permitem que os usu&aacute;rios executem uma tarefa de bloqueio de segundo plano (por exemplo, conex&atilde;o a uma rede) e mostram o progresso da tarefa ou exibem uma mensagem na tela para informar ao usu&aacute;rio que o aplicativo ainda est&aacute; funcionando como esperado. Neste tutorial, mostraremos como o Visual Mobile Designer (VMD) simplifica a cria&ccedil;&atilde;o de telas de espera ao incluir um componente Tela de espera personalizado, que voc&ecirc; pode personalizar e adicionar em seu fluxo do aplicativo.</p>
+<p>Se voc&ecirc; &eacute; novo no desenvolvimento de aplicativos m&oacute;veis no NetBeans, deveria come&ccedil;ar pelo<A HREF="quickstart.html"> Guia de in&iacute;cio r&aacute;pido do NetBeans Java ME MIDP</A> antes de continuar.</p>
+<!--<p class="notes"><b>Observa&ccedil;&atilde;o:</b> Se voc&ecirc; estiver usando o NetBeans IDE 6.8, consulte o tutorial <a href="../../68/javame/waitscreen.html">: criando telas de espera para aplicativos m&oacute;veis no NetBeans IDE 6.8</a>.</p>-->
+<h3>Conte&uacute;do</h3>
+<img  src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" class="stamp" alt="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.9 ou posterior" title="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.9 ou posterior" >
+
+<ul>
+
+<li><a href="#intro" title="Introdu&ccedil;&atilde;o: como funciona o componente Tela de espera">Introdu&ccedil;&atilde;o: como funciona o componente Tela de espera</a></li>
+<li><a href="#sample" title="Instalando e executando o aplicativo de amostra">Instalando e executando o aplicativo de amostra</a></li>
+<li><a href="#creating" title="Criando um aplicativo m&oacute;vel com o componente Tela de espera personalizado">Criando um aplicativo m&oacute;vel com o componente Tela de espera personalizado</a>
+<ul>
+    <li> <a href="#create">Criando o projeto WaitScreenExample</a> </li>
+    <li><a href="#add">Adicione pacotes e um Visual MIDlet ao projeto MyWaitScreen</a></li>
+    <li><a href="#addcomponent">Adicionando componentes ao MyWaitScreenMidlet</a></li>
+    <li><a href="#addimage">Adicionando recursos de imagem</a></li>
+    <li><a href="#addcomponents">Adicionando os comandos OK, Voltar e Sair nos componentes Caixa de texto e Tela de espera</a></li>
+    <li><a href="#createflow">Criando o Fluxo do Aplicativo</a></li>
+    <li><a href="#backgroundtask">Criando uma tarefa em segundo plano para a Tela de espera</a></li>
+    <li><a href="#run">Executando o projeto</a></li>
+  </ul></li>
+  <li><a href="#javadoc-waitscreen">Javadoc dos componentes da tela de espera e SimpleCancellableTask</a></li>
+  <li><a href="#seealso" title="Consulte tamb&eacute;m">Consulte tamb&eacute;m</a></li>
+</ul>
+
+<p><b>Para concluir este tutorial, s&atilde;o necess&aacute;rios os seguintes recursos e softwares:</b></p>
+
+<table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software ou recurso</th>
+                <th class="tblheader" scope="col">Vers&atilde;o necess&aacute;ria</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE com Java ME</a></td>
+                <td class="tbltd1">Vers&atilde;o 6.9 ou posterior</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit</a> (JDK)</td>
+                <td class="tbltd1">Vers&atilde;o 6 ou vers&atilde;o 7</td>
+            </tr>      
+        </tbody>
+</table>
+<h2><a name="intro"></a>Como funciona o componente Tela de espera</h2>
+<p> H&aacute; duas formas para criar tarefas em segundo plano para o componente Tela de espera. Voc&ecirc; pode escrever uma classe que implemente a interface <code>CancellableTask</code> ou apenas usar o recurso <code>SimpleCancellableTask</code>. Voc&ecirc; atribui tarefas em segundo plano na Tela de espera usando o m&eacute;todo <code>setTask()</code>. </p>
+  <p>O componente Tela de espera alterna automaticamente para um objeto exib&iacute;vel diferente quando a tarefa em segundo plano &eacute; conclu&iacute;da. Se a tarefa termina com &ecirc;xito, a Tela de espera alterna para uma exibi&ccedil;&atilde;o fornecida pelos m&eacute;todos <code>setNextDisplayable()</code>. Se a tarefa falha, a Tela de espera alterna para uma exibi&ccedil;&atilde;o fornecida pelos m&eacute;todos <code>setFailureDisplayable()</code>. Se n&atilde;o houver um padr&atilde;o exib&iacute;vel definido para falha, a Tela de espera alterna para uma exibi&ccedil;&atilde;o especificada pelo m&eacute;todo <code>setNextDisplayable()</code>. Se n&atilde;o houver uma pr&oacute;xima tela exib&iacute;vel, a Tela de espera alterna de volta para a tela que foi anteriormente exibida. </p>
+  <p>Observe que este componente est&aacute; dispon&iacute;vel para aplicativos que suportam somente o perfil de dispositivo MIDP 2.0.</p>
+  <p class="align-center"><a href="#top">in&iacute;cio</a></p>
+<h2><a name="sample"></a>Instalando e executando o aplicativo de amostra</h2>
+<div class="indent"> Antes de come&ccedil;ar, talvez voc&ecirc; queira ver o resultado final do 
+tutorial. 
+  <p>Siga as etapas seguintes para instalar o aplicativo de amostra waitscreensample:</p>
+  <ol>
+    <li> Download <a href="https://netbeans.org/projects/samples/downloads/download/Samples/Mobile/WaitScreenExample.zip">WaitScreenExample.zip.</a></li>
+    <li> Descompacte o arquivo. </li>
+    <li> No IDE, selecione <tt>Arquivo</tt> &gt; <tt>Abrir projeto</tt>e navegue at&eacute; a pasta que cont&eacute;m os arquivos descompactados. </li>
+    <li>Clique em Abrir projeto.<br>A vista do Projeto deve ter uma apar&ecirc;ncia semelhante a esta: 
+    <p class="align-center"><img src="../../../images_www/articles/71/mobility/waitscreen/ws-project-window.png" alt="Janela Projetos com os arquivos WaitScreenExample" border=1> 
+    </p> </li>
+    <li>Na janela Projetos, clique com o bot&atilde;o direito do mouse no n&oacute; do projeto e escolha Executar (ou pressione F6). Conforme o aplicativo &eacute; executado, uma janela do emulador se abre e exibe o aplicativo que est&aacute; sendo executado no emulador do dispositivo padr&atilde;o. </li>
+    <li>Na janela Emulador, clique no bot&atilde;o abaixo de
+	&quot;Iniciar.&quot; O emulador exibe o endere&ccedil;o URL do website do NetBeans:: http://netbeans.org.</li>
+    <li>Clique no bot&atilde;o abaixo de &quot;OK.&quot; A tela pergunta se est&aacute; de acordo em usar tempo de conex&atilde;o. </li>
+    <li>Clique no bot&atilde;o &quot;Sim&quot; abaixo para continuar. Quando o emulador tenta se conectar ao site, ele exibe a Tela de espera. 
+ <p class="align-center"> <img src="../../../images_www/articles/71/mobility/waitscreen/ws-emulator.png" alt="Emulador DefaultColorPhone exibindo o aplicativo de tela de espera de amostra" border=1> </p>
+    </li>
+    <li>Ap&oacute;s o emulador se conectar, feche o aplicativo. </li>
+  </ol>
+</div>
+
+<p class="align-center"><a href="#top">in&iacute;cio</a></p>
+<h2><a name="creating"></a>Criando um aplicativo m&oacute;vel com o componente Tela de espera personalizado </h2>
+<div class="indent"> 
+<p>Agora que voc&ecirc; viu o componente Tela de espera em a&ccedil;&atilde;o, vamos voltar para o in&iacute;cio e criar este aplicativo. Para criar o aplicativo, fa&ccedil;a o seguinte: </p>
+  <ol>
+    <li> <a href="#create">Crie o projeto WaitScreenExample</a> </li>
+    <li><a href="#add">Adicione pacotes e um Visual MIDlet ao projeto MyWaitScreen</a></li>
+    <li><a href="#addcomponent">Adicione componentes ao MyWaitScreenMIDlet</a></li>
+    <li><a href="#addimage">Adicione recursos de imagem</a></li>
+    <li><a href="#addcomponents">Adicione os comandos OK, Voltar e Sair nos componentes TextBox e WaitScreen</a></li>
+    <li><a href="#createflow">Criar o fluxo do aplicativo</a></li>
+    <li><a href="#backgroundtask">Crie uma tarefa em segundo plano para a Tela de espera </a></li>
+    <li><a href="#run">Executar o projeto</a></li>
+  </ol>
+  <p class="notes"><strong>OBSERVA&Ccedil;&Atilde;O:</strong> antes de criar este projeto, certifique-se de que o projeto WaitScreenExample executado nas etapas acima esteja fechado ou tenha sido exclu&iacute;do. O NetBeans IDE n&atilde;o permite que projetos identicamente nomeados sejam abertos ao mesmo tempo. </p>
+</div>
+<div class="indent"> 
+  <h3 class="tutorial">Criando o projeto WaitScreenExample<a name="create"></a></h3>
+  <ol>
+    <li> Escolha <tt>Arquivo</tt> &gt; <tt>Novo projeto (Ctrl-Shift-N)</tt>. Em Categorias, selecione <tt>Java ME</tt>. Em Projetos, selecione <tt>Aplicativo m&oacute;vel</tt> e clique em Pr&oacute;ximo. </li>
+    <li> Insira <code>WaitScreenExample</code> no campo Nome do projeto. Altere a Localiza&ccedil;&atilde;o do projeto para um diret&oacute;rio em seu sistema. Nos referimos a este diret&oacute;rio como <tt>$PROJECTHOME</tt>. </li>
+    <li> Desmarque a caixa de verifica&ccedil;&atilde;o Criar Hello MIDlet. Clique em Pr&oacute;ximo. </li>
+    <li> Deixe o Sun Java Wireless Toolkit 2.5.2 como a plataforma do emulador selecionada. Clique em Terminar. </li>
+    <!--li> Click Finish. The project folder contains all of your sources and project metadata, such as the project Ant script. The application itself is displayed in the Flow Design window of the Visual Mobile Designer. </li-->
+  </ol>
+  <h3 class="tutorial">Adicionando pacotes em um Visual MIDlet ao projeto WaitScreenExample<a name="add"></a></h3>
+  <ol>
+    <li> Selecione o projeto <code>WaitScreenExample</code> na janela Projeto e, a seguir, selecione<tt>Arquivo</tt> &gt; <tt>Novo arquivo (Ctrl-N)</tt> . Em Categorias, selecione Java. Em Tipos de arquivo,
+	selecione Pacote Java. Clique em Pr&oacute;ximo. </li>
+    <li> Insira <code>waitscreenexample</code> no campo Nome do pacote. Clique em Terminar. </li>
+    <li> Selecione o pacote <code>waitscreenexample</code> na janela Projeto e, a seguir, selecione<tt>Arquivo</tt> &gt; <tt>Novo arquivo (Ctrl-N)</tt>. Em Categorias, selecione MIDP. Em Tipos de arquivo, selecione
+	MIDlet visual. Clique em Pr&oacute;ximo. </li>
+      <li> Insira <code>MyWaitScreenMidlet</code> nos campos Nome MIDlet e Nome da classe MIDP. Clique em Terminar. </li>
+  </ol>
+  <h3 class="tutorial">Adicionando componentes ao MyWaitScreenMidlet<a name="addcomponent"></a></h3>
+  <p>Selecionando o Visual MIDlet abre o Visual Mobile Designer (VMD). Ao clicar na visualiza&ccedil;&atilde;o Fluxo na parte superior da janela VMD, o Designer de fluxo se abre, onde voc&ecirc; projeta o fluxo do aplicativo. </p>
+  <ol>
+    <li> Alterne seu Visual MIDlet para a visualiza&ccedil;&atilde;o Fluxo. Arraste os seguintes componentes Tela da paleta de componentes e solte-os no Designer de fluxo: 
+    
+    <ul>
+      <li> 
+        <div class="indent"> Caixa de texto</div>
+      </li>
+      <li> 
+        <div class="indent">Tela de espera</div>
+      </li>
+      <li> 
+        <div class="indent">Lista</div>
+      </li>
+      <li> 
+        <div class="indent">Alerta 
+        </div>
+      </li>
+    </ul></li>
+    <li>Escolha <tt>textBox</tt>. Na janela Propriedades (abaixo da paleta de componentes), altere a propriedade T&iacute;tulo para <code>Caixa de texto</code>.</li>
+    <li>Use o mesmo processo para alterar os t&iacute;tulos dos seguintes componentes:      
+      <ul>
+        <li> 
+          <div class="indent">Altere <tt>waitScreen</tt> para <code>Wait Screen</code></div>
+        </li>
+        <li> 
+          <div class="indent">Altere <tt>list</tt> para <code>List</code></div>
+        </li>
+        <li> 
+          <div class="indent">Altere <tt>alert</tt> para <code>Alert</code></div>
+        </li>
+      </ul>
+    </li>
+    <li>Use os valores da propriedade para cada um dos seguintes componentes:  
+      <ul>
+        <li> 
+          <div class="indent">Altere a propriedade de texto <tt>textBox</tt> para <code>http://netbeans.org</code></div>
+        </li>
+        <li> 
+          <div class="indent">Altere a String <tt>alert</tt> para <code>Falha na conex&atilde;o</code></div>
+        </li>
+		<li> 
+          <div class="indent">Altere a propriedade de texto <tt>WaitScreen</tt> para <code>Aguarde...</code></div>
+        </li>
+      </ul>
+    </li>
+   
+  </ol>
+  <p>A visualiza&ccedil;&atilde;o Fluxo deve se parecer com a seguinte imagem: </p>
+   <p class="align-center">
+					  <a href="../../../images_www/articles/71/mobility/waitscreen/ws-flowdesigner.png" rel="lytebox"
+                       title="Visualiza&ccedil;&atilde;o de Fluxo com os &iacute;cones dos componentes"> <img src="../../../images_www/articles/71/mobility/waitscreen/ws-flowdesigner-small.png"
+                     alt="Visualiza&ccedil;&atilde;o de Fluxo com os &iacute;cones dos componentes" border=1></a></p>
+  
+  <h3 class="tutorial">Adicionando recursos de imagem<a name="addimage" id="addimage"></a></h3>
+  <p>Nesta se&ccedil;&atilde;o, voc&ecirc; adiciona imagens que s&atilde;o usadas pela Tela de espera e pela Tela de alerta. </p>
+  <ol>
+    <li>Fa&ccedil;a o download e copie os arquivos <a href="../../../images_www/articles/71/mobility/waitscreen/alert.png">alert.png</a> e <a href="../../../images_www/articles/71/mobility/waitscreen/sandglass.png">sandglass.png</a> na pasta <code>$PROJECTHOME/src/waitscreenexample</code>.</li>
+    <li>No navegador, clique com o bot&atilde;o direito do mouse no componente <tt>alert</tt> e escolha Propriedades no menu pop-up.</li>
+    <li>Na caixa de di&aacute;logo, Propriedades, clique no bot&atilde;o de elipse (<img src="../../../images_www/articles/71/mobility/waitscreen/ellipsis-button.png" border=1 alt="bot&atilde;o Elipse"  >) contra a propriedade Imagem.</li>
+    <li>Na caixa de di&aacute;logo Imagem, clique em Adicionar.<br>
+    O componente </tt>image1<tt> &eacute; adicionado.</li>
+<li>Clique em Procurar e na caixa de di&aacute;logo Abrir especifique o caminho do arquivo alert.png copiado.</li>
+<li>Clique em Abrir.<br>A imagem &eacute; adicionada.</li>
+<li>Clique em OK para fechar a caixa de di&aacute;logo Imagem.</li>
+<li>Clique em Fechar para fechar a caixa de di&aacute;logo Propriedades.<br>A imagem alert.png &eacute; vinculada ao componente <tt>alert</tt>.</li>
+	
+	
+    
+    <li>Repita as etapas 2 a 8, para o componente <tt>waitScreen</tt>, adicione o sandglass.png com uma <tt>image2</tt> e vincule-o ao componente. </li>
+  </ol>
+</div> 
+<div class="indent"> 
+  <h3 class="tutorial">Adicionando os comandos OK, Voltar e Sair nos componentes TextBox e WaitScreen<a name="addcommands" id="addcommands"></a></h3>
+  <ol>
+    <li>Escolha o <tt>comando OK</tt> na se&ccedil;&atilde;o Comandos da Paleta. Arraste-o e solte-o na <tt>textBox</tt>.</li>
+    <li> Escolha o <tt>comando Voltar</tt> na se&ccedil;&atilde;o Comandos da Paleta. Arraste-o e solte-o na </tt>lista<tt>.</li>
+    <li> Escolha o <tt>comando Sair</tt> na se&ccedil;&atilde;o Comandos da Paleta. Arraste-o e solte-o na </tt>lista<tt>.</li>
+  </ol>
+  <h3 class="tutorial">Criando o Fluxo do Aplicativo<a name="createflow" id="createflow"></a></h3>
+  <p>Agora voc&ecirc; est&aacute; pronto para criar o fluxo do aplicativo.</p>
+  <ol>
+    <li>Na visualiza&ccedil;&atilde;o Fluxo, clique em <tt>Started</tt> no Dispositivo m&oacute;vel e arraste-o para o componente <tt>textBox</tt>.</li>
+    <li>Da mesma forma, conecte os componentes como mostrado no gr&aacute;fico seguinte. 
+  
+  <p class="align-center">
+					  <a href="../../../images_www/articles/71/mobility/waitscreen/ws-flow.png" rel="lytebox"
+                       title="Tela do Designer de fluxo conectada da seguinte forma: dispositivo m&oacute;vel ao textBox ao waitScreen ao list1 ao MobileDevice. Uma conex&atilde;o do comando Falha para alert, que ent&atilde;o conecta ao list"> <img src="../../../images_www/articles/71/mobility/waitscreen/ws-flow-small.png"
+                     alt="Tela do Designer de fluxo conectada da seguinte forma: dispositivo m&oacute;vel ao textBox ao waitScreen ao list1 ao MobileDevice. Uma conex&atilde;o do comando Falha para alert, que ent&atilde;o conecta ao list" border=1></a></p>
+  
+    </li>
+  </ol>
+  <h3 class="tutorial">Criando uma tarefa em segundo plano para a Tela de espera <a name="backgroundtask" id="backgroundtask"></a></h3>
+  <ol>
+    <li>Na visualiza&ccedil;&atilde;o de fluxo, clique com o bot&atilde;o direito do mouse no componente<tt>waitScreen</tt> e escolha Propriedades no menu pop-up.</li>
+    <li>Na caixa de di&aacute;logo Propriedades, selecione <tt>&lt;NewCancellableTask&gt;</tt> do menu suspenso Tarefa e clique em Fechar. <br> 
+    Agora <tt>simpleCancellableTask</tt> &eacute; uma tarefa em segundo plano do componente <tt>waitScreen</tt>.</li>
+    <li>Clique no bot&atilde;o C&oacute;digo-fonte na parte superior da do Visual Mobile Designer para alternar para o c&oacute;digo-fonte do aplicativo. </li>
+    <li>Adicione um m&eacute;todo da tarefa em segundo plano ao colar o seguinte c&oacute;digo no c&oacute;digo-fonte <code>MyWaitScreenMIDlet</code> ap&oacute;s <code>public void destroyapp(boolean unconditional) { }</code>:
+    <pre class="examplecode">
+      private void getServerInfo() throws IOException {
+      String url = textBox.getString();
+      list.deleteAll();
+      /**
+      * Open an HttpConnection
+      */ 
+      HttpConnection hc = (HttpConnection) Connector.open(url);
+
+      /**
+      * Obt&eacute;m uma chave do campo de cabe&ccedil;alho e campo de cabe&ccedil;alho por &iacute;ndice e
+      *  os insere em list.
+      */
+      list.setTitle(hc.getURL());   
+      for (int i=0;hc.getHeaderFieldKey(i)!=null; i++){
+      list.insert(i,hc.getHeaderFieldKey(i)+&quot; :&quot;+hc.getHeaderField(i),null);       
+      }     
+      /**
+      * Closing time ...
+      */
+      hc.close();
+      } 
+</pre></li>
+    <li>Clique com o bot&atilde;o direito do mouse no c&oacute;digo-fonte e escolha Corrigir importa&ccedil;&otilde;es no menu suspenso (alternativamente, pressione Ctrl+Shift+I).</li>
+	<li>Encontre a string <tt>public class MyWaitScreenMidlet extends MIDlet implements CommandListener {</tt> (linha 18) e insira <tt>final</tt> de forma que leia:
+	<pre class="examplecode"> public final class MyWaitScreenMidlet extends MIDlet implements CommandListener {</pre></li>
+	<li>Encontre o m&eacute;todo <tt>public MyWaitScreenMidlet()</tt> no c&oacute;digo-fonte (linha 38) e insira o c&oacute;digo a seguir ap&oacute;s <tt>public MyWaitScreenMidlet() {</tt>:<br>
+	<pre class="examplecode"> List list1 = getList();</pre> </li>
+    <li>Clique na Tela para alternar para a visualiza&ccedil;&atilde;o da Tela e selecione <tt>SimpleCancellableTask</tt>.</li>
+	<li>Na janela Propriedades, clique no bot&atilde;o de retic&ecirc;ncias <img src="../../../images_www/articles/71/mobility/waitscreen/ellipsis-button.png" border=1 alt="bot&atilde;o de retic&ecirc;ncias"  > contra a propriedade <tt>C&oacute;digo Execut&aacute;vel</tt>.</li>
+	<li>Clique em Ir para c&oacute;digo-fonte na caixa de di&aacute;logo do c&oacute;digo Execut&aacute;vel.</li>
+    <li>Encontre o m&eacute;todo <tt>getSimpleCancellableTask()</tt> no c&oacute;digo-fonte (linha 328) e insira o seguinte c&oacute;digo ap&oacute;s <tt>public void execute() throws Exception {</tt> onde se l&ecirc; <tt>// write task-execution user code here</tt>:<br>
+	<pre class="examplecode"> getServerInfo();</pre></li> 
+  </ol>
+</div>
+<div class="indent"> 
+  <h3 class="tutorial">Executando o projeto<a name="run"></a></h3>
+  
+      <p>Pressione F6 para executar o projeto principal.</p>
+      <p> Como alternativa, voc&ecirc; pode selecionar Executar &gt; Executar projeto principal.</p>
+    
+ 
+</div>
+<p class="align-center"><a href="#top">in&iacute;cio</a></p>
+<div class="indent"> 
+<a name="javadoc-waitscreen"></a>
+  <h2>Javadoc dos componentes da WaitScreen e SimpleCancellableTask</h2>
+  <P>O NetBeans IDE oferece Javadocs de API dos componentes <tt>WaitScreen</tt> e <tt>SimpleCancellableTask</tt>, assim como outros componentes que voc&ecirc; pode usar no VMD. Para ler os Javadocs dos componentes <tt>WaitScreen</tt> e <tt>simpleCancellableTask</tt>, realize as etapas abaixo:</P>
+  <OL>
+<li>Coloque o cursor no componente <tt>WaitScreen</tt> ou </tt>SimpleCancellableTask<tt> no c&oacute;digo-fonte e pressione Ctr-Shift-Espa&ccedil;o (ou selecione <tt>C&oacute;digo-fonte</tt> &gt; <tt>Exibir documenta&ccedil;&atilde;o</tt>).<br>
+O Javadoc deste elemento &eacute; exibido em uma janela pop-up. </li>
+<li>Clique em Exibir documenta&ccedil;&atilde;o no &iacute;cone de navegador da Web externo (<img src="../../../images_www/articles/71/mobility/smscomposer/show-doc-button.png" alt="Exibir documenta&ccedil;&atilde;o no navegador da Web externo">) na janela pop-up para obter informa&ccedil;&otilde;es detalhadas sobre o componente <tt>WaitScreen</tt> ou </tt>SimpleCancellableTask<tt> em seu navegador.</li>
+
+	
+</OL>
+</div>
+
+<p class="align-center"><a href="#top">in&iacute;cio</a></p>
+ <div class="feedback-box"><a href="/about/contact_form.html?to=6&subject=VMD%20Custom%20Components:%20Creating%20Wait%20Screens">Envie-nos seus coment&aacute;rios</a>
+  </div>
+  <br style="clear:both;" >
+   <br>
+<h2><a name="seealso"></a>Veja tamb&eacute;m</h2>
+  <ul>
+    <li><a href="smscomposer.html">Componentes padr&atilde;o do Visual Mobile Designer: criando um aplicativo SMS Composer</a></li>
+    <li><a href="filebrowser.html">Componentes padr&atilde;o do Visual Mobile Designer: criando um navegador de arquivo de dispositivo m&oacute;vel</a></li>
+    <li><a href="pimbrowser.html">Componentes padr&atilde;o do Visual Mobile Designer: criando um aplicativo de gerenciador de informa&ccedil;&otilde;es pessoais</a></li>
+    <li><a href="loginscreen.html">Componentes padr&atilde;o do Visual Mobile Designer: criando telas de logon no dispositivo m&oacute;vel</a></li>
+    <li><a href="splashscreen.html">Componentes padr&atilde;o do Visual Mobile Designer: usando telas de splash em aplicativos Java ME</a></li>
+    <li><a href="tableitem.html">Componentes padr&atilde;o do Visual Mobile Designer: usando itens de tabela em aplicativos Java ME</a></li>
+    <li><a href="http://wiki.netbeans.org/VisualMobileDesignerPalatteReference">Reference: Visual Mobile Designer Palette Guide</a></li>
+  </ul>
+  <p class="align-center"><a href="#top">in&iacute;cio</a></p>
+</body>
+</html>

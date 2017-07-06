@@ -1,0 +1,270 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>Руководство по началу работы с платформой NetBeans с использованием OSGi</title>
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="AUDIENCE" content="NBUSER"/>
+        <meta name="TYPE" content="ARTICLE"/>
+        <meta name="EXPIRES" content="N"/>
+        <meta name="indexed" content="y"/>
+        <meta name="description"
+              content="A short guide to getting started with the NetBeans Platform."/>
+      <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+    <body>
+
+        <h1>Руководство по началу работы с платформой NetBeans с использованием OSGi</h1>
+
+        <p>В данном документе представлено краткое описание способов интеграции пакетов OSGi в приложении платформы NetBeans.
+        </p>
+
+        <p>
+            В данном учебном курсе особое внимание уделяется сценарию &quot;hello world&quot; на основе <a href="http://www.aqute.biz/Code/Download#sudoku">игры Sudoku Питера Кринса (Peter Kriens)</a>. Импорт пакетов OSGi, содержащих игру Sudoku, осуществляется вместе со связанными обязательными пакетами Equinox. При развертывании приложения в веб-обозревателе становится доступно следующее приложение:
+        </p>
+
+        <p><img width="400" height="300" src="http://netbeans.dzone.com/sites/all/files/sudokugame-4.png"/></p>
+
+        <p>После выполнения данного простейшего сценария рекомендуется перейти к сценариям, перечисленным в разделе &quot;Дополнительные сведения&quot; в конце этого учебного курса.</p>
+
+        <p><b>Содержание</b></p>
+        <p><img src="../images/articles/69/netbeans-stamp69.png" class="stamp" width="114" height="114" alt="Содержимое на этой странице относится к среде IDE NetBeans 6.5, 6.7, 6.8" title="Содержимое на этой странице относится к среде IDE NetBeans 6.5, 6.7, 6.8" /></p>
+        <ul class="toc">
+            <li><a href="#setup">Настройка среды</a></li>
+            <li><a href="#create">Создание приложения</a></li>
+            <li><a href="#import">Импорт пакетов OSGi</a></li>
+            <li><a href="#run">Выполнение приложения</a></li>
+            <li><a href="#further">Дополнительные сведения</a></li>
+        </ul>
+
+        <p><b>Для работы с этим руководством требуется программное обеспечение и ресурсы, перечисленные в следующей таблице.</b></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Программное обеспечение или ресурс</th>
+                    <th class="tblheader" scope="col">Требуемая версия</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">Среда IDE NetBeans</a></td>
+                    <td class="tbltd1">версия 6.9</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Комплект для разработчика на языке Java (JDK)</a></td>
+                    <td class="tbltd1">версия 6 или</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://download.eclipse.org/equinox">Equinox</a></td>
+                    <td class="tbltd1"></td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.aqute.biz/Code/Download#sudoku">Игра Sudoku</a></td>
+                    <td class="tbltd1"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong class="notes">Примечание.</strong> Нет необходимости в загрузке отдельной версии платформы NetBeans для разработки приложений платформы NetBeans. Как правило, разработка приложений и модулей осуществляется в среде IDE NetBeans, затем необходимо просто включить требуемые модули для выполнения платформы NetBeans и созданного приложения.
+        </p>
+
+
+
+        <!-- ===================================================================================== -->
+
+        <h2><a name="setup"></a>Настройка среды</h2>
+        <p>Помимо загрузки программного обеспечения, перечисленного выше, необходимо выполнить некоторые действия для подготовки среды, как описывается ниже.</p>
+
+        <ol>
+
+            <li>Создайте новую папку в файловой системе диска.</li>
+            <li>Поместите в папку следующие файлы дистрибутива Equinox:
+                <ul><li>javax.servlet_xxx.jar</li>
+                    <li>org.eclipse.equinox.ds_xxx.jar</li>
+                    <li>org.eclipse.equinox.http_xxx.jar</li>
+                    <li>org.eclipse.equinox.util_xxx.jar</li>
+                    <li>org.eclipse.osgi.services_xxx.jar</li>
+                    <li>org.eclipse.osgi_xxx.jar</li></ul>
+
+            </li>
+            <li>Переместите оба файла JAR Sudoku в папку размещения остальных файлов JAR:
+                <ul><li>aQute.sudoku.jar</li>
+                    <li>aQute.webrpc.jar</li></ul>
+            </li>
+        </ol>
+
+        <p>Теперь импортируемые пакеты OSGi доступны в централизованной папке, из которой они будут интегрированы в приложение.</p>
+
+        <h2><a name="create"></a>Создание приложения</h2>
+        <p>При доступности всех пакетов OSGi создайте новое приложение платформы NetBeans, как описано ниже.</p>
+
+        <ol>
+            <li><p>Выберите в меню &quot;Файл&quot; команду &quot;Новый проект&quot;, после чего создайте приложение платформы NetBeans Platform на основе Equinox, посредством шаблона Equinox:</p>
+
+                <p><img src="http://netbeans.dzone.com/sites/all/files/sudokugame-5.png"/></p>
+                <p>Нажмите кнопку &quot;Далее&quot;.</p>
+            </li>
+
+            <li><p>Укажите имя приложения, как описано ниже.</p>
+
+                <p><img src="http://netbeans.dzone.com/sites/all/files/sudokugame-3.png"/></p>
+
+                <p>Нажмите кнопку &quot;Готово&quot;.</p></li>
+
+            <li>Приложение, созданное на основе шаблона выше, можно запустить; появится приложение с диалоговым окном, отображающим все модули NetBeans и пакеты OSGi, составляющие приложение.</li>
+
+        </ol>
+
+        <h2><a name="import"></a>Импорт пакетов OSGi</h2>
+        <p>Помимо загрузки программного обеспечения, перечисленного выше, необходимо выполнить некоторые действия для подготовки среды, как описывается ниже.</p>
+
+
+        <ol>
+            <li><p>Щелкните приложение в диалоговом окне &quot;Проекты&quot; правой кнопкой мыши, выберите команду &quot;Свойства&quot;, перейдите на вкладку &quot;Библиотеки&quot;, нажмите кнопку &quot;Добавить кластер&quot; и выполните поиск папки с файлами JAR, упомянутыми выше. Откроется мастер, позволяющий преобразовать все файлы JAR в &quot;кластер&quot;, например набор связанных модулей/пакетов, включаемых в приложение:</p>
+
+                <p><img src="http://netbeans.dzone.com/sites/all/files/sudokugame-1.png"/></p></li>
+
+            <li>Установите для всех импортированных пакетов OSGi значение &quot;Включено&quot;, как показано выше, чтобы она загрузились и были доступны ко времени запуска приложения.</li>
+
+            <li>При нажатии кнопки &quot;Готово&quot; файл настройки platform.properties обновляется. Файл должен выглядеть следующим образом:
+
+                <pre class="examplecode">cluster.path.extra=netbinox:\../../path/to/my/nbsudokugame/folder
+disabled.modules.extra=org.netbeans.libs.felix
+cluster.path=\
+    ${nbplatform.active.dir}/harness:\
+    ${nbplatform.active.dir}/platform:\
+    ${cluster.path.extra}
+disabled.modules=\
+    org.jdesktop.layout,\
+    org.netbeans.api.visual,\
+    org.netbeans.core.execution,\
+    org.netbeans.core.multiview,\
+    org.netbeans.insane,\
+    org.netbeans.libs.felix,\
+    org.netbeans.libs.jsr223,\
+    org.netbeans.modules.apisupport.harness,\
+    org.netbeans.modules.apisupport.tc.cobertura,\
+    org.netbeans.modules.autoupdate.services,\
+    org.netbeans.modules.autoupdate.ui,\
+    org.netbeans.modules.core.kit,\
+    org.netbeans.modules.favorites,\
+    org.netbeans.modules.jellytools.platform,\
+    org.netbeans.modules.jemmy,\
+    org.openide.compat,\
+    org.openide.execution,\
+    org.openide.options,\
+    org.openide.util.enumerations
+nbplatform.active=default</pre>
+
+
+                <p><b>Примечание.</b> Первая строка указывает на ранее созданную папку.</p></li>
+
+            <li>Добавьте эту строку в файл настройки project.properties приложения для указания отсутствия отображения заставки и порта для развертывания приложения:
+
+                <pre class="examplecode">run.args.extra=--nosplash -J-Dorg.osgi.service.http.port=8080</pre></li>
+        </ol>
+
+        <h2><a name="run"></a>Выполнение приложения</h2>
+
+        <p>Теперь приложение готово к развертыванию, как описывается ниже.</p>
+
+        <ol>
+
+            <li><p>Запустите приложение. Все пакеты OSGi и модули NetBeans приложения будут развернуты. Также развертывается приложение для просмотра развернутых пакетов OSGi и модулей NetBeans; таким образом предоставляется удобное приложение рабочей среды для управления развертыванием:</p>
+
+                <p><img src="http://netbeans.dzone.com/sites/all/files/sudokugame-6_0.png"/></p>
+
+            <p>В качестве альтернативы модуль, предоставляющий диалоговое окно на рисунке выше, можно удалить. В этом случае необходимо удалить все модули, необходимые для этого диалогового окна, например систему окон, систему действий и пр., кроме нескольких файлов JAR, требуемых для интеграции OSGi: начальная загрузка, запуск, файловые системы, система модулей, утилиты и поиск.
+            </p>
+
+            <pre class="examplecode">cluster.path.extra=netbinox:\../../path/to/my/nbsudokugame/folder
+disabled.modules.extra=org.netbeans.libs.felix
+cluster.path=\
+    ${nbplatform.active.dir}/harness:\
+    ${nbplatform.active.dir}/platform:\
+    ${cluster.path.extra}
+disabled.modules=\
+    org.jdesktop.layout,\
+    org.netbeans.api.annotations.common,\
+    org.netbeans.api.progress,\
+    org.netbeans.api.visual,\
+    org.netbeans.core,\
+    org.netbeans.core.execution,\
+    org.netbeans.core.io.ui,\
+    org.netbeans.core.multiview,\
+    org.netbeans.core.nativeaccess,\
+    org.netbeans.core.output2,\
+    org.netbeans.core.ui,\
+    org.netbeans.core.windows,\
+    org.netbeans.insane,\
+    org.netbeans.libs.felix,\
+    org.netbeans.libs.jna,\
+    org.netbeans.libs.jsr223,\
+    org.netbeans.libs.junit4,\
+    org.netbeans.modules.apisupport.harness,\
+    org.netbeans.modules.apisupport.tc.cobertura,\
+    org.netbeans.modules.applemenu,\
+    org.netbeans.modules.autoupdate.services,\
+    org.netbeans.modules.autoupdate.ui,\
+    org.netbeans.modules.core.kit,\
+    org.netbeans.modules.editor.mimelookup,\
+    org.netbeans.modules.editor.mimelookup.impl,\
+    org.netbeans.modules.favorites,\
+    org.netbeans.modules.javahelp,\
+    org.netbeans.modules.jellytools.platform,\
+    org.netbeans.modules.jemmy,\
+    org.netbeans.modules.keyring,\
+    org.netbeans.modules.masterfs,\
+    org.netbeans.modules.nbjunit,\
+    org.netbeans.modules.options.api,\
+    org.netbeans.modules.options.keymap,\
+    org.netbeans.modules.print,\
+    org.netbeans.modules.progress.ui,\
+    org.netbeans.modules.queries,\
+    org.netbeans.modules.sendopts,\
+    org.netbeans.modules.settings,\
+    org.netbeans.modules.spi.actions,\
+    org.netbeans.spi.quicksearch,\
+    org.netbeans.swing.outline,\
+    org.netbeans.swing.plaf,\
+    org.netbeans.swing.tabcontrol,\
+    org.openide.actions,\
+    org.openide.awt,\
+    org.openide.compat,\
+    org.openide.dialogs,\
+    org.openide.execution,\
+    org.openide.explorer,\
+    org.openide.io,\
+    org.openide.loaders,\
+    org.openide.nodes,\
+    org.openide.options,\
+    org.openide.text,\
+    org.openide.util.enumerations,\
+    org.openide.windows
+nbplatform.active=default</pre>
+
+            <p>Тогда приложение будет приложением без графического интерфейса пользователя, например, серверным приложением, предназначенным для модульной веб-разработки.</p></li>
+
+            <li>Теперь введите этот URL-адрес в обозреватель (дополнительно можно использовать URLDisplayer.getDefault() API утилит интерфейса NetBeans для открытия обозревателя в требуемом местоположении программными средствами), после чего файл index.html, определенный в игре Sudoku, будет развернут и открыт в обозревателе; игра Sudoku готова к использованию:
+
+                <pre class="examplecode">http://localhost:8080/rpc/sudoku/index.html</pre></li>
+
+        </ol>
+
+        <p>Поздравляем, первая интеграция пакетов OSGi в приложение платформы NetBeans выполнена.</p>
+
+        <h2><a name="further"></a>Дополнительные сведения</h2>
+
+        <p>Теперь, после завершения изучения учебного курса и приобретения навыков использования действий для повторного использования пакета OSGi в приложении платформы NetBeans, обратите внимание на связанные документы и более сложные сценарии:</p>
+
+        <ul>
+            <li><a href="http://www.osgi.org/blog/2006_09_01_archive.html">Питер Кринс (Peter Kriens) и игра Sudoku</a></li>
+            <li><a href="http://wiki.apidesign.org/wiki/NetbinoxTutorial">Ярослав Тулах и Netbinox</a></li>
+            <li><a href="http://eppleton.sharedhost.de/blog/?p=662">Сообщения&middot;в блоге</a>￼&middot;и&middot;￼<a href="http://eppleton.sharedhost.de/blog/?s=Frankenstein%27s+IDE">презентация￼</a>&middot;по&middot;OSGi/NetBeans&middot;Тони&middot;Эппла&middot;(Toni Epple)</li>
+            <li>Интеграция NetBeans-EMF Гуннара Рейнзета (Gunnar Reinseth) (<a href="http://eclipse.dzone.com/emf-on-netbeans-rcp">часть 1</a>, <a href="http://eclipse.dzone.com/emf-on-netbeans-rcp-2">часть 2</a>)</li>
+            <li>Подробные сведения приведены в разделе <a href="http://java.dzone.com/news/new-cool-tools-osgi-developers">Новые полезные средства для разработчиков OSGi</a></li>
+        </ul>
+
+    </body>
+
+</html>

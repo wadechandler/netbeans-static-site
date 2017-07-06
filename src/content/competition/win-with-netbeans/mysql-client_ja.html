@@ -1,0 +1,350 @@
+<html>
+<head>
+<title>NetBeans での単純な MySQL クライアント</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<META NAME="AUDIENCE" CONTENT="NBUSER">
+<META NAME="TYPE" CONTENT="ARTICLE">
+<META NAME="TOPIC" CONTENT="ADVANCED">
+<META NAME="description" CONTENT="Making a simple MySQL client in NetBeans">
+<link rel="stylesheet" type="text/css" href="../../netbeans.css">
+
+</head>
+
+<body >
+<h1>NetBeans での単純な MySQL クライアントの作成</h1>
+<div class="articledate" style="margin-left:0px;"><a href="../../competition/win-with-netbeans.html">Win With NetBeans</a> コンペティションの一部として Miki Shimizu 氏から寄稿</div></p>
+<p></p>
+<p>NetBeans には DB 接続用の優れたインタフェースが用意されていますが、多くの SQL コマンドは完全な文として入力する必要があるため、MySQL データベースへのデータの挿入やデータの表示を行うための Swing アプリケーションを作成しました。このサンプルは非常に簡単なもので、ある特定の表でしか使用できず、削除や更新の操作も行えません。拡張することも可能でしたが、ドキュメントが長く複雑になるので断念しました。</p>
+
+<h2>索引</h2>
+<ul>
+  <li><a href="#db01">MySQL データベースへの接続</a></li>
+
+  <li><a href="#db02">サンプル表の作成</a></li>
+  <li><a href="#db03">最初のデータの挿入</a></li>
+  <li><a href="#db04">Java プロジェクトの新規作成</a></li>
+  <li><a href="#db05">データベースを接続するためのユーティリティークラスの作成</a></li>
+  <li><a href="#db06">表モデルの作成</a></li>
+  <li><a href="#db07">JFrame フォームクラスの作成 - フォームデザイン</a></li>
+
+  <li><a href="#db08">JTable のカスタマイズ</a></li>
+  <li><a href="#db09">InsertTable の初回実行</a></li>
+  <li><a href="#db10">微調整...</a></li>
+  <li><a href="#db11">MySQL へのデータの挿入</a></li>
+</ul>
+
+<h2><a name="db01"></a>MySQL データベースへの接続</h2>
+<p>読者のもとにはすでに、動作する MySQL データベースサーバーの適切な環境が存在し、ある特定のユーザーに十分な権限が与えられたデータベースが存在するものとします。この例では、</p>
+
+<p><b>database name: nonidb<br>
+  user: noniko<br>
+  password: (空) </b>&lt;- これが単なるサンプルにすぎないためです。何らかの重要なデータがある場合は、適切なパスワードを設定してください。</p>
+<p>また、MySQL 用の JDBC ドライバファイルを入手します。ここでは、<a href="http://dev.mysql.com">MySQL 開発者の Web サイト</a>経由で <b>mysql-connector-java-3.1.6-bin.jar</b> ファイルを準備しました。</p>
+<p>それでは、NetBeans を開きましょう。おそらく通常は「プロジェクト」または「ファイル」ウィンドウが表示されているので、「実行時」タブをクリックしてウィンドウを切り替えます。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/adddriver.png" width="357" height="205"></p>
+<p><b>「実行時」ウィンドウで「ドライバを追加」を選択します</b></p>
+<p>ここに「データベース」ノードがあります。このノードを開き、その下にある「ドライバ」ノードを表示します。さらに開いて「ドライバ」の内容を表示すると、「JDBC-ODBC」のみが見つかります。まずやるべきことは、MySQL のドライバを追加することです。「ドライバ」ノードを右クリックしてコンテキストメニューを表示し、「ドライバを追加」を選択します。 </p>
+
+<p>すると、設定ウィンドウが表示されます。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/selectdriver.png" width="560" height="343"></p>
+<p><b>JDBC ドライバファイルの場所を検索します。</b></p>
+<p>「追加」ボタンをクリックすることで、ドライバファイルを視覚的に検索できます。上の場合のように、ここでは、プロジェクトフォルダを格納するための D:\nonidata\nb4worksnew フォルダと、ライブラリファイルを格納するための lib サブフォルダを準備しました。</p>
+<p>ドライバファイルの場所を選択すると、「ドライバクラス」と「名前」が自動的に設定されます。MySQL JDBC ドライバの場合、最初は古いクラス名が設定されます。しかし、「検索」ボタンをクリックすると、下にある進捗バーがアクティブになり、最終的に「ドライバクラスの検索を完了しました」と表示されます。</p>
+
+<p>次に、「ドライバクラス」設定のコンボを開きます。JDBC ドライバの現在のクラス名を選択できます。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/newdrivername.png" width="355" height="109"></p>
+<p><b>クラス名を現在のバージョンの名前に変更します。</b></p>
+<p>「了解」をクリックすると、「ドライバ」ノードの下に新しいドライバのノードが追加されます。それを右クリックし、コンテキストメニューから「接続...」を選択します。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/connectusing.png" width="302" height="71"> </p>
+<p><b>コンテキストメニューから「接続...」を選択します</b></p>
+<p>設定ウィンドウが表示されます。ここで、「データベース URL」、「ユーザー名」、および「パスワード」が必要になります (この場合、「パスワード」は空にします)。「了解」をクリックすると、下の進捗バーに「接続が確立されました」というメッセージが表示されます。このページを「詳細」に切り替えることも可能ですが、この場合は詳細設定は不要です。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/conestablished.png" width="419" height="266"></p>
+<p>接続が確立されると、この接続のノードが表示されます。では次の手順に進みましょう。</p>
+
+
+<h2><a name="db01"></a>サンプル表の作成</h2>
+先に確立された接続のノードを右クリックし、「表を作成...」を選択します。 
+<p><img src="../../images_www/articles/win-with-netbeans/createtable.png" width="335" height="132"></p>
+<p><b>コンテキストメニューから「表を作成...」を選択します</b></p>
+<p>すると、作成する表の設定を行うためのウィンドウが表示されます。必要な設定を表示するには、このウィンドウを手動で拡大する必要がある場合があります。重要な設定は、「キー」、「列名」、「データ型」、およびデータ型によっては「サイズ」です。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/cartable.png" width="740" height="281"></p>
+<p><b>NetBeans での表の作成</b></p>
+
+<p>ここでは、<b>carid</b>、<b>name</b>、<b>vendor</b>、および <b>type</b> をフィールドとして持つサンプル表「<b>cars</b>」を作成しました。フィールド carid が主キーです。データ型は、すべてのフィールドで VARCHAR です。サイズは、carid のみが 10、その他はすべて 20 です。</p>
+<p>表が作成されると、そのノードが接続ノードの下に表示されます。表「cars」の構造が表示されます。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/cartablestruct.png" width="353" height="236"></p>
+<p><b>作成された表のノードツリー</b></p>
+
+<h2><a name="db03"></a>最初のデータの挿入 </h2>
+<p>次に、SQL コマンドを送信して最初の行を挿入しましょう。接続ノードの下の任意のノードを右クリックし、「コマンドを実行...」メニュー項目を表示します。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/execommand.png" width="309" height="116"></p>
+<p>すると、操作コマンド用の大きなウィンドウが、ソースエディタと同じ場所に表示されます。大きすぎるので、その外観全体のスクリーンショットは示しません。重要な部分は、まず何と言っても、コマンド入力用のテキスト領域です。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/firstcmd.png" width="463" height="67"></p>
+<p><b>コマンド文の全体を入力します。</b></p>
+<p>「実行」ボタンをクリックすると、コマンドが有効である場合は、「コマンドが正常に実行されました」というメッセージが下に表示されます。さらに確認するために、「cars」ノードを右クリックし、「データを表示」を選択します。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/viewdata.png" width="264" height="153"></p>
+<p><b>「cars」ノードを右クリックしてデータを表示します。</b></p>
+<p><img src="../../images_www/articles/win-with-netbeans/firstviewdata.png" width="308" height="78"></p>
+<p><b>挿入された最初のデータ</b></p>
+<p>成功です。最初のデータが正常に挿入されました。しかし、「insert into...」のように文全体を入力するのは面倒だと思われるかもしれません。筆者はそうでした。それで、よりグラフィカルな操作でデータを挿入するアプリケーションを構築しようと決心したのです。</p>
+
+<h2><a name="db04"></a>Java プロジェクトの新規作成</h2>
+
+<p>アプリケーション用に新しい Java プロジェクトを作成しましょう。メニューバーから「ファイル」-&gt;「新規プロジェクト」を選択します。新規プロジェクトのウィザードで、「一般」-&gt;「Java アプリケーション」をプロジェクトの種類として選択します。ここでは、プロジェクト名は「mysqloperation」、場所は「d:\nonidata\nb4worksnew\mysqloperation」にしました。「主プロジェクトを作成」のチェックは外します。</p>
+
+<p>プロジェクトを作成したら、新しいパッケージを作成します。ここでは「mysqlop」です。</p>
+
+<h2><a name="db05"></a>データベースを接続するためのユーティリティークラスの作成</h2>
+<p>Java でのデータベース操作は非常に複雑であり、接続、文、結果セット、および多数の try と catch が必要となります。このため、そのような操作を扱うユーティリティークラスを使用しました。</p>
+<p>そのコードの全体を次に示します: <a href="https://netbeans.org/files/documents/4/297/MyDBConnection.java" target="_blank">MyDBConnection.java</a>。</p>
+<p><b>init()</b> メソッドは、MySQL データベースに接続するためのものです。</p>
+
+<p><b>getConnection()</b> メソッドは、確立された接続をほかのクラスに提供する目的で、init() メソッドのあとで呼び出す必要があります。</p>
+<p>2 つの <b>close()</b> メソッドと <b>destroy()</b> メソッドは、操作の終了を設定するためのものです。接続、文、結果セットを閉じる際に try と catch が必要になるので、それらをここに抽出しました。</p>
+<p>このファイルを使用するには、このプロジェクトで JDBC ドライバへのクラスパスを設定する必要があります。「<b>mysqloperation</b>」プロジェクトを右クリックし、コンテキストメニューから「プロパティー...」を選択します。「プロジェクトプロパティー」ウィンドウで、「構築」-&gt;「ソースのコンパイル」を選択します。JDBC JAR ファイルの場所を検索できるように、「ソースをコンパイルするためのクラスパス」設定の近くにある「JAR/フォルダを追加...」ボタンをクリックします。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/addlibrary.png" width="745" height="249"></p>
+<p><b>クラスパスへの JDBC JAR ファイルの追加</b></p>
+
+<h2><a name="db06"></a>表モデルの作成</h2>
+<p>続いて、このアプリケーションで使用する、JTable 用にカスタマイズされた表モデルを準備しました。</p>
+<p>そのコードの全体を次に示します: <a href="https://netbeans.org/files/documents/4/298/CarTableModel.java" target="_blank">CarTableModel.java</a>。</p>
+<p>このコードを記述する際に、NetBeans の便利なツールをいくつか使用しました。 <br>
+  まず、CarTableModel.java という名前の新しい Java クラスファイルを作成します。これは非常に単純な空のテンプレートであり、パッケージとクラスの宣言しかありません。 </p>
+
+<p><br>
+  このクラスの宣言を手動で編集し、「AbstractTableModel」クラスを拡張するようにします。エディタ内にすぐに、エラーを示す赤色の波下線が表示されます。その原因の 1 つは、「javax.swing.table.AbstractTableModel」クラスがインポートされていないことです。このエラーを修正するには、コードのどこかで右クリックし、「インポートを修正」を選択します。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/fiximports.png" width="483" height="139"></p>
+<p><b>「インポートを修正」ツールを使用します</b></p>
+
+<p>宣言 </p>
+<p><b>import javax.swing.table.AbstractTableModel;</b></p>
+<p> がソースコードの先頭の近くに挿入されたことを確認できます。</p>
+<p>しかし、赤色の下線がまだ残っています。その残りの原因は、適切な抽象メソッドが実装されていないことです。<br>
+  これを修正するには、「メソッドをオーバーライド」ツールを次のようにして呼び出します。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/toolovmethods.png" width="455" height="267"></p>
+<p><b>「メソッドをオーバーライド」ツールを使用します</b></p>
+
+<p>「抽象メソッドのみ表示」をオンにすると、必要な実装が抽出されます。 </p>
+<p><img src="../../images_www/articles/win-with-netbeans/overridelist.png" width="484" height="197"></p>
+<p><b>必要な実装が一覧表示されます</b></p>
+<p>ノードをクリックして 3 つのメソッドをすべて選択し、「了解」をクリックします。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/methodimplemented.png" width="436" height="421"></p>
+<p><b>必要な実装が自動的に挿入されます</b></p>
+<p>これで赤色の線が消えました。 </p>
+<p>実際には、<b>getColumnName</b>(int param) メソッドもオーバーライドする必要があります。そうしないと、表のカスタマイズされたヘッダーを取得できません。</p>
+
+<p>では内容を埋めましょう。<br>
+  このコードの仕様では、特定の表「cars」にアクセスするようになっているので、列の数は 4 に固定されます。 <br>
+  各列の名前もわかっており、直接設定できます。</p>
+<p>今回は、JDK5.0 の新機能である総称をはじめて使用しました。これは、NetBeans で正常に動作しました。<br>
+</p>
+
+<h2><a name="db07"></a>JFrame フォームクラスの作成 - フォームデザイン</h2>
+<p>次に、JFrame フォームアプリケーションを作成しましょう。このプロジェクトの主クラスです。新規ウィザードで「JFrame フォーム」を選択できます。ここでは、名前は「InsertTable」にします。すると、ソースファイル「InsertTable.java」が作成されました。</p>
+
+<p>まず、フォームのデザインを行います。そのウィンドウは縦長になるはずなので、「パッキング」を使用せずにフォームサイズを修正しました。<br>
+  インスペクタウィンドウで「JFrame」ノードを選択し、そのプロパティーを表示します。「フォームサイズポリシー」を、デフォルトの「pack() を生成」から「サイズ変更コードの生成」に変更します。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/resizeform.png" width="275" height="282"></p>
+<p><b>フォームサイズを修正する方法。</b></p>
+<p>すると、「フォームのサイズ」プロパティーが編集可能になります。これを次のように編集します。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/resized.png" width="182" height="19"></p>
+<p><b>フォームのサイズを編集します。</b></p>
+<p>このフォームは垂直方向に 3 つの部分に分けられます。</p>
+<p>(1) 新しいデータを入力するための JTextField または JComboBox。<br>
+  (2) データの送信とメッセージの表示を行うための JButton。<br>
+
+  (3) JTable。</p>
+<p>最初の 2 つはそれぞれの JPanel 上に配置し、JTable は JScrollPane 上に配置するようにしてください。これが基本的な部分です。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/panelspanes.png" width="276" height="193"></p>
+<p><b>コンポーネントの配置先となる JPanel と JScrollPane。</b></p>
+<p>各ノードの垂直方向の位置は、実際の位置を意味しているわけではありません。つまり、dataPanel、sendPanel、tablePane はそれぞれ BorderLayout の北、中央、南に配置されます。</p>
+<p>dataPanel には、データ入力用の 3 つの JTextField と 1 つの JComboBox、および説明用の 4 つの JLabel を配置するようにしてください。筆者は、GridLayout がこれらの位置を設定するのに最適であると判断しました。NetBeans では、JPanel のデフォルトのレイアウトは FlowLayout です。これを変更する必要があります。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/setlayout.png" width="343" height="262"> </p>
+<p><b>GridLayout に変更します</b></p>
+<p>すると、この GridLayout のプロパティーが表示されます。列数を 2 に、行数を 4 に設定します。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/griddata.png" width="190" height="112"></p>
+<p>次に、コンポーネントを配置します。それらの位置に満足できない場合は、フォーム上でドラッグ＆ドロップすることでそれらを移動できます。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/griddragdrop.png" width="412" height="97"></p>
+<p><b>GridLayout 内での JComboBox の移動。</b></p>
+<p>別のパネル上など、完全に間違った位置にコンポーネントが移動してしまう場合もあります。心配する必要はありません。インスペクタウィンドウ内でもドラッグ＆ドロップでその位置を移動できます。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/inspectordragdrop.png" width="276" height="226"></p>
+<p><b>インスペクタウィンドウ内での JComboBox の移動。</b></p>
+<p>すべてのコンポーネントを設定したら、それらの名前をカスタマイズし、それぞれの役割がわかるようにします。<br>
+  さらに、各 JLabel の text プロパティーをカスタマイズし、各 JTextField のその値を消去します。JPanel の「text」プロパティーの編集例を、次に示します。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/labeltxt.png" width="277" height="130"></p>
+<p><b>JLabel として「ID:」が表示されるように「text」プロパティーをカスタマイズします</b></p>
+<p>次に、JButton と JLabel の配置先となる sendPanel です。この JPanel でも GridLayout を設定し、列数は 1、行数は 2 にします。名前と「text」プロパティーをカスタマイズします。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/sendpnlcmpns.png" width="203" height="76"></p>
+<p>これで、JTable 以外のコンポーネントが次のように配置されます。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/firstguisetting.png" width="402" height="271"></p>
+
+<p><b>JTable 以外のコンポーネントがカスタマイズされました。</b></p>
+
+<h2><a name="db08"></a>JTable のカスタマイズ</h2>
+<p>上で示したように、この時点では、JTable の構造は 4x4 で、データは空です。これをカスタマイズし、MySQL データベースの表「cars」の内容が表示されるようにしましょう。</p>
+<p>この時点で「carTable」という名前になっている JTable をインスペクタウィンドウで選択し、そのプロパティーを表示します。「model」プロパティーを探し、その右端の「...」ボタンをクリックします。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/tablemodelprop.png" width="275" height="213"></p>
+<p><b>carTable とその「model」プロパティー</b></p>
+<p>すると、エディタウィンドウが表示されます。このウィンドウではデフォルトの 4x4 構造が設定されています。「<b>モードを選択</b>」を「TableModelEditor」から「<b>FormConnection</b>」に変更しましょう。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/selectformcon.png" width="640" height="260"></p>
+
+<p><b>デフォルトの表モデルエディタモードからフォーム接続モードへの切り替え。</b></p>
+<p>フォーム接続モードで、オプションウィンドウ内の「ユーザーコード」のラジオボタンをクリックします。 </p>
+<p><img src="../../images_www/articles/win-with-netbeans/usercodezero.png" width="639" height="273"></p>
+<p><b>フォーム接続モード</b></p>
+<p>次に、このウィンドウの下部を見てください。「拡張機能」ボタンがあります。これをクリックします。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/advancedbtn.png" width="115" height="36"></p>
+
+<p><b>ウィンドウ下部の「拡張機能」ボタン</b></p>
+<p>JTable の表モデルを設定するコードの前後を編集するためのウィンドウが表示されます。ここでは両方をオンにして編集します。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/advancedcode.png" width="358" height="381"></p>
+<p>「InsertTable.java」のソースコード内で、getResultFromCars という名前のメソッドを次のように手動で作成します。</p>
+<pre class='examplecode'><font color="#660000">
+ public ResultSet getResultFromCars() {
+        
+        ResultSet rs=null;
+        
+        try{
+            rs=stmt.executeQuery(&quot;Select * from cars&quot;);
+        
+        }
+        catch(SQLException e){}
+        
+        return rs;
+        
+    }</font></pre>
+<p>「了解」をクリックして「ユーザーコード」に戻り、入力します。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/setusermodel.png" width="263" height="47"></p>
+<p>ここで、文を終了させるセミコロン「;」は入力しないようにしてください。これには理由があります。ソースコードをチェックしてください。<b>InitComponents()</b> メソッドをチェックします。ここです。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/insertedtobluearea.png" width="289" height="61"></p>
+<p>薄青色は「保護」された「編集不可能」な領域でしょうか。だれがそう言ったのでしょうか。実際はそうではありません。NetBeans に用意されているこの方法で、自由に編集できます。</p>
+
+
+<h2><a name="db09"></a>InsertTable の初回実行</h2>
+<p>このカスタマイズされた JTable の最初のテスト実行を行う前に、まだやるべきことがあります。まず、宣言です。</p>
+<p> <font color="#660000">private MyDBConnection mdbc;<br>
+  private java.sql.Statement stmt;</font></p>
+<p>これらは、ソース内のどこかに記述する必要があります。ファイルの終わりの近くで、ほかの変数に近い場所がお勧めです。</p>
+<p>次はコンストラクタです。これに throw 宣言を追加すべきですが、</p>
+<p><img src="../../images_www/articles/win-with-netbeans/exceptionconstruct.png" width="276" height="22"></p>
+<p>これは、「java.sql.SQLException は報告されません...」という不愉快なコンパイルエラーを回避するためです。</p>
+
+<p>コンストラクタの内容の全体を次に示します。</p>
+<pre class='examplecode'><font color="#660000"> 
+public InsertTable() throws  Exception{
+        
+         mdbc=new MyDBConnection();
+         mdbc.init();
+         Connection conn=mdbc.getMyConnection();
+         stmt= conn.createStatement();
+        
+        initComponents();
+    }
+
+</font> </pre>
+<p>同じコンパイルエラーを回避するためにやるべきことが、もう 1 つあります。NetBeans によって準備された main メソッドを編集します。 </p>
+<p><img src="../../images_www/articles/win-with-netbeans/trycatchinmain.png" width="373" height="197"></p>
+<p><b>main メソッドに try-catch を追加します</b></p>
+<p>ここでプロジェクトを実行してみましょう。主クラスを選択するためのウィンドウが表示される場合があります。リストに含まれているのは、この「InsertTable.class」だけです。それを選択します。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/tableshown.png" width="399" height="222"></p>
+<p><b>MySQL の表データが表示されました</b></p>
+
+<p>MySQL データベースの「cars」表に唯一存在する 1 行が表示されました。</p>
+
+<h2><a name="db10"></a>微調整...</h2>
+<p>MySQL 内の既存のデータを JTable に表示できたので、あとは一息ついて微調整を行い、アプリケーションを改善しましょう。</p>
+<p>1 つは、このアプリケーションを正しく終了させることです。MySQL とのすべてのセッション (接続、文、結果セット) を閉じる必要があります。<br>
+  このアプリケーションは、ウィンドウを閉じることで終了します。したがって、WindowClosing イベントのイベント処理メソッドを追加すべきです。 <br>
+  インスペクタウィンドウで「JFrame」を選択してそのプロパティーウィンドウを表示したあと、「イベント」をクリックしてページを切り替えます。「windowClosing」イベントを探します。これはデフォルトで &lt;なし&gt; に設定されていますが、単語 &lt;なし&gt; をクリックすると、それが自動的に「formWindowClosing」に変更されるので、この行が選択された状態で Enter キーを押します。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/windowclosing.png" width="288" height="332"></p>
+<p><b>JFrame の windowClosing イベントの設定</b></p>
+<p>するとソースコードが表示され、メソッドが編集可能になります。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/windowclosingcode.png" width="452" height="93"></p>
+<p><b>「formWindowClosing」メソッドを編集します</b></p>
+<p>文と接続を閉じます。</p>
+<p>もう 1 つは、<b>typeCombo</b> という名前の JComboBox の項目を設定することです。そうです、車の駆動タイプを選択する機能をこれに追加すべきなのです。</p>
+
+<p>インスペクタウィンドウで「typeCombo」ノードを選択し、そのプロパティーを表示します。JTable の表モデルを設定する際に行なったのとまったく同様に、「<b>model</b>」プロパティーを探し、その右端の「...」ボタンをクリックします。<br>
+  ウィンドウが表示されます。今回はデフォルトの <b>ComboBoxModelEditor</b> を使用します。</p>
+
+<p><img src="../../images_www/articles/win-with-netbeans/itemconbo.png" width="454" height="284"></p>
+<p>「項目:」フィールドに新しい項目を入力し、「追加」ボタンをクリックします。簡単です。項目「FF」、「FR」、「MR」、および「4WD」を駆動タイプとして準備しました。ほかに何かありますか。</p>
+
+
+<h2><a name="db11"></a>MySQL へのデータの挿入</h2>
+<p>最後の追い込みに入ります。MySQL へのデータ挿入は、「Send」ボタン (「<b>sendButton</b>」という名前の JButton) のクリック時に行われるようにすべきです。</p>
+<p>NetBeans の GUI エディタで JButton のイベント処理メソッドを作成するのは、非常に簡単です。フォーム上の JButton 自体をダブルクリックするだけです。</p>
+<p><b>「sendButtonActionPerformed」</b>メソッド<b></b>がソースファイル内に作成されます。その内容を次のように入力しましょう。</p>
+
+<pre class='examplecode'><font color="#660000">private void sendButtonActionPerformed(java.awt.event.ActionEvent evt) {<font color="#006600">//GEN-
+FIRST:event_sendButtonActionPerformed
+        // TODO ここに処理コードを追加してください:</font>
+        
+        String carid=idField.getText();
+        String name=nameField.getText();        
+        String vendor=vendorField.getText();
+        String type=(String)typeCombo.getSelectedItem();
+        
+        String insertStr=&quot;&quot;;
+        
+        try{
+            
+            insertStr=&quot;insert into cars (carid, name, vendor, type) values(&quot;
+                    +<b>quotate</b>(carid)+&quot;,&quot;
+                    +quotate(name)+&quot;,&quot;
+                    +quotate(vendor)+&quot;,&quot;
+                    +quotate(type)
+                    +&quot;)&quot;;
+            
+            int done=stmt.executeUpdate(insertStr);
+            
+            commentLabel.setText(&quot;1 row inserted&quot;);
+           
+            <b>getContentPane().removeAll();
+            initComponents();</b>
+        
+        }
+        catch(Exception e){
+            commentLabel.setText(&quot;Error occurred in inserting data&quot;);
+            e.printStackTrace();
+        }
+        
+    }</font><font color="#006600">//GEN-LAST:event_sendButtonActionPerformed</font>
+</pre>
+<p>データの挿入後かつ<b>現在のコンテンツ区画の削除</b>後に、<b>initComponents</b> メソッドが呼び出されています。これは、JTable の表示を更新するために必要です。筆者にもう少しスキルがあれば、コンテナの全体ではなく JTable のみを更新できたと思います。この方法は、日本語で言うところの「豆腐を斧で切る」ようなものです。申し訳ありません。</p>
+
+<p>また、ここでは <b>quotate</b> メソッドが呼び出されています。これを作成したのは、あまりに多くの引用符を入力しないようにするためです。</p>
+<pre class='examplecode'> <font color="#660000">public String quotate(String content){<br>    <br>        return &quot;'&quot;+content+&quot;'&quot;;<br>    }</font>
+
+</pre>
+<p>ここで、<a href="https://netbeans.org/files/documents/4/299/InsertTable.java">InsertTable.java</a> のコード全体を示します。 </p>
+<p>プロジェクトを実行してください。データを入力し、「Send」ボタンをクリックします。すると、JTable に挿入されたばかりの行がもう 1 つ表示されます。もう何回か挿入を繰り返してください。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/appresult.png" width="399" height="263"></p>
+<p><b>完成したアプリケーションの操作</b></p>
+<p>そして、NetBeans のユーティリティーからもこれらのデータが表示されることを確認しておきましょう。</p>
+<p><img src="../../images_www/articles/win-with-netbeans/resultconfirmed.png" width="307" height="106"></p>
+
+<p>お疲れさまでした。しかし、このプロジェクトを通じて次のことを学べました。</p>
+<ul>
+  <li>NetBeans のユーティリティーからデータベースを操作する方法</li>
+  <li>薄青色領域の「保護」されたコードを編集する方法</li>
+  <li>JTable のカスタマイズされた表モデルを使用する方法</li>
+</ul>
+<p>などです。</p>
+
+
+<p>&nbsp;</p>
+</body>
+</html>
+

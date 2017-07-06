@@ -1,0 +1,600 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+    <head>
+        <meta name="KEYWORDS" content="NETBEANS, TUTORIAL, GUIDE, USER, DOCUMENTATION">
+        <meta name="DESCRIPTION" content="This tutorial shows you to configure standard Java
+              and Java web projects in NetBeans IDE. Topics include setting the JDK, setting the classpath,
+              setting sub-projects, enabling/disabling incremental compilation, sharing
+              project libraries, customizing the build script, setting run configurations.">
+        <title>Criando, Importando e Configurando Projetos Java - Tutorial do NetBeans IDE</title>
+        <link rel="StyleSheet" href="../../../netbeans.css" type="text/css">
+        <!--      Copyright (c) 2009 - 2011, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    <meta HTTP-EQUIV="Content-Type" Content="text/html; charset=UTF-8"></head>
+    <body>
+        <h1>Criando, Importando e Configurando Projetos Java - Tutorial do NetBeans IDE</h1>
+        <p>Este guia fornece uma visão geral das principais funcionalidades do NetBeans IDE para instalar e configurar projetos Java. Além disso, ele fornece informações sobre como efetuar a configuração personalizada de scripts de construção gerados pelo IDE.</p>
+        
+
+        <p><b>Conteúdo</b></p>
+        <img alt="O conteúdo desta página se aplica ao NetBeans IDE 7.4" class="stamp" src="../../../images_www/articles/74/netbeans-stamp.png" title="O conteúdo desta página se aplica ao NetBeans IDE 7.4">
+        <ul class="toc">
+            <li><a href="#ide-concepts">Conceitos Básicos do Projeto</a>
+                <ul class="toc"><li><a href="#ide-projects">Projetos</a></li>
+            <li><a href="#ide-ant">Ant</a></li></ul></li>
+            <li><a href="#projects-creating">Criando um Projeto</a></li>
+            <li><a href="#projects-importing">Importando um Projeto</a>
+                <ul class="toc"><li><a href="#import-eclipse">Importando um Espaço de Trabalho do Eclipse</a></li>
+                    <li><a href="#existing-java-sources">Configurando um Projeto Java com base em Códigos-fonte Existentes</a></li>
+                   
+                    <li><a href="#existing-web-sources">Configurando um Projeto Web com Base em Códigos-fonte Existentes</a></li>
+                    <li><a href="#free-form">Projetos de Forma Livre</a></li>
+            </ul>
+            </li>
+            <li><a href="#projects-configuring">Configurando o Classpath e Outras Definições do Projeto</a>
+                <ul class="toc">
+                    <li><a href="#projects-main">Definindo o Projeto Principal</a></li>
+                    <li><a href="#projects-jdk">Definindo o JDK de Destino de um Projeto</a></li>
+                    <li><a href="#projects-classpath">Gerenciando um Classpath do Projeto</a></li>
+                    <li><a href="#projects-dependencies">Gerenciando Dependências entre Projetos</a></li>
+                    <li><a href="#projects-shared-libraries">Compartilhando Bibliotecas do Projeto</a></li>
+                    <li><a href="#projects-jdk-javadoc">Tornando o Javadoc do JDK Disponível no IDE</a></li>
+                    <li><a href="#projectsjws">Ativando o Java Web Start</a></li>
+                </ul>
+            </li>
+            <li><a href="#building">Construindo Aplicações</a>
+            <ul class="toc">
+                <li><a href="#building-commands">Construindo Projetos, Pacotes e Arquivos</a></li>
+                <li><a href="#building-compile-on-save">Compilar ao Salvar</a></li>
+                <li><a href="#building-fixing">Corrigindo Erros de Compilação</a></li>
+                <li><a href="#building-filtering">Filtrando Arquivos de Saída</a></li>
+            </ul>
+			</li>
+            <li><a href="#deploy">Executando Aplicações</a>
+                <ul class="toc">
+                    <li><a href="#deploy-projects">Executando Projetos e Arquivos</a></li>
+                    <li><a href="#deploy-options">Personalizando as Opções de Runtime</a></li>
+                    <li><a href="#deploy-classpath">Definindo o Classpath de Runtime</a></li>
+                    <li><a href="#deploy-args">Definindo a Classe Principal e os Argumentos de Runtime</a></li>
+                    <li><a href="#deploy-jvm">Definindo os Argumentos JVM</a></li>
+            </ul></li>
+            <li><a href="#build-script">Personalizando o Script de Construção </a>
+                <ul class="toc">
+                    <li><a href="#ant-editing">Editando e Executando Scripts do Ant</a></li>
+                    <li><a href="#ant-custom-task">Escrevendo Tarefas Personalizadas do Ant</a></li>
+            </ul></li>
+            <li><a href="#seealso">Consulte Também</a></li>
+        </ul>
+		<p><b>Para concluir este tutorial, você precisa dos seguintes recursos e softwares.</b></p>
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Software ou Recurso</th>
+                    <th class="tblheader" scope="col">Versão Necessária</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                    <td class="tbltd1">versão 7.4</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">JDK (Java Development Kit)</a></td>
+                    <td class="tbltd1">versão 6 ou 7</td>
+                </tr>
+            </tbody>
+        </table>
+        <!-- TODO update screenshots-->
+        <a name="ide-concepts"></a><h2>Conceitos Básicos do Projeto</h2>
+        <p>Esta seção fornece uma visão geral de algumas informações detalhadas sobre o sistema de projeto do IDE.</p>
+        <div class="indent">
+            <a name="ide-projects"></a><h3 class="tutorial">Projetos</h3>
+            <p>
+                No IDE, você sempre trabalha dentro de um projeto. Além dos arquivos de código-fonte, um projeto do IDE contém metadados que pertencem no classpath, como construir e executar o projeto e assim por diante. O IDE armazena as informações do projeto em uma pasta do projeto chamada <tt>nbproject</tt> que inclui um script de construção do ANT e um arquivo de propriedades que controla a construção e as definições de execução e um arquivo <code>project.xml</code> que mapeia os destinos do Ant com comandos do IDE.</p>
+            <p class="notes"><b>Observação:</b> embora o IDE coloque diretórios de código-fonte na pasta de projeto por default, seus diretórios de código-fonte não necessariamente precisam estar localizados na pasta do projeto.</p>
+
+
+            <a name="ide-ant"></a><h3 class="tutorial">Ant</h3>
+            <p>O <a href="http://ant.apache.org/">Apache Ant</a> é uma ferramenta de construção utilizada para padronizar e automatizar a construção, além de executar ambientes para desenvolvimento. O sistema do projeto do IDE tem base direta no Ant. Todos os comandos do projeto, como Limpar e Construir Projeto e Depurar, chamam destinos no script do Ant do projeto. Portanto, é possível construir e executar um projeto fora do IDE, exatamente como é construído e executado dentro do IDE.</p>
+            <p>Não é necessário saber como trabalhar no Ant com o IDE. É possível definir todas as opções básicas de compilação e runtime na caixa de diálogo Propriedades do projeto no projeto e o IDE atualiza automaticamente o script do Ant do projeto. Se você está familiarizado com o Ant, poderá personalizar um script padrão do Ant do projeto ou escrever seu próprio script do Ant para um projeto (consulte o <a href="http://ant.apache.org/manual/index.html">Manual do Usuário do Apache</a> para obter detalhes).</p>
+           
+        </div>
+        <a name="projects-creating"></a><h2>Criando um Projeto</h2>
+        <p><b>Para criar um novo projeto:</b></p>
+        <ul>
+            <li>Escolha <tt>Arquivo</tt> > <tt>Novo Projeto (Ctrl-Shift-N no Windows, Cmd-Shift-N no OS X)</tt>.</li>
+        </ul>
+        <p>Quando o assistente para Novo Projeto aparecer, selecione o modelo correto para seu projeto e complete as etapas restantes do assistente. O ícone do modelo do projeto pode ser exibido em cinza, o que significa que este tipo de projeto não foi ativado. Prossiga com a criação do projeto e esta funcionalidade será ativada no IDE.  </p>
+        <p>O IDE contém os seguintes modelos de projeto padrão para aplicações Java e Java Web:</p>
+        <ul>
+            <li><b>Aplicação Java.</b> Cria um esqueleto do projeto Java SE com uma classe principal. Consulte <a href="javase-intro.html">Desenvolvendo e Implantando Aplicações Java Gerais</a> para obter um breve tutorial que utiliza este modelo.
+            </li>
+            <li><b>Biblioteca da Classe Java.</b> Cria uma biblioteca de classes Java esqueleto sem uma classe principal. Consulte <a href="javase-intro.html">Desenvolvendo e Implantando Aplicações Java Gerais</a> para obter um breve tutorial que utiliza este modelo.</li>
+            <li><b>Projeto Java com Códigos-fonte Existentes.</b> Cria um projeto Java SE com base em seus próprios códigos-fonte. Consulte <a href="#existing-java-sources">Configurando um Projeto Java com Base em Códigos-fonte Existentes</a> abaixo.</li>
+            <li><b>Aplicação Web.</b> Cria uma aplicação Web esqueleto, incluindo opções para adicionar vários frameworks da web. Consulte <a href="../web/quickstart-webapps.html">Introdução ao Desenvolvimento de Aplicações Web</a> para obter um exemplo que utiliza este modelo.</li>
+            <li><b>Aplicação Web com Códigos-fonte Existentes.</b> Cria um projeto Web com base em seus próprios códigos-fonte Java e da Web. Consulte <a href="#existing-web-sources">Configurando um Projeto Web com Base em Códigos-fonte Existente</a> abaixo.</li>
+        </ul>
+        <p>Além disso, o IDE também contém modelos para aplicações JavaFX, módulos EJB, aplicações corporativas, módulos NetBeans e muito mais. Para obter uma lista completa de modelos de projeto padrão, consulte<a href="http://www.oracle.com/pls/topic/lookup?ctx=nb7400&amp;id=NBDAG371">Modelos de Projeto Padrão</a> em <i>Desenvolvendo Aplicações com o NetBeans IDE.</i>. </p>
+        <p>As categorias de projetos Java e Web também têm modelos de projeto de formato livre. Os modelos de formato livre permitem o uso de um script do Ant existente para um projeto, mas requerem a configuração manual. Consulte <a href="#free-form">Projetos de Formato Livre</a> abaixo.</p>
+        <p>Quando você finaliza a criação de um projeto, ele é aberto no IDE com sua estrutura lógica exibida na janela Projetos e sua estrutura de arquivo exibida na janela Arquivos:</p>
+        <ul>
+            <li>
+                A janela Projetos é o ponto de entrada principal para os códigos-fonte do projeto. Ela mostra uma view lógica do conteúdo importante do projeto como pacotes Java e páginas Web. É possível clicar com o botão direito do mouse em qualquer nó do projeto para acessar um menu pop-up de comandos para construir, executar e depurar o projeto, bem como abrir a caixa de diálogo Propriedades do Projeto. A janela Projetos pode ser aberta ao escolher Janela > Projetos (Ctrl-1 no Windows/Cmd-1 no OS X).</li>
+            <li>
+                A janela Arquivos mostra uma view de seus projetos com base em diretório, incluindo arquivos e pastas que não são exibidos na janela Projetos. A partir da janela Arquivos, é possível abrir e editar os arquivos de configuração do projeto, como o script de construção do projeto e o arquivo de propriedades. Também é possível exibir a saída da construção como classes compiladas, arquivos JAR, arquivos WAR e documentação Javadoc gerada. A janela Arquivos pode ser aberta ao escolher Janela > Arquivos (Ctrl-2 no Windows/Cmd-2 no OS X).</li>
+        </ul>
+       	<p class="align-center"><a href="../../../images_www/articles/72/java/project-setup/files-project-window.png" rel="lytebox" title="Janelas Arquivos e Projetos"> <img alt="Janelas Arquivos e Projetos" border="1" src="../../../images_www/articles/72/java/project-setup/files-project-window-small.png"></a></p>
+
+        <p class="notes"><b>Observação:</b> se for necessário acessar os arquivos e diretórios que estejam fora dos diretórios do projeto, é possível utilizar a janela Favoritos. Para abrir a janela Favoritos, escolha <tt>Janela</tt> > <tt>Favoritos (Ctrl-3 no Windows/Cmd-3 no OS X)</tt>. É possível adicionar qualquer pasta ou arquivo à janela Favoritos clicando com o botão direito do mouse na janela Favoritos e escolhendo Adicionar aos Favoritos.</p>
+
+        <a name="projects-importing"></a><h2 class="tutorial">Importando um Projeto</h2>
+        <p>Esta seção mostra como manipular a importação inicial de projetos para o IDE.</p>
+        <div class="indent">
+            <a name="import-eclipse"></a><h3 class="tutorials">Importando um Espaço de Trabalho do Eclipse</h3>
+            <p>Para projetos Eclipse, é possível utilizar o assistente Importar Projeto Eclipse para ajudá-lo a criar projetos NetBeans de projetos em um espaço de trabalho Eclipse e para importar classpaths do projeto e outras definições. Quando o assistente Importar Projeto Eclipse é utilizado, não é necessário utilizar manualmente criar e configurar o projeto NetBeans. Abra o assistente selecionando <tt>Arquivo</tt> > <tt>Importar Projeto</tt> > <tt>Projeto Eclipse</tt>. Consulte <a href="import-eclipse.html">Importando Projetos Eclipse no NetBeans IDE</a> para obter informações sobre como funciona o assistente e como você pode trabalhar simultaneamente em projetos Eclipse e NetBeans.</p>
+
+            <a name="existing-java-sources"></a><h3 class="tutorials">Configurando um projeto Java com Base em Códigos-fonte Existentes</h3>
+            <p>Para outros projetos Java desenvolvidos fora do NetBeans, é possível utilizar o modelo "Código-fonte Existente" no assistente Novo Projeto para criar um projeto NetBeans. No assistente, você identifica a localização dos códigos-fonte e especifica a localização para os metadados do projeto NetBeans. Em seguida, você usa a caixa de diálogo Propriedades do Projeto para <a href="#projects-configuring">configurar o projeto</a>.</p>
+            <p><b>Para configurar um projeto NetBeans para uma aplicação Java existente:</b></p>
+            <ol>
+                <li>Escolha <tt>Arquivo</tt> > <tt>Novo Projeto (Ctrl-Shift-N no Windows, Cmd-Shift-N no OS X)</tt>. </li>
+                <li>Escolha <tt>Java</tt> > <tt>Projeto Java com Código-fonte Existente.</tt> Clique em Próximo. </li>
+                <li>Na página Nome e Localização do assistente, siga as etapas seguir:
+                    <ul>
+                        <li>Digite um nome de projeto.</li>
+                        <li>(Opcional) Altere a localização da pasta do projeto.</li>
+                        <li>(Opcional) Altere o nome do script de construção utilizado pelo IDE. Isso pode ser desejável se já houver um script denominado como <code>build.xml</code> que é utilizado para construir os códigos-fonte.</li>
+                        <li>(Opcional) Marque a caixa de seleção Utilizar Pasta Dedicada para Armazenamento de Bibliotecas e especifique o local da pasta de bibliotecas. Consulte <a href="#projects-shared-libraries">Compartilhando Bibliotecas do Projeto</a> para obter mais informações sobre esta opção.</li>
+                        <li>(Opcional) Marque a caixa de seleção Definir como Projeto Principal. Quando esta opção for selecionada, os atalhos de teclado para os comandos como Limpar e Construir Projeto Principal (Shift-F11) se aplicam a este projeto.</li>
+                    </ul></li>
+              <li>Clique em Próximo para avançar para a página Códigos-fonte Existentes do assistente.</li>
+                    <li>No painel Pasta de Pacotes de Código-fonte, clique em Adicionar Pasta. Depois navegue para seus códigos-fonte, selecione as raízes do código-fonte e clique em Abrir.
+                        <p class="notes">Quando uma pasta contendo o código-fonte é adicionada, é necessário adicionar a pasta que contém a pasta mais alta em sua árvore do pacote. Por exemplo, para o pacote <code>com.mycompany.myapp.ui</code>, você adiciona a pasta que contém a pasta <code>com</code>. </p></li>
+                    <!-- TODO Note that source roots all have to have the same classpath-->
+                
+                <li>(Opcional) No painel Pastas de Pacote de Teste, clique em Adicionar Pasta para selecionar a pasta que contém as pastas do pacote JUnit. </li>
+				<li>Clique em Próximo para avançar para a página Inclusões e Exclusões do assistente.</li>
+                <li>(Opcional) Na página Inclusões e Exclusões do assistente, insira os padrões do nome do arquivo somente para os arquivos que deveriam ser incluídos ou excluídos do projeto. Todos os arquivos em suas raízes de código-fonte são incluídos por default.</li>
+                <li> Clique em Finalizar.
+              </li>
+            </ol>
+            
+            <p><a name="existing-web-sources"></a></p>
+            <h3 class="tutorials">Configurando um Projeto Web com Base em Códigos-fonte Existentes</h3>
+            <p>Para projetos Web desenvolvidos fora do NetBeans, é possível utilizar o modelo "Códigos-fonte existentes" no assistente Novo Projeto para criar um projeto NetBeans. No assistente, você identifica a localização dos códigos-fonte e especifica a localização para os metadados do projeto NetBeans. Em seguida, você usa a caixa de diálogo Propriedades do Projeto para <a href="#projects-configuring">configurar o projeto</a>.</p>
+            <p class="notes"><b>Observação:</b> se o projeto foi originalmente desenvolvido no Eclipse, é possível economizar tempo ao utilizar o assistente Importar Projeto Eclipse ao invés do assistente Novo Projeto. O assistente Importar Projeto Eclipse permite importar simultaneamente vários projetos, incluindo suas configurações. Consulte <a href="import-eclipse.html">Importando Projetos Eclipse no NetBeans IDE</a>.</p>
+
+            <p><b>Para configurar um projeto NetBeans para uma aplicação Web existente:</b></p>
+            <ol>
+                <li>Escolha <tt>Arquivo</tt> > <tt>Novo Projeto (Ctrl-Shift-N no Windows, Cmd-Shift-N no OS X)</tt>. </li>
+                <li>Escolha a Aplicação Web <tt>Java Web</tt> > <tt> com Códigos-fonte Existentes.</tt> Clique em Próximo. </li>
+                <li>Na página Nome e Localização do assistente, siga as etapas seguir:
+                    <ul>
+                        <li>No campo Localização, insira a pasta que contém as pastas raízes do código-fonte da aplicação Web e as pastas da página Web.</li>
+                        <li>Digite um nome de projeto.</li>
+                        <li>(Opcional) Altere a localização da pasta do projeto.</li>
+                        <!--TODO info on the fact that the sources might live in different places-->
+                </ul></li>
+                <!--<li>(Optional) Change the name of the build script used by the IDE.
+                            This might be desirable if there is already a build script called
+                        <code>build.xml</code> that is used to build the sources.</li>-->
+                <li>(Opcional) Marque a caixa de seleção Utilizar Pasta Dedicada para Armazenamento de Bibliotecas e especifique o local da pasta de bibliotecas. Consulte <a href="#projects-shared-libraries">Compartilhando Bibliotecas do Projeto no NetBeans IDE</a> para obter mais informações sobre essa opção.</li>
+                <li>(Opcional) Marque a caixa de seleção Definir como Projeto Principal. Quando esta opção for selecionada, os atalhos de teclado para os comandos como Limpar e Construir Projeto Principal (Shift-F11) se aplicam a este projeto.</li>
+                <li>Clique em Próximo para avançar para a página Servidor e Definições do assistente.</li>
+                <li>(Opcional) Adicione o projeto a uma aplicação corporativa existente.</li>
+                <li>Selecione um servidor a ser implantado. Se o servidor que você deseja não aparece, clique em Adicionar para registrar o servidor no IDE.</li>
+                <li>Defina o nível do código-fonte para a versão Java na qual deseja que a aplicação seja executada.</li>
+                <li>(Opcional) Ajuste o caminho do contexto. O caminho do contexto tem base no nome do projeto por default.</li>
+                <li>Clique em Próximo para avançar para a página Códigos-fonte existentes e Bibliotecas do assistente.</li>
+                <li>Verifique todos os campos na página, como os valores para a Pasta das Páginas Web e Pastas do Pacote do Código-fonte.</li>
+                <li> Clique em Finalizar.
+              </li>
+            </ol>
+
+            <a name="free-form"></a>
+            <h3 class="tutorial">Projetos de Forma Livre</h3>
+            <p>Também há modelos de projeto disponíveis para projetos de formato livre. Em projetos de formato livre, o IDE utiliza destinos em um script do Ant existente para construir, executar, limpar, testar e depurar a aplicação. Se um script do Ant não contiver alvos para algumas destas funções, as funções estão indisponíveis para o projeto. Para implementar essas funções, você escreve destinos em seu script do Ant ou em um script secundário do Ant. </p>
+            <p>Em geral, é melhor utilizar modelos padrão de projeto "Com Códigos-fonte Existentes" para importar projetos. Para projetos Eclipse, é melhor utilizar a funcionalidade Importar Projeto, que cria e configura um projeto padrão por você. Os projetos padrão são mais fáceis para manter a longo prazo. No entanto, os modelos de projeto de formato livre são úteis se você possuir um projeto existente com base no Ant com uma configuração complexa ou idiossincrática, que não pode ser duplicado dentro de um projeto padrão. Por exemplo, se um projeto com múltiplas raízes de código-fonte estiver sendo importado, cada um tendo um classpath diferente e se não puder dividir as raízes de código-fonte em diferentes projetos, pode ser necessário utilizar um modelo de projeto de formato livre.</p>
+            <p>Este guia foca em projetos padrão. Para obter mais informações sobre como configurar projetos de formato livre, consulte <a href="../../articles/freeform-config.html">Configuração Avançada de Projeto de Formato Livre</a>.
+            </p>
+        </div>
+
+        <a name="projects-configuring"></a><h2>Configurando o Classpath e Outras Definições do Projeto</h2>
+        <p>Esta seção cobre as tarefas mais comuns para configurar um projeto, como a definição do JDL de destino do projeto, a definição do classpath, a criação de dependências entre projetos e o compartilhamento de bibliotecas entre projetos e usuários.</p>
+        <div class="indent">
+            <a name="projects-main"></a><h3 class="tutorial">Definindo o Projeto Principal</h3>
+            <p>Quando é desenvolvido uma aplicação grande que consiste em diversas pastas de código-fonte, é comum dividir o seu código em projetos separados. Normalmente, um destes projetos serve como o ponto de entrada para sua aplicação. Para informar ao IDE qual projeto é o ponto de entrada principal da aplicação, defina um projeto como o projeto principal. O IDE fornece comandos que agem no projeto principal. Por exemplo, a execução do comando Limpar e Construir Projeto Principal constroi o projeto principal e todos os projetos necessários. </p>
+            <p><b>Para definir um projeto como o projeto principal:</b></p>
+            <ul>
+                <li>Selecione o nó do projeto na janela Projetos e escolha Executar > Definir Projeto Principal > <i>nome do projeto</i> no menu principal. </li>
+            </ul>
+            <p>Somente um projeto por vez pode ser o projeto principal.</p>
+            <a name="projects-jdk"></a>
+            <h3 class="tutorial">Definindo o JDK de Destino de um Projeto</h3>
+            <p>No IDE, é possível registrar várias plataformas Java e anexar Javadoc e código-fonte a cada plataforma. Alternar o JDK de destino de um projeto padrão faz o seguinte:</p>
+            <ul>
+                <li>Oferece as novas classes do JDK de destino para a funcionalidade autocompletar código.</li>
+                <li>Se disponível, exibe o código-fonte do JDK de destino e a documentação do Javadoc.</li>
+                <li>Utiliza os executáveis do JDK de destino (<code>javac</code> e <code>java</code> ) para compilar e executar a aplicação.</li>
+                <li>Compila o código-fonte nas bibliotecas do JDK de destino.</li>
+            </ul>
+            <p>O IDE utiliza a versão da plataforma Java SE (JDK), na qual o IDE é executado como a plataforma Java default para projetos IDE por default. Você pode exibir sua versão JDK do IDE escolhendo <tt>Ajuda</tt> > <tt>Sobre</tt> (<tt>NetBeans</tt> > <tt>Sobre Netbeans</tt> no OS X). A versão do JDK é listada no campo Java.</p>
+            <p><b>Para executar o IDE com uma versão diferente do JDK:</b></p>
+            <ul>
+                <li>inicie o IDE com a chave a seguir a partir da linha de comandos.
+                    <pre>--jdkhome jdk-home-dir</pre>
+                    <p>Alternativamente, defina o JDK no arquivo <code>/etc/netbeans.conf</code> que está localizado na pasta de instalação do IDE. </p>
+                </li>
+            </ul>
+
+
+            <p><b>Para registrar uma nova plataforma Java:</b></p>
+            <ol>
+                <li>Escolha <tt>Ferramentas</tt> > <tt>Plataformas Java</tt> no menu principal.
+				<p class="align-center"><a href="../../../images_www/articles/74/java/project-setup/setup-platformmgr.png" rel="lytebox" title="Gerenciador de Plataforma Java"> <img alt="Gerenciador de Plataforma Java" border="1" src="../../../images_www/articles/74/java/project-setup/setup-platformmgr-small.png"></a></p></li>
+                <li>Clique em Adicionar Plataforma.</li>
+				<li>Selecione Java Standard Edition na caixa de diálogo Adicionar Plataforma Java e clique em Próximo.</li>
+				<li>Especifique a pasta que contém a plataforma Java, assim como os códigos-fonte e o Javadoc necessários para a depuração. Clique em Próximo.</li>
+				<li>Especifique o nome para exibição da plataforma e a localização de códigos-fonte para a plataforma Java e o Javadoc. Clique em Finalizar.</li>
+            </ol>
+
+          	
+            <p><b>Para alternar o JDK de destino de um projeto padrão:</b></p>
+            <ol>
+                <li>Clique com o botão direito do mouse no nó do projeto e escolha Propriedades.</li>
+                <li>Selecione o painel Bibliotecas.</li>
+                <li>Altere a propriedade Plataforma Java.</li>
+            </ol>
+            <a name="projects-classpath"></a><h3 class="tutorial">Gerenciando um Classpath do Projeto</h3>
+            <p>
+                A adição de um grupo de arquivos de classe a um classpath de projeto informa o IDE das classes a que o projeto deve ter acesso durante a compilação e a execução. O IDE também utiliza definições de classpath para ativar a funcionalidade autocompletar código, o realce automático de erros de compilação e a refatoração. É possível editar todas as instruções do classpath de um projeto existente na caixa de diálogo Propriedades do Projeto.</p>
+            <p>
+                Em projetos padrão Java, o IDE mantém classpaths separados para compilar e executar seu projeto, assim como para compilar e executar testes JUnit (para aplicações Java SE). O IDE adiciona automaticamente tudo no classpath de compilação do projeto ao classpath do runtime do projeto.
+            </p>
+            <p><b>É possível modificar o classpath do projeto de uma das formas a seguir:</b></p>
+            <ul>
+                <li>clique com o botão direito do mouse no nó do projeto, selecione a categoria Bibliotecas e modifique as entradas de classpath listadas.</li>
+                <li>Clique com o botão direito do mouse no nó Bibliotecas na janela Projetos e escolha Adicionar Projeto, Adicionar Biblioteca ou Adicionar JAR/Pasta.</li>
+            </ul>
+            <p>
+                Se houver arquivos de Javadoc e arquivos de código-fonte anexados a um arquivo JAR no Gerenciador de Bibliotecas, o IDE adicionará automaticamente os arquivos de Javadoc e os arquivos de código-fonte ao projeto quando o arquivo JAR for registrado em um classpath do projeto. É possível fazer step into nas classes e procurar as páginas de Javadoc das classes sem configurar nada mais.</p>
+			<p class="align-center"><a href="../../../images_www/articles/74/java/project-setup/projprops-libcompile.png" rel="lytebox" title="Caixa de diálogo Propriedades do Projeto"> <img alt="Caixa de diálogo Propriedades do Projeto" border="1" src="../../../images_www/articles/74/java/project-setup/projprops-libcompile-small.png"></a></p>
+			
+
+            <a name="projects-dependencies"></a>
+            <h3 class="tutorial">Gerenciando Dependências entre Projetos</h3>
+            <p>
+                Se sua aplicação consiste em múltiplos projetos, terá que configurar as dependências de classpath entre os projetos. Normalmente, você configura um projeto principal contendo a classe do projeto principal (em projetos Java SE) e diversos projetos necessários. Um projeto requerido é um projeto que foi adicionado a outro classpath de projeto. Toda vez que você limpa e constrói um projeto, o IDE também limpa e constrói os projetos necessários. O projeto do Javadoc necessário e os códigos-fonte também são disponibilizados para o projeto recebedor. </p>
+            <p>
+                É possível adicionar quaisquer projetos necessários para o projeto ao clicar com o botão direito do mouse no nó Bibliotecas ou adicioná-los ao especificá-los na guia Bibliotecas na caixa de diálogo Propriedades do Projeto. Quando quiser adicionar um projeto obrigatório, selecione a pasta do projeto cujos arquivos JAR você deseja adicionar ao classpath (o seletor de arquivos exibe o ícone para pastas do projeto IDE (<img ALIGN="bottom" alt="Ícone Pasta do Projeto" src="../../../images_www/articles/72/java/project-setup/projectfolder.png">). Ao adicionar projetos na caixa de diálogo Propriedades do Projeto, certifique-se de que a caixa de seleção Construir Projetos no classpath esteja marcada.</p>
+            <p>
+                Se quiser adicionar um projeto de formato livre para o classpath de um projeto padrão, terá que adicionar o arquivo JAR do projeto de formato livre para o classpath do projeto padrão. Para fazer isso, é preciso primeiro declarar todos os arquivos de saída do projeto de formato livre no painel Saída da caixa de diálogo Propriedades do Projeto do projeto de formato livre.</p>
+
+            <a name="projects-shared-libraries"></a><h3 class="tutorial">Compartilhando Bibliotecas do Projeto</h3>
+
+            <p>Como o sistema do projeto NetBeans IDE possui base em Ant, os projetos do NetBeans já são geralmente transferíveis entre usuários diferentes, independentemente de eles utilizarem o IDE ou não. Entretanto, por default, a forma pela qual o script de construção do projeto se refere às bibliotecas depende de vários fatores específicos para cada usuário, particularmente no caso de bibliotecas definidas na caixa de diálogo Gerenciador de Bibliotecas.</p>
+
+            <p>Por exemplo, normalmente é possível colocar um projeto em um arquivo zip e fornecer o arquivo para que outro usuário descompacte-o e execute-o. Mas se o projeto depende de uma biblioteca personalizada especificada na caixa de diálogo Gerenciador de Bibliotecas, outros podem inicialmente ter problemas para construir o projeto por causa das referências não solucionadas para a biblioteca personalizada.</p>
+
+            <p>Outra inconveniência potencial é que as bibliotecas são armazenadas em uma variedade de locais, com base em sua origem. As bibliotecas que vêm com o IDE são armazenadas em várias pastas diferentes na instalação do IDE. Os exemplos disso incluem as bibliotecas das Extensões de Layout do Swing, vinculação de beans e drivers de banco de dados.</p>
+
+            <p>Para solucionar esses problemas, é possível especificar uma pasta dedicada para bibliotecas do projeto. Além disso, você decide entre utilizar um caminho relativo ou caminho absoluto ao se referir a essas bibliotecas. </p>
+            <p>Essa flexibilidade torna mais fácil manipular as situações a seguir:</p>
+            <ul>
+                <li>Você cria um projeto e precisa torná-lo disponível e capaz de ser construído para outros usuários, independentemente de eles utilizarem o IDE ou não. Eles devem acessar o projeto por meio de um check-out de controle de versão ou descompactando um arquivo zip que você forneceu a eles. Em seguida, eles devem ser capazes de construir a aplicação sem configuração extra.</li>
+                <li>Você deve começar trabalhando em um projeto existente e aderir a um conjunto estrito de convenções relacionadas ao lugar onde as bibliotecas do projeto são armazenadas (e se os seus scripts de construção os acessam com uma referência relativa ou referência absoluta). </li>
+            </ul>
+
+            <p>É possível definir uma pasta de bibliotecas dedicadas para projetos padrão Java SE, Web e Corporativo. É possível definir a pasta de bibliotecas ao criar o projeto (no assistente para Novo Projeto) ou depois na guia Bibliotecas da caixa de diálogo Propriedades do Projeto.</p>
+
+            <!--TODO:  info on descriptor/definition file-->
+            <p><b>Para tornar as bibliotecas gerais do projeto Java compartilháveis durante a criação do projeto:</b></p>
+            <ol>
+                <li>Escolha <tt>Arquivo</tt> > <tt>Novo Projeto</tt>.</li>
+                <li>Na categoria Java do assistente, selecione um dos modelos padrão. Em seguida, clique em Próximo.</li>
+                <li>Na página Nome e Localização do assistente, marque a caixa de seleção Utilizar Pasta Dedicada para Armazenar Bibliotecas.</li>
+                <li>No campo Pasta de Bibliotecas, selecione o local onde as bibliotecas serão armazenadas.
+                    <p>Se as bibliotecas já estiverem incluídas no IDE, elas serão copiadas para a pasta designada.</p>
+                <!-- TODO : what about other types of libraries? --></li>
+            </ol>
+
+            <p><b>Para tornar as bibliotecas do projeto Java EE ou da Web compartilháveis durante a criação do projeto:</b></p>
+            <ol>
+                <li>Escolha <tt>Arquivo</tt> > <tt>Novo Projeto</tt>.</li>
+                <li>Na categoria Web do assistente, selecione um dos modelos padrão. Em seguida, clique em Próximo.</li>
+                <li>Na página Nome e Localização do assistente, marque a caixa de seleção Utilizar Pasta Dedicada para Armazenar Bibliotecas.</li>
+                <li>No campo Pasta de Bibliotecas, selecione o local onde as bibliotecas serão armazenadas.
+                    <p>Se as bibliotecas já estiverem incluídas no IDE, elas serão copiadas para a pasta designada.</p></li>
+          </ol>
+
+            <p><b>Para tornar as bibliotecas de um projeto existente compartilháveis:</b></p>
+            <ol>
+                <li>Clique com o botão direito do mouse no nó do projeto e escolha Propriedades.</li>
+                <li>Na caixa de diálogo Propriedades do Projeto, marque o nó Bibliotecas.</li>
+                <li>No painel Bibliotecas, clique em Procurar para abrir o assistente pasta Novas Bibliotecas.</li>
+                <li>Na página Pasta Biblioteca do assistente, insira uma localização para as bibliotecas e clique em Próximo. <br>É possível inserir a localização como uma referência relativa ou uma referência absoluta. </li>
+                <li>No painel Ações do assistente, verifique a ação selecionada para cada biblioteca listada. Na maioria dos casos, o IDE detecta a ação mais apropriada para essa biblioteca.
+                    <p>As ações a seguir estão disponíveis:</p>
+                    <ul>
+                        <li><b>copiar Arquivos JAR da Biblioteca para Nova Pasta de Bibliotecas.</b> Use esta opção se a biblioteca não estiver na pasta que você selecionou e você deseja ter os arquivos JAR da biblioteca colocados nela. </li>
+                        <li><b>Usar Caminho Relativo para Arquivos JAR da Biblioteca.</b> Use esta opção se a biblioteca não estiver na pasta de bibliotecas e você precisar acessar a biblioteca em seu local existente usando um caminho relativo. Uma entrada com uma referência relativa é adicionada para a biblioteca no arquivo <tt>nblibraries.properties</tt> da pasta de bibliotecas.</li>
+                        <li><b>Usar Caminho Absoluto para Arquivos JAR da Biblioteca.</b> Use esta opção se a biblioteca não estiver na pasta de bibliotecas e você precisar acessar a biblioteca em seu local existente usando um caminho absoluto. Uma entrada com uma referência absoluta é adicionada para a biblioteca no arquivo <tt>nblibraries.properties</tt> da pasta das bibliotecas.</li>
+                        <li><b>Usar Biblioteca Existente na Pasta de Bibliotecas.</b> Use esta opção se já houver uma cópia da biblioteca na pasta de bibliotecas e você deseja usar essa cópia da biblioteca.</li>
+                </ul></li>
+                <li>Clique em Finalizar para sair do assistente Tornar Projeto Compartilhável.</li>
+                <li>Clique em OK para sair da caixa de diálogo Propriedades do Projeto.</li>
+
+            </ol>
+            <p><b class="notes">Observação:</b> também é possível utilizar o nó Bibliotecas da caixa de diálogo Propriedades do Projeto para alterar a localização da pasta de bibliotecas. Caso você já tenha especificado uma pasta Bibliotecas, clicar em Procurar abre um seletor de arquivos em vez do assistente para Pasta Nova Biblioteca.
+            </p>
+
+            <h3><a name="projects-jdk-javadoc"></a>Tornando o Javadoc Disponível no IDE
+            </h3>
+            <p>Para exibir a documentação da API Java SE no NetBeans IDE, utilize o comando <tt>Código-fonte</tt> > <tt>Exibir documentação</tt> ou escolha <tt>Janela</tt> > <tt>Outro</tt> > <tt>Javadoc</tt> no menu principal para exibir a documentação da API em outra janela.</p>
+            <p>No entanto, em algumas bibliotecas de terceiros, a documentação da API não está disponível. Nesses casos, os recursos do Javadoc devem ser associados manualmente ao IDE.</p>
+            <p><b>Para tornar a documentação da API Javadoc disponível para o comando Mostrar Javadoc:</b></p>
+            <ol>
+              <li>Faça download do código-fonte da documentação da API Javadoc.</li>
+              <li>Escolha <tt>Ferramentas</tt> > <tt>Bibliotecas</tt>.</li>
+              <li>Na lista Bibliotecas, selecione a biblioteca que seu projeto está utilizando.</li>
+              <li>Clique na guia Javadoc.</li>
+              <li>Clique no botão Adicionar ZIP/Pasta e navegue até o arquivo zip ou à pasta que contém a documentação da API Javadoc em seu sistema. Selecione o arquivo zip ou a pasta e clique no botão Adicionar ZIP/Pasta.</li>
+              <li>Clique em OK.</li>
+            </ol>
+            <h3 class="tutorial"><a name="projectsjws"></a>Ativando o Java Web Start para a Aplicação </h3>
+            <p>É possível configurar sua aplicação para ser executada por meio do Java Web Start no IDE. Para isso, utilize a categoria Java Web Start na janela Propriedades do Projeto. Para obter informações detalhadas sobre como ativar o Java Web Start, consulte o tutorial <a href="../../73/java/javase-jws_pt_BR.html">Ativando o Java Web Start no NetBeans IDE</a>.</p>
+            <p><b>Para Configurar o Java Web Start para a aplicação:</b></p>
+            <ol>
+              <li>Clique com o botão direito do mouse no nó do projeto e escolha Propriedades.</li>
+              <li>Na caixa de diálogo Propriedades do Projeto, selecione o nó <tt>Aplicação</tt> > <tt>Web Start</tt>.</li>
+              <li>Marque a caixa de seleção Ativar Web Start e configure as definições do Java Web Start como explicado em <a href="../../73/java/javase-jws_pt_BR.html">Ativando o Java Web Start no NetBeans IDE</a>.</li>
+            </ol>
+            
+        </div>
+
+
+        <a name="building"></a><h2>Construindo Aplicações</h2>
+        <p>
+            Esta seção explica como construir os projetos padrão no IDE, como efetuar personalizações básicas para o processo de construção e como tratar os erros de compilação. </p>
+        
+        <div class="indent">
+            <a name="building-commands"></a><h3 class="tutorial">Construindo Projetos, Pacotes e Arquivos</h3>
+            <p>A compilação no IDE é simples. Assumindo que seu classpath de compilação do projeto está corretamente definido, será necessário somente selecionar o projeto ou o arquivo que deseja compilar e escolher o comando Construir ou Compilar apropriado no menu Executar. O IDE então compila os arquivos.</p>
+            <p>Se a funcionalidade Compilar ao Salvar estiver ativada para um projeto Java (ou a funcionalidade Implantar ao Salvar está ativada para um projeto Java WEB ou corporativo), o IDE compila automaticamente os arquivos quando estes são salvos. Consulte <a href="#building-compile-on-save">Compilar ao Salvar</a> abaixo, para mais informações.</p>
+            <p><b>Para construir sua aplicação para implantação:</b></p>
+            <ul>
+                <li>Escolha <tt>Executar</tt> > <tt>Limpar e Construir Projeto</tt>.
+                    <p>Todos os arquivos previamente compilados e as saídas distribuíveis como arquivos JAR são deletados. Então os arquivos são recompilados e novas saídas são produzidas. Uma pasta <code>construir</code> é criada para armazenar as classes compiladas. Um <code>dist</code> é gerado para conter saídas distribuíveis como arquivos JAR e documentação Javadoc. É possível ver as saídas construídas ao abrir a janela Arquivos.</p></li>
+            </ul>
+            <p>Sempre que comandos de compilação são chamados, o IDE exibe a saída incluindo quaisquer erros de compilação encontrados na janela de Saída, como descrito em <a href="#building-fixing">Corrigindo Erros de Compilação</a> abaixo.</p>
+
+            <a name="building-compile-on-save"></a><h3 class="tutorial">Compilar ao Salvar</h3>
+            <p>A funcionalidade Compilar ao Salvar do IDE permite economizar tempo quando você estiver executando e depurando projetos no IDE. Quando a funcionalidade Compilar ao Salvar estiver ativada para um projeto, os arquivos são compilados ao serem salvos. Os arquivos compilados são armazenados em um cache que o IDE utiliza quando o projeto no IDE é executado, testado, depurado e perfilado. Isso permite testar e depurar a aplicação sem ter que esperar que a aplicação seja construída primeiro.</p>
+
+            <p>Quando ativada, a funcionalidade Compilar ao Salvar tem os seguintes efeitos:</p>
+            <ul>
+                <li>O IDE compila seus arquivos quando estes são salvos para que seu projeto sempre esteja pronto para ser executado ou depurado no IDE.</li>
+                <li>O comando Construir é desativado. Desative a funcionalidade Salvar ao Compilar se quiser reconstruir o arquivo JAR sem ter de utilizar o comando Limpar e Construir.</li>
+                <li>O script do Ant do projeto não é utilizado quando os comandos Executar, Depurar, Perfilar ou Testar são utilizados. Se o script de construção foi personalizado para quaisquer destes comandos, estas personalizações serão desconsideradas.</li>
+                <li>O arquivo JAR que é construído a partir do projeto <i>não</i> é mantido atualizado quando você salva alterações em seus arquivos. Se quiser construir ou reconstruir o arquivo JAR, utilize o comando Limpar e Construir. O comando Limpar e Construir sempre utiliza o script Ant do seu projeto, independentemente de a funcionalidade Compilar ao Salvar estar ou não ativada.</li>
+            </ul>
+
+            <p>Compilar ao Salvar é ativado por default para novos projetos que você cria. Para projetos existentes, Compilar ao Salvar é desativado.</p>
+
+            <p><b>Para ativar ou desativar Compilar ao Salvar para um projeto Java:</b></p>
+            <ol>
+                <li>Clique com o botão direito do mouse no nó do projeto e escolha Propriedades.</li>
+                <li>Na caixa de diálogo Propriedades do Projeto, expanda a categoria Construir e selecione o nó Compilação.</li>
+				<li>Defina a propriedade Compilar ao Salvar, conforme necessário.</li>
+            </ol>
+            <p>De forma similar, o IDE tem uma funcionalidade Implantar ao Salvar para as aplicações Java Web e corporativas. Quando a funcionalidade Implantar ao Salvar está ativada para um projeto e ele foi implantado por meio do IDE, os arquivos alterados são reimplantados imediatamente no servidor. Para que Implantar ao Salvar funcione no GlassFish V4, a instância Glassfish precisa ter a opção Implantação de Diretório Ativada selecionada. </p>
+            <p><b>Para ativar ou desativar Implantar ao Salvar para um projeto Java Web ou corporativo:</b></p>
+            <ol>
+                <li>Clique com o botão direito do mouse no nó do projeto e escolha Propriedades.</li>
+                <li>Selecione o nó Executar e defina a propriedade Implantar ao Salvar.</li>
+            </ol>
+            <p><b>Para ativar a implantação do diretório Glassfish V4:</b></p>
+            <ol>
+                <li>Escolha <tt>Ferramentas</tt> > <tt>Servidores</tt>.</li>
+                <li>Selecione o servidor.</li>
+                <li>Selecione a guia Opções.</li>
+                <li>Selecione opção Implantação do Diretório Ativada.</li>
+            </ol>
+
+
+
+            <a name="building-fixing"></a><h3 class="tutorial">Corrigindo Erros de Compilação</h3>
+
+            <!--TODO add info here about task list, etc.-->
+            <p>
+                O IDE exibe mensagens de saída e quaisquer erros de compilação na janela de Saída. Essa janela com múltiplas guias é exibida automaticamente quando você encontra erros de compilação, depura o programa, gera documentação Javadoc, e assim por diante. Também é possível abrir manualmente essa janela escolhendo Janela > Saída (Ctrl-4 no Windows/Cmd-4 no OS X).</p>
+            <p>Além disso, os erros de compilação são mostrados na janela Tarefas e marcados no Editor de Código-fonte.</p>
+            <p>
+                Uma função importante da janela de Saída é notificar erros encontrados enquanto compila o programa. A mensagem de erro é exibida em texto sublinhado azul e está vinculada à linha no código-fonte que causou o erro, como ilustrado na imagem abaixo. (Para alguns erros comuns de codificação, o Editor de Código-fonte frequentemente fornece uma dica sobre como corrigir um erro, ao passar o cursor sobre o ícone de dica). A janela de Saída também fornece links para erros encontrados ao executar scripts de compilação Ant. Sempre que você clica em um link de erro na janela de Saída, o Editor de Código-fonte salta automaticamente para a linha que contém o erro.</p>
+           	<p class="align-center"><a href="../../../images_www/articles/74/java/project-setup/output-window.png" rel="lytebox" title="Janela de saída que mostra erros de compilação"> <img alt="Janela de saída que mostra erros de compilação" border="1" src="../../../images_www/articles/74/java/project-setup/output-window-small.png"></a></p>
+
+            <p>Cada ação realizada por um script Ant, como compilar, executar e depurar arquivos, envia a saída para a mesma guia da janela de Saída. Se for necessário salvar as mensagens exibidas na janela de Saída, é possível copiar e colar as mensagens em um arquivo separado. Também é possível definir que o Ant imprima a saída do comando para cada novo destino em uma nova guia da janela de Saída ao escolher Ferramentas > Opções, selecionando a categoria Diversos, clicando na guia Ant e desmarcando a caixa de seleção para Reutilizar Guias de Saída da propriedade Processos Finalizados.</p>
+            <a name="building-filtering"></a><h3 class="tutorial">Filtrando Arquivos de Saída</h3>
+            <p>
+                Ao criar um arquivo JAR ou WAR, normalmente você deseja incluir apenas os arquivos <code>.class</code> compilados e quaisquer outros arquivos de recursos localizados no diretório de código-fonte, como pacotes de recursos ou documentos XML. O filtro default faz isso ao excluir todos os arquivos <code>.java</code>, <code>.nbattrs</code> e <code>.form</code> de seu arquivo de saída.</p>
+            <p>
+                É possível criar filtros adicionais utilizando expressões regulares para controlar os arquivos de Saída. Para especificar quais arquivos devem ser excluídos, clique com o botão direito do mouse em seu projeto na janela Projetos e escolha Propriedades para abrir a caixa de diálogo Propriedades do Projeto. No painel esquerdo clique em Encapsulamento. No painel direito, insira expressões regulares na caixa de texto para especificar os arquivos a serem excluídos ao encapsular os arquivos JAR ou WAR. Além das expressões default, aqui estão algumas expressões regulares adicionais que podem ser utilizadas:</p>
+            <table>
+                <tr>
+                    <th class="tblheader" scope="col">Expressão Regular</th>
+                    <th class="tblheader" scope="col">Descrição</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><code>\.html$ </code></td>
+                    <td class="tbltd1">Exclui todos os arquivos HTML</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><code>\.java$ </code></td>
+                    <td class="tbltd1">Exclui todos os arquivos Java</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><code>(\.html$)|(\.java$) </code></td>
+                    <td class="tbltd1">Exclui todos os arquivos HTML e Java</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><code>(Chave)|(\.gif$) </code></td>
+                    <td class="tbltd1">Exclui todos os arquivos GIF e quaisquer arquivos com <code>Key</code> em seu nome</td>
+                </tr>
+            </table>
+            <p>
+                Para obter um guia para a sintaxe de expressões regulares consulte <a href="http://jakarta.apache.org">jakarta.apache.org</a>.</p>
+        </div>
+        <a name="deploy"></a><h2>Executando Aplicações</h2>
+        <p>Esta seção mostra como executar projetos no IDE e como configurar a classe principal do projeto, os argumentos de runtime, os argumentos VM e o diretório de trabalho.</p>
+        <div class="indent">
+            <a name="deploy-projects"></a><h3 class="tutorial`">Executando Projetos e Arquivos</h3>
+            <p>Para projetos Java, você normalmente define o projeto que contém a classe principal do programa como o projeto principal. Para projetos Web, o projeto principal é o projeto que foi implantado primeiro. Para executar um projeto, pacote ou arquivo, escolha uma das opções a seguir:</p>
+            <ul>
+                <li>No menu principal, escolha <tt>Executar</tt> > <tt>Executar Projeto Principal (F6)</tt> para executar o projeto principal. Alternativamente, é possível utilizar o botão Executar o Projeto Principal na barra de ferramentas.</li>
+                <li>Na janela Projetos, clique com o botão direito do mouse no projeto e escolha Executar para executar um projeto. Observe que para projetos Java, o projeto precisa ter uma classe principal.</li>
+                <li>Na janela Projetos, clique com o botão direito do mouse no arquivo e escolha Executar o Arquivo (F6) para executar um arquivo. Alternativamente, escolha <tt>Executar</tt> > <tt>Executar o arquivo</tt> > <tt>Executar nome do arquivo (Shift+F6)</tt> no menu principal para executar uma classe executável. </li>
+            </ul>
+            <p>Quando você executa o projeto, o IDE exibe quaisquer erros de compilação e a saída na janela de Saída. Para saber mais, consulte <a href="#building-fixing">Corrigindo Erros de Compilação</a>.</p>
+            <p class="notes"><b>Observação:</b> se Compilar ao Salvar estiver ativado para um projeto, o comando Executar o projeto opera em arquivos de classe que foram criados quando estes arquivos foram salvos. O script de construção do Ant não é utilizado. Se etapas personalizadas foram definidas no script de construção, estas etapas não são seguidas. Se desejar que o processo de construção completo ocorra ao utilizar Executar o Projeto, Depurar o Projeto e Perfilar o Projeto, desative <a href="#building-compile-on-save">Compilar ao Salvar</a>.
+            </p>
+
+            <a name="deploy-options"></a><h3 class="tutorial">Personalizando as Opções de Runtime</h3>
+            <p>Como default, o IDE não especifica uma classe principal, argumentos do runtime ou argumentos JVM. O classpath do runtime de cada projeto padrão contém as classes compiladas do projeto e tudo o que houver no classpath de compilação do projeto. É possível exibir o classpath de compilação do projeto ao abrir a caixa de diálogo Propriedades do projeto, selecionar o nó Bibliotecas no painel Categorias e, em seguida, clicar na guia Compilar no painel direito.</p>
+            <p>Para alterar as opções do runtime, abra a caixa de diálogo Propriedades do projeto ao clicar com o botão direito do mouse no nó do projeto na janela Projetos e escolher Propriedades. Em seguida, selecione o nó Bibliotecas no painel Categorias e clique na guia Executar no painel direito da caixa de diálogo. Observe que para acessar as definições para a classe principal, argumentos do programa, diretório de trabalho para a execução do programa e as opções VM, é preciso selecionar o nó Executar. Na próxima seção, iremos examinar mais de perto sobre como configurar o classpath de runtime.</p>
+			<p class="align-center"><a href="../../../images_www/articles/74/java/project-setup/proj_props-libraries.png" rel="lytebox" title="Especificando as definições de runtime na caixa de diálogo Propriedades do Projeto"><img alt="Especificando as definições de runtime na caixa de diálogo Propriedades do Projeto" border="1" src="../../../images_www/articles/74/java/project-setup/proj_props-libraries-small.png"></a></p>
+            <!-- TODO Run configurations-->
+            <a name="deploy-classpath"></a><h3 class="tutorial">Definindo o Classpath de Runtime</h3>
+            <p>Para adicionar projetos, bibliotecas, arquivos JAR e pastas para o classpath de runtime, utilize os botões no lado direito da lista Bibliotecas de Runtime na caixa de diálogo Propriedades do Projeto.</p>
+            <p>Se o projeto utilizar dinamicamente bibliotecas especiais no runtime por meio de uma interface indireta ou reflexão (como drivers JDBC ou implementações JAXP), será necessário adicionar essas bibliotecas ao classpath de runtime. Também será necessário ajustar o classpath de runtime se as dependências de runtime entre os projetos não corresponderem às dependências de compilação dos projetos. Por exemplo, imagine que o projeto A compila o projeto B, e o projeto B compila o projeto C, mas um projeto A não compila o projeto C. Isso significa que o projeto A tem Projeto B em seu classpath de runtime. Se o projeto A necessitar do projeto B e do projeto C durante a execução, será preciso adicionar o projeto C ao classpath de runtime do projeto A.</p>
+
+            <a name="deploy-args"></a><h3 class="tutorial">Definindo a Classe Principal e os Argumentos de Runtime</h3>
+            <p>Para definir a classe principal do projeto, selecione o nó Executar no painel Categorias da caixa de diálogo Propriedades do Projeto e digite um nome completamente qualificado no campo Classe Principal (por exemplo, <code>org.myCompany.myLib.MyLibClass</code>). A classe principal precisa existir no projeto ou em um dos arquivos ou bibliotecas JAR no classpath de runtime do projeto. Após isso, digite quaisquer argumentos de runtime necessários no campo Argumentos.</p>
+            <p>Se você utiliza o botão Procurar para escolher a classe principal do projeto, o seletor de arquivos só mostrará classes no diretório de código-fonte do projeto. Se desejar especificar uma classe em uma das bibliotecas no classpath, precisará digitar o nome totalmente qualificado da classe no campo Classe Principal.</p>
+            <a name="deploy-jvm"></a><h3 class="tutorial">Definindo os Argumentos JVM</h3>
+            <p>É possível especificar os argumentos JVM para o projeto na caixa de diálogo Propriedades do Projeto. Abra a caixa de diálogo Propriedades do Projeto, clique em Executar no painel Categorias e, em seguida, digite uma lista de argumentos JVM separada por espaço no campo Opções VM.</p>
+            <p>É possível definir as propriedades do sistema digitando o seguinte no campo Opções da VM:</p>
+            <pre class="examplecode">-Dname=value</pre>
+        </div>
+
+        <a name="build-script"></a><h2>Personalizando o Script de Construção</h2>
+        <p>Em projetos padrão o IDE gera o script de construção com base nas opções inseridas no assistente Novo Projeto e na caixa de diálogo Propriedades do Projeto. É possível definir todas as opções básicas de compilação e runtime na caixa de diálogo Propriedades do projeto no projeto e o IDE atualiza automaticamente o script do Ant do projeto. Se você possuir requisitos adicionais para o processo de construção, que não podem ser manipulados na caixa de diálogo Propriedades do Projeto, poderá modificar diretamente o script de construção.</p>
+        <p>O script principal do Ant para projetos padrão é o <code>build.xml</code>. O IDE chama os destinos em <code>build.xml</code> sempre que os comandos do IDE são executados. Esse arquivo possui uma instrução de importação que importa o <code>nbproject/build-impl.xml</code>, que contém destinos de construção que são gerados pelo IDE. No <code>build.xml</code>, é possível substituir qualquer destino de <code>nbprojetc/build-impl.xml</code> ou gravar novos destinos. <i>Não</i> edite diretamente o <code>nbproject/build-impl.xml</code>, porque aquele arquivo é gerado novamente com base nas alterações feitas na caixa de diálogo Propriedades do Projeto.</p>
+        <p>Além disso, o script de construção utiliza o <code>nbproject/project.properties</code> que pode ser editado manualmente.</p>
+        <p>Com projetos padrão, é possível personalizar o processo de construção adotando um dos procedimentos a seguir:</p>
+        <ul>
+            <li>inserindo opções básicas, como as definições do classpath e filtros JAR no assistente Novo Projeto quando você cria um projeto ou posteriormente na caixa de diálogo Propriedades do Projeto.</li>
+            <li>Editando propriedades no <code>nbproject/project.properties</code>. Esse arquivo armazena propriedades do Ant com informações importantes sobre seu projeto, como a localização de seu código-fonte e as pastas de saída. É possível substituir as propriedades nesse arquivo. Tenha cuidado ao editar este arquivo. Por exemplo, a pasta de saída é deletada sempre que você limpa seu projeto. Portanto, nunca defina a pasta de saída para o mesmo local da pasta de código-fonte sem primeiro configurar o destino limpo para não deletar a pasta de saída.</li>
+            <li>Personalizando destinos de Ant existentes ou criar novos ao executar quaisquer um dos seguintes:<ul>
+                    <li>adicione instruções a serem processadas antes ou depois de um destino do Ant ser executado. Cada um dos destinos principais no <code>nbproject/build-impl.xml</code> também possui um destino <code>-pre</code> e <code>-post</code> que você substitui no <code>build.xml</code>. Por exemplo, para que o RMI funcione com projetos regulares, digite o seguinte no <code>build.xml</code>:
+                        <pre class="examplecode">&lt;target name=&quot;-post-compile&quot;&gt;
+  &lt;rmic base=&quot;${build.classes.dir}&quot; includes=&quot;**/Remote*.class&quot;/&gt;
+                    &lt;/target&gt;</pre></li>
+                    <li>Altere as instruções em um destino do Ant. Copie o destino de <code>nbproject/build-impl.xml</code> para o <code>build.xml</code> e faça quaisquer alterações no destino.</li>
+                    <li>Crie novos destinos no <code>build.xml</code>. Também é possível adicionar o novo destino nas dependências dos destinos existentes do IDE. Substitua o destino existente em <code>build.xml</code> e, em seguida, adicione o novo destino na propriedade <code>depends</code> do destino existente. Por exemplo, a instrução a seguir adiciona o destino <code>new-target </code> nas dependências do destino de execução:
+                        <pre class="examplecode">&lt;target name=&quot;new-target&quot;&gt;
+    &lt;!-- target body... --&gt;
+&lt;/new-target&gt;
+&nbsp;
+                        &lt;target name=&quot;run&quot; depends=&quot;new-target,myprojname-impl.run&quot;/&gt;</pre>
+                        <p>Não é preciso copiar o corpo do destino de execução no <code> build.xml</code>.</p>
+        </li></ul></li></ul>
+        <p>A tabela a seguir lista algumas tarefas comuns que você pode considerar útil para redefinir um arquivo JAR:</p>
+
+ <table>
+            <tr>
+                <th class="tblheader" scope="col">Para executar essa tarefa</th>
+                <th class="tblheader" scope="col">Siga estas etapas</th>
+            </tr>
+            <tr>
+                <td class="tbltd1">Especifique quais arquivos são adicionados ao arquivo JAR.</td>
+                <td class="tbltd1">Clique com o botão direito do mouse no nó do projeto na janela Projetos e escolha Propriedades. Clique no subnó Encapsulamento (em Construção) e configure as definições do filtro e compressão utilizando o campo Excluir do arquivo JAR. Para mais informações, consulte <a href="#building-filtering">Filtrando os Arquivos de Saída</a></td>
+            </tr>
+            <tr>
+                <td class="tbltd1">Altere o nome e a localização do arquivo JAR. </td>
+                <td class="tbltd1">Na janela Arquivos, clique duas vezes no arquivo <code>nbproject/project.properties</code> do projeto no Editor de Código-fonte. Insira o caminho completo para o arquivo JAR na propriedade <code>dist.jar </code>.
+                </td>
+            </tr>
+            <tr>
+                <td class="tbltd1">Especifique o arquivo manifesto para o arquivo JAR. </td>
+                <td class="tbltd1">Em <code>project.properties</code>, digite o nome do arquivo manifesto na propriedade <code>manifest.file</code>. O nome do arquivo deve ser especificado em relação ao arquivo <code>build.xml</code> do projeto. Observe que se você estiver utilizando o modelo de Aplicação Java, o IDE cria um arquivo manifest.
+                </td>
+            </tr>
+            <tr>
+                <td class="tbltd1">Desative a geração de um arquivo JAR para um projeto. </td>
+                <td class="tbltd1">Na janela Arquivos, abra a pasta do projeto e, em seguida, abra <code>build.xml</code>. Substitua o destino <code>jar</code> para ter conteúdo e não dependências. Por exemplo, adicione o seguinte ao <code>build.xml</code>:
+                    <pre>&lt;target name=&quot;jar&quot; /&gt;</pre>
+                </td>
+            </tr>
+    </table>
+
+        <p>Se você estiver procurando por recursos de aprendizado do Ant, visite <a href="http://ant.apache.org/resources.html">http://ant.apache.org/resources.html</a>. Também é possível instalar o manual do Ant no sistema de ajuda do IDE ao utilizar o Gerenciador de Plug-ins. Escolha Ferramentas > Plug-ins e instale o módulo Documentação do Ant. </p>
+        <div class="indent">
+            <a name="ant-editing"></a><h3 class="tutorial">Editando e Executando Scripts do Ant</h3>
+            <p>O IDE reconhece automaticamente scripts Ant e as exibe como nós de script Ant (<img align="bottom" alt="Ícone do nó do script Ant" src="../../../images_www/articles/72/java/project-setup/anticon.png">) em vez de como arquivos XML normais. Para acessar um menu pop-up de comandos é possível clicar com o botão direito do mouse nos scripts do Ant na janela Projetos, janela Arquivos ou na janela Favoritos. Também é possível expandir o nó do script do Ant para visualizar uma lista alfabética de subnós representando os destinos do script do Ant. Cada um desses subnós também possuem um menu pop-up de comandos.</p>
+            <p>Nas janelas Projetos, Arquivos e Favoritos, os subnós do script do Ant são marcados nas seguintes formas:</p>
+            <table>
+                <tr>
+                    <th class="tblheader" scope="col">Ícone</th>
+                    <th class="tblheader" scope="col">Significado</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1">
+                            <img align="bottom" alt="Ícone de destino do Ant enfatizado" src="../../../images_www/articles/72/java/project-setup/setup-targeticon-emph.png">
+                    </td>
+                    <td class="tbltd1">
+                        <p><b>Alvo Ant Enfatizado.</b> Esses destinos incluem um atributo de descrição, que é exibido como uma dica de ferramenta. Você define o atributo de descrição do destino no Editor de Código-fonte.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="tbltd1">
+
+                            <img alt="Ícone Destino Ant Normal" src="../../../images_www/articles/72/java/project-setup/setup-targeticon.png">
+                    </td>
+                    <td class="tbltd1">
+                            <b>Alvo Ant normal.</b> Um destino sem um atributo de descrição.
+                    </td>
+                </tr>
+            </table>
+            <p>Clique duas vezes nos subnós do script do Ant para ir direto para o local do destino no Editor de Código-fonte. Todas as ferramentas normais de pesquisa XML, ferramentas de seleção e atalhos de teclado estão disponíveis para editar scripts do Ant e o IDE fornece a funcionalidade autocompletar código para todas as tarefas padrão do Ant.</p>
+            <p>
+                Ao criar um destino que deseja executar a partir da linha de comandos, forneça um atributo de descrição para o alvo. Então, se você se esquecer dos nomes dos destinos ou o que eles fazem, poderá executar o comando <code>-projecthelp &lt;script></code> do Ant na linha de comandos. Com este comando, o Ant lista somente os destinos que tenham um atributo de descrição, junto com suas descrições. Especialmente quando há muitos destinos em seu script de construção do Ant, enfatizar alguns e não enfatizar outros pode ser uma forma útil de distinguir entre os que são muito utilizados e os que são utilizados com menor frequência.</p>
+            <p>O estilo da fonte do label do subnó nas janelas Projetos, Arquivos e Favoritos indicam o seguinte:</p>
+            <ul>
+                <li><b>Normal.</b> Um destino que está definido dentro do script Ant atual.</li>
+                <li><b>Itálico.</b> Um destino importado de outro script Ant.</li>
+                <li><b>Acinzentado.</b> Um destino interno que não pode ser executado diretamente. Os destinos internos possuem nomes começando por '-'.</li>
+                <li><b>Negrito.</b> O destino default para o script, se houver. O destino default é declarado como um atributo para o projeto, junto com outros atributos do projeto, como seu nome. Você define o atributo default do projeto no Editor de Código-fonte.</li>
+            </ul>
+            <p>Os destinos que são importados de outro script mas que são sobrescritos no script de importação não são listados. Somente o destino substituído é listado.</p>
+            <p>É possível executar destinos em um script do Ant a partir do nó do script do Ant na janela Projetos, Arquivos ou Favoritos. Para fazer isso, clique com o botão direito do mouse no nó do script do Ant e escolha um destino a partir do submenu Executar Alvo. Os destinos são classificados alfabeticamente. Somente os destinos enfatizados são listados. Escolha Outros Destinos para executar um destino que não foi enfatizado com um atributo de descrição. Os destinos internos são excluídos dessas listas porque eles não podem ser executados independentemente.</p>
+            <p>Em vez de executar um destino utilizando o menu pop-up do nó do script do Ant, basta clicar com o botão direito do mouse no nó do destino e escolher Executar Destino.</p>
+			<p class="align-center"><a href="../../../images_www/articles/72/java/project-setup/setup-run.png" rel="lytebox" title="Executando um destino de Ant"><img alt="Executando um destino de Ant" border="1" src="../../../images_www/articles/72/java/project-setup/setup-run-small.png"></a></p>
+            <a name="ant-custom-task"></a><h3 class="tutorial">Escrevendo Tarefas Personalizadas do Ant</h3>
+            <p>É possível utilizar tarefas personalizadas do Ant para expandir a funcionalidade fornecida por tarefas embutidas do Ant. As tarefas personalizadas são utilizadas com frequência para definir propriedades, para criar elementos aninhados ou para escrever texto diretamente entre marcadores utilizando o método <code>addText</code>.</p>
+            <p><b>Para criar uma tarefa personalizada do Ant no IDE:</b></p>
+            <ol>
+                <li>Clique com o botão direito do mouse no pacote onde gostaria de colocar a tarefa e escolha <tt>Novo</tt> > <tt>Outro</tt>.</li>
+                <li>Selecione a categoria Outro e o tipo de arquivo da tarefa personalizada do Ant.</li>
+                <li>Conclua o assistente.</li>
+            </ol>
+            <p>Quando você cria o arquivo da tarefa personalizada do Ant, o modelo é aberto no Editor de Código-fonte. O modelo contém código de amostra para muitas das operações comuns executadas por tarefas do Ant. Após cada seção do código, o modelo também mostra como utilizar a tarefa em um script do Ant.</p>
+
+        </div>
+
+
+        <br>
+        <div class="feedback-box">
+            <a href="/about/contact_form.html?to=3&subject=Creating,%20Importing,%20and%20Configuring%20Java%20Projects">Enviar Feedback neste Tutorial</a>        </div>
+        <br style="clear:both;" >
+
+        <h2><a name="seealso">Consulte Também</a></h2>
+        <ul>
+		    <li><a href="http://www.oracle.com/pls/topic/lookup?ctx=nb7400&id=NBDAG366">Criando Projetos Java</a> em <i>Desenvolvendo Aplicações com o NetBeans IDE</i></li>
+            <li><a href="junit-intro.html">Escrevendo Testes JUnit</a></li>
+            <li><a href="debug-multithreaded.html">Depurando Aplicações Multithread no NetBeans IDE</a></li>
+
+            <li><a href="../../73/java/javase-jws_pt_BR.html">Ativando o Java Web Start no NetBeans IDE</a></li>
+        </ul>
+
+        <hr>
+
+    </body>
+</html>

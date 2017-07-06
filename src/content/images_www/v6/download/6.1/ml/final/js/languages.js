@@ -1,0 +1,16 @@
+LANGUAGE_NAMES.push("English");
+LANGUAGE_IDS.push("en");
+LANGUAGE_SUFFIXES.push("");
+LANGUAGE_WEBPAGE_NAMES.push("English");
+LANGUAGE_NAMES.push("\u65e5\u672c\u8a9e");
+LANGUAGE_IDS.push("ja");
+LANGUAGE_SUFFIXES.push("ja");
+LANGUAGE_WEBPAGE_NAMES.push("Japanese");
+LANGUAGE_NAMES.push("\u7b80\u4f53\u4e2d\u6587");
+LANGUAGE_IDS.push("zh_CN");
+LANGUAGE_SUFFIXES.push("zh_CN");
+LANGUAGE_WEBPAGE_NAMES.push("Simplified&nbsp;Chinese");
+LANGUAGE_NAMES.push("Portugu\u00eas");
+LANGUAGE_IDS.push("pt_BR");
+LANGUAGE_SUFFIXES.push("pt_BR");
+LANGUAGE_WEBPAGE_NAMES.push("Brazilian&nbsp;Portuguese");

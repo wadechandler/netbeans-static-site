@@ -1,0 +1,407 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>Учебный курс по интеграции генератора кода для платформы NetBeans 6.0, 6.1, 6.5</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="AUDIENCE" content="NBUSER"/>
+  <meta name="TYPE" content="ARTICLE"/>
+  <meta name="EXPIRES" content="N"/>
+  <meta name="developer" content="gwielenga@netbeans.org"/>
+  <meta name="indexed" content="y"/>
+  <meta name="description"
+ content="A short guide to using the Code Generator API."/>
+<!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+	<h1>Учебный курс по интеграции генератора кода</h1>
+
+<p>В этом руководстве показан способ написания модуля, интегрирующего новые элементы в функцию генерации кода NetBeans, которая вызывается сочетанием клавиш ALT+INSERT в редакторе.</p>
+
+   <p><b>Содержание</b></p>
+   
+   <p><img  src="../images/articles/69/netbeans-stamp7-8-9.png" class="stamp" width="114" height="114" alt="Содержимое на этой странице относится к среде IDE NetBeans 6.5, 6.7, 6.8" title="Содержимое на этой странице относится к среде IDE NetBeans 6.5, 6.7, 6.8" /></p>
+      <ul class="toc">
+  <li><a href="#intro">Введение в интеграцию генератора кода</a></li>
+  <li><a href="#creating">Создание проекта модуля</a></li>
+  <li><a href="#use">Использование диалогового окна &quot;Поставщик генератора кода&quot;</a></li>
+  <li><a href="#code">Написание кода интеграции генератора кода</a></li>
+  <li><a href="#install">Установка и ознакомление с функциональными возможностями</a></li>
+  <li><a href="#share">Создание совместно используемого исполняемого файла</a></li>
+       </ul>
+         
+<p><b>Для работы с этим руководством требуется программное обеспечение и ресурсы, перечисленные в следующей таблице.</b></p>
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Программное обеспечение или ресурс</th>
+                <th class="tblheader" scope="col">Требуемая версия</th>
+            </tr> 
+           <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">Среда IDE NetBeans</a></td>
+                <td class="tbltd1">версия 6.7 или выше </td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Комплект для разработчика на языке Java (JDK)</a></td>
+                <td class="tbltd1">версия 6 или<br/>версия 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+ <p class="tips">Дополнительно, в целях поиска и устранения ошибок, можно <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=11179">загрузить готовый пример</a> и изучить исходный код.</p>
+    
+
+
+<h2 class="tutorial"><a name="intro"></a>Введение в интеграцию генератора кода</h2>
+
+<p>Функция &quot;генератор кода&quot;, которая впервые появилась в среде IDE NetBeans 6.5, состоит из списка позиций, выводимых при нажатии ALT+INSERT. Каждая позиция вызывает генерацию кода в редакторе.</p>
+
+<p><img src="../images/tutorials/code-generator/code-generator-5.png" alt="Развернутый результат" /></p>
+
+
+<!-- ===================================================================================== -->
+
+<h2 class="tutorial"><a name="creating"></a>Создание проекта модуля</h2>
+      
+<p>В этом разделе используется мастер для создания структуры исходного кода, требуемого любым модулем NetBeans. Эта структура исходного кода состоит из ряда папок в особых местах и набора файлов, которые требуются в любом случае. Например, для каждого модуля NetBeans требуется папка <tt>nbproject</tt>, в которой хранятся метаданные проекта, а также файл <tt>layer.xml</tt>, в котором объявляется регистрация таких элементов как кнопки панелей управления и окна.</p>
+
+<ol>
+          
+	      <li>Выберите в меню &quot;Файл&quot; команду &quot;Новый проект&quot; (CTRL+SHIFT+N). В разделе &quot;Категории&quot; выберите параметр &quot;Модули NetBeans&quot;. В области &quot;Проекты&quot; выберите &quot;Модуль&quot; и нажмите кнопку &quot;Далее&quot;.</li>
+	<li>На панели &quot;Имя и расположение&quot; в поле &quot;Имя проекта&quot; введите <tt>DemoCodeGenerator</tt>. В поле &quot;Расположение проекта&quot; укажите любой каталог на компьютере, например <tt>c:\mymodules</tt>. Оставьте переключатель &quot;Отдельный модуль&quot; выбранным. Панель должна выглядеть следующим образом:
+
+<p><img src="../images/tutorials/code-generator/code-generator-1.png" alt="Действие 1 мастера создания проекта" /></p>
+<p>Нажмите кнопку &quot;Далее&quot;.</p></li>
+
+<li>На панели &quot;Основные настройки модуля&quot; введите <tt>org.netbeans.modules.demo</tt> в поле &quot;Основа кодового имени&quot;. Установите флажок &quot;Создать слой XML&quot; и оставьте местоположение локализуемого файла ресурсов и слоя XML по умолчанию; при этом они будут храниться в пакете с именем <tt>org/netbeans/modules/demo</tt>. Панель должна выглядеть следующим образом:
+
+ <p><img src="../images/tutorials/code-generator/code-generator-2.png" alt="Действие 2 мастера создания проекта" /></p></li>
+
+<li>Нажмите кнопку &quot;Готово&quot;. </li></ol>
+
+<p> В среде IDE создается проект <tt>DemoCodeGenerator</tt>. Проект содержит все исходные файлы и метаданные проекта, например, сценарий сборки проекта Ant. Проект откроется в среде IDE. Логическую структуру проекта можно просмотреть в окне &quot;Проекты&quot; (CTRL+1), а его файловую структуру &ndash; в окне &quot;Файлы&quot; (CTRL+2). </p>
+
+
+
+<!-- ===================================================================================== -->
+<h2><a name="use"></a>Использование диалогового окна &quot;Поставщик генератора кода&quot;</h2>
+
+<p>В этом разделе с помощью мастера будет создан класс заглушки и сущности слоя, необходимые для начала интеграции с функцией генератора кода.</p>
+
+  
+ <ol>
+	
+	 <li>Щелкните узел проекта правой кнопкой мыши и выберите команду &quot;Создать &gt; Прочее&quot;. В диалоговом окне &quot;Новый файл&quot; выберите &quot;Разработка модулей &gt; Генератор кода&quot;, как показано ниже:
+              <p><img src="../images/tutorials/code-generator/code-generator-3.png" alt="Мастер генератора кода." /></p>
+              </li>
+	      <li>Установите следующие значения на панели &quot;Новый генератор кода&quot;:
+        <ul>
+            <li><b>Имя класса.</b> Имя класса для заглушки, генерируемой мастером. Введите в это поле значение &quot;DemoCodeGenerator&quot;.</li>
+            <li><b>Пакет.</b> Пакет, в котором будет создан класс заглушки. Выберите в раскрывающемся списке пункт &quot;org.netbeans.modules.demo&quot;.</li>
+            <li><b>Тип MIME.</b> Тип MIME, к которому применяется интеграция генератора кода. Введите в это поле значение &quot;x-java&quot;.</li>
+            <li><b>Создать CodeGeneratorContextProvider.</b> Добавление дополнительных объектов к поиску генератора кода. Не устанавливайте этот флажок.</li>
+          </ul>
+                  <p>На экране должны быть представлены следующие параметры:</p>
+                  <p><img src="../images/tutorials/code-generator/code-generator-4.png" alt="Шаблон быстрого поиска" /></p>
+              </li>
+<li>Нажмите кнопку &quot;Готово&quot;. 
+
+    <p>Окно &quot;Проекты&quot; должно выглядеть следующим образом:</p>
+
+<p><img src="../images/tutorials/code-generator/code-generator-6.png" alt="Итоговое окно &quot;Проекты&quot;. " /></p></li></ol>
+
+<p>В файле <tt>layer.xml</tt> должен содержаться следующий текст:</p>
+      
+<pre>&lt;filesystem&gt;
+    &lt;folder name=&quot;Editors&quot;&gt;
+        &lt;folder name=&quot;text&quot;&gt;
+            &lt;folder name=&quot;x-java&quot;&gt;
+                &lt;folder name=&quot;CodeGenerators&quot;&gt;
+                    &lt;file name=&quot;org-netbeans-modules-demo-DemoCodeGenerator$Factory.instance&quot;/&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/filesystem&gt;</pre>      
+
+<p>Сгенерированный класс должен выглядеть следующим образом:</p>
+
+<pre>public class DemoCodeGenerator implements CodeGenerator {
+
+    JTextComponent textComp;
+
+    /**
+     * 
+     * @param context containing JTextComponent and possibly other items 
+     * registered by {@link CodeGeneratorContextProvider}
+     */
+    private DemoCodeGenerator(Lookup context) { 
+    // Не рекомендуется сохранять Lookup снаружи ctor
+        textComp = context.lookup(JTextComponent.class);
+    }
+
+    public static class Factory implements CodeGenerator.Factory {
+
+        public List<? extends CodeGenerator> create(Lookup context) {
+            return Collections.singletonList(new DemoCodeGenerator(context));
+        }
+    }
+
+    /**
+     * Имя, вставляемое в диалоговое окно &quot;Вставить код&quot;
+     */
+    public String getDisplayName() {
+        return &quot;Sample Generator&quot;;
+    }
+
+    /**
+     * Эта функция вызывается при выборе этого генератора в диалоговом окне &quot;Вставить код&quot;
+     */
+    public void invoke() {
+    }
+    
+}</pre>
+
+    <!-- ======================================================================================= -->
+      
+      <h2><a name="code"></a>Написание кода интеграции генератора кода</h2>
+<p>Далее необходимо реализовать интерфейс API. Используются следующие классы интерфейса API:</p>
+
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Класс</th>
+                <th class="tblheader" scope="col">Описание</th>
+            </tr>
+            <tr>
+                <td class="tbltd1">JavaSource</td>
+                <td class="tbltd1">Определяется позднее</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">CancellableTask</td>
+                <td class="tbltd1">Определяется позднее</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">WorkingCopy</td>
+                <td class="tbltd1">Определяется позднее</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">CompilationUnitTree</td>
+                <td class="tbltd1">Определяется позднее</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">TreeMaker</td>
+                <td class="tbltd1">Определяется позднее</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">ClassTree</td>
+                <td class="tbltd1">Определяется позднее</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">ModifiersTree</td>
+                <td class="tbltd1">Определяется позднее</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">VariableTree</td>
+                <td class="tbltd1">Определяется позднее</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">TypeElement</td>
+                <td class="tbltd1">Определяется позднее</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">ExpressionTree</td>
+                <td class="tbltd1">Определяется позднее</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">MethodTree</td>
+                <td class="tbltd1">Определяется позднее</td>
+            </tr>
+            
+        </tbody>
+    </table>
+    
+<p>Ниже указываются зависимости требуемых модулей, которые затем реализуются в собственном модуле.</p>
+
+<div class="indent">
+    
+    <ol>
+        
+        <li>Щелкните правой кнопкой мыши проект, выберите &quot;Свойства&quot;, а затем укажите следующие 4 зависимости на панели &quot;Библиотеки&quot;:
+        
+        <p><img src="../images/tutorials/code-generator/code-generator-7.png" alt="Установка зависимостей." /></p>
+        
+        <p><b>Примечание.</b> Обратите внимание, что &quot;Библиотека редактора 2&quot; и &quot;API утилит&quot; уже установлены автоматически мастером генерации кода. Оставшиеся две зависимости &ndash; &quot;Javac API Wrapper&quot; и &quot;Исходные файлы Java&quot; &ndash; потребуются для генерации новых фрагментов кода Java с помощью созданной интеграции генератора кода.</p></li>
+        
+        <li>Откройте сгенерированный класс и измените метод <tt>invoke()</tt> следующим образом:
+    
+<pre>public void invoke() {
+    try {
+        Document doc = textComp.getDocument();
+        JavaSource javaSource = JavaSource.forDocument(doc);
+        CancellableTask task = new CancellableTask&lt;WorkingCopy&gt;() {
+            public void run(WorkingCopy workingCopy) throws IOException {
+                workingCopy.toPhase(Phase.RESOLVED);
+                CompilationUnitTree cut = workingCopy.getCompilationUnit();
+                TreeMaker make = workingCopy.getTreeMaker();
+                for (Tree typeDecl : cut.getTypeDecls()) {
+                    if (Tree.Kind.CLASS == typeDecl.getKind()) {
+                        ClassTree clazz = (ClassTree) typeDecl;
+                        ModifiersTree methodModifiers = 
+                                make.Modifiers(Collections.&lt;Modifier&gt;singleton(Modifier.PUBLIC), 
+                                Collections.&lt;AnnotationTree&gt;emptyList());
+                        VariableTree parameter = 
+                                make.Variable(make.Modifiers(Collections.&lt;Modifier&gt;singleton(Modifier.FINAL), 
+                                Collections.&lt;AnnotationTree&gt;emptyList()), 
+                                &quot;arg0&quot;, 
+                                make.Identifier(&quot;Object&quot;), 
+                                null);
+                        TypeElement element = workingCopy.getElements().getTypeElement(&quot;java.io.IOException&quot;);
+                        ExpressionTree throwsClause = make.QualIdent(element);
+                        MethodTree newMethod = 
+                                make.Method(methodModifiers, 
+                                &quot;writeExternal&quot;, 
+                                make.PrimitiveType(TypeKind.VOID), 
+                                Collections.&lt;TypeParameterTree&gt;emptyList(), 
+                                Collections.singletonList(parameter), 
+                                Collections.&lt;ExpressionTree&gt;singletonList(throwsClause), 
+                                &quot;{ throw new UnsupportedOperationException(\&quot;Не поддерживается.\&quot;) }&quot;, 
+                                null);
+                        ClassTree modifiedClazz = make.addClassMember(clazz, newMethod);
+                        workingCopy.rewrite(clazz, modifiedClazz);
+                    }
+                }
+            }
+            public void cancel() {
+            }
+        };
+        ModificationResult result = javaSource.runModificationTask(task);
+        result.commit();
+    } catch (Exception ex) {
+        Exceptions.printStackTrace(ex);
+    }
+}</pre></li>
+ 
+ <li>Убедитесь в том, что определены следующие выражения импорта:
+ 
+<pre>import com.sun.source.tree.AnnotationTree;
+import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.ModifiersTree;
+import com.sun.source.tree.Tree;
+import com.sun.source.tree.TypeParameterTree;
+import com.sun.source.tree.VariableTree;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeKind;
+import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
+import org.netbeans.api.java.source.CancellableTask;
+import org.netbeans.api.java.source.JavaSource;
+import org.netbeans.api.java.source.JavaSource.Phase;
+import org.netbeans.api.java.source.ModificationResult;
+import org.netbeans.api.java.source.TreeMaker;
+import org.netbeans.api.java.source.WorkingCopy;
+import org.netbeans.spi.editor.codegen.CodeGenerator;
+import org.netbeans.spi.editor.codegen.CodeGeneratorContextProvider;
+import org.openide.util.Exceptions;
+import org.openide.util.Lookup;</pre> </li>
+ 
+ </ol>
+    </div>
+
+      
+    <!-- ======================================================================================= -->
+
+<h2><a name="install"></a>Установка и ознакомление с функциональными возможностями</h2>
+<p>Теперь установим модуль и воспользуемся функцией интеграции генератора кода. Для построения и установки модуля в среде IDE используется сценарий построения Ant. При создании проекта автоматически создается сценарий построения.</p>
+<div class="indent">
+
+
+      <ol>
+	      <li>В окне &quot;Проекты&quot; щелкните проект правой кнопкой мыши и выберите &quot;Выполнить&quot;.
+	      <p>Запускается новый экземпляр среды IDE, и выполняется установка модуля интеграции генератора кода. </p></li>
+               <li>Нажмите сочетание клавиш ALT+INSERT; в списке появится новый элемент:
+                   <p><img src="../images/tutorials/code-generator/code-generator-5.png" alt="Развернутый результат" /></p></li>
+                   <li>Щелкните этот элемент, и будет выполнена вставка кода.</li>
+       </ol>          
+   </div>
+    
+<!-- ======================================================================================= -->
+
+<h2><a name="share"></a>Создание совместно используемого исполняемого файла модуля</h2>
+
+<p>Готовый модуль можно предоставить для использования другими разработчиками. Для этого необходимо создать и распространить двоичный файл &quot;NBM&quot; (модуль NetBeans). </p>
+
+<div class="indent">
+  
+      <ol>
+	      <li>В окне &quot;Проекты&quot; щелкните проект правой кнопкой мыши и выберите &quot;Создать NBM&quot;.
+
+                  <p>Создается файл NBM, который можно просмотреть в окне &quot;Файлы&quot; (CTRL+2).</p></li>
+	      <li>Чтобы предоставить этот файл для использования другим разработчикам, можно, например, воспользоваться <a href="http://plugins.netbeans.org/PluginPortal/">порталом подключаемых модулей NetBeans</a>. Для установки модуля получатель должен воспользоваться диспетчером подключаемых модулей (&quot;Сервис &gt; Подключаемые модули&quot;).</li>
+       </ol>
+ 
+    </div>
+
+
+<!-- ======================================================================================== -->
+
+
+<p><br/></p>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Quick%20Search%20Integration%20Tutorial">Мы ждем ваших отзывов</a></div>
+<p><br style="clear:both;" /></p>
+  
+  
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Что дальше?</h2>
+
+<p>Дополнительные сведения о создании и разработке модулей NetBeans приведены в следующих ресурсах: </p>
+  <ul>
+	  <li><a href="https://platform.netbeans.org/index.html">Домашняя страница платформы NetBeans</a></li>
+	  <li><a href="https://netbeans.org/download/dev/javadoc/">Список интерфейсов API среды NetBeans (текущая версия разработки)</a></li>
+  <li><a href="https://netbeans.org/kb/trails/platform_ru.html">Другие связанные руководства</a></li></ul>
+  
+<!-- ======================================================================================== -->
+<!-- 
+<h2><a name="version"></a>Versioning </h2>
+<p>
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+         19 July 2008
+      </td>
+      <td>
+      Initial version.
+      </td>
+  </tr>
+ </tbody>
+</table>
+-->
+</body>
+</html>

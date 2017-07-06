@@ -1,0 +1,493 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>适用于 NetBeans Platform 6.5 的 XML 编辑器扩展模块教程</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="gwielenga@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="扩展 Netbeans XML 编辑器的简明向导.">
+<!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>XML 编辑器扩展模块教程</h1>
+<p>由 NetBeans 中文社区的 <a href="mailto:tpservices@hotmail.com">Solaris_navi</a> 参考 <a href="http://gceclub.sun.com.cn/NetBeans/tutorials/plugin/nbm-taghandler.html">NetBeans Editor Extension 模块教程</a> 翻译</p>
+<p>本教程演示如何创建一个继承 IDE 编辑器之一提供的功能的模块。
+IDE 有许多模块
+&#8212;例如，XML 编辑器、Java 编辑器、JSP 编辑器以及 SQL 编辑器。
+一般来说所有的 IDE 编辑器共同来自于源编辑器。但是，每个编辑器是完全不同的
+ &#8212;其功能针对于其文件类型。本教程中，您将向 XML 编辑器中添加一个操作。在您创建以及安装模块，并打开 XML 文件之后，
+编辑器的语境菜单讲包含一个菜单项，在输出窗口中显示 XML 文件的标签。 
+
+ <p><strong class="notes">注意：</strong>本文档使用 NetBeans IDE 6.5，如果您使用更早的版本，请参照 <a href="60/nbm-xmleditor.html"> 6.0/6.1 版本的文档</a>。
+
+  <p><b>目录</b></p>
+   
+   <p><img  src="../../images/articles/69/netbeans-stamp7-8-9.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.5, 6.7, 6.8" title="Content on this page applies to NetBeans IDE 6.5, 6.7, 6.8"/></p>
+      <ul class="toc">
+  <li><a href="#creatingthemoduleproject">设定模块项目</a>
+<ul><li><a href="#create-plug-in">创建模块项目实例</a></li>
+<li><a href="#specify-dependencies">指定模块的依存关系</a></li></ul></li>
+  <li><a href="#create-tag-handler">模块编码</a>
+  <li><a href="#creating-action">创建操作</a>
+  <li><a href="#building">构建并安装模块</a>
+  <ul><li><a href="#install-plugin">安装模块</a>
+  <li><a href="#use-plugin">使用模块</a>
+  <li><a href="#share-plugin">创建可共享的模块二进制文件</a></ul></li>
+       </ul>
+         
+<p><b>要学习本教程，您需要的软件和下表中列出的资源。</b></p>
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">软件或资源</th>
+                <th class="tblheader" scope="col">需求版本</th>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">版本 6.5</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java 开发工具包 (JDK)</a></td>
+                <td class="tbltd1">版本 6 或者<br/>版本 5</td>
+            </tr>
+        </tbody>
+    </table>
+ 
+ <p class="tips">另外，如果您想直接进行调试，您可以 <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=14039">下载完整示例</a>。
+
+<h2 class="tutorial"><a name="creatingthemoduleproject"></a>设定模块项目</h2>
+<p>在您开始写模块之前，您需要确认您的项目设置正确。IDE 提供了一个向导，用来配置所有模块需要的基本文件。</p>
+<div class="indent">
+
+<h3 class="tutorial"><a name="create-plug-in"></a>创建模块项目实例</h3>
+
+ <ol>
+    <li>选择 文件 &gt; 新建项目 (Ctrl+Shift+N)。在分类中选择 Netbeans 模块。在项目中选择模块。单击 下一步。</li>
+    <li>名称与位置面板上，在项目名称中输入 <tt>ShowXMLStructure</tt>。
+        将项目位置更改到您的计算机的任意文件夹中。保持 独立模块 选项以及 设置为主项目 选项已选，单击 下一步。</li>
+    <li>在基本模块设置面板中，在 Code Name Base 中键入 <tt>org.netbeans.modules.showxmlstructure</tt>。
+    <li>选择“生成 XML 层”， 留出本地化包和 XML 层的位置，以便它们存储在名为 <tt>org/netbeans/modules/showxmlstructure</tt> 的包中。单击 完成。</li>
+</ol>
+
+ <p> IDE 创建 <tt>ShowXMLStructure</tt> 项目。该项目包含所有资源和项目元数据，如该项目的 Ant 构建脚本。该项目在 IDE 中打开。您可以在 项目 窗口 (Ctrl-1) 中查看其逻辑结构，在 文件 窗口 (Ctrl-2) 中查看其文件结构。</p>
+
+<h3 class="tutorial"><a name="specify-dependencies"></a>指定模块的依存关系</h3>
+
+<p>您需要将几个属于 NetBeans API 的类设为子类。每个类都将被声明为模块依存关系。使用 项目属性 对话框来执行此操作，如下描述。 
+      <ol>
+	<li>在 项目 窗口中，右键单击 <tt>ShowXMLStructure</tt>  项目，然后选择 属性。
+
+<li>对于以下每个 API，在 类库 面板中，单击“添加...”，从 模块 列表中选择名称，然后单击 确定 确认：
+<p><ul>
+<li><tt>I/O APIs</tt>
+<li><tt>Nodes API</tt>
+<li><tt>Text API</tt>
+<li><tt>Utilities API</tt>
+<li><tt>Window System API</tt></ul>
+<p>单击 确定，退出 项目属性 对话框。
+      </ol>
+<p>在 项目 窗口中，展开 重要文件 结点，双击 项目元数据 并注意您选择的 API 是否声明为模块依存关系。
+
+
+      </div>
+      <br />
+
+<!-- ===================================================================================== -->
+<h2><a name="create-tag-handler"></a>模块编码</h2>
+
+ <br />
+
+<div class="indent">
+
+
+<h3 class="tutorial"><a name="creating-action"></a>创建操作</h3>
+
+<ol>
+	
+	 <li><p>右键单击项目结点并选择 新建 &gt; 其他。在 类别目录 下，选择 模块开发（Module Development）。在 项目 下选择 操作，如下图所示：</p>
+           <p align="left"><img src="../../images/tutorials/taghandler/65-action.png" alt="新建操作向导第一步"></p>
+
+            <p>单击 下一步。</p></li>
+           <li><p>在 操作类型 面板中，单击 有条件启用。选择 <tt>EditorCookie</tt>，它是允许 源编辑器 访问该 操作 的类名称，如下所示：</p>
+           <p align="left"><img src="../../images/tutorials/taghandler/65-action-2.png" alt="新建操作向导第二步"></p>
+
+	      
+              <p>单击 下一步。</p></li>
+
+              <li><p>在 GUI 注册 面板中，选择 类别 下拉列表中的“编辑”类别。Category 下拉列表控制操作在 IDE 的 键盘快捷键 编辑器中显示的位置。接下来，选择 编辑上下文菜单项，然后选择 <tt>text/xml</tt> MIME 类型，如下所示：</p>
+	      
+<p align="left"><img src="../../images/tutorials/taghandler/65-action-3.png" alt="新建操作向导第三步"></p>
+
+<p>注意到您可以设置菜单项的位置，并且可以将它与其之前和之后的菜单项分离。单击 下一步。</p></li>
+
+   <li><p>在 名称与位置 面板中，键入 <tt>ShowXMLStructureAction</tt> 作为 类名称，并键入 <tt>Show XML Structure</tt> 作为 显示名称。如下所示：</p>
+<p align="left"><img src="../../images/tutorials/taghandler/65-action-4.png" alt="新建操作向导第四步"></p>
+   <p>上下文菜单提供的菜单项不显示图标。因此，单击 完成， <tt>ShowXMLStructureAction.java</tt> 便添加到包中。文件内容如下所示：</p>
+
+<pre class="examplecode">package org.netbeans.modules.showxmlstructure;
+
+import org.openide.cookies.EditorCookie;
+import org.openide.nodes.Node;
+import org.openide.util.HelpCtx;
+import org.openide.util.NbBundle;
+import org.openide.util.actions.CookieAction;
+
+public final class ShowXMLStructureAction extends CookieAction {
+
+    protected void performAction(Node[] activatedNodes) {
+        EditorCookie editorCookie = activatedNodes[0].getLookup().lookup(EditorCookie.class);
+        // TODO use editorCookie
+    }
+
+    protected int mode() {
+        return CookieAction.MODE_EXACTLY_ONE;
+    }
+
+    public String getName() {
+        return NbBundle.getMessage(ShowXMLStructureAction.class, "CTL_ShowXMLStructureAction");
+    }
+
+    protected Class[] cookieClasses() {
+        return new Class[]{EditorCookie.class};
+    }
+
+    @Override
+    protected void initialize() {
+        super.initialize();
+        // see org.openide.util.actions.SystemAction.iconResource() Javadoc for more details
+        putValue("noIconInMenu", Boolean.TRUE);
+    }
+
+    public HelpCtx getHelpCtx() {
+        return HelpCtx.DEFAULT_HELP;
+    }
+
+    @Override
+    protected boolean asynchronous() {
+        return false;
+    }
+
+}</pre>
+
+
+
+   <li>在 源编辑器 中，在阅读并理解代码中的注释后，如下重写 <tt>performAction</tt> 方法：
+
+<pre class="examplecode">protected void performAction(Node[] activatedNodes) {
+    EditorCookie editorCookie = activatedNodes[0].getLookup().lookup(EditorCookie.class);
+    <b>//从 Bundle.properties 文件中获得标签页名称：</b>
+    String tabName = NbBundle.getMessage(ShowXMLStructureAction.class, "LBL_tabName");
+    <b>// "XML Structure" 标签页在 输出窗口被创建，用来显示标记列表：</b>
+    InputOutput io = IOProvider.getDefault().getIO(tabName, false);
+    io.select(); <b>//"XML Structure" 标签页被选择</b>
+    try {
+        <b>//从 EditorCookie 获取 InputStream :</b>
+        InputStream is = ((org.openide.text.CloneableEditorSupport) editorCookie).getInputStream();
+        <b>//使用 NetBeans org.openide.xml.XMLUtil 类创建 org.w3c.dom.Document:</b>
+        Document doc = XMLUtil.parse(new InputSource(is), true, true, null, null);
+        <b>//为所有元素创建一个节点列表：</b>
+        NodeList list = doc.getElementsByTagName("*");
+        <b>//通过列表进行迭代:</b>
+        for (int i = 0; i < list.getLength(); i++) {
+            <b>//For each node in the list, create a org.w3c.dom.Node:</b>
+            org.w3c.dom.Node mainNode = list.item(i);
+            <b>//创建所有 org.w3c.dom.Node 的属性的映射：</b>
+            NamedNodeMap map = mainNode.getAttributes();
+            <b>//得到节点名称：</b>
+            String nodeName = mainNode.getNodeName();
+            <b>//为节点属性创建 StringBuilder:</b>
+            StringBuilder attrBuilder = new StringBuilder();
+            <b>//通过属性映射进行迭代:</b>
+            for (int j = 0; j < map.getLength(); j++) {
+                <b>//每一次迭代，创建一个新的节点：</b>
+                org.w3c.dom.Node attrNode = map.item(j);
+                <b>//获得当前属性的名称：</b>
+                String attrName = attrNode.getNodeName();
+                <b>//将当前属性添加到 StringBuilder:</b>
+                attrBuilder.append("*" + attrName + " ");
+            }
+            <b>//在 输出窗口 中打印元素及其属性：</b>
+            io.getOut().println("ELEMENT: " + nodeName +
+                    " --> ATTRIBUTES: " + attrBuilder.toString());
+        }
+        <b>//关闭 InputStream:</b>
+        is.close();
+    } catch (SAXException ex) {
+        Exceptions.printStackTrace(ex);
+    } catch (IOException ex) {
+        Exceptions.printStackTrace(ex);
+    }
+}</pre>
+
+<li>将显示名称添加到 <tt>Bundle.properties</tt> 文件中：
+
+<p><pre class="examplecode">LBL_tabName=XML Structure</pre>
+
+</ol>
+ </div>
+      <br />
+
+<!-- ======================================================================================= -->
+
+<h2><a name="building"></a>构建并安装模块</h2>
+<p>IDE 使用 Ant 构建脚本来构建和安装您的模块。构建脚本是创建模块项目时为您创建的。</p>
+<div class="indent">
+
+	<h3 class="tutorial"><a name="install-plugin"></a>安装模块</h3>
+<p>在 项目窗口 中，右键单击 <tt>ShowXMLStructure</tt> 项目，选择运行。
+	      <p>模块即在目标 IDE 或平台中构建和安装。目标 IDE 或平台打开后，您可以试用新的模块。默认目标 IDE 或平台是由开发 IDE 的当前实例使用的安装平台。注意到当您运行模块时，您将使用临时测试用户目录，而不是开发 IDE 的用户目录。 
+
+       <h3 class="tutorial"><a name="use-plugin"></a>使用模块</h3>
+       <ol>
+           <li><p>选择 文件 &gt; 新建工程 (Ctrl-Shift-N) 创建一个新的工程。</p></li>
+	       <li><p>在文件窗口(Ctrl-2)中，展开工程结点，并展开 <tt>nbproject</tt>  结点。
+           双击 <tt>build-impl.xml</tt> 打开源编辑器</p></li>
+                <li><p>在源编辑器中任意位置单击右键，注意弹出菜单中叫做“Show XML Structure”的菜单项。
+	        选择该项并注意标签处理器在输出窗口中打印出所有元素以及属性，输出窗口在 IDE 的底部，如下图所示：</p>
+                <p align="left"><img border="1" src="../../images/tutorials/taghandler/65-result.png" alt="新建输出窗口"></p></li>
+	<li><p>在源编辑器中打开一个其他类型的文件。例如，打开一个 Java 类文件。在源编辑器中任意位置单击右键并注意到新建的子菜单项并没有被包含在上下文菜单中。这是因为新建操作向导创建了一个只对 XML 文件有效的操作：</p>
+
+<pre class="examplecode">&lt;folder name="Actions"&gt;
+    &lt;folder name="Edit"&gt;
+        &lt;file name="org-netbeans-modules-showxmlstructure-ShowXMLStructureAction.instance"/&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;
+&lt;folder name="Editors"&gt;
+    &lt;folder name="text"&gt;
+        &lt;folder name="xml"&gt;
+            &lt;folder name="Popup"&gt;
+                &lt;file name="org-netbeans-modules-showxmlstructure-ShowXMLStructureAction.shadow"&gt;
+                    &lt;attr name="originalFile" stringvalue="Actions/Edit/org-netbeans-modules-showxmlstructure-ShowXMLStructureAction.instance"/&gt;
+                    &lt;attr name="position" intvalue="1100"/&gt;
+                &lt;/file&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+
+ </ol>
+
+ <h3 class="tutorial"><a name="share-plugin"></a>创建可共享的模块二进制文件</h3>
+  
+      <ol>
+          <li><p>在项目窗口中哦能够，右键单击 <tt>ShowXMLStructure</tt> 项目，选择 创建 Netbeans 模块(NBM)。</p>
+
+              <p> NBM 文件则被建立，您可以在文件窗口中看到（Ctrl-2）：</p>
+	      <p align="left"><img src="../../images/tutorials/taghandler/65-nbm-generated.png" alt="可共享的 NBM。">
+          <li>将其共享给其他人，例如， <a href="http://plugins.netbeans.org/PluginPortal/">通过插件入口</a>。
+       </ol>
+    </div>
+    
+    <br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20XML%20Editor%20Extension%20Tutorial">请将您的反馈发送给我们</a></div>
+<br style="clear:both;" />
+
+      
+
+ <!-- ======================================================================================== -->
+    
+    <h2><a name="nextsteps"></a>进阶</h2>
+    
+    <p>更多关于创建以及开发 Netbeans 模块的信息，请访问一下资源：
+    <ul>
+        <li><a href="https://netbeans.org/kb/trails/platform.html">其他相关教程</a></li>
+        <li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API Javadoc</a></li>
+    </ul>
+    
+    <hr>
+    <!-- ======================================================================================== -->
+    
+<h2><a name="version"></a>版本控制  </h2>
+  
+<p>
+
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>版本</b></div>
+      </td>
+      <td>
+	<div align="left"><b>日期</b></div>
+      </td>
+      <td>
+	<div align="left"><b>变更</b></div>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+         2005年7月11日
+      </td>
+      <td>
+         初版
+      </td>
+  </tr>
+ <tr>
+      <td>
+         2
+      </td>
+      <td>
+         2005年9月27日
+      </td>
+      <td>
+	      <ul><li>添加了操作向导
+		      <li>重命名本文档，原名为“ Netbeans 标签处理器插件教程”，现为“ Netbeans 源编辑器扩展模块教程”
+		      <li>在下面添加了 Issue 7 。</ul>
+      </td>
+  </tr> 
+ <tr>
+      <td>
+         3
+      </td>
+      <td>
+         2005年9月28日
+      </td>
+      <td>
+	      <ul><li>由于“Source Editor”不包含 SQL 编辑器（还可以在本教程中使用一些步骤进行扩展），因此，对该教程进行重新命名。 
+	       <li>重新编写介绍性段落。</ul>
+      </td>
+  </tr> 
+   <tr>
+      <td>
+         4
+      </td>
+      <td>
+         2007年6月11日
+      </td>
+      <td>
+	      将整个教程更新清理为 Netbeans 6.0 版本，同时更改了截图。
+      </td>
+  </tr>
+  <tr>
+      <td>
+         5
+      </td>
+      <td>
+         2007年11月17日
+      </td>
+      <td>
+	      修复了步骤间的空行，并尝试附上如其所描述的示例。
+      </td>
+  </tr>
+  <tr>
+      <td>
+         6
+      </td>
+      <td>
+         2008年11月1日
+      </td>
+      <td>
+	      更新至Netbeans 6.5：徽章，表格等，但通过使用NetBeans XMLUtil类也大大简化了教程， 
+           因此消除了一整个章节和大量的代码。
+      </td>
+  </tr>
+  </tbody>
+</table>
+<p>
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <b>Issue 序号</b>
+      </td>
+      <td>
+	<b>描述</b>
+      </td>
+      <td>
+	<b>状态</b>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+	      代码以及本身教程需要审核。 
+      </td>
+      <td>
+	      有待解决。
+      </td>
+  </tr>
+  <tr>
+      <td>
+         2
+      </td>
+      <td>
+	       	 阶段 III 和阶段 IV 完成之后，需要更新教程。 
+      </td>
+      <td>
+	     已修复。
+      </td>
+  </tr>
+ <tr>
+      <td>
+         3
+      </td>
+      <td>
+	      本教程中使用的一些 API 拥有已废弃的方法。这将在 Output 窗口中产生错误，但是不应该影响模块的功能。 
+      </td>
+      <td>
+	      有待解决。
+      </td>
+  </tr>
+<tr>
+      <td>
+         4
+      </td>
+      <td>将为所有 API、类和方法添加清晰的解释和到 Javadoc 的链接。还要添加每个依存关系的链接以及本教程需要它们的原因。 
+      </td>
+      <td>
+	      有待解决。
+      </td>
+  </tr>
+
+<tr>
+      <td>
+       5
+      </td>
+      <td>
+	      应该提到 JSP 编辑器、HTML 编辑器等其他标识符。例如，不使用“xml”（在 layer.xml 中），而使用“html”、“x-properties”、“base”等等。 
+      </td>
+      <td>
+	      有待解决。
+      </td>
+  </tr> 
+<tr>
+      <td>
+       6
+      </td>
+      <td>
+	      解释什么是 Cookie 及其操作。
+      </td>
+      <td>
+	      有待解决。
+      </td>
+  </tr> 
+<tr>
+      <td>
+      7
+      </td>
+      <td>
+	      由于当前在可下载的代码中标记句柄和显示 XML 操作是单独的文件，而它们又是相同的文件，因此需要更改可下载代码。由于相同的原因，也必须更改一个文件的屏幕截图，而不是更改上面显示的两个文件的屏幕截图。 
+      </td>
+      <td>
+	      已修复。
+      </td>
+  </tr> 
+
+
+  </tbody>
+</table>
+</body>
+</html>

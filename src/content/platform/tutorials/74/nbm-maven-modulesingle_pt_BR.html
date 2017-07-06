@@ -1,0 +1,434 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Criando um m&oacute;dulo NetBeans utilizando o Maven</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+    <meta name="AUDIENCE" content="NBUSER"/>
+    <meta name="TYPE" content="ARTICLE"/>
+    <meta name="EXPIRES" content="N"/>
+    <meta name="indexed" content="y"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="description" content="A short demonstration of how to use Maven to create and run a NetBeans Platform Module Suite."/>
+    <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+<body>
+
+    <h1>Criando um m&oacute;dulo NetBeans utilizando o Maven</h1>
+
+    <p>Este documento demonstra como criar um projeto no m&oacute;dulo NetBeans a partir de um arquetipo Maven e como desenvolver e instalar o m&oacute;dulo em sua instala&ccedil;&atilde;o do IDE. Neste tutorial, voc&ecirc; criar&aacute; um projeto de m&oacute;dulo simples que ap&oacute;s ser instalado permite criar um novo tipo de arquivo em seus projetos. Este m&oacute;dulo tamb&eacute;m cria uma a&ccedil;&atilde;o de menu que fica dispon&iacute;vel quando o novo tipo de arquivo &eacute; selecionado.
+    </p>
+
+    <p>Este documento tem base no <a href="https://platform.netbeans.org/tutorials/nbm-filetype_pt_BR.html">Tutorial de tipo de arquivo do NetBeans</a> com base no Ant e ilustra algumas das diferen&ccedil;as entre o uso do Ant e do Maven para desenvolver m&oacute;dulos NetBeans. Ap&oacute;s compreender algumas das diferen&ccedil;as, &eacute; poss&iacute;vel prosseguir com facilidade atrav&eacute;s dos outros tutoriais na <a href="https://netbeans.org/kb/trails/platform_pt_BR.html">Trilha de aprendizado da plataforma NetBeans</a>.</p>
+
+    <p class="tips">Caso seja novo na plataforma NetBeans, recomenda-se com &ecirc;nfase que voc&ecirc; assista &agrave; s&eacute;rie de screencasts <a href="https://platform.netbeans.org/tutorials/nbm-10-top-apis.html">As 10 principais APIs do NetBeans</a>.</p>
+
+    <p><b>Conte&uacute;do</b></p>
+    <p><img src="../images/articles/74/netbeans_stamp_74_73_72.png" class="stamp" width="114" height="114" alt="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.5, 6.7, 6.8" title="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.5, 6.7, 6.8" /></p>
+
+    <ul class="toc">
+        <li><a href="#config">Utilizando Maven com o IDE</a>
+            <ul>
+            <li><a href="#config1">Configurando as op&ccedil;&otilde;es do Maven</a></li>
+            <li><a href="#config2">Visualizando os reposit&oacute;rios Maven</a></li>
+            </ul></li>
+        <li><a href="#01">Criando o projeto do m&oacute;dulo da plataforma NetBeans</a>
+            <ul>
+            <li><a href="#01a">Criando o m&oacute;dulo</a></li>
+            <li><a href="#01b">Criando a classe DataObject</a></li>
+            </ul>
+        </li>
+        <li><a href="#02">Desenvolvendo e executando o projeto do m&oacute;dulo</a>
+            <ul>
+            <li><a href="#02a">Especificando a localiza&ccedil;&atilde;o da instala&ccedil;&atilde;o do NetBeans</a></li>
+            <li><a href="#02b">Executando o m&oacute;dulo</a></li>
+            </ul>
+        </li>
+        <li><a href="#03">Adicionando uma a&ccedil;&atilde;o para o tipo de arquivo</a>
+            <ul>
+            <li><a href="#03a">Criando a classe Action</a></li>
+            <li><a href="#03b">Atribuindo um comportamento &agrave; a&ccedil;&atilde;o</a></li>
+            </ul>
+        </li>
+        <li><a href="#04">Criando uma janela para o tipo de arquivo</a></li>
+        <li><a href="#05">Criando uma janela de m&uacute;ltiplas visualiza&ccedil;&otilde;es</a></li>
+      </ul>
+
+<p><b>Para seguir este tutorial, os softwares e recursos listados na tabela seguinte s&atilde;o necess&aacute;rios.</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software ou recurso</th>
+                <th class="tblheader" scope="col">Vers&atilde;o necess&aacute;ria</th>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://download.netbeans.org/">NetBeans IDE</a></td>
+                <td class="tbltd1">vers&atilde;o 6.9</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Vers&atilde;o 6</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://maven.apache.org/">Maven</a></td>
+                <td class="tbltd1">Vers&atilde;o 2.0.9 ou superior</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><strong class="notes">Nota:</strong> n&atilde;o &eacute; preciso efetuar o download de uma vers&atilde;o separada da plataforma NetBeans para desenvolver aplicativos para a plataforma NetBeans. Normalmente, voc&ecirc; desenvolver&aacute; os aplicativos e os m&oacute;dulos no NetBeans IDE e, em seguida, somente incluir&aacute; os m&oacute;dulos necess&aacute;rios para executar a plataforma NetBeans e seu aplicativo.</p>
+
+    <p>Antes de come&ccedil;ar este tutorial, talvez voc&ecirc; queira se familiarizar com a documenta&ccedil;&atilde;o a seguir.</p>
+    <ul>
+        <li><a href="http://wiki.netbeans.org/MavenBestPractices">Melhores pr&aacute;ticas para o Apache Maven no NetBeans 6.x</a></li>
+        <li><a href="http://www.sonatype.com/books/maven-book/reference/introduction.html">Cap&iacute;tulo 1. Introdu&ccedil;&atilde;o ao Apache Maven</a> (do <a href="http://www.sonatype.com/books/maven-book/reference/public-book.html">Maven: o guia definitivo</a>)</li>
+        <li><a href="https://netbeans.org/kb/docs/java/gui-functionality_pt_BR.html">Introdu&ccedil;&atilde;o &agrave; constru&ccedil;&atilde;o de GUIs</a></li>
+    </ul>
+
+
+
+
+
+
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++ Configuring Maven +++++++++++++++++++++++++++++++++ -->
+
+    <h2><a name="config"></a>Usando Maven com o IDE</h2>
+    <p>Se este for seu primeiro projeto Maven, talvez queira se familiarizar com as defini&ccedil;&otilde;es de configura&ccedil;&otilde;es e com o navegador do reposit&oacute;rio Maven.</p>
+
+    <div class="indent">
+        <a name="config1"></a>
+        <h3>Configurando as op&ccedil;&otilde;es do Maven</h3>
+        <p>&Eacute; poss&iacute;vel usar a aba Maven na janela Op&ccedil;&otilde;es para configurar o comportamento do Maven no IDE e verificar se sua configura&ccedil;&atilde;o est&aacute; correta.</p>
+
+        <ol>
+            <li>Selecione a categoria Diversos na janela Op&ccedil;&otilde;es e clique na aba Maven.</li>
+            <li>Especifique a localiza&ccedil;&atilde;o da instala&ccedil;&atilde;o local do Maven (requer 2.0.9 ou mais recente).</li>
+            <li>Verifique se a localiza&ccedil;&atilde;o do reposit&oacute;rio local do Maven est&aacute; correta.</li>
+            <li>Clique em OK.</li>
+        </ol>
+        <p>Na maioria dos casos, se sua configura&ccedil;&atilde;o do Maven &eacute; a t&iacute;pica, as informa&ccedil;&otilde;es na janela Op&ccedil;&otilde;es j&aacute; devem estar corretas.</p>
+
+        <p class="notes"><strong>Nota.</strong> O suporte ao Maven &eacute; ativado como parte do conjunto de recursos do Java SE. Se a aba Maven n&atilde;o estiver dispon&iacute;vel na janela Op&ccedil;&otilde;es, confirme se o Java SE est&aacute; ativado ao criar um aplicativo Java.</p>
+
+        <h3><a name="config2"></a>Visualizando os reposit&oacute;rios Maven</h3>
+        <p>Os artefatos que s&atilde;o usados pelo Maven para construir todos os seus projetos s&atilde;o armazenados em seu reposit&oacute;rio local Maven. Quando um artefato &eacute; declarado como uma depend&ecirc;ncia do projeto, o artefato &eacute; baixado para seu reposit&oacute;rio local a partir de um dos reposit&oacute;rios remotos registrados.</p>
+
+        <p>Como padr&atilde;o, o reposit&oacute;rio NetBeans e os diversos reposit&oacute;rios Maven indexados conhecidos s&atilde;o registrados e identificados na janela do navegador do reposit&oacute;rio. O reposit&oacute;rio NetBeans cont&eacute;m a maioria dos artefatos p&uacute;blicos necess&aacute;rios para que voc&ecirc; desenvolva seu projeto. Voc&ecirc; pode usar o navegador do reposit&oacute;rio Maven para visualizar o conte&uacute;do dos reposit&oacute;rios locais e remotos. Voc&ecirc; expande o n&oacute; Reposit&oacute;rio local para ver os artefatos que est&atilde;o presentes localmente. Os artefatos listados abaixo dos n&oacute;s do reposit&oacute;rio NetBeans podem ser adicionados como depend&ecirc;ncias do projeto, mas nem todos eles est&atilde;o localmente presentes. Eles s&atilde;o adicionados ao reposit&oacute;rio local somente quando s&atilde;o declarados como depend&ecirc;ncias do projeto.</p>
+
+        <p>Para abrir o navegador do reposit&oacute;rio Maven:</p>
+        <ul>
+            <li>Escolha Janela &gt; Outro &gt; Navegador do reposit&oacute;rio Maven no menu principal.<br/>
+            <img src="../images/tutorials/maven-quickstart68/maven-nbm-netbeans-repo.png" alt="Captura de tela do navegador do reposit&oacute;rio Maven" title="Captura de tela do navegador do reposit&oacute;rio Maven" class="margin-around b-all"  />
+
+            </li>
+        </ul>
+    </div>
+
+
+    <!-- =================================================================== -->
+    <!-- ++++++++++++++++++++++ Creating the Module ++++++++++++++++++++++++ -->
+
+    <h2><a name="01"></a>Criando o projeto do m&oacute;dulo da plataforma NetBeans</h2>
+    <p>Nesta se&ccedil;&atilde;o voc&ecirc; criar&aacute; um projeto do m&oacute;dulo NetBeans e a seguir criar&aacute; um DataObject para o novo tipo de arquivo.</p>
+    <div class="indent">
+        <h3><a name="01a"></a>Criando o m&oacute;dulo</h3>
+        <p>Neste exerc&iacute;cio, voc&ecirc; usa o assistente Novo projeto para criar um projeto do m&oacute;dulo NetBeans a partir de um arquetipo Maven.</p>
+        <ol>
+            <li>Abra o assistente Novo projeto e escolha M&oacute;dulo NetBeans Maven na categoria Maven. Clique em Pr&oacute;ximo.</li>
+            <li>Digite <strong>AbcFileType</strong> em Nome do projeto. Clique em Terminar.</li>
+        </ol>
+        <p>Quando voc&ecirc; clicar em Terminar, o IDE criar&aacute; o projeto AbcFileType. Se voc&ecirc; examinar o POM poder&aacute; ver que o Maven utilizar&aacute; o <tt><a href="http://maven.apache.org/plugins/maven-jar-plugin/">plug-in maven-jar</a></tt> para desenvolver o JAR e o <tt><a href="http://mojo.codehaus.org/nbm-maven-plugin/">plug-in nbm-maven</a></tt> empacotar&aacute; o JAR como um m&oacute;dulo NetBeans (<tt>nbm</tt>).</p>
+    
+        <pre class="examplecode">    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+    &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+    &lt;artifactId&gt;AbcFileType&lt;/artifactId&gt;
+    <strong>&lt;packaging&gt;nbm&lt;/packaging&gt;</strong>
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+    &lt;name&gt;AbcFileType NetBeans Module&lt;/name&gt;
+    ...
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+                <strong>&lt;artifactId&gt;nbm-maven-plugin&lt;/artifactId&gt;</strong>
+                &lt;extensions&gt;true&lt;/extensions&gt;
+            &lt;/plugin&gt;
+            ...
+            &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                <strong>&lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;</strong>
+                &lt;version&gt;2.2&lt;/version&gt;
+                &lt;configuration&gt;
+                    &lt;!-- to have the jar plugin pickup the nbm generated manifest --&gt;
+                    &lt;useDefaultManifestFile&gt;true&lt;/useDefaultManifestFile&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;</pre>
+
+        
+
+
+        <h3><a name="01b"></a>Criando a classe DataObject</h3>
+
+        <p>Nesta se&ccedil;&atilde;o voc&ecirc; utilizar&aacute; o assistente Novo tipo de arquivo para criar os arquivos para a cria&ccedil;&atilde;o e reconhecimento de um novo tipo de arquivo denominado <tt>.abc</tt>. O assistente criar&aacute; um <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/DataObject.html">DataObject</a></tt>, um solucionador de tipo MIME e um modelo de arquivo para os arquivos <tt>abc</tt> e modificar&aacute; o <tt>layer.xml</tt> para adicionar entradas do registro para o novo tipo de arquivo.</p>
+
+        <ol>
+            <li>Clique com o bot&atilde;o direito do mouse no n&oacute; da janela Projeto e escolha Novo &gt; Tipo de arquivo.</li>
+            <li>No painel Reconhecimento de arquivo, digite <strong>text/x-abc</strong> para o Tipo the MIME e <strong>.abc .ABC</strong> como a extens&atilde;o do nome do arquivo. Clique em Pr&oacute;ximo.<br/>
+            <img src="../images/tutorials/maven-single/maven-single-new-filetype-wizard.png" alt="Captura de tela para o assistente Novo tipo de arquivo" title="Assistente Novo tipo de arquivo" class="margin-around b-all"  />
+            </li>
+            <li>Digite <strong>Abc</strong> como o prefixo do nome da classe.</li>
+            <li>Clique em Procurar e selecione um arquivo de imagem de 16x16 pixels como o &iacute;cone do novo tipo de arquivo. Clique em Terminar.
+                <p class="tips">Voc&ecirc; pode salvar esta imagem como <tt><a href="../images/tutorials/maven-crud/abc16.png">abc16.png</a></tt> (&nbsp;<img src="../images/tutorials/maven-crud/abc16.png" alt="imagem do &iacute;cone 16x16" title="16x16"  />&nbsp;) em seu sistema e especificar a imagem no assistente.</p>
+            </li>
+        </ol>
+
+
+        <p>Quando voc&ecirc; clica em Terminar, o IDE cria a classe <tt>AbcDataObject</tt> e copia o &iacute;cone do tipo de arquivo no pacote em <tt>src/main/resources</tt> sob Outras origens.<br/>
+        <img src="../images/tutorials/maven-single/maven-single-projects1.png" alt="Captura de tela da janela Projetos" title="Captura de tela da janela Projetos" class="margin-around b-all"  />
+
+        </p>
+        <p>Na janela Projetos &eacute; poss&iacute;vel visualizar que o assistente criou o solucionador de tipo MIME (<tt>AbcResolver.xml</tt>) e os arquivos de modelo (<tt>AbcTemplate.abc</tt>) no diret&oacute;rio <tt>src/main/resources</tt>.</p>
+
+        <p class="tips">Para obter mais detalhes sobre os arquivos criados pelo IDE, consulte <a href="http://wiki.netbeans.org/DevFaqDataObject">O que &eacute; um DataObject</a> e a se&ccedil;&atilde;o em <a href="nbm-filetype_pt_BR.html#recognizing">Reconhecendo arquivos Abc</a> no <a href="nbm-filetype_pt_BR.html">tutorial de tipo de arquivo NBM</a>.</p>
+
+
+    </div>
+
+
+
+    <!-- =================================================================== -->
+    <!-- ++++++++++++++++++++++ Running the  Module ++++++++++++++++++++++++ -->
+    <h2><a name="02"></a>Desenvolvendo e executando o projeto</h2>
+
+    <p>Nesta se&ccedil;&atilde;o voc&ecirc; configurar&aacute; o m&oacute;dulo para que seja instalado na vers&atilde;o atual do IDE. Uma nova inst&acirc;ncia do IDE se inicia quando voc&ecirc; executa o m&oacute;dulo. </p>
+
+    <div class="indent">
+        <h3><a name="02a"></a>Especificando a localiza&ccedil;&atilde;o da instala&ccedil;&atilde;o do NetBeans</h3>
+        <p>Como padr&atilde;o, nenhuma instala&ccedil;&atilde;o NetBeans alvo &eacute; especificada quando voc&ecirc; usa o arquetipo Maven para criar um m&oacute;dulo da plataforma NetBeans. Voc&ecirc; pode desenvolver o projeto, mas quando tenta execut&aacute;-lo antes de definir o diret&oacute;rio de instala&ccedil;&atilde;o, ver&aacute; um erro de vers&atilde;o similar ao seguinte na janela Sa&iacute;da.<br/>
+        <img src="../images/tutorials/maven-single/output-build-error.png" alt="Captura de tela da janela Sa&iacute;da mostrando o erro de vers&atilde;o" title="Janela Sa&iacute;da mostrando o erro de vers&atilde;o" class="margin-around b-all"  />
+
+        </p>
+        <p>Para instalar e executar o m&oacute;dulo em uma instala&ccedil;&atilde;o do IDE, &eacute; necess&aacute;rio editar o elemento <tt>nbm-maven-plugin</tt> no POM para especificar o caminho para o diret&oacute;rio de instala&ccedil;&atilde;o.</p>
+        <ol>
+            <li>Expanda o n&oacute; Arquivos do projeto e abra o <tt>pom.xml</tt> no editor.</li>
+            <li>Especifique o caminho para a instala&ccedil;&atilde;o do NetBeans ao modificar o elemento <tt>nbm-maven-plugin</tt> para adicionar o elemento <tt>&lt;netbeansInstallation&gt;</tt>.
+<pre class="examplecode">&lt;plugin&gt;
+    &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+    &lt;artifactId&gt;nbm-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;3.2&lt;/version&gt;
+    &lt;extensions&gt;true&lt;/extensions&gt;
+    <strong>&lt;configuration&gt;
+       &lt;netbeansInstallation&gt;/home/me/netbeans-6.9&lt;/netbeansInstallation&gt;
+    &lt;/configuration&gt;</strong>
+&lt;/plugin&gt;</pre>
+       <!-- &lt;descriptor&gt;src/main/nbm/module.xml&lt;/descriptor&gt; -->
+            <p class="notes"><strong>Nota.</strong> O caminho precisa especificar o diret&oacute;rio que contenha o diret&oacute;rio <tt>bin</tt> contendo o arquivo execut&aacute;vel.</p>
+            <p>Por exemplo, no SO X o caminho pode se parecer com o seguinte.</p>
+            <pre class="examplecode">&lt;netbeansInstallation&gt;/Applications/NetBeans/NetBeans 6.9.app/Contents/Resources/NetBeans&lt;/netbeansInstallation&gt;</pre>
+            </li>
+        </ol>
+
+        <h3><a name="02b"></a>Executando o m&oacute;dulo</h3>
+        <p>Ap&oacute;s especificar o diret&oacute;rio de instala&ccedil;&atilde;o do NetBeans IDE, &eacute; poss&iacute;vel desenvolver e executar o m&oacute;dulo.</p>
+        <ol>
+            <li>Clique com o bot&atilde;o direito do mouse no n&oacute; do projeto e escolha Construir.</li>
+            <li>Clique com o bot&atilde;o direito do mouse no n&oacute; do projeto e escolha Executar.</li>
+        </ol>
+        <p>Quando voc&ecirc; escolhe Executar, o IDE &eacute; iniciado com o novo m&oacute;dulo instalado. Para confirmar que o novo m&oacute;dulo esteja funcionando corretamente, crie um novo projeto e a seguir use o assistente Novo arquivo para criar um arquivo <tt>abc</tt>. Por exemplo, voc&ecirc; pode criar um aplicativo Java simples e a seguir abrir o assistente Novo arquivo e escolher o tipo de arquivo Empty Abc na categoria Outro.</p>
+        <p class="tips">Quando voc&ecirc; cria o novo arquivo, especifique uma pacote de origem se desejar visualizar o arquivo na janela Projetos. Como padr&atilde;o, o assistente para o novo tipo de arquivo criar&aacute; o arquivo no n&iacute;vel raiz do projeto.</p>
+        <p><img src="../images/tutorials/maven-single/wizard-new-abc-file.png" alt="Captura de tela do assistente Novo arquivo com o tipo de arquivo Abc" title="assistente Novo arquivo com o tipo de arquivo Abc" class="margin-around b-all"  />
+        <br/>
+        Ap&oacute;s voc&ecirc; criar o novo arquivo abc, poder&aacute; visualizar que o arquivo &eacute; exibido na janela Projetos com o &iacute;cone para o tipo de arquivo. Se voc&ecirc; abrir o arquivo no editor, poder&aacute; visualizar o conte&uacute;do do novo arquivo que foi gerado a partir do modelo de arquivo.<br/>
+        <img src="../images/tutorials/maven-single/maven-single-projects-abcfile.png" alt="Captura de tela do arquivo Abc na janela Projetos e aberto no editor" title="Arquivo Abc na janela Projetos e aberto no editor" class="margin-around b-all"  />
+        </p>
+    </div>
+
+
+
+    <!-- =================================================================== -->
+    <!-- +++++++++++++++++++++++ Adding an Action ++++++++++++++++++++++++++ -->
+    <h2><a name="03"></a>Adicionando uma a&ccedil;&atilde;o para o tipo de arquivo</h2>
+    <p>Nesta se&ccedil;&atilde;o voc&ecirc; adicionar&aacute; uma a&ccedil;&atilde;o que pode ser chamada a partir do menu suspenso quando o usu&aacute;rio clica com o bot&atilde;o direito do mouse no n&oacute; do novo tipo de arquivo.</p>
+
+    <div class="indent">
+        <h3><a name="03a"></a>Criando a classe Action</h3>
+        <p>Neste exerc&iacute;cio, usaremos o assistente Nova a&ccedil;&atilde;o para criar uma classe Java que executar&aacute; uma a&ccedil;&atilde;o para o novo tipo de arquivo. O assistente tamb&eacute;m registrar&aacute; a classe no <tt>layer.xml</tt>.</p>
+        <ol>
+            <li>Clique com o bot&atilde;o direito do mouse no n&oacute; do projeto e escolha Nova &gt; A&ccedil;&atilde;o.</li>
+            <li>No painel Tipo de a&ccedil;&atilde;o, selecione Condicionalmente habilitado e digite <strong>com.mycompany.abcfiletype.AbcDataObject</strong> para a classe Cookie. Clique em Pr&oacute;ximo.<br/>
+            <img src="../images/tutorials/maven-single/maven-single-newactionwizard.png" alt="Captura de tela do assistente Nova a&ccedil;&atilde;o" title="Assistente Nova a&ccedil;&atilde;o" class="margin-around b-all"  />
+            </li>
+            <li>Selecione Editar na lista suspensa Categoria e cancele a sele&ccedil;&atilde;o de Item de menu global.</li>
+            <li>Selecione Item de menu de contexto de tipo de arquivo e selecione <strong>text/x-abc</strong> na lista suspensa Tipo de conte&uacute;do. Clique em Pr&oacute;ximo.</li>
+            <li>Digite <strong>MyAction</strong> como o Nome da classe e <strong>My Action</strong> como o Nome de exibi&ccedil;&atilde;o. Clique em Terminar.</li>
+        </ol>
+        <p>Quando voc&ecirc; clica em Terminar, <tt>MyAction.java</tt> &eacute; criado no pacote fonte <tt>com.mycompany.abcfiletype</tt>. Se voc&ecirc; abre o <tt>layer.xml</tt> no editor, poder&aacute; visualizar que o assistente adicionou detalhes sobre a nova a&ccedil;&atilde;o para o tipo de arquivo dentro da pasta <tt>Edit</tt> e o elemento dentro da pasta <tt>Actions</tt>.</p>
+        <pre class="examplecode">
+&lt;folder name=&quot;Actions&quot;&gt;
+    &lt;folder name=&quot;Edit&quot;&gt;
+        <strong>&lt;file name=&quot;com-mycompany-abcfiletype-MyAction.instance&quot;&gt;</strong>
+            &lt;attr name=&quot;delegate&quot; methodvalue=&quot;org.openide.awt.Actions.inject&quot;/&gt;
+            &lt;attr name=&quot;displayName&quot; bundlevalue=&quot;com.mycompany.abcfiletype.Bundle#CTL_MyAction&quot;/&gt;
+            &lt;attr name=&quot;injectable&quot; stringvalue=&quot;com.mycompany.abcfiletype.MyAction&quot;/&gt;
+            &lt;attr name=&quot;instanceCreate&quot; methodvalue=&quot;org.openide.awt.Actions.context&quot;/&gt;
+            &lt;attr name=&quot;noIconInMenu&quot; boolvalue=&quot;false&quot;/&gt;
+            &lt;attr name=&quot;selectionType&quot; stringvalue=&quot;EXACTLY_ONE&quot;/&gt;
+            &lt;attr name=&quot;type&quot; stringvalue=&quot;com.mycompany.abcfiletype.AbcDataObject&quot;/&gt;
+        &lt;/file&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+        <p>O assistente tamb&eacute;m gerou elementos dentro das pastas <tt>Loaders</tt> e <tt>Factories</tt> e elementos que se aplicam ao novo tipo de arquivo. As a&ccedil;&otilde;es de menu para o tipo de arquivo <tt>abc</tt> s&atilde;o especificadas sob <tt>Actions</tt> e o <tt>DataLoader</tt> &eacute; especificado sob <tt>Factories</tt>.</p>
+
+        <pre class="examplecode">
+&lt;folder name=&quot;Loaders&quot;&gt;
+    &lt;folder name=&quot;text&quot;&gt;
+        <strong>&lt;folder name=&quot;x-abc&quot;&gt;
+            &lt;folder name=&quot;Actions&quot;&gt;
+                &lt;file name=&quot;com-mycompany-abcfiletype-MyAction.shadow&quot;&gt;</strong>
+                    &lt;attr name=&quot;originalFile&quot; stringvalue=&quot;Actions/Edit/com-mycompany-abcfiletype-MyAction.instance&quot;/&gt;
+                    <strong>&lt;attr name=&quot;position&quot; intvalue=&quot;0&quot;/&gt;</strong>
+                &lt;/file&gt;
+                &lt;file name=&quot;org-openide-actions-CopyAction.shadow&quot;&gt;
+                    &lt;attr name=&quot;originalFile&quot; stringvalue=&quot;Actions/Edit/org-openide-actions-CopyAction.instance&quot;/&gt;
+                    &lt;attr name=&quot;position&quot; intvalue=&quot;400&quot;/&gt;
+                &lt;/file&gt;
+                ...
+            &lt;/folder&gt;
+            <strong>&lt;folder name=&quot;Factories&quot;&gt;
+                &lt;file name=&quot;AbcDataLoader.instance&quot;&gt;</strong>
+                    &lt;attr name=&quot;SystemFileSystem.icon&quot; urlvalue=&quot;nbresloc:/com/mycompany/abcfiletype/abc16.png&quot;/&gt;
+                    &lt;attr name=&quot;dataObjectClass&quot; stringvalue=&quot;com.mycompany.abcfiletype.AbcDataObject&quot;/&gt;
+                    &lt;attr name=&quot;instanceCreate&quot; methodvalue=&quot;org.openide.loaders.DataLoaderPool.factory&quot;/&gt;
+                    &lt;attr name=&quot;mimeType&quot; stringvalue=&quot;text/x-abc&quot;/&gt;
+                &lt;/file&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>
+
+        <p class="tips">A posi&ccedil;&atilde;o de My Action no menu suspenso &eacute; especificada pelo atributo <tt>posi&ccedil;&atilde;o</tt> (<tt>&lt;attr name=&quot;position&quot; intvalue=&quot;0&quot;/&gt;</tt>). O padr&atilde;o &eacute; o de atribuir o atributo <tt>intvalue</tt> de uma nova a&ccedil;&atilde;o como <tt>0</tt> que far&aacute; com que a a&ccedil;&atilde;o esteja no topo da lista. Voc&ecirc; pode alterar a ordem ao alterar o <tt>intvalue</tt>. Por exemplo, se voc&ecirc; altera o <tt>intvalue</tt> para <tt>200</tt>, o item de menu My Action aprecer&aacute; abaixo do item de menu Abrir (a a&ccedil;&atilde;o Abrir tem um <tt>intvalue</tt> de <tt>100</tt>).</p>
+
+
+        <h3><a name="03b"></a>Atribuindo um comportamento &agrave; a&ccedil;&atilde;o</h3>
+        <p>Agora &eacute; necess&aacute;rio adicionar o c&oacute;digo para a a&ccedil;&atilde;o. Neste exemplo, voc&ecirc; adicionar&aacute; algum c&oacute;digo que usa <tt>DialogDisplayer</tt> para abrir uma caixa de di&aacute;logo quando a a&ccedil;&atilde;o &eacute; chamada a partir do menu suspenso. Para usar <tt>DialogDisplayer</tt> tamb&eacute;m ser&aacute; necess&aacute;rio declarar uma depend&ecirc;ncia direta em <tt>org.openide.dialogs</tt>.</p>
+        <ol>
+            <li>Modifique o m&eacute;todo <tt>actionPerformed(ActionEvent ev)</tt> no <tt>MyAction.java</tt> para abrir uma caixa de di&aacute;logo quando My Action &eacute; chamada.
+            <pre class="examplecode">@Override
+public void actionPerformed(ActionEvent ev) {
+   <strong>FileObject f = context.getPrimaryFile();
+   String displayName = FileUtil.getFileDisplayName(f);
+   String msg = &quot;This file is &quot; + displayName + &quot;.&quot;;
+   NotifyDescriptor nd = new NotifyDescriptor.Message(msg);
+   DialogDisplayer.getDefault().notify(nd);</strong>
+}</pre>
+            </li>
+            <li>Corrija suas importa&ccedil;&otilde;es e confirme que voc&ecirc; importou <tt><strong>org.openide.filesystems.FileObject</strong></tt>. Salve as altera&ccedil;&otilde;es.
+            <p>Quando voc&ecirc; corrigiu as importa&ccedil;&otilde;es adicionou uma declara&ccedil;&atilde;o de importa&ccedil;&atilde;o para <tt>org.openide.DialogDisplayer</tt>. Agora &eacute; necess&aacute;rio declarar a depend&ecirc;ncia no artefato <tt>org.openide.dialogs</tt>, uma depend&ecirc;ncia direta ao inv&eacute;s de uma depend&ecirc;ncia transitiva.</p></li>
+            <li>Clique com o bot&atilde;o direito do mouse no JAR <tt>org.openide.dialogs</tt> sob o n&oacute; Bibliotecas do projeto e escolha Declarar como depend&ecirc;ncia direta.</li>
+        </ol>
+        <p>Agora &eacute; poss&iacute;vel testar o m&oacute;dulo para confirmar que a nova a&ccedil;&atilde;o funciona corretamente.</p>
+        <p class="notes"><strong>Nota.</strong> Para executar o m&oacute;dulo, &eacute; preciso primeiro limpar e desenvolver o m&oacute;dulo.</p>
+        <p><img src="../images/tutorials/maven-single/maven-single-action-popup.png" alt="Captura de tela do arquivo Abc na janela Projetos e aberto no editor" title="Arquivo Abc na janela Projetos e aberto no editor" class="margin-around b-all"  />
+        </p>
+        <p>Ao clicar com o bot&atilde;o direito do mouse em um n&oacute; no tipo de arquivo <tt>abc</tt>, ver&aacute; que My Action &eacute; um dos itens no menu suspenso.</p>
+    
+    </div>
+
+
+    <!-- =================================================================== -->
+    <!-- +++++++++++++++++++++++ Creating a Window +++++++++++++++++++++++++ -->
+
+    <h2><a name="04"></a>Criando uma janela para o Tipo de arquivo</h2>
+    <p>Como padr&atilde;o, o novo tipo de arquivo ser&aacute; aberto em um editor de texto b&aacute;sico. Caso n&atilde;o deseje usar um editor para o novo tipo de arquivo, voc&ecirc; pode criar uma nova janela especificamente para editar o novo tipo de arquivo. Voc&ecirc; pode ent&atilde;o modificar o componente de janela para suportar outras formas de editar o arquivo, por exemplo, ao tornar a janela um editor visual. Nesta se&ccedil;&atilde;o voc&ecirc; criar&aacute; um novo componente de janela especificamente para arquivos de seu novo tipo de arquivo.</p>
+
+    <ol>
+        <li>Clique com o bot&atilde;o direito do mouse no n&oacute; do projeto e escolha Nova &gt; Janela.</li>
+        <li>Selecione <strong>editor</strong> na lista suspensa e selecione Abrir ao iniciar o aplicativo. Clique em Pr&oacute;ximo.</li>
+        <li>Digite <strong>Abc</strong> como o prefixo do nome da classe. Clique em Terminar.</li>
+        <li>Abra <tt>AbcDataObject.java</tt> no editor e modifique o construtor de classe para usar <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/OpenSupport.html">OpenSupport</a></tt> ao inv&eacute;s de <tt>DataEditorSupport</tt>.
+        <pre class="examplecode">
+public AbcDataObject(FileObject pf, MultiFileLoader loader) throws DataObjectExistsException, IOException {
+    super(pf, loader);
+    CookieSet cookies = getCookieSet();
+    <strong>cookies.add((Node.Cookie) new AbcOpenSupport(getPrimaryEntry()));</strong>
+}</pre>
+        </li>
+        <li>Crie a classe <tt>AbcOpenSupport</tt> que &eacute; chamada pelo construtor.
+        <p class="tips">Tecle Alt-Enter na linha que cont&eacute;m a chamada para <tt>AbcOpenSupport</tt> para criar <tt>AbcOpenSupport</tt> no pacote <tt>com.mycompany.abcfiletype</tt>.</p></li>
+        <li>Modifique <tt>AbcOpenSupport</tt> para estender <tt>OpenSupport</tt> e implementar <tt>OpenCookie</tt> e <tt>CloseCookie</tt>.
+        <pre class="examplecode">
+class AbcOpenSupport <strong>extends OpenSupport implements OpenCookie, CloseCookie</strong> {</pre>
+        </li>
+        <li>Implemente os m&eacute;todos abstratos (Alt-Enter) e fa&ccedil;a as seguintes altera&ccedil;&otilde;es na classe.
+        <pre class="examplecode">
+    public AbcOpenSupport(<strong>AbcDataObject.Entry entry</strong>) {
+        <strong>super(entry);</strong>
+    }
+
+    @Override
+    protected CloneableTopComponent createCloneableTopComponent() {
+        <strong>AbcDataObject dobj = (AbcDataObject) entry.getDataObject();
+        AbcTopComponent tc = new AbcTopComponent();
+        tc.setDisplayName(dobj.getName());
+        return tc;</strong>
+    }</pre>
+        </li>
+        <li>Abra <tt>AbcTopComponent</tt> no editor e modifique a classe para estender <tt>CloneableTopComponent</tt> ao inv&eacute;s de <tt>TopComponent</tt>.
+        <pre class="examplecode">public final class AbcTopComponent extends <strong>CloneableTopComponent</strong> {</pre>
+        </li>
+        <li>Altere o modificador de classe de <tt>privado</tt> para <tt>p&uacute;blico</tt>. 
+        <pre class="examplecode"><strong>public</strong> static AbcTopComponent instance;</pre>
+        </li>
+        <li>Corrija as importa&ccedil;&otilde;es e salve as altera&ccedil;&otilde;es.</li>
+    </ol>
+    <p>Agora &eacute; poss&iacute;vel tentar executar o m&oacute;dulo novamente ap&oacute;s limpar e desenvolver o projeto.<br/>
+    <img src="../images/tutorials/maven-single/maven-single-newfile-window.png" alt="Captura de tela do arquivo Abc na janela Projetos e aberto no editor" title="Arquivo Abc na janela Projetos e aberto no editor" class="margin-around b-all"  /></p>
+    <p>Quando voc&ecirc; abre um arquivo abc, este agora ser&aacute; aberto na nova janela ao inv&eacute;s de no editor b&aacute;sico.</p>
+
+
+
+
+
+
+    
+   
+    <!--<p>The project also contains other XML files containing metadata about the project such as <tt>profiles.xml</tt>.
+    The <tt>profiles.xml</tt> file specifies the path to the NetBeans installation and is used by the IDE when running the project.
+    -->
+    
+    <!--<p>Unlike the original Ant-based tutorial, you do not specify the platform installation in the wizard.
+    For Maven module suites you need to modify the <tt>&lt;netbeans.installation&gt;</tt> element in the profiles.xml file
+    and explicitly specify the path to the NetBeans platform installation. </p>
+    see https://netbeans.org/bugzilla/show_bug.cgi?id=185941.
+-->
+
+
+ 
+    <p>Este tutorial demonstrou como criar e executar um m&oacute;dulo NetBeans criado a partir de um arquetipo Maven. Voc&ecirc; aprendeu como modificar o POM do projeto para especificar a instala&ccedil;&atilde;o NetBeans alvo, para que o comando Executar no IDE instale o m&oacute;dulo e inicie uma nova inst&acirc;ncia do IDE. Voc&ecirc; tamb&eacute;m aprendeu um pouco sobre como trabalhar com tipos de arquivos e <tt>DataObjects</tt>, mas para obter mais detalhes deveria consultar o <a href="https://platform.netbeans.org/tutorials/nbm-filetype_pt_BR.html">Tutorial de tipo de arquivo do NetBeans</a>. Para obter mais exemplos sobre como desenvolver aplicativos e m&oacute;dulos da plataforma NetBeans, consulte os tutoriais listados na <a href="https://netbeans.org/kb/trails/platform_pt_BR.html">Trilha do aprendizado da plataforma NetBeans</a>.</p>
+
+
+<!-- ======================================================================================== -->
+
+
+    <h2><a name="nextsteps"></a>Consulte tamb&eacute;m</h2>
+
+    <p>Para obter mais informa&ccedil;&otilde;es sobre a cria&ccedil;&atilde;o e o desenvolvimento de aplicativos, consulte os seguintes recursos.</p>
+    <ul>
+        <li><a href="https://netbeans.org/kb/trails/platform_pt_BR.html">Trilha do aprendizado da plataforma NetBeans</a></li>
+        <li><a href="http://bits.netbeans.org/dev/javadoc/">Javadoc da API da NetBeans </a></li>
+    </ul>
+    <p>Sempre que tiver perguntas sobre a plataforma NetBeans, de qualquer tipo, sinta-se a vontade para escrever para a lista de e-mail, dev@platform.netbeans.org, ou visualize <a href="https://netbeans.org/projects/platform/lists/dev/archive">o arquivo da lista de e-mail da plataforma NetBeans</a>.</p>
+
+
+    <!-- ======================================================================================== -->
+
+
+
+</body>
+
+</html>

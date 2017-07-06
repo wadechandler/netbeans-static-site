@@ -1,0 +1,286 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+<title>DRAFT: NetBeans Visual Library Widget Creation Tutorial</title>
+  <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+  <meta name="AUDIENCE" content="NBUSER"/>
+  <meta name="TYPE" content="ARTICLE"/>
+  <meta name="EXPIRES" content="N"/>
+  <meta name="developer" content="geertjan.wielenga@sun.com"/>
+  <meta name="indexed" content="y"/>
+  <meta name="description" content="A walk-through of the basic features of the Visual Library API."/>
+   <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+   <!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>DRAFT: NetBeans Visual Library Widget Creation Tutorial</h1>
+
+<p>In this tutorial, you will learn about a different approach
+     to creating widgets in Visual Library scenes. Other
+     approaches are described in other tutorials:</p>
+
+     <ul>
+         <li><a href="https://platform.netbeans.org/tutorials/nbm-visual_library.html">NetBeans Visual Library Tutorial.</a> In this
+              introductory tutorial to the Visual Library, you are shown
+              how widgets can be created when the user drags-and-drops
+              an item from the Component Palette.</li>
+         <li><a href="https://platform.netbeans.org/tutorials/nbm-visual_library2.html">NetBeans Visual Database Explorer Tutorial.</a> In this
+              tutorial, you are shown
+              how widgets can be created from tables in a database
+              via a database connection
+              in the Services window.</li>
+         <li><a href="https://platform.netbeans.org/tutorials/nbm-visual_library3.html">NetBeans Visual Library Tutorial for Java Applications.</a> In this
+              tutorial aimed at general Java SE applications, you are shown
+              how widgets can be generated from the constructor
+              of a NetBeans Visual Library Scene class.</li>
+     </ul>
+
+<p>In this tutorial, widgets are created in a slightly different
+     way, more common to typical Visual Library scenarios. When
+     the user clicks in a scene, a dialog will appear, where the
+     user can specify certain attributes of the widget, after
+     which the widget itself will be created. In other words, in
+     contrast to the above tutorials, widgets will be created
+     on-demand, that is, when the user requires them, when clicking
+     in the scene, that is, without using
+     the Component Palette.</p>
+
+     <p><b>Contents</b></p>
+   
+   <p><img  src="../images/articles/69/netbeans-stamp69.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 6.9" title="Content on this page applies to NetBeans IDE 6.9"/></p>
+      <ul class="toc">
+<li><a href="#getting-started">Setting Up the Application</a></li>
+<li><a href="#creating-the-window">Creating the Window</a></li>
+<li><a href="#creating-the-scene">Creating the Scene</a></li>
+<li><a href="#adding-a-layer-widget">Adding a LayerWidget</a></li>
+<li><a href="#adding-an-icon-widget">Adding an IconNodeWidget via Drag and Drop Functionality</a></li>
+<li><a href="#adding-to-scene">Adding Functionality to the Scene</a></li>
+<li><a href="#adding-to-widget">Adding Functionality to the IconNodeWidget</a></li>
+       </ul>
+         
+<p><b>To follow this tutorial, you need the software and resources listed in the following 
+table.</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software or Resource</th>
+                <th class="tblheader" scope="col">Version Required</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.7 or above</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Version 6 or<br/>version 5</td>
+            </tr>
+        </tbody>
+    </table>
+  
+<p>All the information you need to know for working with the Visual Library API
+ is collected at these two locations:</p>
+  
+ <ul>
+     <li><a href="http://graph.netbeans.org/">Visual Library Project Page</a></li>
+     <li><a href="http://graph.netbeans.org/documentation.html">Visual Library 2.0 - Documentation</a></li>
+ </ul>
+ 
+<!-- ===================================================================================== -->
+
+<h2><a name="getting-started"></a>Setting Up the Application</h2>
+
+<p>In this section, we use wizards to create a module project and
+ a custom window component.</p>
+
+<ol>
+    <li>Choose File &gt; New Project (Ctrl+Shift+N). Under Categories, select
+        NetBeans Modules.
+        Under Projects, select NetBeans Platform Application. Click Next.</li>
+    <li>In the Name and Location panel, type <tt>DemoToolVisualizer</tt> as
+        the name of the application. Click Finish.</li>
+    <li>Choose File &gt; New Project (Ctrl+Shift+N). Under Categories, select NetBeans Modules.
+        Under Projects, select Module. Click Next.</li>
+    <li>In the Name and Location panel, type <tt>ToolVisualizerSample</tt> in the Project Name field.
+        Change the Project Location to any directory on your computer.
+        Set the <tt>DemoToolVisualizer</tt> as the suite to which you
+        will add your module. Click Next.</li>
+    <li>In the Basic Module Configuration panel, type <tt>org.netbeans.demo</tt>
+     in Code Name Base.</li>
+    <li>Select "Generate XML Layer". Leave the
+        locations of both the localizing bundle and the XML layer file
+        so that they will be stored in a package with
+        the name <tt>org/netbeans/demo</tt>. Click Finish.</li>
+</ol>
+
+<p>The IDE has created an application containing a single module.
+    The application contains all of your sources and project
+    metadata, such as the project's Ant build script. The project opens in the IDE. You can view its logical
+    structure in the Projects window (Ctrl+1) and its file structure in the Files window (Ctrl+2).
+</p>
+
+<p>Now we need to set some dependencies.</p>
+
+<ol>
+ <li><p>Right-click the project, choose Properties, click Libraries
+in the Project Properties dialog box and declare a dependency on the following APIs:
+     </p>
+<ul>
+    <li>Visual Library API</li>
+    <li>Utilities API</li>
+</ul>
+
+
+  <p>Click OK.</p>
+  </li>
+</ol>
+
+
+ <!-- ===================================================================================== -->
+
+<h2><a name="creating-the-window"></a>Creating the Window</h2>
+
+<p>In this section, we use a wizard to create a custom window component.</p>
+
+<ol>
+
+ <li>Right-click the module project, choose
+ New &gt; Other and choose Window from the
+ Module Development category. Click Next.</li>
+
+ <li>Choose <tt>editor</tt>
+ in the drop-down list and select Open on Application Start. Click Next.</li>
+ 
+ <li><p>Type <tt>ToolVisualizer</tt> in Class Name Prefix. Optionally,
+ add an icon with a dimension of 16x16 pixels. Click Finish.</p> 
+ 
+ <p>Multiple files are generated, one of them is <tt>ToolVisualizerTopComponent</tt>.
+ Open this file in Design mode. You should now see this:</p>
+ 
+     <p><img alt="" style="border: 1px solid" src="../images/tutorials/vislib/65-shapetopcomponent.png"/></p>
+</li>
+ 
+<li>Right-click in the TopComponent in Design mode, choose Set Layout,
+  and select BorderLayout. </li>
+
+</ol>
+  
+
+<h2><a name="creating-the-scene"></a>Creating the Scene</h2>
+
+<p>Programming with the Visual Library API is similar to programming in Swing. You build
+  and modify a tree of visual elements that are called "widgets". The root of the tree is 
+ represented by a Scene class which holds all the visual data of the scene. The scene is a widget. 
+ You have to create a scene view, which is a JComponent. You must then add
+ the JComponent to a JScrollPane.</p>
+
+ <p>In this section,
+ we add a JScrollPane to our TopComponent. Then we create a new
+  scene. Next, we pass the scene view to the TopComponent, so that it can be displayed in
+ the TopComponent's JScrollPane. We then install the module project and display
+   our first scene.</p>
+
+<ol>
+  
+<li>Use the Palette (Ctrl-Shift-8) to drop a 
+ <tt>JScrollPane</tt> on the TopComponent. In the Inspector, right-click
+  the <tt>JScrollPane</tt>, choose Change Variable Name and type <tt>shapePane</tt>.</li>
+ 
+ <li>Create a Scene in the window, as follows:
+  
+<pre class="examplecode">private final Scene scene;
+private final LayerWidget layer;
+
+public ToolVisualizerTopComponent() {
+
+    ...
+    ...
+    ...
+
+    scene = new Scene();
+
+    layer = new LayerWidget(scene);
+    scene.addChild(layer);
+
+    scene.getActions().addAction(ActionFactory.createPopupMenuAction(new PopupMenuProvider() {
+        public JPopupMenu getPopupMenu(Widget widget, Point localLocation) {
+            JPopupMenu popup = new JPopupMenu();
+            popup.add(new WidgetMenuItem(scene,"Hammer", localLocation));
+            popup.add(new WidgetMenuItem(scene,"Saw", localLocation));
+            return popup;
+        }
+    }));
+
+    jScrollPane1.setViewportView(scene.createView());
+
+}
+
+class WidgetMenuItem extends JMenuItem {
+
+    public WidgetMenuItem(final Scene scene, final String type, final Point loc) {
+        super(type);
+        addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                NotifyDescriptor.InputLine desc =
+                        new NotifyDescriptor.InputLine(
+                        "Description:","Create a " + type) ;
+                DialogDisplayer.getDefault().notify(desc);
+                ToolWidget widget = new ToolWidget(
+                        scene,
+                        type,
+                        desc.getInputText(),
+                        loc);
+                layer.addChild(widget);
+                scene.validate();
+            }
+        });
+    }
+
+}
+
+class ToolWidget extends LabelWidget {
+
+    public ToolWidget(Scene scene, String type, String description, Point loc) {
+        super(scene);
+        setLabel(type + " (" + description + ")");
+        setPreferredLocation(loc);
+        getActions().addAction(ActionFactory.createMoveAction());
+    }
+
+}</pre></li>
+
+
+    <li><p>Run the application.</p>
+
+       <p><img alt="" style="border: 1px solid" src="../images/tutorials/vislib4/result-1.png"/></p>
+       <p><img alt="" style="border: 1px solid" src="../images/tutorials/vislib4/result-2.png"/></p>
+       <p><img alt="" style="border: 1px solid" src="../images/tutorials/vislib4/result-3.png"/></p>
+       <p><img alt="" style="border: 1px solid" src="../images/tutorials/vislib4/result-4.png"/></p>
+
+    </li>
+
+</ol>
+
+<p>Congratulations, you have completed your first Visual Library scene.</p>
+
+<br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Visual%20Library%20API%20Tutorial%20NetBeans">Send Us Your Feedback</a></div>
+<br style="clear:both;" />
+
+      
+        <a name="next_steps"></a><h2>Next Steps</h2>
+        <p>For more information
+        on working with the Visual Library API, see:</p> 
+  
+ <ul>
+      <li><a href="http://www.javalobby.org/eps/netbeans_visual_library/">Roman Strobl's Visual Library
+Screencast</a> on Javalobby.</li>
+     <li><a href="http://graph.netbeans.org/">Visual Library Project Page</a></li>
+     <li><a href="http://graph.netbeans.org/documentation.html">Visual Library 2.0 - Documentation</a></li>
+ </ul>
+ 
+
+    </body>
+</html>

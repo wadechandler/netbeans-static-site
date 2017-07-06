@@ -1,0 +1,678 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Maven を使用した NetBeans プラットフォームクイックスタート</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+    <meta name="AUDIENCE" content="NBUSER"/>
+    <meta name="TYPE" content="ARTICLE"/>
+    <meta name="EXPIRES" content="N"/>
+    <meta name="indexed" content="y"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="description"
+          content="A short demonstration of how to create a simple
+    NetBeans Platform application and module and use Maven for the build framework."/>
+   <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+<body>
+
+   <h1>Maven を使用した NetBeans プラットフォームクイックスタート</h1>
+
+   <p><a href="https://platform.netbeans.org/"><b>NetBeans プラットフォーム</b></a>へようこそ!</p>
+
+    <p>このドキュメントは、構築フレームワークとして Maven を使用し、単純な NetBeans プラットフォームのアプリケーションおよびモジュールを作成する方法についての簡単なデモンストレーションです。このドキュメントでは、Maven 原型を使用して、NetBeans プラットフォームのアプリケーションおよびモジュールを作成します。Swing UI ツールキットおよび「Matisse」GUI ビルダーを使用して、モジュールのウィンドウコンポーネントを作成します。NetBeans プラットフォームのモジュール式の特長により、新しいモジュールを追加するだけで、ユーザーアプリケーションの機能を開発および拡張できます。
+    </p>
+
+    <p>このドキュメントは Ant ベースの「<a href="nbm-quick-start_ja.html">NetBeans プラットフォーム: NetBeans プラットフォームクイックスタート</a>」に基づいており、NetBeans プラットフォームのアプリケーション開発において、Ant を使用する場合と Maven を使用する場合の違いについていくつか説明します。Maven と Ant との相違点を理解すれば、「<a href="https://netbeans.org/kb/trails/platform_ja.html">NetBeans プラットフォームの学習</a>」のチュートリアルを容易に理解できるようになります。</p>
+
+    <p class="tips">NetBeans IDE 6.8 を使用している場合は、「<a href="68/nbm-maven-quickstart.html">Maven を使用した NetBeans プラットフォーム 6.8 クイックスタート</a>」を参照してください。</p>
+
+    <p class="tips">NetBeans プラットフォームをはじめて使用する場合は、スクリーンキャストシリーズの「<a href="https://platform.netbeans.org/tutorials/nbm-10-top-apis.html">NetBeans API のトップ 10</a>」を視聴いただくことをお勧めします。</p>
+
+    <p><b>目次</b></p>
+    <p><img src="../images/articles/74/netbeans_stamp_74_73_72.png" class="stamp" width="114" height="114" alt="このページの内容は NetBeans IDE 6.5、6.7、および 6.8 が対象です" title="このページの内容は NetBeans IDE 6.5、6.7、および 6.8 が対象です" /></p>
+
+    <ul class="toc">
+        <li><a href="#config">Maven の構成</a></li>
+        <li><a href="#01">NetBeans プラットフォームアプリケーションプロジェクトの作成</a>
+            <ul>
+            <li><a href="#01a">ブランド設定要素の変更</a></li>
+            </ul>
+        </li>
+        <li><a href="#02">MavenWordEngine モジュールの作成</a>
+            <ul>
+            <li><a href="#02b">モジュールの依存リソース設定</a></li>
+            <li><a href="#02c">ウィンドウコンポーネントの追加</a></li>
+            </ul>
+        </li>
+        <li><a href="#04">TextFilter モジュールの作成</a>
+            <ul>
+            <li><a href="#04b">モジュールの依存リソース設定</a></li>
+            <li><a href="#04c">インタフェースの追加</a></li>
+            <li><a href="#04d">モジュールの公開設定</a></li>
+            </ul>
+        </li>
+        <li><a href="#05">MyFilter モジュールの作成</a>
+            <ul>
+            <li><a href="#05b">依存リソースとしての TextFilter の追加</a></li>
+            <li><a href="#05c">Java クラスの追加</a></li>
+            <li><a href="#05d">MavenWordEngine モジュールからのメソッドの呼び出し</a></li>
+            </ul>
+        </li>
+        <li><a href="#06">リスナーおよびコンテンツフィールドの追加</a></li>
+        <li><a href="#07">History モジュールの作成</a>
+            <ul>
+            <li><a href="#07b">ウィンドウコンポーネントの追加</a></li>
+            </ul>
+        </li>
+        <li><a href="#08">アプリケーションの実行</a></li>
+      </ul>
+
+<p><b>このチュートリアルを行うには、次の表に示すソフトウェアおよびリソースが必要です。</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                <th class="tblheader" scope="col">必須バージョン</th>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://download.netbeans.org/">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.9</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">version 6</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://maven.apache.org/">Maven</a></td>
+                <td class="tbltd1">version 2.0.9 以降</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><strong class="notes">注:</strong> NetBeans プラットフォーム用のアプリケーション開発のために、別々のバージョンの NetBeans プラットフォームをダウンロードする必要はありません。通常、NetBeans IDE でアプリケーションおよびモジュールを開発し、NetBeans プラットフォームおよびアプリケーションを実行するのに必要なモジュールのみを追加します。</p>
+
+    <p>このチュートリアルを開始する前に、必要に応じて次のドキュメントをお読みください。</p>
+    <ul>
+        <li><a href="http://wiki.netbeans.org/MavenBestPractices">NetBeans 6.x での Apache Maven のベストプラクティス</a></li>
+        <li><a href="http://www.sonatype.com/books/maven-book/reference/introduction.html">Chapter 1. Introducing Apache Maven</a> (『<a href="http://www.sonatype.com/books/maven-book/reference/public-book.html">Maven: The Definitive Guide</a>』)</li>
+        <li><a href="https://netbeans.org/kb/docs/java/gui-functionality_ja.html">GUI 構築入門</a></li>
+    </ul>
+
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++ Configuring Maven +++++++++++++++++++++++++++++++++ -->
+
+<h2><a name="config"></a>Maven の構成</h2>
+    <p>これがはじめての Maven プロジェクトである場合は、「オプション」ウィンドウで Maven の構成設定を確認します。このチュートリアルを完了するには、ローカルシステムに Maven がインストールされている必要があります。インストーラは <a href="http://maven.apache.org/">Maven のサイト</a>からダウンロードできます。</p>
+
+    <ol>
+        <li>「オプション」ウィンドウの「その他」カテゴリを選択して、「Maven」タブをクリックします。</li>
+        <li>Maven をインストールするローカルの場所を指定します (2.0.9 以降が必要)。</li>
+        <li>Maven のローカルリポジトリの場所が正しいことを確認します。</li>
+        <li>「了解」をクリックします。</li>
+    </ol>
+    <p>ほとんどの場合、Maven の設定が標準的であれば、「オプション」ウィンドウの情報はすでに正しいものになっています。</p>
+    
+    <p class="notes"><strong>注:</strong> Maven サポートは、Java SE 機能セットの一部として有効になっています。「オプション」ウィンドウで「Maven」タブが使用できない場合は、Java アプリケーションを作成して Java SE が有効になっているか確認してください。</p>
+
+    <p>IDE は、Maven SCM を使用して Maven アーティファクトのチェックアウトを行います。ソースのチェックアウトを行うために必要なすべてのクライアントが、ローカルマシンにインストールされていて正しく設定されているか確認することをお勧めします。</p>
+    <p class="tips">Maven SCM の詳細については、「<a href="http://maven.apache.org/scm/index.html">Maven SCM のページ</a>」を参照してください。</p>
+
+    <div class="indent">
+        <h3><a name="config1"></a>Maven リポジトリの表示</h3>
+        <p>Maven ですべてのプロジェクトを構築するために使用されるアーティファクトは、Maven のローカルリポジトリに格納されます。アーティファクトがプロジェクトの依存リソースとして宣言されると、そのアーティファクトは登録されたリモートリポジトリの 1 つからローカルリポジトリにダウンロードされます。</p>
+
+        <p>デフォルトで、NetBeans リポジトリおよびよく知られているインデックス付きの Maven リポジトリがいくつか登録され、リポジトリブラウザウィンドウに一覧表示されます。NetBeans リポジトリには、プロジェクトの構築に必要な、ほとんどの公開アーティファクトが含まれています。Maven リポジトリブラウザを使用すると、ローカルリポジトリとリモートリポジトリの内容を確認することができます。「ローカルリポジトリ」ノードを展開すると、ローカルにあるアーティファクトを表示できます。NetBeans リポジトリノードの下に一覧表示されているアーティファクトは、プロジェクトの依存リソースとして追加できますが、すべてのアーティファクトがローカルにあるわけではありません。これらはプロジェクトの依存リソースとして宣言されたときにだけ、ローカルリポジトリに追加されます。</p>
+
+        <p>Maven リポジトリブラウザを開くには、次の手順に従います。</p>
+        <ul>
+            <li>メインメニューから「ウィンドウ」&gt;「その他」&gt;「Maven リポジトリブラウザ」を選択します。<br/>
+            <img src="../images/tutorials/maven-quickstart68/maven-nbm-netbeans-repo.png" alt="Maven リポジトリブラウザのスクリーンショット" title="Maven リポジトリブラウザのスクリーンショット" class="margin-around b-all"  />
+            </li>
+        </ul>
+
+
+        <p>カーソルをアーティファクトの上に置くと、アーティファクトのコーディネートとともにツールチップが表示されます。ブラウザで、アーティファクトの JAR ファイルをダブルクリックすると、アーティファクトについての追加の詳細情報を確認できます。</p>
+
+        <p class="tips">Maven リポジトリブラウザのツールバーにある「検索」ボタンをクリックするか、メインツールバーにあるクイック検索のテキストフィールドを使用すると、アーティファクトを検索できます。</p>
+        <p class="tips">IDE での Maven のクラスパス依存リソースの管理と、Maven リポジトリの操作の詳細については、「<a href="http://wiki.netbeans.org/MavenBestPractices">NetBeans 6.x での Apache Maven のベストプラクティス</a>」の「<a href="http://wiki.netbeans.org/MavenBestPractices#Dependency_management">依存リソースの管理</a>」の節を参照してください。
+        </p>
+        <p class="tips">Artifact Viewer の使用方法のデモンストレーションを確認するには、「<a href="https://netbeans.org/kb/docs/java/maven-dependencies-screencast.html">Maven 依存リソースの操作</a>」のスクリーンキャストを参照してください。</p>
+
+</div>
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++ Creating the Platform Application +++++++++++++++++ -->
+
+<h2><a name="01"></a>NetBeans プラットフォームアプリケーションプロジェクトの作成</h2>
+
+    <p>この節では、「新規プロジェクト」ウィザードを使用して、Maven 原型から NetBeans アプリケーションを作成します。このウィザードにより、NetBeans プラットフォームでアプリケーションを開発するために必要な Maven モジュールプロジェクトが作成されます。このウィザードでは、アプリケーションプロジェクトで NetBeans モジュールを作成することもできますが、このチュートリアルでは各モジュールを個々に作成します。</p>
+
+    <div class="indent">
+        <h3>プロジェクトの作成</h3>
+
+        <p>「新規プロジェクト」ウィザードを使用して NetBeans プラットフォームアプリケーションを作成するには、次の手順を実行します。</p>
+        <ol>
+            <li>「ファイル」&gt;「新規プロジェクト」(Ctrl-Shift-N) を選択し、「新規プロジェクト」ウィザードを開きます。</li>
+            <li>「Maven」カテゴリから「Maven NetBeans アプリケーション」を選択します。「次へ」をクリックします。</li>
+            <li>「プロジェクト名」に「<strong>MavenPlatformWordApp</strong>」と入力し、「プロジェクトの場所」を設定します。「完了」をクリックします。 <br/>
+            <img src="../images/tutorials/maven-quickstart/maven-newproject.png" alt="「新規プロジェクト」ウィザードのスクリーンショット" title="「新規プロジェクト」ウィザードのスクリーンショット" class="margin-around b-all"  />
+            </li>
+        </ol>
+
+        <p class="notes"><strong>注:</strong> これが Maven を使用した最初の NetBeans プラットフォームアプリケーションである場合、IDE が必要なすべてのアーティファクトを NetBeans リポジトリからダウンロードする必要があるため、プロジェクト作成まで少し時間がかかることがあります。</p>
+
+        <p>「完了」をクリックすると、デフォルトで IDE が次のような Maven プロジェクトタイプを作成します。</p>
+        <ul>
+            <li><strong>NetBeans Platform Application。</strong>このプロジェクトはプラットフォームアプリケーションのコンテナプロジェクトです。このプロジェクトに、包含する各モジュールおよびプロジェクトのリポジトリの場所が一覧表示されます。このプロジェクトにソースは含まれません。IDE は、このプロジェクトのサブディレクトリに、ソースおよびリソースを含むモジュールを生成します。</li>
+            <li><strong>NetBeans Platform based application。</strong>このプロジェクトは、アプリケーションをコンパイルするために必要なアーティファクト (ソース) を指定します。必要な依存リソース (IDE アーティファクト、モジュールアーティファクト) は、このプロジェクトの <tt>pom.xml</tt> ファイルで指定されます。「ライブラリ」ノードを展開すると、NetBeans プラットフォームのアプリケーションに必要なライブラリを確認できます。</li>
+            <li><strong>Platform application branding resources。</strong>このプロジェクトには、アプリケーションのブランド設定に使用されるリソースが含まれています。 </li>
+        </ul>
+
+        <p>すべての Maven プロジェクトにおいて、<tt>pom.xml</tt> ファイル (POM) は「プロジェクト」ウィンドウの「プロジェクトファイル」ノードの下にあります。NetBeans プラットフォームアプリケーションプロジェクトの POM を見ると、ウィザードによって作成された別の 2 つのモジュールが、アプリケーションのモジュールとして一覧表示されているのが確認できます。</p>
+<pre class="examplecode">
+&lt;modules&gt;
+   &lt;module&gt;branding&lt;/module&gt;
+   &lt;module&gt;application&lt;/module&gt;
+&lt;/modules&gt;
+</pre>
+
+
+        <h3><a name="01a"></a>ブランド設定要素の変更</h3>
+        <p>ブランド設定モジュールは、プラットフォームアプリケーションの構築時に使用されるブランド設定リソースを指定します。ブランド設定ダイアログでアプリケーションのブランド設定プロパティーを修正することで、名前、スプラッシュ画面、およびテキスト要素の値を簡単に変更できます。</p>
+
+        <p>NetBeans プラットフォームアプリケーションを原型から作成する場合、アプリケーションのデフォルト名はアプリケーションのアーティファクト ID になります。この課題では、ブランド設定ウィザードを使用して、アプリケーション名の変更およびスプラッシュ画面のデフォルト画像の置き換えを行います。</p>
+        <p class="notes"><strong>注:</strong> ブランド設定リソースを変更するには、IDE によってブランド設定モジュールが構築されている必要があります。</p>
+        <ol>
+            <li>「<strong>Platform application branding resources</strong>」モジュールを右クリックして、「ブランド設定」を選択します。</li>
+            <li>「基本」タブで、「アプリケーションタイトル」を「<strong>My Maven Platform Word App</strong>」に変更します。<br/>
+            <img src="../images/tutorials/maven-quickstart/maven-branding1.png" alt="「新規プロジェクト」ウィザードのスクリーンショット" title="「新規プロジェクト」ウィザードのスクリーンショット" class="margin-around b-all"  />
+            </li>
+            <li>「スプラッシュ画面」タブをクリックし、スプラッシュ画面のデフォルトの画像の隣にある「参照」ボタンをクリックして、別の画像を指定します。「了解」をクリックします。</li>
+            <!--<li>Click the Resource Bundles tab and expand the <strong>org/netbeans/core/startup/Bundle.properties</strong> node.</li>
+            <li>Double-click <strong>CTL_About_Title</strong> and type a new title for the About dialog window. Click OK.<br/>
+            <img src="../images/tutorials/maven-quickstart/maven-branding2.png" alt="Screenshot of New Project wizard" title="Screenshot of New Project wizard" class="margin-around b-all" />
+            </li>-->
+        </ol>
+
+
+        <p class="tips">次の画像をローカルシステムにコピーして、ブランド設定ダイアログにスプラッシュ画面の画像として指定することもできます。</p>
+        <img src="../images/tutorials/maven-quickstart68/splash.gif" alt="デフォルトのスプラッシュ画像の例" title="デフォルトのスプラッシュ画像の例" class="margin-around b-all"  />
+
+    </div>
+
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++ Creating the MavenWordEngine Module +++++++++++++++ -->
+
+
+<h2><a name="02"></a>MavenWordEngine モジュールの作成</h2>
+
+    <p>この節では、MavenWordEngine という名前の新しいモジュールを作成します。そのあとでモジュールを変更して、ウィンドウコンポーネント、ボタン、およびテキスト領域を追加します。</p>
+
+    <div class="indent">
+        <h3><a name="02a"></a>モジュールの作成</h3>
+        <p>この課題では、ブランド設定モジュールとアプリケーションモジュールを含む同じディレクトリで、新しいモジュールプロジェクトを作成します。</p>
+        <ol>
+            <li>メインメニューから「ファイル」&gt;「新規プロジェクト」を選択します。</li>
+            <li>「Maven」カテゴリから「Maven NetBeans モジュール」を選択します。「次へ」をクリックします。</li>
+            <li>「プロジェクト名」に「<strong>MavenWordEngine</strong>」と入力します。</li>
+            <li>「参照」をクリックして、「プロジェクトの場所」を MavenPlatformWordApp ディレクトリに指定します。「完了」をクリックします。</li>
+        </ol>
+
+        <img src="../images/tutorials/maven-quickstart/maven-wizard-project-location.png" alt="「新規プロジェクト」ウィザードのスクリーンショット" title="「新規プロジェクト」ウィザードのスクリーンショット" class="margin-around b-all"  />
+
+
+        <p>MavenWordEngine モジュールの POM を見ると、プロジェクトの <tt>artifactId</tt> が <strong>MavenWordEngine</strong> であることが確認できます。</p>
+
+        <pre class="examplecode">
+&lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+&lt;parent&gt;
+    &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+    &lt;artifactId&gt;MavenPlatformWordApp&lt;/artifactId&gt;
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+&lt;/parent&gt;
+&lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+&lt;artifactId&gt;<strong>MavenWordEngine</strong>&lt;/artifactId&gt;
+&lt;packaging&gt;nbm&lt;/packaging&gt;
+&lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+&lt;name&gt;MavenWordEngine NetBeans Module&lt;/name&gt;
+</pre>
+
+        <p>NetBeans モジュールを構築するには、<tt>nbm-maven-plugin</tt> を使用する必要があります。モジュールの POM を見ると、IDE によって自動的に <tt>packaging</tt> に <tt>nbm</tt> が指定され、構築プラグインとして <strong>nbm-maven-plugin</strong> が指定されていることが確認できます。</p>
+
+        <pre class="examplecode">
+&lt;plugin&gt;
+   &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+   &lt;artifactId&gt;<strong>nbm-maven-plugin</strong>&lt;/artifactId&gt;
+   &lt;version&gt;3.2-SNAPSHOT&lt;/version&gt;
+   &lt;extensions&gt;true&lt;/extensions&gt;
+&lt;/plugin&gt;
+</pre>
+
+        <p>NetBeans プラットフォームアプリケーションの POM を見ると、<strong>MavenWordEngine</strong> がアプリケーションのモジュールの一覧に追加されているのが確認できます。</p>
+
+        <pre class="examplecode">
+&lt;modules&gt;
+   &lt;module&gt;branding&lt;/module&gt;
+   &lt;module&gt;application&lt;/module&gt;
+   &lt;module&gt;<strong>MavenWordEngine</strong>&lt;/module&gt;
+&lt;/modules&gt;
+</pre>
+
+        <h3><a name="02b"></a>モジュール を MavenPlatformWordApp の依存リソースに設定する</h3>
+        <p>この課題では、POM に依存リソースを追加して、MavenWordEngine モジュールを「NetBeans Platform based application」の依存リソースとして宣言します。アプリケーションの POM では、次の依存リソースを宣言しています。</p>
+        <pre class="examplecode">&lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.netbeans.cluster&lt;/groupId&gt;
+        &lt;artifactId&gt;platform&lt;/artifactId&gt;
+        &lt;version&gt;${netbeans.version}&lt;/version&gt;
+        &lt;type&gt;pom&lt;/type&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+        &lt;artifactId&gt;branding&lt;/artifactId&gt;
+        &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;</pre>
+
+        <p>「NetBeans Platform based application」の「ライブラリ」ノードを展開すると、ブランド設定モジュールや、アプリケーション構築に必要なクラスタの依存リソースであるほかのライブラリに対して、依存リソースが存在することが確認できます。</p>
+        <img src="../images/tutorials/maven-quickstart/maven-projects-libraries.png" alt="「ライブラリ」ノードのスクリーンショット" title="「依存リソースを追加」ダイアログのスクリーンショット" class="margin-around b-all"  />
+        <p class="tips">クラスパスではない依存リソースの一覧を展開すると、依存リソースの全一覧が確認できます。</p>
+
+        <p>POM に依存リソースを追加するには、エディタで直接 POM を編集するか、「プロジェクト」ウィンドウから「依存リソースを追加」ダイアログボックスを開いて操作します。</p>
+
+        <ol>
+            <li>「プロジェクト」ウィンドウで「<strong>MavenPlatformWordApp - NetBeans Platform based application</strong>」を展開します。</li>
+            <li>「ライブラリ」ノードを右クリックし、「依存リソースを追加」を選択します。</li>
+            <li>「開いているプロジェクト」タブをクリックして、「<strong>MavenWordEngine</strong>」を選択します。「了解」をクリックします。</li>
+        </ol>
+        <img src="../images/tutorials/maven-quickstart/maven-add-dependency1.png" alt="「依存リソースを追加」ダイアログのスクリーンショット" title="「依存リソースを追加」ダイアログのスクリーンショット" class="margin-around b-all"  />
+
+        <p class="notes"><strong>注:</strong> IDE によってインデックスのスキャンおよび更新が完了すると、ダイアログに新しいプロジェクトが表示されます。</p>
+
+        <p>「プロジェクト」ウィンドウで「MavenPlatformWordApp」の「ライブラリ」ノードを展開すると、MavenWordEngine が依存リソースとして表示されるようになっているのが確認できます。</p>
+
+        <h3><a name="02c"></a>モジュールへのウィンドウコンポーネントの追加</h3>
+
+        <p>この課題では、ウィザードを使用して、MavenWordEngine モジュールにウィンドウコンポーネントを追加します。</p>
+        <ol>
+            <li>「プロジェクト」ウィンドウで「<strong>MavenWordEngine NetBeans Module</strong>」を右クリックして、「新規」&gt;「その他」を選択して「新規ファイル」ウィザードを開きます。</li>
+            <li>「モジュールの開発」カテゴリで「ウィンドウ」を選択します。「次へ」をクリックします。</li>
+            <li>「ウィンドウの位置」ドロップダウンリストから「<strong>output</strong>」を選択します。「次へ」をクリックします。<br/>
+            <img src="../images/tutorials/maven-quickstart/maven-new-window.png" alt="「新規ファイル」ウィザードのウィンドウコンポーネントページのスクリーンショット" title="「新規ファイル」ウィザードのウィンドウコンポーネントページのスクリーンショット" class="margin-around b-all"  />
+            </li>
+            <li>「クラス名の接頭辞」フィールドに「<strong>Text</strong>」と入力します。「完了」をクリックします。
+            <p>ウィザードにより、作成されるファイルと変更されるファイルの一覧が表示されます。 </p></li>
+        </ol>
+
+
+
+        <p>「完了」をクリックすると、IDE によって「ソースパッケージ」の下の <tt>com.mycompany.mavenwordengine</tt> に <tt>TextTopComponent.java</tt> クラスが生成されているのが「プロジェクト」ウィンドウで確認できます。また、「その他のソース」の下の <tt>com.mycompany.mavenwordengine</tt> にも IDE によって追加のリソースファイルが生成されています。この課題では、<tt>TextTopComponent.java</tt> だけを編集します。</p>
+
+        <p>プロジェクトの構造は、「ファイル」ウィンドウで確認できます。Maven プロジェクトをコンパイルするには、「ソースパッケージ」(「ファイル」ウィンドウの <tt>src/main/java</tt> ディレクトリ) の下にソースファイルだけを配置する必要があります。その他のリソース (XML ファイルなど) は、「その他のソース」(「ファイル」ウィンドウの <tt>src/main/resources</tt> ディレクトリ) の下に配置しなければいけません。 </p>
+
+        <h3><a name="02d"></a>ウィンドウコンポーネントの変更</h3>
+
+        <p>この課題では、ウィンドウコンポーネントにテキスト領域とボタンを追加します。そのあと、ボタンによって呼び出されるメソッドを、テキスト領域の文字を大文字にするように変更します。</p>
+        <ol>
+            <li>エディタで <tt>TextTopComponent.java</tt> の「デザイン」タブをクリックします。</li>
+            <li>パレットからウィンドウに、ボタンとテキスト領域をドラッグ＆ドロップします。</li>
+            <li>テキスト領域を右クリックして、「変数名を変更」を選択し、「<strong>text</strong>」という名前を入力します。この名前は、コードからコンポーネントにアクセスする際に使用します。</li>
+            <li>ボタンのテキストを「<strong>Filter!</strong>」に設定します。<br/>
+            <img src="../images/tutorials/maven-quickstart68/maven-nbm-textopcomponent.png" alt="「新規ファイル」ウィザードのウィンドウコンポーネントページのスクリーンショット" title="「新規ファイル」ウィザードのウィンドウコンポーネントページのスクリーンショット" class="margin-around b-all"  />
+            </li>
+            <li>「デザイン」ビューで「Filter!」ボタンをダブルクリックして、ソースコードエディタでボタンのイベントハンドラメソッドを開きます。ボタン要素をダブルクリックすると、メソッドが自動的に作成されます。</li>
+            <li>メソッドの本文に次のコードを追加します。変更を保存します。
+            <pre class="examplecode">
+private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {
+   <strong>String s = text.getText();
+   s = s.toUpperCase();
+   text.setText(s);</strong>
+}</pre>
+            <p class="tips">エディタでコード補完を使用すると、コードの入力に役立ちます。 </p>
+            </li>
+        </ol>
+
+        <p>アプリケーションが正しく動作するかテストする場合は、「<strong>MavenPlatformWordApp NetBeans Platform based application</strong>」のプロジェクトノードを右クリックして、「依存関係で構築」を選択します。</p>
+
+        <p>「依存関係で構築」にマップされているデフォルトの動作は、Reactor プラグインを使用してプロジェクトを構築することです。Reactor プラグインを使用してプロジェクトを構築すると、サブプロジェクトの依存関係が構築されてから、それを含むプロジェクトが構築されます。出力ウィンドウに、構築の順序が表示されます。</p>
+
+        <img src="../images/tutorials/maven-quickstart/maven-buildwithdependencies1.png" alt="「出力」ウィンドウの Reactor 構築順序のスクリーンショット" title="「出力」ウィンドウの Reactor 構築順序のスクリーンショット" class="margin-around b-all"  />
+
+        <p>出力ウィンドウには、構築の結果も表示されます。</p>
+
+        <img src="../images/tutorials/maven-quickstart/maven-buildwithdependencies2.png" alt="「出力」ウィンドウの正常な Reactor 構築のスクリーンショット" title="「出力」ウィンドウの正常な Reactor 構築のスクリーンショット" class="margin-around b-all"  />
+
+        <p>「プロジェクト」ウィンドウを見ると、「<tt>com.mycompany</tt>」ノードの下の「ローカルリポジトリ」で必要な依存関係のアーティファクトが使用可能になったため、プロジェクトからバッジがなくなっているのが確認できます。</p>
+
+        <img src="../images/tutorials/maven-quickstart/maven-localrepo.png" alt="「ローカルリポジトリ」のスクリーンショット" title="「ローカルリポジトリ」のスクリーンショット" class="margin-around b-all"  />
+
+        <p>プロジェクトを実行するには、「<strong>MavenPlatformWordApp NetBeans Platform based application</strong>」のプロジェクトノードを右クリックして、「実行」を選択します。アプリケーションが起動したら、次の手順を実行してアプリケーションをテストできます。</p>
+        <ol>
+            <li>プラットフォームアプリケーションのメインメニューから「Window」&gt;「Text」を選択して、「Text」ウィンドウを開きます。</li>
+            <li>テキスト領域に小文字をいくつか入力して、「Filter!」をクリックします。 </li>
+            <li>Maven Platform Word App を終了します。</li>
+        </ol>
+        <p>「Filter!」をクリックすると、入力した文字が大文字に変更されてテキスト領域に表示されます。 </p>
+
+    </div>
+
+
+
+
+
+<!-- =================================================================== -->
+<!-- +++++++++++++ Creating the TextFilter Module ++++++++++++++++++++++ -->
+
+
+<h2><a name="04"></a>TextFilter モジュールの作成</h2>
+
+    <p>この課題では、<b>TextFilter</b> という名前のモジュールを作成して、このモジュールを依存リソースとしてアプリケーションに追加します。TextFilter モジュールはサービスを提供し、インタフェースだけを含んでいます。あとで、ほかのモジュールからルックアップを使用してこのサービスにアクセスできます。</p>
+
+    <div class="indent">
+        <h3><a name="04a"></a>モジュールの作成</h3>
+        <p>この課題では、次の手順を実行して、TextFilter モジュールを作成します。</p>
+
+        <ol>
+            <li> 「ファイル」&gt;「新規プロジェクト」(Ctrl-Shift-N) を選択します。</li>
+            <li> 「Maven」カテゴリから「Maven NetBeans モジュール」原型を選択します。「次へ」をクリックします。</li>
+            <li> 「プロジェクト名」に「<b>TextFilter</b>」と入力します。</li>
+            <li> 「参照」をクリックして、「プロジェクトの場所」を MavenPlatformWordApp ディレクトリに設定します。「完了」をクリックします。</li>
+        </ol>
+
+        <p>「完了」をクリックすると、IDE がモジュールを作成し、モジュールプロジェクト「<b>TextFilter NetBeans Module</b>」が「プロジェクト」ウィンドウで開きます。</p>
+        <p>IDE により、POM プロジェクト「MavenPlatformWordApp - NetBeans Platform Application」の <tt>pom.xml</tt> が変更され、プロジェクトに含まれるモジュールの一覧に新しいモジュールが追加されます。</p>
+
+<pre class="examplecode">&lt;modules&gt;
+    &lt;module&gt;branding&lt;/module&gt;
+    &lt;module&gt;application&lt;/module&gt;
+    &lt;module&gt;MavenWordEngine&lt;/module&gt;
+    &lt;module&gt;TextFilter&lt;/module&gt;
+&lt;/modules&gt;</pre>
+
+        <p>モジュールを作成したら、そのモジュールをアプリケーションの依存リソースとして追加する必要があります。</p>
+
+        <h3><a name="04b"></a>MavenPlatformWordApp の依存リソースとして TextFilter モジュールを追加する</h3>
+
+        <p>この課題では、TextFilter モジュールを「MavenPlatformWordApp NetBeans Platform based application」の依存リソースとして追加します。</p>
+        <ol>
+            <li>「<strong>MavenPlatformWordApp - NetBeans Platform based application</strong>」プロジェクトの「ライブラリ」ノードを右クリックして、「依存リソースを追加」を選択します。</li>
+            <li>「依存リソースを追加」ダイアログで、「開いているプロジェクト」タブをクリックします。</li>
+            <li>「<strong>TextFilter NetBeans Module</strong>」モジュールを選択します。「了解」をクリックします。</li>
+        </ol>
+
+        <p>「了解」をクリックすると、IDE によってモジュールがプロジェクトの依存リソースとして追加されます。「ライブラリ」ノードを展開すると、モジュールが依存リソースの一覧に追加されているのが確認できます。「<strong>MavenPlatformWordApp - NetBeans Platform based application</strong>」の POM では、IDE によって「<tt>dependencies</tt>」要素の中に次の行が追加されているのが確認できます。</p>
+
+<pre class="examplecode">&lt;dependency&gt;
+   &lt;groupId&gt;${project.groupId}&lt;/groupId&gt;
+   &lt;artifactId&gt;TextFilter&lt;/artifactId&gt;
+   &lt;version&gt;${project.version}&lt;/version&gt;
+&lt;/dependency&gt;</pre>
+
+
+
+        <h3><a name="04c"></a>TextFilter モジュールへのインタフェースの追加</h3>
+        <p>この課題では、TextFilter モジュールへの単純なインタフェースを追加します。</p>
+
+        <ol>
+            <li> 「<strong>TextFilter NetBeans Module</strong>」を右クリックし、「新規」&gt;「Java インタフェース」を選択します。</li>
+            <li> 「クラス名」に「<strong>TextFilter</strong>」と入力します。</li>
+            <li> 「パッケージ」ドロップダウンリストから「<b>com.mycompany.textfilter</b>」を選択します。「完了」をクリックします。</li>
+            <li> クラスに次のコードを追加します。変更を保存します。</li>
+        </ol>
+<pre class="examplecode">package com.mycompany.textfilter;
+
+public interface TextFilter {
+    <strong>public String process(String s);</strong>
+}</pre>
+
+
+        <h3><a name="04d"></a>モジュールの公開設定</h3>
+        <p>この課題では、<tt>com.mycompany.textfilter</tt> パッケージの内容を公開パッケージとして設定し、ほかのモジュールがこのメソッドにアクセスできるようにします。パッケージを公開パッケージとして宣言するには、POM にある <tt>nbm-maven-plugin</tt> の <tt>configuration</tt> 要素を変更して、プラグインによって公開パッケージとしてエクスポートされるパッケージを指定します。エディタで POM を変更するか、プロジェクトの「プロパティー」ダイアログボックスで、公開するパッケージを選択できます。
+        </p>
+
+
+        <ol>
+            <li> 「<strong>TextFilter NetBeans Module</strong>」を右クリックし、「プロパティー」を選択します。</li>
+            <li> 「プロジェクトプロパティー」ダイアログで「公開パッケージ」カテゴリを選択します。</li>
+            <li> 「<strong>com.mycompany.textfilter</strong>」パッケージを選択します。「了解」をクリックします。</li>
+        </ol>
+        <img src="../images/tutorials/maven-quickstart/maven-public-packages.png" alt="「プロパティー」ダイアログのスクリーンショット" title="「プロパティー」ダイアログのスクリーンショット" class="margin-around b-all"  />
+
+
+        <p>「了解」をクリックすると、IDE によってプロジェクト POM が変更され、<tt>nbm-maven-plugin</tt> アーティファクトの <tt>configuration</tt> 要素に次のエントリが追加されます。</p>
+
+<pre>&lt;publicPackages&gt;
+   &lt;publicPackage&gt;com.mycompany.textfilter&lt;/publicPackage&gt;
+&lt;/publicPackages&gt;</pre>
+
+        <p>この時点で、POM エントリには次のエントリが含まれています。</p>
+<pre>&lt;plugin&gt;
+    &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+    &lt;artifactId&gt;nbm-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;3.2&lt;/version&gt;
+    &lt;extensions&gt;true&lt;/extensions&gt;
+    &lt;configuration&gt;
+                    &lt;publicPackages&gt;
+                        &lt;publicPackage&gt;com.mycompany.textfilter&lt;/publicPackage&gt;
+                    &lt;/publicPackages&gt;
+
+    &lt;/configuration&gt;
+&lt;/plugin&gt;</pre>
+
+
+        <p class="tips">詳細は、「<a href="http://mojo.codehaus.org/nbm-maven-plugin/manifest-mojo.html#publicPackages" class="external text" title="http://mojo.codehaus.org/nbm-maven-plugin/manifest-mojo.html#publicPackages" rel="nofollow">nbm-maven-plugin マニフェスト</a>」を参照してください。</p>
+
+    </div>
+
+<!-- =================================================================== -->
+<!-- +++++++++++++ Creating the MyFilter Module ++++++++++++++++++++++++ -->
+
+
+    <h2><a name="05"></a>MyFilter モジュールの作成</h2>
+    <p>この課題では、モジュール <b>MyFilter</b> を作成して、このモジュールを TextFilter の依存リソースとして追加します。その後、TextFilter サービスをルックアップして、MyFilter のメソッドを呼び出せるようになります。</p>
+    <div class="indent">
+
+        <h3><a name="05a"></a>モジュールの作成</h3>
+        <p>この課題では、<strong>MyFilter</strong> という名前のモジュールを作成します。このモジュールを作成するには、TextFilter モジュールを作成したときと同じ手順を実行します。</p>
+
+        <ol>
+            <li> 「ファイル」&gt;「新規プロジェクト」(Ctrl-Shift-N) を選択します。</li>
+            <li> 「Maven」カテゴリから「Maven NetBeans モジュール」を選択します。「次へ」をクリックします。</li>
+            <li> 「プロジェクト名」に「<b>MyFilter</b>」と入力します。</li>
+            <li> 「参照」をクリックして、「プロジェクトの場所」を <strong>MavenPlatformWordApp</strong> ディレクトリに設定します。「完了」をクリックします。</li>
+            <li> MyFilter モジュールを「<b>MavenPlatformWordApp - NetBeans Platform based application</b>」プロジェクトの依存リソースとして追加します。</li>
+        </ol>
+
+
+        <h3><a name="05b"></a>依存リソースとしての TextFilter モジュールの追加</h3>
+        <p>この課題では、TextFilter モジュールを MyFilter モジュールの依存リソースとして追加します。</p>
+
+        <ol>
+            <li>「<b>MyFilter</b>」プロジェクトの「ライブラリ」ノードを右クリックし、「依存リソースを追加」を選択します。</li>
+            <li>「依存リソースを追加」ダイアログで、「開いているプロジェクト」タブをクリックします。</li>
+            <li>「<strong>TextFilter</strong>」モジュールを選択します。「了解」をクリックします。</li>
+        </ol>
+
+        <h3><a name="05c"></a>MyFilter モジュールの変更</h3>
+        <p>この課題では、文字列を大文字に変換する <tt>process</tt> という名前の単一のメソッドを持つ Java クラスを追加します。また、クラスが TextFilter インタフェースを実装することも指定します。<tt>@ServiceProvider</tt> 注釈を使用して、TextFilter がコンパイル時に登録されるサービスであることを指定します。</p>
+
+        <ol>
+            <li> 「<b>MyFilter</b>」モジュールを右クリックし、「新規」&gt;「Java クラス」を選択します。</li>
+            <li> 「クラス名」に「<b>UpperCaseFilter</b>」と入力します。</li>
+            <li> 「パッケージ」ドロップダウンリストから「<b>com.mycompany.myfilter</b>」を選択します。「完了」をクリックします。</li>
+            <li> クラスに次のコードを追加します。変更を保存します。</li>
+        </ol>
+
+<pre>package com.mycompany.myfilter;
+
+import com.mycompany.textfilter.TextFilter;
+import org.openide.util.lookup.ServiceProvider;
+
+<strong>@ServiceProvider(service=TextFilter.class)</strong>
+public class UpperCaseFilter <strong>implements TextFilter {
+
+    public String process(String s) {
+        return s.toUpperCase();
+    }</strong>
+}</pre>
+
+        <p class="tips">サービスプロバイダを指定するための、注釈の使用方法に注目してください。<tt>@ServiceProvider</tt> 注釈および JDK 6 の ServiceLoader 機構の動作についての詳細は、ユーティリティーの API ドキュメントを参照してください。</p>
+
+
+
+        <h3><a name="05d"></a>MavenWordEngine モジュールの変更</h3>
+        <p>この課題では、ルックアップを使用した「TextFilter」インタフェースの呼び出しおよび「MyFilter」のメソッドへのアクセスを行うように、「Text」ウィンドウコンポーネントのイベントハンドラを変更します。イベントハンドラにコードを追加する前に、TextFilter モジュールで依存リソースを宣言する必要があります。</p>
+
+        <ol>
+            <li>「<strong>MavenWordEngine</strong>」モジュールの「ライブラリ」ノードを右クリックして、TextFilter モジュールに依存リソースを追加します。</li>
+            <li>「<strong>MavenWordEngine</strong>」モジュールの「ソースパッケージ」を展開して、ソースエディタで <tt>TextTopComponent</tt> を開きます。</li>
+            <li><tt>jButton1ActionPerformed</tt> ボタンのハンドラメソッドに次のコードを追加します。変更を保存します。
+
+<pre>private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {
+    String s = text.getText();
+    <strong>TextFilter filter = Lookup.getDefault().lookup(TextFilter.class);
+    if (filter != null) {
+        s = filter.process(s);
+    }</strong>
+    text.setText(s);
+}</pre>
+            </li>
+        </ol>
+        <p class="tips">コード補完を使用すると、コードの入力に役立ちます。</p>
+
+        <p>この時点で、アプリケーションが正常に動作するかを確認できます。次に、フィルタを使用して処理したテキストの履歴を表示する、新しいウィンドウコンポーネントを追加します。</p>
+
+    </div>
+
+
+<!-- =================================================================== -->
+<!-- ++++++++++++++++++ Adding a LookupListener ++++++++++++++++++++++++ -->
+
+    <h2><a name="06"></a>「Text」ウィンドウコンポーネントへの LookupListener および InstanceContent の追加</h2>
+    <p>この課題では、「Filter!」ボタンがクリックされたときにテキスト領域の内容を保存するリスナーおよびフィールドを追加します。</p>
+
+    <ol>
+        <li>「<strong>MavenWordEngine</strong>」モジュールに次のコードを追加して、<tt>InstanceContent</tt> オブジェクトの追加および <tt>TextTopComponent</tt> のコンストラクタの変更を行います。
+
+        <pre>public final class TextTopComponent extends TopComponent {
+    <strong>private InstanceContent content;</strong>
+
+    public TextTopComponent() {
+        initComponents();
+        setName(NbBundle.getMessage(TextTopComponent.class, &quot;CTL_TextTopComponent&quot;));
+        setToolTipText(NbBundle.getMessage(TextTopComponent.class, &quot;HINT_TextTopComponent&quot;));
+        //        setIcon(Utilities.loadImage(ICON_PATH, true));
+
+        <strong>content = new InstanceContent();
+        associateLookup(new AbstractLookup(content));</strong>
+    }</pre>
+        </li>
+        <li><tt>jButton1ActionPerformed</tt> メソッドを変更して、ボタンがクリックされたときに古いテキストの値を <tt>InstanceContent</tt> オブジェクトに追加するようにします。
+
+        <pre>private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {
+     String s = text.getText();
+     TextFilter filter = Lookup.getDefault().lookup(TextFilter.class);
+     if (filter&nbsp;!= null) {
+         <strong>content.add(s);</strong>
+         s = filter.process(s);
+     }
+     text.setText(s);
+ }</pre>
+        </li>
+    </ol>
+
+
+<!-- =================================================================== -->
+<!-- ++++++++++++++ Creating the History Module ++++++++++++++++++++++++ -->
+
+    <h2><a name="07"></a>History モジュールの作成</h2>
+    <p>この節では、<tt>InstanceContent</tt> の値を表示する「<strong>History</strong>」という名前のモジュールを作成します。このモジュールを作成するには、TextFilter および MyFilter モジュールを作成したときと同じ手順を実行します。</p>
+
+    <div class="indent">
+        <ol>
+            <li>「ファイル」&gt;「新規プロジェクト」(Ctrl-Shift-N) を選択します。</li>
+            <li>「Maven」カテゴリから「Maven NetBeans モジュール」を選択します。「次へ」をクリックします。</li>
+            <li>「プロジェクト名」に「<strong>History</strong>」と入力します。</li>
+            <li>「参照」をクリックして、「プロジェクトの場所」を MavenPlatformWordApp ディレクトリに設定します。「完了」をクリックします。</li>
+            <li>History モジュールを「<b>MavenPlatformWordApp - NetBeans Platform based application</b>」プロジェクトの依存リソースとして追加します。</li>
+        </ol>
+
+        <h3><a name="07a"></a>「History」モジュールのウィンドウコンポーネントの作成</h3>
+        <p>この課題では、ウィザードを使用して、モジュールにウィンドウコンポーネントを追加します。</p>
+
+        <ol>
+            <li>「プロジェクト」ウィンドウで「<b>History NetBeans Module</b>」を右クリックして、「新規」&gt;「その他」を選択して「新規ファイル」ダイアログを開きます。</li>
+            <li>「モジュールの開発」カテゴリで「ウィンドウ」を選択します。「次へ」をクリックします。</li>
+            <li>「ウィンドウの位置」ドロップダウンリストから「<b>editor</b>」を選択します。「次へ」をクリックします。</li>
+            <li>「クラス名の接頭辞」フィールドに「<b>History</b>」と入力します。「完了」をクリックします。<br />
+            ウィザードにより、作成されるファイルと変更されるファイルの一覧が表示されます。</li>
+        </ol>
+
+        <h3><a name="07b"></a>「History」ウィンドウコンポーネントの変更</h3>
+
+        <p>ここで、フィルタされた文字列を表示するウィンドウコンポーネントに、テキスト領域要素を追加します。</p>
+
+        <ol>
+            <li>エディタで <tt>HistoryTopComponent.java</tt> の「デザイン」タブをクリックします。</li>
+            <li>パレットからウィンドウに、テキスト領域をドラッグ＆ドロップします。</li>
+            <li>テキスト領域を右クリックして、「変数名を変更」を選択し、「<b>historyText</b>」という名前を入力します。</li>
+            <li><tt>HistoryTopComponent</tt> のコンストラクタに <tt>private</tt> フィールド <tt>result</tt> および次のコードを追加して、このコンポーネントが現在のアクティブウィンドウの String クラスのルックアップを待機して、取得したテキスト領域の String オブジェクトをすべて表示するようにします。
+            <pre class="examplecode">
+      <strong>private Lookup.Result result;</strong>
+
+      public HistoryTopComponent() {
+          initComponents();
+          ...
+
+          <strong>result = org.openide.util.Utilities.actionsGlobalContext().lookupResult(String.class);
+          result.addLookupListener(new LookupListener() {
+              public void resultChanged(LookupEvent e) {
+                  historyText.setText(result.allInstances().toString());
+              }
+          });</strong>
+      }</pre>
+            </li>
+        </ol>
+    </div>
+
+    <h2><a name="02c"></a>アプリケーションの構築と実行</h2>
+    <p>ここで、アプリケーションをテストできます。</p>
+    <ol>
+        <li>「<strong>MavenPlatformWordApp NetBeans Platform based application</strong>」のプロジェクトノードを右クリックして、「生成物を削除」を選択します。</li>
+        <li>「<strong>MavenPlatformWordApp NetBeans Platform based application</strong>」のプロジェクトノードを右クリックして、「依存関係で構築」を選択します。</li>
+        <li>「<strong>MavenPlatformWordApp NetBeans Platform based application</strong>」のプロジェクトノードを右クリックして、「実行」を選択します。</li>
+    </ol>
+
+    <p>「実行」をクリックすると、IDE によって NetBeans プラットフォームアプリケーションが起動します。「Window」メニューから、「History」および「Text」ウィンドウを開くことができます。<br/>
+
+    <img src="../images/tutorials/maven-quickstart/maven-final-app.png" alt="完成版 NetBeans プラットフォームアプリケーションのスクリーンショット" title="完成版 NetBeans プラットフォームアプリケーションのスクリーンショット" class="margin-around b-all"  />
+</p>
+    <p>「Text」ウィンドウにテキストを入力して「Filter!」ボタンをクリックすると、テキストが大文字に変換され、「History」ウィンドウの内容に追加されます。</p>
+
+    <p>このクイックスタートでは、Maven を使用した NetBeans プラットフォームアプリケーションの作成方法が、Ant を使用した作成方法と大きく違わないことを示しました。主な違いは、Maven POM によるアプリケーション組み立ての制御方式です。ほかの NetBeans プラットフォームアプリケーションおよびモジュール構築の例については、「<a href="https://netbeans.org/kb/trails/platform.html">NetBeans プラットフォームの学習</a>」に一覧表示されている各チュートリアルを参照してください。</p>
+
+
+<!-- ======================================================================================== -->
+
+
+    <h2><a name="nextsteps"></a>関連項目</h2>
+
+    <p>アプリケーションの作成と開発の詳細については、次のリソースを参照してください。</p>
+    <ul>
+        <li><a href="https://netbeans.org/kb/trails/platform.html">NetBeans プラットフォームの学習</a></li>
+        <li><a href="http://bits.netbeans.org/dev/javadoc/">NetBeans API Javadoc</a></li>
+    </ul>
+    <p>NetBeans プラットフォームに関して質問がある場合は、dev@platform.netbeans.org のメーリングリストに投稿していただくか、<a href="https://netbeans.org/projects/platform/lists/dev/archive">NetBeans プラットフォームメーリングリストのアーカイブ</a>を参照してください。</p>
+
+
+    <!-- ======================================================================================== -->
+
+
+
+</body>
+
+</html>

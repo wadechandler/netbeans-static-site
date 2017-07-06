@@ -1,0 +1,600 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+    <head>
+        <meta name="KEYWORDS" content="NETBEANS, TUTORIAL, GUIDE, USER, DOCUMENTATION">
+        <meta name="DESCRIPTION" content="This tutorial shows you to configure standard Java
+              and Java web projects in NetBeans IDE. Topics include setting the JDK, setting the classpath,
+              setting sub-projects, enabling/disabling incremental compilation, sharing
+              project libraries, customizing the build script, setting run configurations.">
+        <title>创建、导入和配置 Java 项目 - NetBeans IDE 教程</title>
+        <link rel="StyleSheet" href="../../../netbeans.css" type="text/css">
+        <!--      Copyright (c) 2009 - 2011, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    <meta HTTP-EQUIV="Content-Type" Content="text/html; charset=UTF-8"></head>
+    <body>
+        <h1>创建、导入和配置 Java 项目</h1>
+        <p>本指南将简要介绍 NetBeans IDE 中的一些用于设置和配置 Java 项目的主要功能。此外，还将提供有关如何对 IDE 构建的构建脚本进行定制配置的信息。</p>
+        
+
+        <p><b>目录</b></p>
+        <img alt="此页上的内容适用于 NetBeans IDE 7.4" class="stamp" src="../../../images_www/articles/74/netbeans-stamp.png" title="此页上的内容适用于 NetBeans IDE 7.4">
+        <ul class="toc">
+            <li><a href="#ide-concepts">项目基本概念</a>
+                <ul class="toc"><li><a href="#ide-projects">项目</a></li>
+            <li><a href="#ide-ant">Ant</a></li></ul></li>
+            <li><a href="#projects-creating">创建项目</a></li>
+            <li><a href="#projects-importing">导入项目</a>
+                <ul class="toc"><li><a href="#import-eclipse">导入 Eclipse 工作区</a></li>
+                    <li><a href="#existing-java-sources">基于现有源代码设置 Java 项目</a></li>
+                   
+                    <li><a href="#existing-web-sources">基于现有源代码设置 Web 项目</a></li>
+                    <li><a href="#free-form">自由格式项目</a></li>
+            </ul>
+            </li>
+            <li><a href="#projects-configuring">配置类路径和其他项目设置</a>
+                <ul class="toc">
+                    <li><a href="#projects-main">设置主项目</a></li>
+                    <li><a href="#projects-jdk">设置项目中的目标 JDK</a></li>
+                    <li><a href="#projects-classpath">管理项目的类路径</a></li>
+                    <li><a href="#projects-dependencies">管理项目之间的依赖关系</a></li>
+                    <li><a href="#projects-shared-libraries">共享项目库</a></li>
+                    <li><a href="#projects-jdk-javadoc">使 JDK 的 Javadoc 在 IDE 中可用</a></li>
+                    <li><a href="#projectsjws">启用 Java Web Start</a></li>
+                </ul>
+            </li>
+            <li><a href="#building">构建应用程序</a>
+            <ul class="toc">
+                <li><a href="#building-commands">构建项目、包和文件</a></li>
+                <li><a href="#building-compile-on-save">在保存时编译</a></li>
+                <li><a href="#building-fixing">修复编译错误</a></li>
+                <li><a href="#building-filtering">过滤输出文件</a></li>
+            </ul>
+			</li>
+            <li><a href="#deploy">运行应用程序</a>
+                <ul class="toc">
+                    <li><a href="#deploy-projects">运行项目和文件</a></li>
+                    <li><a href="#deploy-options">定制运行时选项</a></li>
+                    <li><a href="#deploy-classpath">设置运行时类路径</a></li>
+                    <li><a href="#deploy-args">设置主类和运行时参数</a></li>
+                    <li><a href="#deploy-jvm">设置 JVM 参数</a></li>
+            </ul></li>
+            <li><a href="#build-script">定制构建脚本</a>
+                <ul class="toc">
+                    <li><a href="#ant-editing">编辑和运行 Ant 脚本</a></li>
+                    <li><a href="#ant-custom-task">编写定制 Ant 任务</a></li>
+            </ul></li>
+            <li><a href="#seealso">另请参见</a></li>
+        </ul>
+		<p><b>要学完本教程，您需要具备以下软件和资源。</b></p>
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">软件或资源</th>
+                    <th class="tblheader" scope="col">要求的版本</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                    <td class="tbltd1">版本 7.4</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java 开发工具包 (JDK)</a></td>
+                    <td class="tbltd1">版本 6 或 7</td>
+                </tr>
+            </tbody>
+        </table>
+        <!-- TODO update screenshots-->
+        <a name="ide-concepts"></a><h2>项目基本概念</h2>
+        <p>此部分将简要介绍一些有关 IDE 项目系统的背景信息。</p>
+        <div class="indent">
+            <a name="ide-projects"></a><h3 class="tutorial">项目</h3>
+            <p>
+                在 IDE 中，您始终在项目内工作。除了源文件以外，IDE 项目还包含元数据，这些数据说明类路径上所包含的内容以及如何构建和运行项目等。IDE 将项目信息存储在一个称为 <tt>nbproject</tt> 的项目文件夹中，该文件夹包括一个 Ant 构建脚本和一个属性文件（它们用于控制构建和运行设置），还包括一个 <code>project.xml</code> 文件（该文件用于将 Ant 目标映射到 IDE 命令）。</p>
+            <p class="notes"><b>注：</b>虽然默认情况下 IDE 将源目录放置在项目文件夹内，但是源目录并非必须位于项目文件夹中。</p>
+
+
+            <a name="ide-ant"></a><h3 class="tutorial">Ant</h3>
+            <p><a href="http://ant.apache.org/">Apache Ant</a> 是基于 Java 的构建工具，用于使开发的构建环境和运行环境标准化和自动化。IDE 的项目系统直接基于 Ant。所有项目命令（如“清理并构建项目”和“调试”）均调用项目 Ant 脚本中的目标。因此，您可以在 IDE 外部构建和运行项目，这与在 IDE 内部构建和运行项目完全相同。</p>
+            <p>无需了解 Ant 即可使用 IDE。您可以在项目的“项目属性”对话框中设置所有基本的编译和运行时选项，IDE 会自动更新项目的 Ant 脚本。如果您熟悉 Ant，则可以定制标准项目的 Ant 脚本，或者为项目编写您自己的 Ant 脚本（有关详细信息，请参见 <a href="http://ant.apache.org/manual/index.html">Apache 用户手册</a>）。</p>
+           
+        </div>
+        <a name="projects-creating"></a><h2>创建项目</h2>
+        <p><b>创建新项目：</b></p>
+        <ul>
+            <li>选择<tt>文件</tt> > <tt>新建项目</tt>（在 Windows 上为 Ctrl-Shift-N 组合键/在 OS X 上为 Cmd-Shift-N 组合键）。</li>
+        </ul>
+        <p>在出现新建项目向导时，为项目选择合适的模板并完成向导中的其余步骤。项目模板图标可能以灰色显示，这表示尚未激活此项目类型。继续创建项目，将在 IDE 中激活该功能。  </p>
+        <p>IDE 包含以下用于创建 Java 和 Java Web 应用程序的标准项目模板：</p>
+        <ul>
+            <li><b>Java 应用程序</b>。创建包含主类的框架 Java SE 项目。有关使用此模板的简明教程，请参见<a href="javase-intro.html">开发和部署常规 Java 应用程序</a>。
+            </li>
+            <li><b>Java 类库</b>。创建不包含主类的框架 Java 类库。有关使用此模板的简明教程，请参见<a href="javase-intro.html">开发和部署常规 Java 应用程序</a>。</li>
+            <li><b>基于现有源代码的 Java 项目</b>。创建基于您自己的 Java 源代码的 Java SE 项目。请参见下面的<a href="#existing-java-sources">基于现有源代码设置 Java 项目</a>部分。</li>
+            <li><b>Web 应用程序</b>。选择框架 Web 应用程序，包括用于添加各种 Web 框架的选项。有关使用此模板的示例，请参见 <a href="../web/quickstart-webapps.html">Web 应用程序开发简介</a>。</li>
+            <li><b>基于现有源代码的 Web 应用程序</b>。创建基于您自己的 Web 和 Java 源代码的 Web 项目。请参见下面的<a href="#existing-web-sources">基于现有源代码设置 Web 项目</a>部分。</li>
+        </ul>
+        <p>此外，IDE 还包含用于 JavaFX 应用程序、EJB 模块、企业应用程序、NetBeans 模块等的模板。有关标准项目模板的完整列表，请参见<i>使用 NetBeans IDE 开发应用程序</i>中的<a href="http://www.oracle.com/pls/topic/lookup?ctx=nb7400&amp;id=NBDAG371">标准项目模板</a>。 </p>
+        <p>Java 和 Web 项目类别还具有自由格式项目模板。通过自由格式模板，可以将现有 Ant 脚本用于项目，但需要手动进行配置。请参见下面的<a href="#free-form">自由格式项目</a>。</p>
+        <p>创建完项目后，该项目在 IDE 中打开，并在 "Projects"（项目）窗口中显示其逻辑结构，同时在 "Files"（文件）窗口中显示其文件结构：</p>
+        <ul>
+            <li>
+                "Projects"（项目）窗口是项目源的主入口点。它将显示重要项目内容（如 Java 包和 Web 页）的逻辑视图。通过右键单击任意项目节点，可以访问一个包含各种命令的弹出式菜单，这些命令用于构建、运行和调试项目，以及打开“项目属性”对话框。通过选择 "Window"（窗口）> "Projects"（项目）（在 Windows 上为 Ctrl-1 组合键/在 OS X 上为 Cmd-1 组合键），即可打开 "Projects"（项目）窗口。</li>
+            <li>
+                "Files"（文件）窗口显示了基于目录的项目视图，其中包括 "Projects"（项目）窗口中未显示的文件和文件夹。在 "Files"（文件）窗口中，可以打开并编辑项目配置文件，如项目的构建脚本和属性文件。此外，还可以查看构建输出，如编译的类、JAR 文件、WAR 文件和构建的 Javadoc 文档。通过选择 "Window"（窗口）> "Files"（文件）（在 Windows 上为 Ctrl-2 组合键/在 OS X 上为 Cmd-2 组合键），即可打开 "Files"（文件）窗口。</li>
+        </ul>
+       	<p class="align-center"><a href="../../../images_www/articles/72/java/project-setup/files-project-window.png" rel="lytebox" title="&quot;Files&quot;（文件）和 &quot;Projects&quot;（项目）窗口"> <img alt="&quot;Files&quot;（文件）和 &quot;Projects&quot;（项目）窗口" border="1" src="../../../images_www/articles/72/java/project-setup/files-project-window-small.png"></a></p>
+
+        <p class="notes"><b>注：</b>如果需要访问项目目录之外的文件和目录，则可以使用 "Favorites"（收藏夹）窗口。通过选择 <tt>Window</tt>（窗口）> <tt>Favorites</tt>（收藏夹）（在 Windows 上为 Ctrl-3 组合键/在 OS X 上为 Cmd-3 组合键），即可打开 "Favorites"（收藏夹）窗口。要将某个文件夹或文件添加到 "Favorites"（收藏夹）窗口，请在 "Favorites"（收藏夹）窗口中单击鼠标右键，然后选择 "Add to Favorites"（添加到收藏夹）。</p>
+
+        <a name="projects-importing"></a><h2 class="tutorial">导入项目</h2>
+        <p>此部分将介绍最初在 IDE 中导入项目时所执行的操作。</p>
+        <div class="indent">
+            <a name="import-eclipse"></a><h3 class="tutorials">导入 Eclipse 工作区</h3>
+            <p>对于 Eclipse 项目，可以使用导入 Eclipse 项目向导帮助您基于 Eclipse 工作区中的项目创建 NetBeans 项目，并导入项目类路径和其他设置。在使用导入 Eclipse 项目向导时，无需手动创建和配置 NetBeans 项目。通过选择<tt>文件</tt> > <tt>导入项目</tt> > <tt>Eclipse 项目</tt>，可以打开该向导。有关该向导的工作原理以及如何同时处理 Eclipse 项目和 NetBeans 项目的信息，请参见<a href="import-eclipse.html">将 Eclipse 项目导入 NetBeans IDE</a>。</p>
+
+            <a name="existing-java-sources"></a><h3 class="tutorials">基于现有源代码设置 Java 项目</h3>
+            <p>对于在 NetBeans 外部开发的其他 Java 项目，可以使用新建项目向导中的“现有源代码”模板创建 NetBeans 项目。在向导中，您可以标识源代码的位置并指定 NetBeans 项目元数据的位置。然后，可以使用“项目属性”对话框<a href="#projects-configuring">配置项目</a>。</p>
+            <p><b>为现有 Java 应用程序设置 NetBeans 项目：</b></p>
+            <ol>
+                <li>选择<tt>文件</tt> > <tt>新建项目</tt>（在 Windows 上为 Ctrl-Shift-N 组合键/在 OS X 上为 Cmd-Shift-N 组合键）。 </li>
+                <li>选择 <tt>Java</tt> > <tt>基于现有源代码的 Java 项目</tt>。单击“下一步”。 </li>
+                <li>在向导的“名称和位置”页中，执行以下步骤：
+                    <ul>
+                        <li>键入项目名称。</li>
+                        <li>（可选）更改项目文件夹的位置。</li>
+                        <li>（可选）更改 IDE 使用的构建脚本的名称。如果已存在用于构建源代码的构建脚本 <code>build.xml</code>，则可能需要执行此操作。</li>
+                        <li>（可选）选中“使用专用文件夹存储库”复选框，并指定库文件夹的位置。有关此选项的详细信息，请参见<a href="#projects-shared-libraries">共享项目库</a>。</li>
+                        <li>（可选）选中“设置为主项目”复选框。如果选中此选项，则可以对该项目应用“清理并构建主项目”（Shift-F11 组合键）等命令的快捷键。</li>
+                    </ul></li>
+              <li>单击“下一步”以转至该向导的“现有源代码”页。</li>
+                    <li>在“源包文件夹”窗格中，单击“添加文件夹”。然后，导航至源并选择源根目录，再单击“打开”。
+                        <p class="notes">在添加包含源代码的文件夹时，添加的文件夹必须包含包树中的最高层文件夹。例如，对于 <code>com.mycompany.myapp.ui</code> 包，添加的文件夹应包含 <code>com</code> 文件夹。 </p></li>
+                    <!-- TODO Note that source roots all have to have the same classpath-->
+                
+                <li>（可选）在“测试包文件夹”窗格中，单击“添加文件夹”以选择包含 JUnit 包文件夹的文件夹。 </li>
+				<li>单击“下一步”，前进至该向导的“包括和排除”页。</li>
+                <li>（可选）在该向导的“包括和排除”页中，为应包括在项目中或应从项目中排除的任何文件输入文件名模式。默认情况下，会包括源根目录中的所有文件。</li>
+                <li> 单击“完成”。
+              </li>
+            </ol>
+            
+            <p><a name="existing-web-sources"></a></p>
+            <h3 class="tutorials">基于现有源代码设置 Web 项目</h3>
+            <p>对于在 NetBeans 外部开发的 Web 项目，可以使用“新建项目”向导中的“现有源代码”模板创建 NetBeans 项目。在向导中，您可以标识源代码的位置并指定 NetBeans 项目元数据的位置。然后，可以使用“项目属性”对话框<a href="#projects-configuring">配置项目</a>。</p>
+            <p class="notes"><b>注：</b>如果项目最初是在 Eclipse 中开发的，则可以使用导入 Eclipse 项目向导而不是新建项目向导，这样可以节省时间。使用导入 Eclipse 项目向导可以同时导入多个项目，包括这些项目的配置。请参见<a href="import-eclipse.html">将 Eclipse 项目导入 NetBeans IDE</a>。</p>
+
+            <p><b>为现有 Web 应用程序设置 NetBeans 项目：</b></p>
+            <ol>
+                <li>选择<tt>文件</tt> > <tt>新建项目</tt>（在 Windows 上为 Ctrl-Shift-N 组合键/在 OS X 上为 Cmd-Shift-N 组合键）。 </li>
+                <li>选择 <tt>Java Web</tt> > <tt>基于现有源代码的 Web 应用程序</tt>。单击“下一步”。 </li>
+                <li>在向导的“名称和位置”页中，执行以下步骤：
+                    <ul>
+                        <li>在“位置”字段中，输入包含 Web 应用程序的源根文件夹和 Web 页文件夹的文件夹。</li>
+                        <li>键入项目名称。</li>
+                        <li>（可选）更改项目文件夹的位置。</li>
+                        <!--TODO info on the fact that the sources might live in different places-->
+                </ul></li>
+                <!--<li>(Optional) Change the name of the build script used by the IDE.
+                            This might be desirable if there is already a build script called
+                        <code>build.xml</code> that is used to build the sources.</li>-->
+                <li>（可选）选中“使用专用文件夹存储库”复选框，并指定库文件夹的位置。有关此选项的详细信息，请参见<a href="#projects-shared-libraries">在 NetBeans IDE 中共享项目库</a>。</li>
+                <li>（可选）选中“设置为主项目”复选框。如果选中此选项，则可以对该项目应用“清理并构建主项目”（Shift-F11 组合键）等命令的快捷键。</li>
+                <li>单击“下一步”以转至该向导的“服务器和设置”页。</li>
+                <li>（可选）将项目添加到现有企业应用程序。</li>
+                <li>选择要部署到的服务器。如果未显示所需的服务器，请单击“添加”以在 IDE 中注册该服务器。</li>
+                <li>将源代码级别设置为运行应用程序时要使用的 Java 版本。</li>
+                <li>（可选）调整上下文路径。默认情况下，上下文路径基于项目名称。</li>
+                <li>单击“下一步”以转至该向导的“现有源代码和库”页。</li>
+                <li>验证该页上的所有字段，如“Web 页文件夹”和“源包文件夹”的值。</li>
+                <li> 单击“完成”。
+              </li>
+            </ol>
+
+            <a name="free-form"></a>
+            <h3 class="tutorial">自由格式项目</h3>
+            <p>对于自由格式项目，也提供了项目模板。在自由格式项目中，IDE 使用现有 Ant 脚本中的目标构建、运行、清理、测试和调试应用程序。如果 Ant 脚本不包含用于实现其中某些功能的目标，则将无法对该项目使用这些功能。要实现这些功能，您需要在 Ant 脚本或辅助 Ant 脚本中编写目标。 </p>
+            <p>通常情况下，最好使用标准的“基于现有源代码”项目模板导入项目。对于 Eclipse 项目，最好使用“导入项目”功能，通过该功能可以创建和配置标准项目。标准项目便于长期维护。但是，如果您具有一个基于 Ant 的现有项目，且该项目包含无法在标准项目中复制的复杂或特殊配置，则自由格式项目模板会非常有用。例如，如果要导入一个包含多个源根目录的项目，且每个源根目录都具有不同的类路径，同时您无法将这些源根目录拆分为不同的项目，则可能需要使用自由格式项目模板。</p>
+            <p>本指南重点介绍标准项目。有关设置自由格式项目的详细信息，请参见<a href="../../articles/freeform-config.html">自由格式项目的高级配置</a>。
+            </p>
+        </div>
+
+        <a name="projects-configuring"></a><h2>配置类路径和其他项目设置</h2>
+        <p>此部分将介绍在设置项目时需要执行的一些最常见任务，如设置项目的目标 JDK、设置类路径、创建项目之间的依赖关系以及在项目之间和用户之间共享库。</p>
+        <div class="indent">
+            <a name="projects-main"></a><h3 class="tutorial">设置主项目</h3>
+            <p>在开发由很多源文件夹组成的大型应用程序时，经常会将代码拆分为若干个单独的项目。通常，其中的一个项目会作为应用程序的入口点。为了让 IDE 知道哪个项目是应用程序的主入口点，可以将一个项目设置为主项目。IDE 提供了专门用于主项目的命令。例如，运行“清理并构建主项目”命令可以构建主项目及其所有必需项目。 </p>
+            <p><b>将项目设置为主项目：</b></p>
+            <ul>
+                <li>在 "Projects"（项目）窗口中选择项目节点，然后从主菜单中选择 "Run"（运行）> "Set Main Project"（设置为主项目）> "<i>项目名称</i>"。 </li>
+            </ul>
+            <p>一次只能有一个项目是主项目。</p>
+            <a name="projects-jdk"></a>
+            <h3 class="tutorial">设置项目中的目标 JDK</h3>
+            <p>在 IDE 中，可以注册多个 Java 平台，并将 Javadoc 和源代码连接到每个平台上。切换标准项目的目标 JDK 将执行以下操作：</p>
+            <ul>
+                <li>提供新目标 JDK 的类，以用于代码完成。</li>
+                <li>显示目标 JDK 的源代码和 Javadoc 文档（如果可用）。</li>
+                <li>使用目标 JDK 的可执行文件（<code>javac</code> 和 <code>java</code>）编译和执行应用程序。</li>
+                <li>针对目标 JDK 的库来编译源代码。</li>
+            </ul>
+            <p>默认情况下，IDE 将其运行时所使用的 Java SE 平台 (JDK) 版本作为 IDE 项目的默认 Java 平台。通过选择 <tt>Help</tt>（帮助）> <tt>About</tt>（关于）（在 OS X 上为 <tt>NetBeans</tt> > <tt>About Nebeans</tt>（关于 Nebeans）），可以查看 IDE 的 JDK 版本。JDK 版本在 "Java" 字段中列出。</p>
+            <p><b>使用不同的 JDK 版本运行 IDE：</b></p>
+            <ul>
+                <li>从命令行中使用以下开关启动 IDE。
+                    <pre>--jdkhome jdk-home-dir</pre>
+                    <p>或者，在 <code>/etc/netbeans.conf</code> 文件中设置 JDK，该文件位于 IDE 的安装文件夹中。 </p>
+                </li>
+            </ul>
+
+
+            <p><b>注册新的 Java 平台：</b></p>
+            <ol>
+                <li>从主菜单中选择 <tt>Tools</tt>（工具）> <tt>Java Platforms</tt>（Java 平台）。
+				<p class="align-center"><a href="../../../images_www/articles/74/java/project-setup/setup-platformmgr.png" rel="lytebox" title="Java 平台管理器"> <img alt="Java 平台管理器" border="1" src="../../../images_www/articles/74/java/project-setup/setup-platformmgr-small.png"></a></p></li>
+                <li>单击 "Add Platform"（添加平台）。</li>
+				<li>在 "Add Java Platform"（添加 Java 平台）对话框中选择 "Java Standard Edition"，然后单击 "Next"（下一步）。</li>
+				<li>指定包含 Java 平台的文件夹以及调试所需的源代码和 Javadoc。单击“下一步”。</li>
+				<li>指定平台的显示名称以及 Java 平台和 Javadoc 的源位置。单击“完成”。</li>
+            </ol>
+
+          	
+            <p><b>切换标准项目的目标 JDK：</b></p>
+            <ol>
+                <li>右键单击项目节点，选择“属性”。</li>
+                <li>选择“库”面板。</li>
+                <li>更改“Java 平台”属性。</li>
+            </ol>
+            <a name="projects-classpath"></a><h3 class="tutorial">管理项目的类路径</h3>
+            <p>
+                通过将一组类文件添加到项目的类路径中，可以通知 IDE 在编译和执行期间项目应该能够访问哪些类。IDE 还使用类路径设置来启用代码完成、自动突出显示编译错误以及重构。您可以在“项目属性”对话框中编辑现有项目的类路径声明。</p>
+            <p>
+                在标准 Java 项目中，IDE 将为编译和运行项目以及编译和运行 JUnit 测试（用于 Java SE 应用程序）保留单独的类路径。IDE 自动将项目编译类路径中的所有内容添加到项目的运行时类路径中。
+            </p>
+            <p><b>可以使用下列任一方法修改项目的类路径：</b></p>
+            <ul>
+                <li>右键单击项目的节点，选择“属性”，选择“库”类别，然后修改所列的类路径条目。</li>
+                <li>在“项目”窗口中右键单击“库”节点，然后选择“添加项目”、“添加库”或“添加 JAR/文件夹”。</li>
+            </ul>
+            <p>
+                如果已经在库管理器中将 Javadoc 和源文件附加到某个 JAR 文件，则在项目的类路径中注册该 JAR 文件时，IDE 会自动将 Javadoc 和源文件添加到项目中。可以步入类并在 Javadoc 页中查找类，而无需配置任何其他内容。</p>
+			<p class="align-center"><a href="../../../images_www/articles/74/java/project-setup/projprops-libcompile.png" rel="lytebox" title="&quot;Project Properties&quot;（项目属性）对话框"> <img alt="&quot;Project Properties&quot;（项目属性）对话框" border="1" src="../../../images_www/articles/74/java/project-setup/projprops-libcompile-small.png"></a></p>
+			
+
+            <a name="projects-dependencies"></a>
+            <h3 class="tutorial">管理项目之间的依赖关系</h3>
+            <p>
+                如果应用程序由多个项目组成，则必须设置项目之间的类路径依赖关系。通常，应设置一个包含项目主类（在 Java SE 项目中）的主项目和几个必需项目。必需项目是指已添加到其他项目类路径中的项目。在清理并构建项目时，IDE 还会清理并构建其必需项目。接收项目也可以使用必需项目的 Javadoc 和源代码。 </p>
+            <p>
+                通过在“项目”窗口中右键单击“库”节点，可以将任何必需项目添加到您的项目中；或者，也可以通过在“项目属性”对话框的“库”标签中指定它们来进行添加。当您要添加所需项目时，请选择要将其 JAR 文件添加到类路径的项目文件夹（文件选择器会显示 IDE 项目文件夹的图标 (<img ALIGN="bottom" alt="项目文件夹图标" src="../../../images_www/articles/72/java/project-setup/projectfolder.png">)）。在“项目属性”对话框中添加项目时，请确保选中了“依据类路径构建项目”复选框。</p>
+            <p>
+                如果要将自由格式项目添加到标准项目的类路径中，则必须将自由格式项目的 JAR 文件添加到标准项目的类路径中。要执行此操作，必须先在自由格式项目的“项目属性”对话框的“输出”面板中声明自由格式项目的所有输出文件。</p>
+
+            <a name="projects-shared-libraries"></a><h3 class="tutorial">共享项目库</h3>
+
+            <p>由于 NetBeans IDE 项目系统基于 Ant，因此 NetBeans 项目通常可以在不同用户之间移植，无论他们是否使用 IDE。但是，默认情况下，项目构建脚本引用库的方式依赖于每位用户的特定因素，“库管理器”对话框中定义的库尤其如此。</p>
+
+            <p>例如，通常可以将项目置于 zip 文件中，然后将其提供给其他用户来解压缩和运行。但是，如果项目依赖于“库管理器”对话框中指定的定制库，则其他库最初在构建项目时可能会出现问题，因为未解析对定制库的引用。</p>
+
+            <p>另一个可能的不便之处是库存储在不同的位置，具体位置取决于其来源。IDE 附带的库存储在 IDE 安装目录下的不同文件夹中。此类情形还包括 Swing 布局扩展、Bean 绑定和数据库驱动程序的库。</p>
+
+            <p>要解决这些问题，可以指定一个专用文件夹来存储项目库。此外，在引用这些库时，您可以控制使用相对路径还是绝对路径。 </p>
+            <p>这种灵活性能够使您更轻松地处理以下情况：</p>
+            <ul>
+                <li>您创建了一个项目，并且需要使其他用户可以使用或构建它，无论他们是否使用 IDE。他们应该可以通过版本控制检出或者解压您提供的 ZIP 文件来访问该项目。然后他们应该无需额外配置就可以构建应用程序。</li>
+                <li>您必须从现有项目开始，并遵守关于项目库存储位置的严格约定（无论您的构建脚本使用相对引用还是绝对引用来访问这些库）。 </li>
+            </ul>
+
+            <p>您可以为标准 Java SE、Web 和企业项目设置一个专用库文件夹。可以在创建项目时（在新建项目向导中）设置库文件夹，也可以在以后通过“项目属性”对话框的“库”标签进行设置。</p>
+
+            <!--TODO:  info on descriptor/definition file-->
+            <p><b>在创建项目后将常规 Java 项目的库设置为可共享的库：</b></p>
+            <ol>
+                <li>选择<tt>文件</tt> > <tt>新建项目</tt>。</li>
+                <li>在向导的 "Java" 类别中选择一个标准模板。然后，单击“下一步”。</li>
+                <li>在向导的“名称和位置”页中，选择“使用专用文件夹存储库”复选框。</li>
+                <li>在“库文件夹”字段中，选择要存储的库的位置。
+                    <p>如果库已经包含在 IDE 中，则会将这些库复制到您指定的文件夹中。</p>
+                <!-- TODO : what about other types of libraries? --></li>
+            </ol>
+
+            <p><b>在创建项目时将 Web 或 Java EE 项目的库设置为可共享的库：</b></p>
+            <ol>
+                <li>选择<tt>文件</tt> > <tt>新建项目</tt>。</li>
+                <li>在向导的 "Web" 类别中选择一个标准模板。然后，单击“下一步”。</li>
+                <li>在向导的“名称和位置”页中，选择“使用专用文件夹存储库”复选框。</li>
+                <li>在“库文件夹”字段中，选择要存储的库的位置。
+                    <p>如果库已经包含在 IDE 中，则会将这些库复制到您指定的文件夹中。</p></li>
+          </ol>
+
+            <p><b>将现有项目的库设置为可共享的库：</b></p>
+            <ol>
+                <li>右键单击项目节点，选择“属性”。</li>
+                <li>在“项目属性”对话框中，选择“库”节点。</li>
+                <li>在“库”面板中，单击“浏览”打开“新建库文件夹”向导。</li>
+                <li>在向导的“库文件夹”页中，输入库的位置并单击“下一步”。<br>您可以以相对引用或绝对引用的形式输入该位置。 </li>
+                <li>在向导的“操作”面板中，为每一个列出的库验证选定的操作。在大多数情况下，IDE 都会检测最适合于该库的操作。
+                    <p>可用的操作包括：</p>
+                    <ul>
+                        <li><b>将库 JAR 文件复制到新库文件夹</b>。如果库不在您所选的文件夹中并且您希望将库 JAR 文件放在此文件夹时，请使用此选项。 </li>
+                        <li><b>使用库 JAR 文件的相对路径</b>。如果库不在库文件夹中并且您需要使用相对路径在库的现有位置中访问库，请使用此选项。该库的相对引用条目将会添加到库文件夹的 <tt>nblibraries.properties</tt> 文件中。</li>
+                        <li><b>使用库 JAR 文件的绝对路径</b>。如果库不在库文件夹中并且您需要使用绝对路径在库的现有位置中访问库，请使用此选项。该库的绝对引用条目将会添加到库文件夹的 <tt>nblibraries.properties</tt> 文件中。</li>
+                        <li><b>使用库文件夹中的现有库</b>。如果库文件夹中已有一个库副本并且您希望使用该库副本，请使用此选项。</li>
+                </ul></li>
+                <li>单击“完成”退出该向导。</li>
+                <li>单击“确定”退出“项目属性”对话框。</li>
+
+            </ol>
+            <p><b class="notes">注：</b>也可以使用“项目属性”对话框的“库”节点来更改库文件夹的位置。如果已经指定了库文件夹，请单击“浏览”打开一个文件选择程序，而不是新建库文件夹向导。
+            </p>
+
+            <h3><a name="projects-jdk-javadoc"></a>使 Javadoc 在 IDE 中可用
+            </h3>
+            <p>要在 NetBeans IDE 中查看 Java SE API 文档，请使用<tt>源</tt> > <tt>显示文档</tt>命令，或者从主菜单中选择<tt>窗口</tt> > <tt>其他</tt> > <tt>Javadoc</tt>，以便在单独的窗口中查看 API 文档。</p>
+            <p>不过，对于某些第三方库，则无法使用 API 文档。在这些情况下，必须手动将 Javadoc 资源与 IDE 相关联。</p>
+            <p><b>要使 API 文档可用于“显示 Javadoc”命令，请执行以下操作：</b></p>
+            <ol>
+              <li>下载 Javadoc API 文档源文件。</li>
+              <li>选择<tt>工具</tt> > <tt>库</tt>。</li>
+              <li>在“库”列表中，选择项目所使用的库。</li>
+              <li>单击 "Javadoc" 标签。</li>
+              <li>单击“添加 ZIP/文件夹”按钮，然后导航至系统上包含 Javadoc API 文档的 zip 文件或文件夹。选择该 zip 文件或文件夹，然后单击“添加 ZIP/文件夹”按钮。</li>
+              <li>单击“确定”。</li>
+            </ol>
+            <h3 class="tutorial"><a name="projectsjws"></a>为应用程序启用 Java Web Start </h3>
+            <p>您可以在 IDE 中配置应用程序以通过 Java Web Start 运行。为此，请使用“项目属性”窗口中的 Java Web Start 类别。有关如何启用 Java Web Start 的详细信息，请参见<a href="../../73/java/javase-jws_zh_CN.html">在 NetBeans IDE 中启用 Java Web Start</a> 教程。</p>
+            <p><b>为应用程序配置 Java Web Start：</b></p>
+            <ol>
+              <li>右键单击项目节点，选择“属性”。</li>
+              <li>在“项目属性”对话框中，选择<tt>应用程序</tt> > <tt>Web Start</tt> 节点。</li>
+              <li>选中“启用 Web Start”复选框，然后按照<a href="../../73/java/javase-jws_zh_CN.html">在 NetBeans IDE 中启用 Java Web Start</a> 的说明配置 Java Web Start 设置。</li>
+            </ol>
+            
+        </div>
+
+
+        <a name="building"></a><h2>构建应用程序</h2>
+        <p>
+            此部分将介绍如何在 IDE 中构建标准项目、如何对构建过程进行基础定制，以及如何处理编译错误。 </p>
+        
+        <div class="indent">
+            <a name="building-commands"></a><h3 class="tutorial">构建项目、包和文件</h3>
+            <p>在 IDE 中进行编译非常简单。假定您已正确设置项目的编译类路径，只需选择要编译的项目、包或文件，并从“运行”菜单中选择相应的“构建”或“编译”命令。执行这些操作后，IDE 将编译文件。</p>
+            <p>如果已为 Java 项目启用了“在保存时编译”功能（或者为 Java Web 或企业项目启用了“在保存时部署”功能），则在保存项目文件时，IDE 会自动对其进行编译。有关详细信息，请参见下面的<a href="#building-compile-on-save">在保存时编译</a>部分。</p>
+            <p><b>构建用于部署的应用程序：</b></p>
+            <ul>
+                <li>选择<tt>运行</tt> > <tt>清理并构建项目</tt>。
+                    <p>将删除以前编译的所有文件以及可分发的输出（如 JAR 文件）。然后，会重新编译这些文件并生成新输出。此外，还会创建 <code>build</code> 文件夹以存放编译的类。同时，生成 <code>dist</code> 以存放可分发的输出，如 JAR 文件和 Javadoc 文档。通过打开“文件”窗口，可以查看构建输出。</p></li>
+            </ul>
+            <p>每次调用编译命令时，IDE 都会在“输出”窗口中显示输出，其中包括遇到的任何编译错误，如下面的<a href="#building-fixing">修复编译错误</a>部分所述。</p>
+
+            <a name="building-compile-on-save"></a><h3 class="tutorial">在保存时编译</h3>
+            <p>使用 IDE 的“在保存时编译”功能，您可以节省在 IDE 中运行和调试项目的时间。为项目启用“在保存时编译”功能后，项目文件即会在保存时进行编译。在 IDE 中运行、测试、调试和分析项目时，编译的文件会存储在 IDE 使用的高速缓存中。这样，您不必先等待构建应用程序，即可对其进行测试和调试。</p>
+
+            <p>启用“在保存时编译”功能后，会产生以下影响：</p>
+            <ul>
+                <li>IDE 会在保存项目文件时对其进行编译，这样便可以随时在 IDE 中运行或调试项目。</li>
+                <li>禁用“构建”命令。如果要在不使用“清理并构建”命令的情况下重新构建 JAR 文件，则必须禁用“在保存时编译”功能。</li>
+                <li>在使用“运行”、“调试”、“分析”或“测试”命令时，不使用项目的 Ant 脚本。如果为其中某个命令定制了构建脚本，则将忽略这些定制。</li>
+                <li>在保存对项目文件所做的更改时，通过项目构建的 JAR 文件将<i>不会</i>更新为最新。如果要构建或重新构建 JAR 文件，则需要使用“清理并构建”命令。无论是否启用了“在保存时编译”功能，“清理并构建”命令始终都会使用项目的 Ant 脚本。</li>
+            </ul>
+
+            <p>默认情况下，将会为创建的新项目启用“在保存时编译”功能。对于现有项目，“在保存时编译”功能处于禁用状态。</p>
+
+            <p><b>为 Java 项目启用或禁用“在保存时编译”功能：</b></p>
+            <ol>
+                <li>右键单击项目节点，选择“属性”。</li>
+                <li>在“项目属性”对话框中，展开“构建”类别，然后选择“编译”节点。</li>
+				<li>根据需要设置“在保存时编译”属性。</li>
+            </ol>
+            <p>同样，IDE 为 Java Web 和企业应用程序提供了“在保存时部署”功能。如果为某个项目启用了“在保存时部署”功能，并且该项目已通过 IDE 部署到服务器，则在更改项目文件后，会立即将其重新部署到服务器。要使“在保存时部署”功能可用于 GlassFish V4，GlassFish 实例必须选定了“启用目录部署”选项。 </p>
+            <p><b>为 Java Web 或企业项目启用或禁用“在保存时部署”功能：</b></p>
+            <ol>
+                <li>右键单击项目节点，选择“属性”。</li>
+                <li>选择“运行”节点，然后设置“在保存时部署”属性。</li>
+            </ol>
+            <p><b>为 GlassFish V4 启用目录部署：</b></p>
+            <ol>
+                <li>选择<tt>工具</tt> > <tt>服务器</tt>。</li>
+                <li>选择服务器。</li>
+                <li>选择“选项”标签。</li>
+                <li>选择“启用目录部署”选项。</li>
+            </ol>
+
+
+
+            <a name="building-fixing"></a><h3 class="tutorial">修复编译错误</h3>
+
+            <!--TODO add info here about task list, etc.-->
+            <p>
+                IDE 在“输出”窗口中显示输出消息和任何编译错误。在发生编译错误、调试程序、生成 Javadoc 文档等情况下，会自动显示此多标签窗口。此外，也可以选择“窗口”>“输出”（在 Windows 上为 Ctrl-4 组合键/在 OS X 上为 Cmd-4 组合键）以手动打开此窗口。</p>
+            <p>此外，编译错误还会显示在“任务”窗口中，并在源代码编辑器中进行标记。</p>
+            <p>
+                “输出”窗口的一个重要功能就是通知您在编译程序时发现的错误。错误消息会显示为带下划线的蓝色文本，并链接到产生错误的源代码行上（如下图所示）。（对于一些常见编码错误，将光标悬停在 "hint"（提示）图标之上时，源代码编辑器通常会提供有关如何修复错误的提示。）"Output"（输出）窗口还将提供指向运行 Ant 构建脚本时发现的错误的链接。在单击“输出”窗口中的错误链接时，源代码编辑器会自动跳至包含该错误的行上。</p>
+           	<p class="align-center"><a href="../../../images_www/articles/74/java/project-setup/output-window.png" rel="lytebox" title="显示编译错误的 &quot;Output&quot;（输出）窗口"> <img alt="显示编译错误的 &quot;Output&quot;（输出）窗口" border="1" src="../../../images_www/articles/74/java/project-setup/output-window-small.png"></a></p>
+
+            <p>Ant 脚本运行的每个操作（如编译、运行和调试文件）都将其输出发送到相同的“输出”窗口标签。如果需要保存“输出”窗口中显示的消息，则可以复制该消息，并将其粘贴到一个单独的文件中。此外，还可以设置 Ant，使其在新的“输出”窗口中输出每个新目标的命令输出，方法是：选择“工具”>“选项”，选择“其他”类别，单击 "Ant" 标签，然后取消选中“重用完成进程中的输出标签”属性的复选框。</p>
+            <a name="building-filtering"></a><h3 class="tutorial">过滤输出文件</h3>
+            <p>
+                在创建 JAR 文件或 WAR 文件时，通常只需包含编译的 <code>.class</code> 文件以及位于源目录中的任何其他资源文件，如资源包或 XML 文档。默认过滤器会通过排除输出文件中的所有 <code>.java</code>、<code>.nbattrs</code> 和 <code>.form</code> 文件来实现这一目的。</p>
+            <p>
+                您可以使用正则表达式创建其他过滤器来控制输出文件。要指定需排除的文件，请在“项目”窗口中右键单击项目，然后选择“属性”以打开“项目属性”对话框。在左窗格中，单击“打包”。在右窗格的相应文本框中，输入正则表达式以指定在打包 JAR 或 WAR 文件时要排除的文件。除了默认表达式以外，您还可以使用下面所列的一些正则表达式：</p>
+            <table>
+                <tr>
+                    <th class="tblheader" scope="col">正则表达式</th>
+                    <th class="tblheader" scope="col">描述</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><code>\.html$ </code></td>
+                    <td class="tbltd1">排除所有 HTML 文件</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><code>\.java$ </code></td>
+                    <td class="tbltd1">排除所有 Java 文件</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><code>(\.html$)|(\.java$) </code></td>
+                    <td class="tbltd1">排除所有 HTML 和 Java 文件</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><code>(Key)|(\.gif$) </code></td>
+                    <td class="tbltd1">排除所有 GIF 文件和名称包含 <code>Key</code> 的所有文件</td>
+                </tr>
+            </table>
+            <p>
+                有关正则表达式语法的指南，请参见 <a href="http://jakarta.apache.org">jakarta.apache.org</a>。</p>
+        </div>
+        <a name="deploy"></a><h2>运行应用程序</h2>
+        <p>此部分将介绍如何在 IDE 中运行项目以及如何配置项目的主类、运行时参数、VM 参数和工作目录。</p>
+        <div class="indent">
+            <a name="deploy-projects"></a><h3 class="tutorial`">运行项目和文件</h3>
+            <p>对于 Java 项目，通常会将包含程序主类的项目设置为主项目。对于 Web 项目，主项目是第一个部署的项目。要运行项目、包或文件，请选择下列任一操作：</p>
+            <ul>
+                <li>在主菜单中，选择<tt>运行</tt> > <tt>运行主项目</tt>（F6 键），运行主项目。或者，也可以使用工具栏中的“运行主项目”按钮。</li>
+                <li>在“项目”窗口中，右键单击项目，然后选择“运行”以运行项目。请注意，对于 Java 项目，项目必须具有主类。</li>
+                <li>在“项目”窗口中，右键单击文件，然后选择“运行文件”（Shift+F6 组合键）以运行文件。此外，也可以在主菜单中选择<tt>运行</tt> > <tt>运行文件</tt> > <tt>运行 &lt;文件名></tt>）（Shift+F6 组合键），以运行可运行的类。 </li>
+            </ul>
+            <p>运行项目时，IDE 在“输出”窗口中显示任何编译错误和输出。有关详细信息，请参见<a href="#building-fixing">修复编译错误</a>。</p>
+            <p class="notes"><b>注：</b>如果为项目启用了“在保存时编译”功能，则“运行项目”命令会处理在保存项目文件时所创建的类文件。同时，不会使用 Ant 构建脚本。如果在构建脚本中定义了定制步骤，则不会执行这些步骤。如果希望在使用“运行项目”、“调试项目”和“分析项目”命令时发生完整的构建过程，请禁用<a href="#building-compile-on-save">在保存时编译</a>功能。
+            </p>
+
+            <a name="deploy-options"></a><h3 class="tutorial">定制运行时选项</h3>
+            <p>默认情况下，IDE 不指定主类、运行时参数或 JVM 参数。每个标准项目的运行时类路径都包含项目的已编译类以及项目编译类路径中的所有内容。您可以查看项目的编译类路径，方法是：打开 "Project Properties"（项目属性）对话框，在 "Categories"（类别）窗格中选择 "Libraries"（库）节点，然后在右窗格中单击 "Compile"（编译）标签。</p>
+            <p>要更改项目的运行时选项，请在 "Projects"（项目）窗口中右键单击项目节点，然后选择 "Properties"（属性）以打开 "Project Properties"（项目属性）对话框。接下来，在 "Categories"（类别）窗格中选择 "Libraries"（库）节点，然后在该对话框的右窗格中单击 "Run"（运行）标签。请注意，要访问主类、程序参数、用于执行程序的工作目录以及 VM 选项的设置，必须选择 "Run"（运行）节点。在下一部分中，我们将详细介绍如何配置运行时类路径。</p>
+			<p class="align-center"><a href="../../../images_www/articles/74/java/project-setup/proj_props-libraries.png" rel="lytebox" title="在 &quot;Project Properties&quot;（项目属性）对话框中指定运行时设置"><img alt="在 &quot;Project Properties&quot;（项目属性）对话框中指定运行时设置" border="1" src="../../../images_www/articles/74/java/project-setup/proj_props-libraries-small.png"></a></p>
+            <!-- TODO Run configurations-->
+            <a name="deploy-classpath"></a><h3 class="tutorial">设置运行时类路径</h3>
+            <p>要将项目、库、JAR 文件和文件夹添加到项目的运行时类路径中，请使用“项目属性”对话框中“运行时库”列表右侧的相应按钮。</p>
+            <p>如果项目在运行时通过间接接口或反射（如 JDBC 驱动程序或 JAXP 实现）动态使用特殊库，则必须将这些库添加到运行时类路径中。如果项目之间的运行时依赖关系与项目之间的编译依赖关系不匹配，则还必须调整运行时类路径。例如，假设项目 A 针对项目 B 进行编译，并且项目 B 针对项目 C 进行编译，但项目 A 不针对项目 C 进行编译。这意味着项目 A 仅在其运行时类路径上包含项目 B。如果项目 A 在执行过程中同时需要项目 B 和项目 C，则必须将项目 C 添加到项目 A 的运行时类路径中。</p>
+
+            <a name="deploy-args"></a><h3 class="tutorial">设置主类和运行时参数</h3>
+            <p>要设置项目的主类，请在“项目属性”对话框的“类别”窗格中选择“运行”节点，然后在“主类”字段中键入全限定名称（例如 <code>org.myCompany.myLib.MyLibClass</code>）。主类必须位于项目中，或者位于项目运行时类路径上的某个 JAR 文件或库中。之后，在“参数”字段中键入任何所需的运行时参数。</p>
+            <p>如果使用“浏览”按钮选择项目主类，则文件选择器只显示项目源目录中的类。如果要指定类路径上某个库中的类，则必须在“主类”字段中键入该类的全限定名称。</p>
+            <a name="deploy-jvm"></a><h3 class="tutorial">设置 JVM 参数</h3>
+            <p>您可以在“项目属性”对话框中指定项目的 JVM 参数。方法是：打开“项目属性”对话框，在“类别”窗格中单击“运行”，然后在“VM 选项”字段中键入以空格分隔的 JVM 参数列表。</p>
+            <p>可以通过在“VM 选项”字段中键入以下内容来设置系统属性：</p>
+            <pre class="examplecode">-Dname=value</pre>
+        </div>
+
+        <a name="build-script"></a><h2>定制构建脚本</h2>
+        <p>在标准项目中，IDE 将基于您在新建项目向导和项目的“项目属性”对话框中输入的选项来创建构建脚本。您可以在项目的“项目属性”对话框中设置所有基本的编译和运行时选项，IDE 会自动更新项目的 Ant 脚本。如果对在“项目属性”对话框中无法处理的构建过程有其他要求，则可以直接修改构建脚本。</p>
+        <p>标准项目的主 Ant 脚本是 <code>build.xml</code>。每次运行 IDE 命令时，IDE 都会调用 <code>build.xml</code> 中的目标。此文件包含一条导入 <code>nbproject/build-impl.xml</code>（其中包含 IDE 构建的构建目标）的 import 语句。在 <code>build.xml</code> 中，可以覆盖 <code>nbproject/build-impl.xml</code> 中的任何目标或编写新目标。<i>请勿</i>直接编辑 <code>nbproject/build-impl.xml</code>，因为会基于“项目属性”对话框中所做的更改重新构建该文件。</p>
+        <p>此外，构建脚本会使用可手动编辑的 <code>nbproject/project.properties</code>。</p>
+        <p>对于标准项目，可以通过执行下列任一操作来定制构建过程：</p>
+        <ul>
+            <li>创建项目时在新建项目向导中输入基本选项（例如类路径设置和 JAR 过滤器），或者以后在“项目属性”对话框中进行设置。</li>
+            <li>编辑 <code>nbproject/project.properties</code> 中的属性。此文件存储了 Ant 属性以及有关项目的重要信息，如源文件夹和输出文件夹的位置。您可以覆盖此文件中的属性。请谨慎编辑此文件。例如，每次清理项目时，都会删除输出文件夹。因此，如果未事先将清理目标配置为不删除输出文件夹，则切勿将输出文件夹的位置设置为与源文件夹相同。</li>
+            <li>执行下列任一操作以定制现有 Ant 目标或创建新的 Ant 目标：<ul>
+                    <li>添加在运行 Ant 目标之前或之后处理的指令。<code>nbproject/build-impl.xml</code> 中的每个主目标还具有可以在 <code>build.xml</code> 中覆盖的 <code>-pre</code> 和 <code>-post</code> 目标。例如，要使 RMI 可用于常规项目，请在 <code>build.xml</code> 中键入以下内容：
+                        <pre class="examplecode">&lt;target name=&quot;-post-compile&quot;&gt;
+  &lt;rmic base=&quot;${build.classes.dir}&quot; includes=&quot;**/Remote*.class&quot;/&gt;
+                    &lt;/target&gt;</pre></li>
+                    <li>更改 Ant 目标中的指令。将 <code>nbproject/build-impl.xml</code> 中的目标复制到 <code>build.xml</code>，然后对目标执行任何更改。</li>
+                    <li>在 <code>build.xml</code> 中创建新目标。您还可以将新目标添加到 IDE 的任何现有目标的依赖关系中。覆盖 <code>build.xml</code> 中的现有目标，然后将新目标添加到现有目标的 <code>depends</code> 属性中。例如，以下代码将 <code>new-target</code> 目标添加到 run 目标的依赖关系中：
+                        <pre class="examplecode">&lt;target name=&quot;new-target&quot;&gt;
+    &lt;!-- target body... --&gt;
+&lt;/new-target&gt;
+&nbsp;
+                        &lt;target name=&quot;run&quot; depends=&quot;new-target,myprojname-impl.run&quot;/&gt;</pre>
+                        <p>您不必将 run 目标的主体复制到 <code>build.xml</code> 中。</p>
+        </li></ul></li></ul>
+        <p>下表列出了在重新定义 JAR 文件时需要执行的一些常见任务，它们可能会对您有所帮助：</p>
+
+ <table>
+            <tr>
+                <th class="tblheader" scope="col">要执行此任务</th>
+                <th class="tblheader" scope="col">请按照下列步骤执行操作</th>
+            </tr>
+            <tr>
+                <td class="tbltd1">指定要添加到 JAR 文件中的文件。</td>
+                <td class="tbltd1">右键单击“项目”窗口中的项目节点，然后选择“属性”。单击“打包”子节点（在“构建”下面），然后使用“从 JAR 文件中排除”字段配置过滤器和压缩设置。有关详细信息，请参见<a href="#building-filtering">过滤输出文件</a>。</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">更改 JAR 文件的名称和位置。 </td>
+                <td class="tbltd1">在“文件”窗口中，双击项目的 <code>nbproject/project.properties</code> 文件以在源代码编辑器中将其打开。在 <code>dist.jar</code> 属性中输入 JAR 文件的完整路径。
+                </td>
+            </tr>
+            <tr>
+                <td class="tbltd1">指定 JAR 文件的清单文件。 </td>
+                <td class="tbltd1">在 <code>project.properties</code> 中的 <code>manifest.file</code> 属性上，键入清单文件的名称。指定的文件名必须与项目的 <code>build.xml</code> 文件有关。请注意，如果您使用的是 Java 应用程序模板，则 IDE 将会为您创建一个清单文件。
+                </td>
+            </tr>
+            <tr>
+                <td class="tbltd1">禁止为项目生成 JAR 文件。 </td>
+                <td class="tbltd1">在“文件”窗口中，打开项目文件夹，然后打开 <code>build.xml</code>。覆盖 <code>jar</code> 目标，使其不包含任何内容和依赖关系。例如，将以下内容添加到 <code>build.xml</code> 中：
+                    <pre>&lt;target name=&quot;jar&quot; /&gt;</pre>
+                </td>
+            </tr>
+    </table>
+
+        <p>如果要查找了解 Ant 所需的资源，请参见 <a href="http://ant.apache.org/resources.html">http://ant.apache.org/resources.html</a>。您还可以使用插件管理器将 Ant 手册安装到 IDE 帮助系统中。方法是：选择“工具”>“插件”，然后安装 Ant 文档模块。 </p>
+        <div class="indent">
+            <a name="ant-editing"></a><h3 class="tutorial">编辑和运行 Ant 脚本</h3>
+            <p>IDE 可自动识别 Ant 脚本并将其显示为 Ant 脚本节点 (<img align="bottom" alt="Ant 脚本节点图标" src="../../../images_www/articles/72/java/project-setup/anticon.png">) 而不是正常 XML 文件。您可以在“项目”窗口、“文件”窗口或“收藏夹”窗口中右键单击 Ant 脚本来访问包含一些命令的弹出式菜单。此外，还可以展开 Ant 脚本节点，以查看表示 Ant 脚本目标的子节点的列表（按字母顺序排列）。其中的每个子节点也都具有包含一些命令的弹出式菜单。</p>
+            <p>在“项目”、“文件”或“收藏夹”窗口中，Ant 脚本的子节点会采用以下方式进行标记：</p>
+            <table>
+                <tr>
+                    <th class="tblheader" scope="col">图标</th>
+                    <th class="tblheader" scope="col">含义</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1">
+                            <img align="bottom" alt="强调的 Ant 目标图标" src="../../../images_www/articles/72/java/project-setup/setup-targeticon-emph.png">
+                    </td>
+                    <td class="tbltd1">
+                        <p><b>强调的 Ant 目标</b>。这些目标包含显示为工具提示的描述属性。您可以在源代码编辑器中定义目标的描述属性。</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="tbltd1">
+
+                            <img alt="正常 Ant 目标图标" src="../../../images_www/articles/72/java/project-setup/setup-targeticon.png">
+                    </td>
+                    <td class="tbltd1">
+                            <b>正常 Ant 目标</b>。不包含描述属性的目标。
+                    </td>
+                </tr>
+            </table>
+            <p>双击 Ant 脚本的任意子节点，即可跳至该目标在源代码编辑器中的相应位置。所有的常规 XML 搜索工具、选择工具和快捷键都可用于编辑 Ant 脚本，并且 IDE 为所有标准 Ant 任务提供了代码完成。</p>
+            <p>
+                在创建要从命令行运行的目标时，需为该目标提供一个描述属性。之后，如果忘记了目标的名称或其作用，则可以从命令行运行 ant <code>-projecthelp &lt;script></code> 命令。使用此命令时，Ant 仅列出具有描述属性的目标及其描述。尤其是当 Ant 构建脚本中存在许多目标时，可以在强调一些目标的同时取消强调另一些目标，通过这种有用的方式可以将那些常用目标和不常用目标区别开。</p>
+            <p>“项目”、“文件”或“收藏夹”窗口中子节点标签的字体样式指示以下信息：</p>
+            <ul>
+                <li><b>正常</b>。当前 Ant 脚本中定义的目标。</li>
+                <li><b>斜体</b>。从其他 Ant 脚本导入的目标。</li>
+                <li><b>灰显</b>。不能直接运行的内部目标。内部目标的名称以 "-" 开头。</li>
+                <li><b>粗体</b>。脚本的默认目标（如果有）。默认目标和其他项目属性（如其名称）一起被声明为项目的属性。您可以在源代码编辑器中定义项目的默认属性。</li>
+            </ul>
+            <p>未列出从其他脚本导入但在导入脚本中被覆盖的目标。仅列出了覆盖目标。</p>
+            <p>在 "Projects"（项目）、"Files"（文件）或 "Favorites"（收藏夹）窗口中，可以从 Ant 脚本的节点运行 Ant 脚本中的目标。要执行此操作，请右键单击 Ant 脚本节点，然后从 "Run Target"（运行目标）子菜单中选择一个目标。目标按字母顺序排列。仅列出了强调的目标。选择 Other Targets"（其他目标）可运行未使用描述属性强调的目标。这些列表中未包括内部目标，因为它们无法独立运行。</p>
+            <p>您不必使用 Ant 脚本节点的弹出式菜单也可运行目标，只需右键单击目标的节点，然后选择 "Run Target"（运行目标）即可轻松实现。</p>
+			<p class="align-center"><a href="../../../images_www/articles/72/java/project-setup/setup-run.png" rel="lytebox" title="运行 Ant 目标"><img alt="运行 Ant 目标" border="1" src="../../../images_www/articles/72/java/project-setup/setup-run-small.png"></a></p>
+            <a name="ant-custom-task"></a><h3 class="tutorial">编写定制 Ant 任务</h3>
+            <p>您可以使用定制 Ant 任务来扩展由 Ant 内置任务提供的功能。定制任务通常用于定义属性、创建嵌套元素，或使用 <code>addText</code> 方法直接编写标记之间的文本。</p>
+            <p><b>在 IDE 中创建定制 Ant 任务：</b></p>
+            <ol>
+                <li>右键单击要在其中放置任务的包，然后选择<tt>新建</tt> > <tt>其他</tt>。</li>
+                <li>选择“其他”类别和“定制 Ant 任务”文件类型。</li>
+                <li>完成向导。</li>
+            </ol>
+            <p>创建定制 Ant 任务文件后，其模板在源代码编辑器中打开。该模板包含 Ant 任务执行的许多常见操作的样例代码。在每段代码后，该模板还说明了如何在 Ant 脚本中使用任务。</p>
+
+        </div>
+
+
+        <br>
+        <div class="feedback-box">
+            <a href="/about/contact_form.html?to=3&subject=Creating,%20Importing,%20and%20Configuring%20Java%20Projects">发送有关此教程的反馈意见</a>        </div>
+        <br style="clear:both;" >
+
+        <h2><a name="seealso">另请参见</a></h2>
+        <ul>
+		    <li><i>使用 NetBeans IDE 开发应用程序</i>中的<a href="http://www.oracle.com/pls/topic/lookup?ctx=nb7400&id=NBDAG366">创建 Java 项目</a></a></li>
+            <li><a href="junit-intro.html">编写 JUnit 测试</a></li>
+            <li><a href="debug-multithreaded.html">在 NetBeans IDE 中调试多线程应用程序</a></li>
+
+            <li><a href="../../73/java/javase-jws_zh_CN.html">在 NetBeans IDE 中启用 Java Web Start</a></li>
+        </ul>
+
+        <hr>
+
+    </body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><!-- -*- xhtml -*- -->
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<!--
+Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+<head>
+  <title>Uncovering Memory Leaks Using NetBeans Profiler</title>
+  <meta name="description" value="An article explaining how to use the NetBeans Profiler to help uncover memory leaks in an application" />
+  <link rel="stylesheet" href="../../netbeans.css" type="text/css" />
+  <meta name="TYPE" content="ARTICLE" />
+  <meta name="author" content="Jiri Sedlacek" />
+</head>
+
+<body>
+<h1>Uncovering Memory Leaks Using NetBeans Profiler</h1>
+<div class="articledate" style="margin-left: 0px;">Contributed by Jiri Sedlacek</div>
+<p>This articles discusses how to use the NetBeans Profiler to locate memory leaks in
+a Java application. </p>
+<h2>What's a Memory Leak?</h2>
+
+<p>"Memory leak is a particular kind of unintentional memory consumption by a computer program 
+where the program fails to release memory when no longer needed" as 
+<a href="http://en.wikipedia.org/wiki/Memory_leak">Wikipedia</a> says. 
+This can happen for any program written in any programming language and Java is no exception.</p>
+
+<p>Many users think that the Java VM releases unused objects from memory automatically, but that's not always the case. 
+There are several scenarios when objects cannot be released and memory leaks occur. 
+One common scenario is when a single object with large memory consumption may be unintentionally held in memory,
+for example a <code>Project</code> instance in NetBeans IDE when the project has already been closed. 
+Another common scenario is when small objects are constantly being added to a <code>Collection</code> 
+over time but they are never removed from that <code>Collection</code>, for example caching coordinates in a graphics editor or a game.</p>
+
+<h2>How Can I Detect a Memory Leak?</h2>
+
+<p>In the first scenario, when a single (or few) object remains in memory after some 
+action, memory leak detection is typically done by comparing memory snapshots taken before the action to snapshots taken after the action and then 
+searching for unnecessary references to that object(s) in a heap walker tool. <!--This technique will be covered in
+a subsequent article on uncovering memory leaks.--></p>
+
+<p>This article will cover the second scenario, when there are many small objects that are continuously accumulating without being released.
+This type of leak can be more difficult to detect because typically it's not related to any concrete action and does not use a
+noticeable amount of memory until the program has run for a long time. 
+This scenario is dangerous especially with Java EE applications that are expected to run 
+for long periods of time. 
+After some time the leak starts to consume memory and may slow down performance of the 
+application or cause an <code>OutOfMemoryError</code> crash without any visible cause.</p>
+
+<p>Even if your application seems to be working without any problems, before releasing your application it's always a good idea 
+to verify that your application does not contain any potential memory leaks. 
+For this purpose the NetBeans Profiler offers you special metrics which can reliably uncover 
+large amounts of continuously leaking small objects - the <b>Surviving Generations metrics</b>. 
+You can start the application in Monitoring mode without any profiling overhead and 
+watch the graph to see if the application leaks over time.</p>
+
+<h2>What Do The Surviving Generations Metrics Mean?</h2>
+
+<p>Surviving Generations metrics cannot be easily defined with just one line, so let's make a three-line definition:</p>
+<ul>
+  <li><i>a Generation is a set of instances created within the same GC interval (between two garbage collections)</i></li>
+  <li><i>a Surviving Generation is a Generation that survives at least one garbage collection. The number of 
+  survived garbage collections - the generation's age - is its unique identifier</i></li>
+  <li><i>Surviving Generations (metrics) value is the number of different Surviving Generations 
+  that are currently alive on the heap (number of Generations with different generation ages)</i></li>
+</ul>
+
+<p>Typically there are several long-lived objects (like an application's main <code>JFrame</code> etc.) in an application. 
+The generation's age increases during the application's run time but still represents one or a few Surviving Generations.</p>
+
+<p>Most applications also have short-lived objects which are created very frequently 
+(such as <code>Dimension</code> etc.) but these objects are released very soon, typically within only a few garbage collections. 
+This means that they represent only a few Surviving Generations (with generation's age of 1, 2, 3 etc.).</p>
+
+<p>If we merge the two above cases, the total number of Surviving Generations in typical applications is 
+quite stable. You may have long-lived objects representing, for example, 3 Surviving Generations, and short-lived 
+objects representing, for example, 5 Surviving Generations, which means there will be about 8 Surviving Generations during the application's runtime.</p>
+
+<p>Of course, in some application, for example a Swing application, dialogs and other components are created 
+during run time and as a result the number of Surviving Generations grows a bit. 
+But after some period of time the number of Surviving Generations should become stable 
+because all long-lived objects have already been created and newly-created 
+short-lived objects are periodically being released from the heap.</p>
+
+<p>However, if there is a memory leak in an application which prevents newly-created 
+objects from being released from the heap (for example objects stored in a <code>Collection</code> 
+and never removed), the number of Surviving Generations grows. Why? Because between every two 
+garbage collections a new generation (of leaking objects) is created and it survives each 
+successive garbage collection. During run time the number of Surviving Generations whose 
+generation's age differ by one unit increases, and that's exactly what the Surviving Generations 
+metrics is able to detect regardless of how much memory is wasted by such a leak. 
+That's why using the Surviving Generations metrics can help you discover a memory leak much 
+sooner, before it consumes the entire heap and causes an <code>OutOfMemoryError</code>.</p>
+
+<h2>How To Do It With NetBeans Profiler?</h2>
+
+<p>The NetBeans Profiler is included as part of the regular installation of current versions of NetBeans IDE.
+    If you are using an older version of the IDE that does not include all the profiler features (NetBeans IDE 6.1 or earlier)
+    you might need to download and install the
+    <a href="http://profiler.netbeans.org/download/index.html">NetBeans Profiler installer package</a>.</p>
+
+<div class="indent">
+<h3>Discovering the Leak</h3>
+<ol>
+
+  <li>Download and install <a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a>.</li>
+  <li>Open the project that you want to check for possible memory leaks.</li>
+  <li>Choose Profile &gt; Profile Project from the main menu to start profiling the project.
+      <p>Alternatively, choose Attach Profiler if you want to attach the NetBeans Profiler to an external application. </p>
+  </li>
+  <li>Choose the Monitor mode and click Run. (You don't need to monitor application's threads.)
+  <br />
+<!--  <img alt="screenshot of Select Profiling Task dialog box" src="../../images_www/articles/profiler/monitor_application_screen.png" />-->
+      <img alt="screenshot of Telemetry overview" src="../../images_www/articles/profiler/monitor-wizard.png" class="margin-around b-all"/>
+      <p><i>Image 1: Monitor Application mode. </i></p>
+</li>
+
+  <li>Open the small telemetry graphs (menu Profile/View/Telemetry Overview) or large Memory (GC) 
+  graph using the VM Telemetry button in the NetBeans Profiler Control Panel and watch the behavior of the red Surviving Generations 
+  metrics line during the application's run time. The longer the application runs in monitoring 
+  mode with a realistic workload, the more precise the memory leak analysis will be.
+  <br/>
+<!--      <img alt="screenshot of Telemetry overview" src="../../images_www/articles/profiler/telemetry_overview_screen.png"/>-->
+      <img alt="screenshot of Telemetry overview" src="../../images_www/articles/profiler/telemetry.png" class="margin-around b-all"/>
+ <p><i>Image 2: VM Telemetry Overview showing how the Surviving Generations value increases after application 
+         startup (the exact number of surviving generations is not important). 
+ If the value continues to increase during run time, the application is very likely leaking.</i></p>
+ <p>Typically, the Surviving Generations value starts to grow during an application's startup, 
+  but after some time it should reach some stable limit and level off. When this happens it indicates that no objects 
+  are being created continuously and leaking. If the Surviving Generations line continues 
+  to grow all the time (regardless of how quickly), then the application is most likely leaking.</p></li>
+</ol>
+  <p>If you discover a memory leak using the Surviving Generations metrics during
+  monitoring, the NetBeans Profiler enables you to easily find the code in your application where the leaking 
+  objects are created and fix the problem.</p>
+
+  <h3>Discovering the Source</h3>
+  <p>To find the suspect code, perform the following steps.</p>
+  <ol>
+      <li>Switch the profiling mode to Memory mode and select Record stack trace for allocations.<br/>
+      <img alt="screenshot of Memory mode" src="../../images_www/articles/profiler/memory-wizard.png" class="margin-around b-all"/>
+      </li>
+      <li>Open the live results and click the Generations column heading to sort the results by Surviving Generations value.<br/>
+      <img alt="screenshot of Live Profiling Results tab" src="../../images_www/articles/profiler/live-results.png" class="margin-around b-all"/>
+      <p><i>Image 3: The Live Profiling Results tab shows that the <code>double[]</code> and <code>float[]</code> entries are
+      continuously being created and not released.
+      This is a potential memory leak even though they don't consume much memory.</i></p>
+      </li>
+      <li>Right-click the class with the continuously growing Surviving Generations value
+      and choose Take Snapshot and Show Allocations Stack Traces in the popup menu.<br/>
+      <img alt="screenshot of Allocation Stack trace" src="../../images_www/articles/profiler/stack-trace.png" class="margin-around b-all"/>
+      <p>The IDE displays opens the stack trace that enables you to locate code that is
+      the possible source of the leak. You can right-click the class name and choose Go to Source
+      in the popup menu to open the class in the editor.</p>
+      </li>
+  </ol> 
+
+  </div>
+
+  <p>Follow these steps to locate all the methods of your code where instances of the class are being created.
+  The method(s) with the highest Surviving Generations value is most likely the cause of the leak. </p>
+
+  <div class="feedback-box">
+    <a href="/about/contact_form.html?to=3&amp;subject=Feedback:%20Uncovering%20Memory%20Leaks%20Using%20NetBeans%20Profiler%20-%20Part%201">Send Feedback on This Tutorial</a>
+</div>
+
+  <br style="clear: both;"/>
+</body>
+
+</html>

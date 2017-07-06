@@ -1,0 +1,388 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>使用 Linux cal 命令的弹出式日历</title>
+<META NAME="description" CONTENT="Popup calendar using Linux cal command">
+<link rel="stylesheet" type="text/css" href="../../netbeans.css">
+<META NAME="AUDIENCE" CONTENT="NBUSER">
+<META NAME="TYPE" CONTENT="ARTICLE">
+<META NAME="TOPIC" CONTENT="BASIC">
+<META NAME="EXPIRES" CONTENT="N">
+<meta name="author" content=""/>
+<meta name="indexed" content="y"/>
+
+		<title>使用 Linux cal 命令的弹出式日历</title>
+		
+	</head>
+<body>
+	
+
+		<h1>使用 Linux cal 命令的弹出式日历</h1>
+<div class="articledate" style="margin-left:0px;">撰稿人：Zsolt Kiss，</a>与 NetBeans 共赢<a href="../win-with-netbeans.html">参赛作品</div></p>
+
+<p><a href="https://netbeans.org/files/documents/4/309/popupcalendar.zip">下载文件和源代码</a></p>
+	
+<p>
+此日历的灵感来自于我以前完成的一个项目。我在匈牙利的 GE 公司工作时，曾经构建了一个具有 Web GUI 的 Intranet 应用程序，它在很多页面上使用日历组件。这是一个非常精致的应用程序，我使用 JavaScript 的 Date 对象进行开发并花了很多时间才完成。我必须运用一些技巧以正确处理闰年问题，将表示月份和日期的数字转换为本地化的字符串，而更不用说格式设置工作了，从而将我的日历变成非常时髦的 HTML 表格...效果非常好，最后，我编写了一个包含许多方法的 JavaScript Calendar 类...今天，我将使用略微不同的方法进行实现。我将使用 Linux <b><i>cal</i></b> 命令...
+</p>
+<p>
+如果您调用 cal 命令而不提供任何输入，该命令将显示当前日历月份，或者，如果您指定了年份和月份，它将显示任意年份中的任意月份（年份值可以是 1 到 9999 之间的数字，月份值可以是 1 到 12 之间的数字）。您可以在下面看到我的 Linux 终端窗口中显示的 cal 命令调用和输出结果（我的本地设置为匈牙利语）：
+<pre>
+zsolt@linux:~&gt; cal 12 2004
+    december 2004
+ v  h  k sz cs  p sz
+          1  2  3  4
+ 5  6  7  8  9 10 11
+12 13 14 15 16 17 18
+19 20 21 22 23 24 25
+26 27 28 29 30 31
+
+zsolt@linux:~&gt;
+</pre>
+</p>
+<p>
+不再需要运用技巧以使用 JavaScript Date 对象，不再需要转换方法...我们可以直接使用 Linux cal 命令提供的输出来生成编排好格式的漂亮日历，以便在 Web 上向我们的客户展示。假设我们的 Web 服务器在 Linux 计算机上运行，并且它具有运行操作系统命令的访问权限。我所在的位置满足所有这些条件。
+</p>
+<h2>工作原理</h2>
+<p>
+但是，Linux 命令的输出如何变成 html 页的输入呢？通过相当简单的方式。我们必须使用 java.lang.Runtime 类的 exec() 方法在 Java 虚拟机外部启动一个外部进程（或程序）。如果按以下方式调用 exec() 以将其传递给 Linux cal 命令：
+<pre class="examplecode"> 
+Process p = Runtime.getRuntime().exec(&quot;cal 12 2004&quot;);
+</pre>
+</p>
+<p>
+您可以读取命令输出（即，显示的日历）以作为 InputStream：
+<pre class="examplecode">
+BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+</pre>
+</p>
+<p>
+现在，我们具有一个 Reader 对象，StreamTokenizer 可以处理该对象以过滤输出中的空格而不是数值。通过将重点放在数字上，可以生成任意格式的 HTML 表格。  
+</p>
+<p>
+我创建了一个 CalBuilder 类，并在其中创建一个静态 build() 方法以设置输出字符串的格式，将在 Servlet 中使用该字符串以写出 html。下面是该 CalBuilder 类：
+<pre class="examplecode">
+public class CalBuilder {
+    private static final String spanBegin = &quot;&lt;span style=\&quot;color:green;font-size:14px;\&quot; onmouseover=\&quot;this.style.color='red';\&quot; onmouseout=\&quot;this.style.color='green';\&quot; onclick=\&quot;Send(this);\&quot;&gt;&quot;;
+    private static final String spanEnd = &quot;&lt;/span&gt;&quot;;
+    
+    public CalBuilder() {
+    }
+    
+    public static String build(String year, String month) throws IOException {
+        String line;
+        int token;
+        StringBuffer cmd = new StringBuffer(&quot;cal &quot;).append(month).append(&quot; &quot;).append(year);
+           
+        Process p = Runtime.getRuntime().exec(cmd.toString());
+        BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+         
+        StringBuffer sb = new StringBuffer(&quot;&lt;th id=\&quot;header\&quot; align=\&quot;center\&quot; colspan=\&quot;7\&quot;&gt;&quot;);
+        StreamTokenizer st = new StreamTokenizer(br);
+        st.eolIsSignificant(true);
+        st.ordinaryChar(32);
+
+        int eolCounter = 1;
+        int line3Tokens = 0;
+        
+        while((token = st.nextToken()) != StreamTokenizer.TT_EOF) {
+            System.out.println(st.toString());
+            if(eolCounter == 1 &amp;&amp; token == StreamTokenizer.TT_WORD) {
+                sb.append(st.sval + &quot;&nbsp;&quot;);
+            }else if(eolCounter == 1 &amp;&amp; token == StreamTokenizer.TT_NUMBER) {
+                sb.append((int)st.nval);
+            }else if(eolCounter == 1 &amp;&amp; token == StreamTokenizer.TT_EOL) {
+                sb.append(&quot;&lt;/th&gt;&lt;tr&gt;&quot;);
+            }else if(eolCounter == 2 &amp;&amp; token == StreamTokenizer.TT_WORD) {
+                sb.append(&quot;&lt;td&gt;&quot; + st.sval + &quot;&lt;/td&gt;&quot;);
+            }else if(eolCounter == 2 &amp;&amp; token == StreamTokenizer.TT_EOL) {
+                sb.append(&quot;&lt;/tr&gt;&lt;tr&gt;&quot;);
+            }else if(eolCounter == 3 &amp;&amp; token == StreamTokenizer.TT_NUMBER) {
+                line3Tokens++;
+            }else if(eolCounter == 3 &amp;&amp; token == StreamTokenizer.TT_EOL) {
+                sb.append(padding(line3Tokens));
+                sb.append(&quot;&lt;/tr&gt;&lt;tr&gt;&quot;);
+            }else if(eolCounter &gt; 3 &amp;&amp; token == StreamTokenizer.TT_NUMBER) {
+                sb.append(&quot;&lt;td&gt;&quot; + spanBegin + (int)st.nval + spanEnd + &quot;&lt;/td&gt;&quot;);
+            }else if(eolCounter &gt; 3 &amp;&amp; token == StreamTokenizer.TT_EOL) {
+                sb.append(&quot;&lt;/tr&gt;&lt;tr&gt;&quot;);
+            }
+                    
+                        
+            if(token == StreamTokenizer.TT_EOL) {
+                eolCounter++;
+            }
+ 
+        }
+        return sb.toString();
+    }
+    
+    
+    private static String padding(int num) {
+        StringBuffer sb = new StringBuffer();
+        if(num &gt; 0 &amp;&amp; num &lt; 8) {
+            int spaces = 7 - num;
+            for(int i=0;i&lt;spaces;i++) {
+                sb.append(&quot;&lt;td&gt;&nbsp;&lt;/td&gt;&quot;);
+            }
+            
+            for(int i=1;i&lt;=num;i++) {
+                sb.append(&quot;&lt;td&gt;&quot; + spanBegin + i + spanEnd + &quot;&lt;/td&gt;&quot;);
+            }
+        }else {
+            for(int i=0;i&lt;7;i++) {
+                sb.append(&quot;&lt;td&gt;&nbsp;&lt;/td&gt;&quot;);
+            }
+        }
+        return sb.toString();
+    }
+
+    
+}
+</pre>
+</p>
+<br clear="all">
+<p>
+类顶部的静态字符串用于为单元格设置某种样式，数字将放在 html 的单元格中，以使用户可以单击它们或实现其他功能。
+</p>
+
+
+<p>
+Servlet 将调用 CalBuilder 类，它将设置了格式的日历 html 文本插入到其 html 输出中，即，插入到 <i>&lt;table&gt;&lt;/table&gt;</i> 标记中。
+</p>
+<p>
+Servlet 还会写出名为 Send() 的 JavaScript 发送者函数，它负责将用户单击的日期发回到已从中弹出日历组件的 index.jsp 页。在发回日期后，将关闭弹出式日历窗口。
+</p>
+<p>
+index.jsp 中只有两个组合框，用于向日历发送一些初始值。可通过简单的 html 按钮单击（不是提交元素而是按钮）以调用标准 JavaScript window.open() 函数，激活弹出式窗口。
+</p>
+
+<p>
+您可以在下面看到 Servlet：
+<pre class="examplecode">
+public class ShowCalendar extends HttpServlet {
+ 
+    protected void processRequest(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+        String year = &quot;&quot;;
+        String month = &quot;&quot;;
+        if(req.getParameter(&quot;initMonth&quot;) != null) {
+            month = req.getParameter(&quot;initMonth&quot;);
+        }
+        if(req.getParameter(&quot;initYear&quot;) != null) {
+            year = req.getParameter(&quot;initYear&quot;);
+        }
+        
+        res.setContentType(&quot;text/html&quot;);
+        
+        PrintWriter out = res.getWriter();
+        out.println(&quot;&lt;html&gt;&quot;);
+        out.println(&quot;&lt;head&gt;&quot;);
+        out.println(&quot;&lt;title&gt;Calendar set up with Linux cal command&lt;/title&gt;&quot;);
+        out.println(sender());
+        out.println(&quot;&lt;/head&gt;&quot;);
+        out.println(&quot;&lt;body&gt;&quot;);
+        out.println(&quot;&lt;table border=\&quot;1\&quot;&gt;&quot;);
+        out.println(CalBuilder.build(year, month));
+        
+        out.println(&quot;&lt;/table&gt;&quot;); 
+        out.println(&quot;&lt;/body&gt;&quot;);
+        out.println(&quot;&lt;/html&gt;&quot;);
+        
+        out.close();
+    }
+    
+    private static String sender() {
+        StringBuffer javascript = new StringBuffer();
+        javascript.append(&quot;&lt;script type=\&quot;text/javascript\&quot;&gt;\n&quot;);
+        javascript.append(&quot;function Send(obj) {\n&quot;);
+        javascript.append(&quot;var winObj = window.opener;\n&quot;);
+        javascript.append(&quot;var docObj = winObj.document;\n&quot;);
+        javascript.append(&quot;if(docObj != null) {\n&quot;);
+        javascript.append(&quot;var cbYear = docObj.getElementById(\&quot;cbYear\&quot;);\n&quot;);
+        javascript.append(&quot;var cbMonth = docObj.getElementById(\&quot;cbMonth\&quot;);\n&quot;);
+        javascript.append(&quot;var year = cbYear.options[cbYear.selectedIndex].value;\n&quot;);
+        javascript.append(&quot;var month = cbMonth.options[cbMonth.selectedIndex].text;\n&quot;);
+        javascript.append(&quot;docObj.getElementById(\&quot;selectedDate\&quot;).value = year + \&quot; \&quot; + month + \&quot; \&quot; + obj.firstChild.nodeValue;\n&quot;);
+        javascript.append(&quot;}\n&quot;);
+        javascript.append(&quot;window.close();&quot;);
+        javascript.append(&quot;}\n&quot;);
+        javascript.append(&quot;&lt;/script&gt;\n&quot;);
+        return javascript.toString();
+    }
+          
+}
+</pre>
+</p>
+
+		
+
+<h2>使用 NetBeans 4.0 开发可单击的日历</h2>
+<p>我将指导您完成以下主要步骤：</p>
+<ul>
+  <li><a href="#setup">使用 NetBeans IDE 4.0 设置新的 Web 应用程序</a></li>
+  <li><a href="#addservlet">将 ShowCalendar Servlet 添加到项目中</a></li>
+  <li><a href="#calbuilder">创建 CalBuilder 类</a></li>
+  <li><a href="#indexjsp">编辑 index.jsp</a></li>
+  <li><a href="#buildandrun">生成和运行项目</a></li>
+ </ul>
+ 
+<p>
+<h3><a name="setup"></a>使用 NetBeans IDE 4.0 设置新的 Web 应用程序</h3>
+<hr style="color:black;" class="align-center" width="100%">
+<ol>
+	<li>
+<p>
+启动 NetBeans，然后在主菜单中选择 &quot;File&quot;（文件）&gt; &quot;New Project&quot;（新建项目）。在 &quot;Categories&quot;（类别）中选择 &quot;Web&quot;，然后在 &quot;Projects&quot;（项目）中选择 &quot;Web Application&quot;（Web 应用程序）。单击 &quot;Next&quot;（下一步）。在下一页中，键入 popupcalendar 作为项目名称，然后浏览到所需的文件夹（您希望 IDE 在其中创建项目文件夹）。单击 &quot;Finish&quot;（完成）。
+</p> 
+	</li>
+<li>
+<p>
+您可以在 IDE 中检查项目文件夹及其内容：按 Ctrl+1 组合键可查看 &quot;Project&quot;（项目）窗口，按 Ctrl+2 组合键可查看 &quot;File&quot;（文件）窗口。IDE 将创建一个缺省 index.jsp 文件以及始终需要使用的 WEB-INF 文件夹。
+</p> 
+	</li>	
+</ol>
+ 
+<h3><a name="addservlet"></a>将 ShowCalendar Servlet 添加到项目中</h3>
+<hr style="color:black;" class="align-center" width="100%">
+
+<ol>
+	<li>
+<p>
+现在，让我们创建 ShowCalendar Servlet。在 &quot;Project&quot;（项目）窗口中，右键单击项目名称，选择 &quot;New&quot;（新建）&gt; &quot;Servlet&quot;，然后键入 ShowCalendar 作为类名，指定所需的包名（我使用的是 com.zsoltkiss.web.misc），然后单击 &quot;Next&quot;（下一步）。在下一个窗口中，重写到 /cal 的 URL 映射，然后单击 &quot;Finish&quot;（完成）。将在指定的包中创建 Servlet 的框架文件。在 &quot;Project&quot;（项目）窗口中，选中该文件。
+</p> 
+	</li>
+<li>
+<p>
+修改 Servlet 的 <i>processRequest()</i> 方法，或者，您也可以从本教程中复制粘贴完整方法，然后将其插入到 Servlet 类中以覆盖原来的方法。
+</p> 
+	</li>	
+</ol>
+
+<h3><a name="calbuilder"></a>创建 CalBuilder 类</h3>
+<hr style="color:black;" class="align-center" width="100%">
+
+<ol>
+	<li>
+<p>
+现在，您可以按如下方式在项目中添加新类：<br>右键单击项目名称，然后选择 &quot;New&quot;（新建）&gt; &quot;Java Class&quot;（Java 类）（简单的类，而不是 Servlet！），类名是 ClaBuilder，将包名保持不变（此时，IDE 提供以前创建的类所在的包名称作为缺省名称）。单击 &quot;Finish&quot;（完成）。
+</p> 
+	</li>
+	<li>
+<p>
+从前面的代码中复制 CalBuilder 源代码，并覆盖 IDE 为该类创建的原始框架代码。
+</p> 
+	</li>	
+
+</ol>	
+
+<h3><a name="indexjsp"></a>编辑 index.jsp</h3>
+<hr style="color:black;" class="align-center" width="100%">
+<ol>
+	<li>
+<p>
+在 IDE 中切换到 &quot;Project&quot;（项目）窗口，在项目名称下面展开 &quot;Web Pages&quot;（Web 页）部分（如果未展开），然后单击 index.jsp 以在编辑器中打开该文件。
+</p> 
+	</li>
+	<li>
+<p>	
+将页面标题修改为所需的字符串。我指定的标题是：<i>Web GUI for testing popup calendar</i>
+</p>	
+	</li>
+	<li>
+<p>	
+将一些 JavaScript 直接放在 &lt;/title&gt; 结束标记后面，如以下片段所示：
+<pre class="examplecode">
+&lt;script type=&quot;text/javascript&quot;&gt;
+function showCalendar() {
+    var url = &quot;/popupcalendar/cal?initYear=&quot; + document.getElementById(&quot;cbYear&quot;).value + &quot;&amp;initMonth=&quot; + document.getElementById(&quot;cbMonth&quot;).value;
+    window.open(url,&quot;&quot;,&quot;width=180,height=200&quot;);
+}
+&lt;/script&gt;
+</pre>
+</p>
+<p>
+此 JavaScript 函数负责调用日历组件。
+</p>	
+	</li>
+	<li>
+<p>
+将整个 &lt;body&gt;&lt;/body&gt; 部分更改为以下片段：
+<pre class="examplecode">
+&lt;body&gt;
+&lt;table&gt;
+    &lt;th colspan=&quot;3&quot; style=&quot;color:navy;font-family:Courier New;&quot;&gt;Choose a year and month&lt;/th&gt;
+    &lt;form name=&quot;form1&quot;&gt;
+    &lt;tr&gt;
+        &lt;td&gt;
+            &lt;select name=&quot;initYear&quot; id=&quot;cbYear&quot;&gt;
+                &lt;option value=&quot;1990&quot;&gt;1990&lt;option&gt;
+                &lt;option value=&quot;1991&quot;&gt;1991&lt;option&gt;
+                &lt;option value=&quot;1992&quot;&gt;1992&lt;option&gt;
+                &lt;option value=&quot;1993&quot;&gt;1993&lt;option&gt;
+                &lt;option value=&quot;1994&quot;&gt;1994&lt;option&gt;
+                &lt;option value=&quot;1995&quot;&gt;1995&lt;option&gt;
+                &lt;option value=&quot;1996&quot;&gt;1996&lt;option&gt;
+                &lt;option value=&quot;1997&quot;&gt;1997&lt;option&gt;
+                &lt;option value=&quot;1998&quot;&gt;1998&lt;option&gt;
+                &lt;option value=&quot;1999&quot;&gt;1999&lt;option&gt;
+                &lt;option value=&quot;2000&quot;&gt;2000&lt;option&gt;
+                &lt;option value=&quot;2001&quot;&gt;2001&lt;option&gt;
+                &lt;option value=&quot;2002&quot;&gt;2002&lt;option&gt;
+                &lt;option value=&quot;2003&quot;&gt;2003&lt;option&gt;
+                &lt;option value=&quot;2004&quot;&gt;2004&lt;option&gt;
+                &lt;option value=&quot;2005&quot;&gt;2005&lt;option&gt;
+                &lt;option value=&quot;2006&quot;&gt;2006&lt;option&gt;
+                &lt;option value=&quot;2007&quot;&gt;2007&lt;option&gt;
+                &lt;option value=&quot;2008&quot;&gt;2008&lt;option&gt;
+                &lt;option value=&quot;2009&quot;&gt;2009&lt;option&gt;
+            &lt;/select&gt;
+        &lt;/td&gt;
+        &lt;td&gt;
+            &lt;select name=&quot;initMonth&quot; id=&quot;cbMonth&quot;&gt;
+                &lt;option value=&quot;1&quot;&gt;January&lt;option&gt;
+                &lt;option value=&quot;2&quot;&gt;February&lt;option&gt;
+                &lt;option value=&quot;3&quot;&gt;March&lt;option&gt;
+                &lt;option value=&quot;4&quot;&gt;April&lt;option&gt;
+                &lt;option value=&quot;5&quot;&gt;May&lt;option&gt;
+                &lt;option value=&quot;6&quot;&gt;June&lt;option&gt;
+                &lt;option value=&quot;7&quot;&gt;July&lt;option&gt;
+                &lt;option value=&quot;8&quot;&gt;August&lt;option&gt;
+                &lt;option value=&quot;9&quot;&gt;September&lt;option&gt;
+                &lt;option value=&quot;10&quot;&gt;October&lt;option&gt;
+                &lt;option value=&quot;11&quot;&gt;November&lt;option&gt;
+                &lt;option value=&quot;12&quot;&gt;December&lt;option&gt;
+            &lt;/select&gt;
+        &lt;/td&gt;
+        &lt;td&gt;
+            &lt;input type=&quot;Button&quot; value=&quot;Show Calendar&quot; onclick=&quot;showCalendar();&quot;&gt;
+        &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+        &lt;td colspan=&quot;3&quot; headers=&quot;20&quot;&gt;&nbsp;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+        &lt;td colspan=&quot;3&quot; class=&quot;align-right&quot;&gt;
+            &lt;input type=&quot;text&quot; name=&quot;selectedDate&quot; id=&quot;selectedDate&quot; readonly&gt;
+        &lt;/td&gt;
+    &lt;/tr&gt;
+&lt;/form&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+</pre>
+</p>
+</ol>	
+
+<h3><a name="buildandrun"></a>生成和运行项目</h3>
+<hr style="color:black;" class="align-center" width="100%">
+
+<p>
+要在 IDE 中生成和运行项目，请先按 Ctlr+F11 组合键以清理并生成。如果操作成功，则可以使用 F6 键运行项目。当然啦，可以从 NetBeans IDE 菜单中触发这些功能。如果项目运行，IDE 的内置 Tomcat 将呈现 index.jsp。
+<br><br>
+选择所需的年份和月份，然后单击子标题为 <i>Show calendar</i> 的按钮。如果一切顺利，则会显示弹出式日历。如果显示，则将鼠标移到日历上。鼠标在上面经过的数字的颜色将变为红色。如果单击数字，所选的日期将发回到调用者页面，即，index.jsp。此时，弹出式日历将自行关闭。所选的日期由字符串表示，该字符串将显示在 index.jsp 上的该按钮下方的文本框中。您可以在下面的图片中看到运行的弹出日历及其调用者页面：<br><br>
+<img alt="运行中的弹出式日历" src="../../images_www/articles/win-with-netbeans/inaction.gif"><br><br>
+<img alt="运行中的弹出式日历" src="../../images_www/articles/win-with-netbeans/date.GIF">
+</p><br><br>
+
+</body>
+</html>
+

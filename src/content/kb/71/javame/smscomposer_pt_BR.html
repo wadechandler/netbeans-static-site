@@ -1,0 +1,194 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<!--
+Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+
+<html>
+<head>
+<title>Componentes personalizados do Visual Mobile Designer: Criando um aplicativo compositor de SMS - Tutorial do NetBeans Java ME</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
+<link rel="stylesheet" type="text/css" href="../../../netbeans.css">
+<meta name="author" content="Karol Harelzak">
+</head>
+<BODY>
+<a name="top"></a>
+<H1>Componentes personalizados do Visual Mobile Designer: Criando um aplicativo compositor de SMS </H1>
+
+<p>O Visual Mobile Designer (VMD) &eacute; uma interface gr&aacute;fica do NetBeans Mobility que permite criar aplicativos m&oacute;veis usando componentes de arrastar e soltar. O VMD permite que voc&ecirc; defina o fluxo do aplicativo e crie a sua IGU usando os componentes fornecidos pelo IDE, ou componentes que voc&ecirc; mesmo cria. O VMD cont&eacute;m muitos componentes de Interface de usu&aacute;rio (IU) padr&atilde;o que voc&ecirc; pode usar para criar aplicativos como Listas, Alertas, Formul&aacute;rios e Imagens. Ele tamb&eacute;m inclui componentes personalizados que simplificam a cria&ccedil;&atilde;o de recursos mais complexos, tais como Telas de espera, Telas de abertura, Itens de tabela, etc.</p>
+<P>O Compositor SMS &eacute; um componente personalizado que fornece um mecanismo e uma interface de usu&aacute;rio para enviar mensagens curtas usando o SMS (Short Message Service).
+ Este componente utiliza a Wireless Messaging API <a href="http://jcp.org/en/jsr/detail?id=120">JSR-120</a>. Esta API n&atilde;o faz parte da especifica&ccedil;&atilde;o MIDP 2.0, assim, este componente personalizado s&oacute; pode ser implantado em dispositivos que possuam suporte interno para a JSR-120.</P>
+<P>Este tutorial mostra como usar o componente Compositor SMS em um aplicativo m&oacute;vel para dispositivos habilitados para Wireless Messaging API (WMA). Voc&ecirc; aprender&aacute; os recursos b&aacute;sicos deste componente e como enviar mensagens usando o SMS. </P>
+<P>Al&eacute;m do componente personalizado Compositor SMS, usaremos dois outros componentes MIDP: Tela de abertura e Alerta. 
+</P>
+<!--<p class="notes"><b>Observa&ccedil;&atilde;o:</b> Se voc&ecirc; estiver usando o NetBeans IDE 6.8, consulte o tutorial <a href="../../68/javame/smscomposer.html">: criando um aplicativo compositor de SMS no NetBeans IDE 6.8</a>.</p>-->
+ <p><b>Conte&uacute;do</b></p>
+<img  src="../../../images_www/articles/69/netbeans-stamp-69-70-71.png" class="stamp" alt="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.9 e posterior" title="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.9 e posterior" >
+<ul class="class">
+<li><a href="#sample-app">Instalando e executando o aplicativo de amostra</a></li>
+   <li><a href="#create-app">Criando um aplicativo com o compositor de SMS</a></li><div>
+	<ul>
+	<LI><A HREF="#create">Criando o projeto SMSComposerExample</A> </LI>
+	<LI><A HREF="#add">Adicionando pacotes e um MIDlet visual ao projeto</A> </LI>
+	<LI><A HREF="#addcomponent">Adicionando componentes ao projeto</A> </LI>
+	<LI><A HREF="#addcommands">Adicionando comandos ao projeto</A> </LI>
+	<LI><A HREF="#connect">Conectando os componentes para criar um fluxo de aplicativo</A> </LI>
+	<LI><A HREF="#insert">Modificando a tarefa da tela de espera</A> </LI>
+	<LI><A HREF="#run">Executando o projeto</A> </LI>
+</ul>
+</div>
+<li><a href="#javadoc-loginscreen">Javadoc do componente Compositor SMS</a></li>
+   <li><a href="#see-also">Consulte tamb&eacute;m</a></li>
+</ul>
+ <p><b>Para acompanhar este tutorial, s&atilde;o necess&aacute;rios os recursos e softwares listados abaixo.</b></p>
+
+<table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software ou recurso</th>
+                <th class="tblheader" scope="col">Vers&atilde;o necess&aacute;ria</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE com Java ME</a></td>
+              <td class="tbltd1">Vers&atilde;o 6.9 e posterior </td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit</a> (JDK)</td>
+                <td class="tbltd1">Vers&atilde;o 6 e vers&atilde;o 7</td>
+            </tr>      
+        </tbody>
+</table>
+<a name="sample-app"></a>
+<H2>Instalando e executando o aplicativo de amostra</H2>
+<P>Antes de come&ccedil;ar, talvez voc&ecirc; queira ver o resultado final do 
+tutorial. </P>
+<P>Siga as etapas seguintes para instalar o aplicativo <tt>SMSComposerExample</tt>:</P>
+<OL>
+	<LI>Baixe <A HREF="https://netbeans.org/projects/samples/downloads/download/Samples/Mobile/SMSComposerExample.zip">SMSComposerExample.zip</A>.</LI>
+	<LI>Descompacte o arquivo. </LI>
+	
+	<LI>No IDE, escolha <tt> Arquivo</tt> &gt; <tt>Abrir projeto</tt>e navegue at&eacute; a pasta que cont&eacute;m os arquivos descompactados com o projeto <tt>SMSComposerExample</tt>.</LI>
+	<li>Clique em Abrir projeto.<br>
+	
+	A janela Projetos deve ter uma apar&ecirc;ncia semelhante a esta: 
+<p class="align-center">	<img src="../../../images_www/articles/71/mobility/smscomposer/sms-project.png" alt="Janela Projetos aberta com o Compositor SMS de exemplo" border=1></p> </LI>
+	<LI>Na janela Projetos, clique com o bot&atilde;o direito do mouse no n&oacute; do projeto e escolha <tt>Executar projeto</tt> (ou pressione F6). <br>
+	  Conforme o aplicativo &eacute; executado, uma janela do emulador se abre e exibe o aplicativo que est&aacute; sendo executado no emulador do dispositivo padr&atilde;o. </LI>
+	<LI>Na janela Emulador, clique no bot&atilde;o abaixo de &quot;Executar&quot;. O emulador exibe um componente Tela de splash, depois, o Compositor SMS, conforme mostrado: 
+	<p class="align-center"><img src="../../../images_www/articles/71/mobility/smscomposer/sms-emulator.png" alt="Emulador WTK 2.5 exibindo o aplicativo Compositor SMS de exemplo" border=1></p> </LI>
+</OL>
+<UL>
+	<LI>Mova o cursor para cima e para baixo para navegar nas op&ccedil;&otilde;es dispon&iacute;veis como N&uacute;mero de telefone ou Mensagem. </LI>
+	<li>Clique no bot&atilde;o central para habilitar o campo de texto selecionado para edi&ccedil;&atilde;o.</li>
+	<LI>Clique no bot&atilde;o abaixo de “Enviar” para enviar a mensagem. </LI>
+	<LI>Clique no bot&atilde;o abaixo de &quot;Sair&quot; para fechar o aplicativo. </LI>
+</UL>
+ <p class="align-center"><a href="#top">in&iacute;cio</a></p>
+ <a name="create-app"></a>
+<H2 CLASS="western">Criando um aplicativo com o componente personalizado Compositor SMS </H2>
+<P>Agora que voc&ecirc; viu o componente Compositor SMS em a&ccedil;&atilde;o, vamos
+voltar para o in&iacute;cio e criar essa aplicativo. Para criar o aplicativo, fa&ccedil;a o seguinte: </P>
+<OL>
+	<LI><A HREF="#create">Crie o projeto SMSComposerExample</A> </LI>
+	<LI><A HREF="#add">Adicione pacotes e um MIDlet visual ao projeto</A> </LI>
+	<LI><A HREF="#addcomponent">Adicione componentes ao projeto</A> </LI>
+	<LI><A HREF="#addcommands">Adicione comandos ao projeto</A> </LI>
+	<LI><A HREF="#connect">Conecte os componentes para criar um fluxo de aplicativo</A> </LI>
+	<LI><A HREF="#insert">Modifique a tarefa da tela de espera</A> </LI>
+	<LI><A HREF="#run">Executar o projeto</A> </LI>
+</OL>
+<A NAME="create"></A>
+<H3>Criando o projeto SMSComposerExample</H3>
+<OL>
+	<LI>Escolha <tt>Arquivo</tt> &gt; <tt>Novo projeto (Ctrl-Shift-N)</tt>. Em Categorias, selecione JavaME. Em Projetos, selecione Aplicativo m&oacute;vel e clique em Pr&oacute;ximo. 	</LI>
+	<LI>Indique <CODE>SMSComposerExample</CODE>
+	no campo Nome do projeto. Altere a Localiza&ccedil;&atilde;o do projeto para um diret&oacute;rio em seu sistema. A partir de agora, vamos chamar esse diret&oacute;rio de <code>$PROJECTHOME</code>. </LI>
+	<LI>Desmarque a caixa de verifica&ccedil;&atilde;o Criar Hello MIDlet. Clique em Pr&oacute;ximo. </LI>
+	<LI>Deixe o Sun Java Wireless Toolkit como a Plataforma do emulador selecionada. Clique em Pr&oacute;ximo. </LI>
+	<LI>Clique em Terminar. </LI>
+	<p class="notes"><b>Observa&ccedil;&atilde;o:</b> a pasta do projeto cont&eacute;m todos os c&oacute;digos-fonte e metadados do projeto, como o script Ant do projeto. </p>
+</OL>
+<A NAME="add"></A>
+<H3>Adicionando pacotes em um Visual MIDlet ao projeto</H3>
+<OL>
+	<LI>Escolha o projeto <CODE>SMSComposerExample</CODE> na janela Projeto e, a seguir, escolha <tt>Arquivo</tt> &gt; <tt>Novo arquivo (Ctrl-N)</tt> . Em Categorias, selecione Java. Em Tipos de arquivo,
+	selecione Pacote Java. Clique em Pr&oacute;ximo. </LI>
+	<LI>Indique <CODE>smscomposerexample</CODE>
+	no campo Nome do pacote. Clique em Terminar. </LI>
+	<LI>Escolha o pacote <CODE>smscomposerexample</CODE> na janela Projeto e, a seguir, escolha <tt>Arquivo</tt> &gt; <tt>Novo arquivo (Ctrl-N)</tt> . Em Categorias, selecione MIDP. Em Tipos de arquivo, selecione
+	MIDlet visual. Clique em Pr&oacute;ximo. </LI>
+  <LI>Indique <CODE>SMSComposerExample</CODE> nos campos Nome do MIDlet e Nome da classe MIDP. Clique em Terminar.<br>
+    O aplicativo &eacute; exibido na janela Design de fluxo do Visual Mobile Designer.  </LI>
+	
+<p class="align-center"> <img src="../../../images_www/articles/71/mobility/smscomposer/sms-midlet.png" alt="SMSComposerExample Visual Mobile Designer" border=1></p>
+	
+</OL>
+<H3><A NAME="addcomponent"></A>Adicionando componentes ao projeto</H3>
+<OL>
+	<LI>Na janela Design de fluxo, arraste e solte os seguintes componentes da Paleta de componentes:</LI>
+	<UL>
+		<LI>Tela de splash</LI>
+		<LI>Compositor SMS</LI>
+		<LI>Tela de espera</LI>
+      <LI>Alerta (x2)</LI>
+	</UL> 
+	<LI>Clique em splashScreen e, na janela Propriedades, altere o valor da propriedade Texto de <tt>null</tt> (nulo) para o <tt>SMS Composer Example</tt> e pressione Enter.</LI>
+	<LI>Clique em alerta e, na janela Propriedades, altere o valor da propriedade Title de <tt>alert</tt> para <tt>alertSent</tt>, da mesma forma altere a propriedade Title alert1, de <tt>alert1</tt> para <tt>alertError</tt>. </LI>
+	<LI>
+	Clique em alert e, na janela Propriedades, altere o valor da propriedade String para <tt>Mensagem enviada</tt>, da mesma forma, altere a propriedade String no componente alertError para <tt>Erro</tt>.</LI>
+	<LI>Clique em smsComposer e, na janela Propriedades, desmarque a propriedade Enviar automaticamente (categoria Propriedades do SMS. </LI>
+</OL>
+<H3><A NAME="addcommands"></A>Adicionando comandos ao projeto</H3>
+<OL>
+	<LI>Abrir o Editor de fluxo.</LI>
+	<LI>Escolha o comando Sair na se&ccedil;&atilde;o
+	Comandos da Paleta do componente. Arraste-o e solte-o no componente smsComposer no Design de fluxo.</LI>
+</OL>
+<A NAME="connect"></A>
+<H3>Conectando os componentes para criar um fluxo de aplicativo</H3>
+
+	<p>No Design de fluxo, clique em Ponto de in&iacute;cio no Dispositivo m&oacute;vel e arraste-o para o componente Tela de abertura. Da mesma forma, conecte os componentes como mostrado no gr&aacute;fico seguinte.</p>
+	
+<p class="align-center"> <img src="../../../images_www/articles/71/mobility/smscomposer/sms-flow.png" alt="Mostra o Designer de fluxo com componentes conectados por linhas de comando" border=1></p>
+	
+
+<A NAME="insert"></A>
+<H3>Modificando a tarefa da tela de espera</H3>
+
+	<p>Na categoria Recursos do Navegador, encontre e clique com o bot&atilde;o direito do mouse no componente<tt>task</tt>, selecione Ir para c&oacute;digo-fonte a partir do menu pop-up. Na janela C&oacute;digo-fonte, localize a se&ccedil;&atilde;o <code>// write task-execution user code here&quot;</code> e substitua-a por <code>smsComposer.sendSMS();</code>.	</p>
+
+    <A NAME="run"></A>
+<H3>Executando o projeto</H3>
+
+	<p>Pressione &lt;F6&gt; para executar o projeto principal. Como alternativa, voc&ecirc; pode selecionar <tt>Executar</tt> &gt; <tt>Executar projeto principal</tt>.</p>
+
+ <p class="align-center"><a href="#top">in&iacute;cio</a></p>
+ <a name="javadoc-loginscreen"></a>
+<H2>Javadoc do componente Compositor SMS</H2>
+<P>O NetBeans IDE oferece Javadocs de API do componente <tt>SMSComposer</tt>, assim como outros componentes que voc&ecirc; pode usar no VMD. Para ler os Javadocs do componente <tt>SMSComposer</tt>: 
+</P>
+<OL>
+<li>Coloque o cursor no componente <tt>SMSComposer</tt> no c&oacute;digo-fonte e pressione Ctr-Shift-Espa&ccedil;o (ou selecione <tt>C&oacute;digo-fonte</tt> &gt; <tt>Exibir documenta&ccedil;&atilde;o</tt>).<br>
+O Javadoc deste elemento &eacute; exibido em uma janela pop-up. </li>
+<li>Clique em Exibir documenta&ccedil;&atilde;o no &iacute;cone de navegador da Web externo (<img src="../../../images_www/articles/71/mobility/smscomposer/show-doc-button.png" alt="Exibir documenta&ccedil;&atilde;o no navegador da Web externo">) na janela pop-up para obter informa&ccedil;&otilde;es detalhadas sobre o componente <tt>SMSComposer</tt> em seu navegador.</li>
+
+	
+</OL>
+ <p class="align-center"><a href="#top">in&iacute;cio</a></p>
+<div class="feedback-box"><a href="/about/contact_form.html?to=6&subject=NetBeans%20Java%20ME%20Custom%20Component:%20SMS%20Composer">Envie-nos seus coment&aacute;rios</a></div>
+<br style="clear:both;" >  
+
+<a name="see-also"></a>
+<H2>Consulte tamb&eacute;m</H2>
+ <UL>
+ <li><a href="filebrowser.html">Componentes padr&atilde;o do Visual Mobile Designer: criando um navegador de arquivo de dispositivo m&oacute;vel</a></li>
+ <li><a href="loginscreen.html">Componentes padr&atilde;o do Visual Mobile Designer: criando telas de logon no dispositivo m&oacute;vel</a></li>
+ <li><a href="pimbrowser.html">Componentes padr&atilde;o do Visual Mobile Designer: criando um aplicativo de gerenciador de informa&ccedil;&otilde;es pessoais</a></li>
+ <li><a href="splashscreen.html">Componentes padr&atilde;o do Visual Mobile Designer: usando telas de splash em aplicativos Java ME</a></li>
+ <li><a href="waitscreen.html">Componentes personalizados do Visual Mobile Designer: Criando telas de espera para aplicativos m&oacute;veis</a></li>
+<li><a href="tableitem.html">Componentes padr&atilde;o do Visual Mobile Designer: usando itens de tabela em aplicativos Java ME</a></li>
+ <li><a href="http://wiki.netbeans.org/VisualMobileDesignerPalatteReference">Reference: Visual Mobile Designer Palette Guide</a></li>
+</UL>
+ <p class="align-center"><a href="#top">in&iacute;cio</a></p>
+</BODY>
+</HTML>

@@ -1,0 +1,506 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- -*- xhtml -*- -->
+  <title>Tutorial de integra&ccedil;&atilde;o de Pesquisa r&aacute;pida para a plataforma NetBeans 6.5</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css">
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="gwielenga@netbeans.org">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A short guide to using the Nodes API.">
+<!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+	<h1>Tutorial de integra&ccedil;&atilde;o de Pesquisa r&aacute;pida </h1>
+
+<p>Este tutorial mostra como escrever um m&oacute;dulo que integre novos itens no recurso Pesquisa r&aacute;pida do NetBeans. 
+
+   <p><b>Conte&uacute;do</b></p>
+   
+   <p><img  src="../../images/articles/69/netbeans-stamp7-8-9.png" class="stamp" width="114" height="114" alt="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.5, 6.7, 6.8" title="O conte&uacute;do desta p&aacute;gina se aplica ao NetBeans IDE 6.5, 6.7, 6.8" /></p>
+      <ul class="toc">
+  <li><a href="#intro">Introdu&ccedil;&atilde;o &agrave; integra&ccedil;&atilde;o da Pesquisa r&aacute;pida</a></li>
+  <li><a href="#creating">Criando o projeto do m&oacute;dulo </a></li>
+  <li><a href="#use">Usando o assistente do provedor de Pesquisa r&aacute;pida</a></li>
+  <li><a href="#third">Integrando um analisador HTML DOM externo</a></li>
+  <li><a href="#code">Codificando a integra&ccedil;&atilde;o da Pesquisa r&aacute;pida</a></li>
+  <li><a href="#install">Instalando e testando a funcionalidade</a></li>
+  <li><a href="#platform">Usando o recurso Pesquisa r&aacute;pida na plataforma NetBeans</a></li>
+  <ul>
+     <li><a href="#enable">Habilitando o recurso Pesquisa r&aacute;pida na plataforma NetBeans</a></li>
+     <li><a href="#enable2">Habilitando o provedor de pesquisa na Web padr&atilde;o na plataforma NetBeans</a></li>
+  </ul>
+  <li><a href="#share">Criando um bin&aacute;rio que pode ser compartilhado</a></li>
+       </ul>
+         
+<p><b>Para seguir este tutorial, voc&ecirc; preciso dos softwares e recursos listados na tabela seguinte.</b></p>
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Software ou recurso</th>
+                <th class="tblheader" scope="col">Vers&atilde;o necess&aacute;ria</th>
+            </tr> 
+            <tr>
+                <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                <td class="tbltd1">vers&atilde;o 6.7 ou superior</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">Vers&atilde;o 6 ou<br/>vers&atilde;o 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+ <p class="tips">Opcionalmente, para fins de solu&ccedil;&atilde;o de problemas, voc&ecirc; pode <a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=11179">baixar a amostra completa</a> e inspecionar os c&oacute;digos-fonte.
+    
+
+
+<h2 class="tutorial"><a name="intro"></a>Introdu&ccedil;&atilde;o &agrave; integra&ccedil;&atilde;o da Pesquisa r&aacute;pida</h2>
+
+<p>O recurso Pesquisa r&aacute;pida, introduzido no NetBeans IDE 6.5, consiste em um campo de texto no canto superior direito do IDE. Quando uma string de pesquisa &eacute; digitada no campo, uma lista suspensa aparece, mostrando os itens correspondentes. Por padr&atilde;o, os itens v&ecirc;m de nomes de a&ccedil;&otilde;es registradas no IDE, assim como t&oacute;picos de ajuda no JavaHelp do IDE. Quando um item de a&ccedil;&atilde;o &eacute; selecionado, uma a&ccedil;&atilde;o &eacute; chamada; quando um item de ajuda &eacute; selecionado, o t&oacute;pico &eacute; aberto no JavaHelp.
+ 
+ <p>Entretanto, al&eacute;m disso, a <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/overview-summary.html">API da Pesquisa r&aacute;pida</a> &eacute; exposta. Voc&ecirc; pode us&aacute;-la para integrar seus pr&oacute;prios itens de pesquisa no recurso Pesquisa r&aacute;pida. Voc&ecirc; pode usar o recurso no IDE ou como parte de seu pr&oacute;prio aplicativo na plataforma NetBeans.
+
+<p>Neste tutorial, voc&ecirc; criar&aacute; um m&oacute;dulo que integrar&aacute; itens da <a href="http://netbeans.dzone.com">zona do NetBeans </a> com o recurso Pesquisa r&aacute;pida:
+
+<p><p align="left"><img border="1" src="../../images/tutorials/qsearch/deployed-result.png" alt="Resultado implantado">
+
+
+<!-- ===================================================================================== -->
+
+<h2 class="tutorial"><a name="creating"></a>Criando o projeto do m&oacute;dulo </h2>
+      
+<p>Nesta se&ccedil;&atilde;o, usaremos um assistente para criar a estrutura de c&oacute;digo-fonte que todo m&oacute;dulo NetBeans precisa. A estrutura do c&oacute;digo-fonte consiste em determinadas pastas em locais espec&iacute;ficos e em um conjunto de arquivos que sempre s&atilde;o necess&aacute;rios. Por exemplo, cada m&oacute;dulo NetBeans requer uma pasta <tt>nbproject</tt>, que cont&eacute;m os metadados do projeto, e um arquivo <tt>layer.xml</tt>, para registro de declara&ccedil;&atilde;o de itens como janelas e bot&otilde;es da barra de ferramentas.
+
+<ol>
+          
+	      <li>Escolha Arquivo &gt; Novo projeto (Ctrl-Shift-N). Em Categorias, selecione M&oacute;dulos do NetBeans. Em Projetos, selecione M&oacute;dulo   e clique em Pr&oacute;ximo.</li>
+	<li>No painel Nome e localiza&ccedil;&atilde;o, digite <tt>NetBeansZoneSearch</tt> em Nome do projeto. Altere a Localiza&ccedil;&atilde;o do projeto para qualquer diret&oacute;rio no computador, como <tt>c:\meusmodulos</tt>. Deixe o bot&atilde;o de op&ccedil;&atilde;o M&oacute;dulo independente selecionado. O painel agora deve ter esta apar&ecirc;ncia:
+
+<p><p align="left"><img src="../../images/tutorials/qsearch/new-module-1.png" alt="Etapa 1 do assistente para Nova Projeto.">
+ <p>Clique em Pr&oacute;ximo.
+
+<li>No painel Configura&ccedil;&atilde;o b&aacute;sica de m&oacute;dulos, digite <tt>org.netbeans.modules.nbzone</tt> como o Nome base de c&oacute;digo. Adicione espa&ccedil;os ao Nome de exibi&ccedil;&atilde;o do m&oacute;dulo sugerido, para que ele seja alterado para <tt>Pesquisa na zona do NetBeans</tt>. Marque a caixa de verifica&ccedil;&atilde;o &quot;Gerar camada XML&quot; e deixe o pacote de localiza&ccedil;&atilde;o e a camada XML onde est&atilde;o, para que eles sejam armazenados em um pacote com o nome <tt>org/netbeans/modules/nbzone</tt>. O painel agora deve ter esta apar&ecirc;ncia:
+
+<p><p align="left"><img src="../../images/tutorials/qsearch/new-module-2.png" alt="Etapa 2 do assistente para Novo projeto">
+
+<li>Clique em Terminar.</ol>
+
+<p> O IDE cria o projeto <tt>Pesquisa na zona do NetBeans</tt>. O projeto cont&eacute;m todos os metadados de projeto e fontes, como o script de constru&ccedil;&atilde;o Ant do projeto. O projeto se abre no IDE. Voc&ecirc; pode ver a estrutura l&oacute;gica na janela Projetos (Ctrl-1) e a estrutura de arquivos na janela Arquivos (Ctrl+2). 
+
+
+      <br />
+
+<!-- ===================================================================================== -->
+<h2><a name="use"></a>Usando o assistente do provedor de Pesquisa r&aacute;pida</h2>
+
+<p>Nesta se&ccedil;&atilde;o, usaremos um assistente para criar a classe stub e entradas de camada necess&aacute;rias para come&ccedil;ar a integra&ccedil;&atilde;o com o recurso Pesquisa r&aacute;pida.
+
+  
+ <ol>
+	
+	 <li>Clique com o bot&atilde;o direito do mouse no n&oacute; do projeto e escolha Novo &gt; Outro.  Na caixa de di&aacute;logo Novo arquivo, escolha Desenvolvimento de m&oacute;dulo &gt; Provedor da pesquisa r&aacute;pida.</li>
+	      <li>No painel Provedor da pesquisa r&aacute;pida, defina o seguinte:
+        <p><ul>
+            <li><b>Nome da classe do provedor.</b> Especifica o nome da classe do stub que o assistente ir&aacute; gerar. Digite &quot;NBZoneSearchProvider&quot; neste campo.
+            <li><b>Pacote.</b> Especifica o pacote em que a classe do stub ser&aacute; gerada. Selecione &quot;org.netbeans.modules.nbzone&quot; da lista suspensa.
+            <li><b>Nome de exibi&ccedil;&atilde;o da categoria.</b> Especifica o nome de exibi&ccedil;&atilde;o da categoria que o stub criar&aacute;. Digite &quot;NetBeans Zone&quot; neste campo.
+            <li><b>Prefixo do comando.</b> Especifica o prefixo para limitar a pesquisa &agrave; categoria que o stub criar&aacute;. Digite &quot;nb&quot; neste campo.
+            <li><b>Posi&ccedil;&atilde;o no pop-up.</b> Especifica a posi&ccedil;&atilde;o da nova categoria no recurso Pesquisa r&aacute;pida. Deixe &quot;0&quot;, para que a categoria seja a primeira no pop-up.
+          </ul>
+          <p>Agora voc&ecirc; deve ver o seguinte:
+<p><p align="left"><img src="../../images/tutorials/qsearch/quick-search-template.png" alt="Modelo de pesquisa r&aacute;pida">
+          
+<li>Clique em Terminar.
+
+<p><p>A janela Projetos agora deve ter esta apar&ecirc;ncia:
+
+<p><p align="left"><img src="../../images/tutorials/qsearch/projects-window-final.png" alt="Janela Projetos finais."></ol>
+
+      <p>No arquivo <tt>layer.xml</tt>, voc&ecirc; deve ver o seguinte:
+      
+<pre>&lt;filesystem&gt;
+    &lt;folder name=&quot;QuickSearch&quot;&gt;
+        &lt;folder name=&quot;NetBeansZone&quot;&gt;
+            &lt;attr name=&quot;SystemFileSystem.localizingBundle&quot; stringvalue=&quot;org.netbeans.modules.nbzone.Bundle&quot;/&gt;
+            &lt;attr name=&quot;command&quot; stringvalue=&quot;nb&quot;/&gt;
+            &lt;attr name=&quot;position&quot; intvalue=&quot;0&quot;/&gt;
+            &lt;file name=&quot;org-netbeans-modules-nbzone-NBZoneSearchProvider.instance&quot;/&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/filesystem&gt;</pre>      
+
+      <br />
+      
+    <!-- ======================================================================================= -->
+      
+      <h2><a name="third"></a>Integrando um analisador HTML DOM externo</h2>
+<p>Na pr&oacute;xima se&ccedil;&atilde;o, precisaremos de um analisador HTML DOM para podermos analisar a zona do NetBeans. Voc&ecirc; pode usar qualquer analisador apropriado que escolher. Para a finalidade deste tutorial, usaremos <a href="http://sourceforge.net/project/showfiles.php?group_id=13153">JTidy</a>.</p>
+
+<p>H&aacute; duas maneiras de tornar um arquivo JAR externo dispon&iacute;vel para um m&oacute;dulo. A primeira maneira &eacute; colocar o JAR em um m&oacute;dulo separado, chamado de &quot;m&oacute;dulo de wrapper de bibliotecas&quot; , e fazer do m&oacute;dulo de funcionalidade <i>depend on</i> o m&oacute;dulo de wrapper de bibliotecas, depois de colocar ambos em uma su&iacute;te de m&oacute;dulos. A vantagem de ter dois m&oacute;dulos separados &eacute; que, quando uma nova vers&atilde;o do JAR externo for liberada, voc&ecirc; s&oacute; precisar&aacute; redistribuir um m&oacute;dulo pequeno contendo somente o JAR externo, em vez de um grande que tamb&eacute;m contenha o c&oacute;digo de funcionalidade. A segunda maneira &eacute; adicionar o JAR ao m&oacute;dulo de funcionalidade, o que &eacute; feito abaixo. A vantagem desta abordagem &eacute; que ela &eacute; mais conveniente somente em curto prazo, j&aacute; que voc&ecirc; possui apenas um m&oacute;dulo para distribuir, embora a desvantagem seja que voc&ecirc; est&aacute; misturando a biblioteca externa com o c&oacute;digo de funcionalidade, o que n&atilde;o &eacute; uma abordagem estritamente modular.
+
+<div class="indent">
+    
+ <ol>
+    
+    <li>Baixe o <a href="http://sourceforge.net/project/showfiles.php?group_id=13153">JTidy</a> e localize o <tt>Tidy.jar</tt> que est&aacute; no download.
+    
+    <li>Na janela Arquivos, crie a estrutura de pasta mostrada abaixo, colocando o arquivo <tt>Tidy.jar</tt> na pasta <tt>release/modules/ext</tt>:
+     
+    <p><p align="left"><img src="../../images/tutorials/qsearch/tidyjar.png" alt="JAR JTidy." />
+
+<li>Mais para o final do arquivo <tt>project.xml</tt>, que est&aacute; na pasta <tt>nbproject</tt>, adicione as marcas de negrito abaixo, por exemplo, pr&oacute;ximo ao final do arquivo:
+ 
+ <pre>
+            ...
+            ...
+            ...
+            <b>&lt;class-path-extension&gt;
+                &lt;runtime-relative-path&gt;ext/Tidy.jar&lt;/runtime-relative-path&gt;
+                &lt;binary-origin&gt;release/modules/ext/Tidy.jar&lt;/binary-origin&gt;
+            &lt;/class-path-extension&gt;</b>
+        &lt;/data&gt;
+    &lt;/configuration&gt;
+ &lt;/project&gt;</pre>
+ 
+ <li>No arquivo <tt>project.properties</tt>, adicione a seguinte linha:
+ 
+ <pre>cp.extra=release/modules/ext/Tidy.jar</pre>
+
+ </ol>
+ 
+    </div>
+ <p>O analisador HTML DOM externo agora est&aacute; no classpath do seu m&oacute;dulo. Agora voc&ecirc; pode usar as classes no JAR, como voc&ecirc; precisar&aacute; fazer na pr&oacute;xima se&ccedil;&atilde;o.
+    
+    
+    <!-- ======================================================================================= -->
+      
+      <h2><a name="code"></a>Codificando a integra&ccedil;&atilde;o da Pesquisa r&aacute;pida</h2>
+<p>Em seguida, implementaremos a API. As classes da API s&atilde;o as seguintes:</p>
+
+
+      <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">Classe</th>
+                <th class="tblheader" scope="col">Descri&ccedil;&atilde;o</th>
+            </tr>
+            <tr>
+              <td class="tbltd1"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchProvider.html">SearchProvider</a></td>
+                <td class="tbltd1">A principal interface da API da Pesquisa r&aacute;pida. Implemente esta interface para fornecer um novo grupo de resultados para a sua pesquisa r&aacute;pida.</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchRequest.html">SearchRequest</a></td>
+                <td class="tbltd1">A descri&ccedil;&atilde;o da requisi&ccedil;&atilde;o de pesquisa r&aacute;pida.</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchResponse.html">SearchResponse</a></td>
+                <td class="tbltd1">O objeto da resposta para coletar os resultados de SearchRequest.</td>
+            </tr>
+        </tbody>
+    </table>
+    
+<p><p>Abaixo, definiremos depend&ecirc;ncias nos m&oacute;dulos necess&aacute;rios e depois as implementaremos no seu pr&oacute;prio m&oacute;dulo.
+
+<div class="indent">
+    
+    <ol>
+        
+        <li>Clique com o bot&atilde;o direito do mouse no projeto, escolha Propriedades e defina as depend&ecirc;ncias a seguir no painel Bibliotecas:
+        
+     <p><p align="left"><img src="../../images/tutorials/qsearch/set-dependencies.png" alt="Defina depend&ecirc;ncias." /> 
+        
+        <li>Abra a classe gerada.
+        
+        <li>Modifique a classe da seguinte maneira:
+    
+ <pre>public class NBZoneSearchProvider implements <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchProvider.html">SearchProvider</a> {
+
+    /**
+     * Method is called by infrastructure when search operation is requested.
+     * Implementors should evaluate given request and fill response object with
+     * apropriate results
+     *
+     * @param request Search request object that contains search string
+     * @param response Search response object that stores search results 
+     * Note that it's important to react to return value of 
+     * SearchResponse.addResult(...) method and stop computation if 
+     * false value is returned.
+     */
+    @Override 
+    public void evaluate(<a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchRequest.html">SearchRequest request</a>, <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchResponse.html">SearchResponse response</a>) {
+        try {
+
+            <b>//The URL that we are providing a search for:</b>
+            URL url = new URL(&quot;http://netbeans.dzone.com&quot;);
+            <b>//Stuff needed by Tidy:</b>
+            Tidy tidy = new Tidy();
+            tidy.setXHTML(true);
+            tidy.setTidyMark(false);
+            tidy.setShowWarnings(false);
+            tidy.setQuiet(true);
+
+            <b>//Get the org.w3c.dom.Document from Tidy,
+            //or use a different parser of your choice:</b>
+            Document doc = tidy.parseDOM(url.openStream(), null);
+
+            <b>//Get all &quot;a&quot; elements:</b>
+            NodeList list = doc.getElementsByTagName(&quot;a&quot;);
+
+            <b>//Get the number of elements:</b>
+            int length = list.getLength();
+
+            <b>//Loop through all the &quot;a&quot; elements:</b>
+            for (int i = 0; i &lt; length; i++) {
+
+                String href = null;
+                if (null != list.item(i).getAttributes().getNamedItem(&quot;href&quot;)) {
+                    <b>//Get the &quot;href&quot; attribute from the current &quot;a&quot; element:</b>
+                    href = list.item(i).getAttributes().getNamedItem(&quot;href&quot;).getNodeValue();
+                }
+
+                <b>//Get the &quot;title&quot; attribute from the current &quot;a&quot; element:</b>
+                if (null != list.item(i).getAttributes().getNamedItem(&quot;title&quot;)) {
+                    String title = list.item(i).getAttributes().getNamedItem(&quot;title&quot;).getNodeValue();
+
+                    <b>//If the title matches the requested text:</b>
+                    if (title.toLowerCase().indexOf(<a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchRequest.html">request.getText().toLowerCase()</a>) != -1) {
+
+                        <b>//Add the runnable and the title to the response
+                        //and return if nothing is added:</b>
+                        if (!<a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-spi-quicksearch/org/netbeans/spi/quicksearch/SearchResponse.html">response.addResult(new OpenFoundArticle(href), title)</a>) {
+                            return;
+                        }
+
+                    }
+
+                }
+
+            }
+
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+    }
+
+    private static class OpenFoundArticle implements Runnable {
+
+        private String article;
+
+        public OpenFoundArticle(String article) {
+            this.article = article;
+        }
+
+        public void run() {
+            try {
+                URL url = new URL(&quot;http://netbeans.dzone.com&quot; + article);
+                StatusDisplayer.getDefault().setStatusText(url.toString());
+                URLDisplayer.getDefault().showURL(url);
+            } catch (MalformedURLException ex) {
+                Logger.getLogger(NBZoneSearchProvider.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        
+    } 
+    
+ }</pre>
+ 
+ <li>Certifique-se de que as seguintes senten&ccedil;as import sejam declaradas:
+ 
+<pre>import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.netbeans.spi.quicksearch.SearchProvider;
+import org.netbeans.spi.quicksearch.SearchRequest;
+import org.netbeans.spi.quicksearch.SearchResponse;
+import org.openide.awt.HtmlBrowser.URLDisplayer;
+import org.openide.awt.StatusDisplayer;
+import org.openide.util.Exceptions;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.w3c.tidy.Tidy;</pre> 
+ 
+ </ol>
+    </div>
+
+      
+    <!-- ======================================================================================= -->
+
+<h2><a name="install"></a>Instalando e testando a funcionalidade</h2>
+<p>Agora vamos instalar o m&oacute;dulo e usar a integra&ccedil;&atilde;o do recurso pesquisa r&aacute;pida. O IDE utiliza um script de constru&ccedil;&atilde;o Ant para construir e instalar seu m&oacute;dulo.   O script de constru&ccedil;&atilde;o &eacute; criado quando o projeto &eacute; criado.</p>
+<div class="indent">
+
+
+      <ol>
+	      <li>Na janela Projetos, clique com o bot&atilde;o direito do mouse no projeto e escolha Executar.
+	      <p><p>Uma nova inst&acirc;ncia do IDE &eacute; iniciada e instala o m&oacute;dulo de integra&ccedil;&atilde;o da Pesquisa r&aacute;pida. 
+               <li>Digite uma string no recurso Pesquisa r&aacute;pida e, se a string corresponder ao t&iacute;tulo de algo na zona do NetBeans, o item da zona do NetBeans ser&aacute; inclu&iacute;do no resultado:
+<p><p align="left"><img border="1" src="../../images/tutorials/qsearch/deployed-result.png" alt="Resultado implantado">
+<p>Se voc&ecirc; digitar o prefixo do comando definido em <tt>layer.xml</tt>, seguido de um espa&ccedil;o, somente a categoria relacionada ser&aacute; pesquisada:
+<p><p align="left"><img border="1" src="../../images/tutorials/qsearch/command.png" alt="Prefixo do comando">
+		 <li>Clique em um item e, se voc&ecirc; tiver definido um navegador no IDE, ele ser&aacute; aberto, exibindo o artigo selecionado.
+       </ol>          
+   </div>
+      <br />
+
+
+<!-- ======================================================================================= -->
+
+<h2><a name="platform"></a>Usando o recurso Pesquisa r&aacute;pida na plataforma NetBeans</h2>
+
+<p>As se&ccedil;&otilde;es anteriores assumiram que voc&ecirc; estava criando um m&oacute;dulo para um aplicativo existente. Os dois t&oacute;picos a seguir ser&atilde;o aplic&aacute;veis se, em vez de criar um m&oacute;dulo, voc&ecirc; estiver criando seu pr&oacute;prio aplicativo na plataforma NetBeans.
+
+<div class="indent">
+    
+<h3><a name="enable"></a>Habilitando o recurso Pesquisa r&aacute;pida na plataforma NetBeans</h3>
+
+<p>Embora o NetBeans IDE venha com suporte para o recurso Pesquisa r&aacute;pida, a plataforma NetBeans n&atilde;o vem. Por padr&atilde;o, o recurso Pesquisa r&aacute;pida est&aacute; oculto. Realize as etapas abaixo para habilit&aacute;-lo.
+
+<div class="indent">
+  
+      <ol>
+          <li>Adicione as marcas seguintes ao arquivo <tt>layer.xml</tt>:
+<pre>&lt;folder name=&quot;Toolbars&quot;&gt;
+    &lt;folder name=&quot;QuickSearch&quot;&gt;
+        &lt;attr name=&quot;SystemFileSystem.localizingBundle&quot; stringvalue=&quot;org.netbeans.modules.nbzone.Bundle&quot;/&gt;
+        &lt;file name=&quot;org-netbeans-modules-quicksearch-QuickSearchAction.shadow&quot;&gt;
+            &lt;attr name=&quot;originalFile&quot; 
+            stringvalue=&quot;Actions/Edit/org-netbeans-modules-quicksearch-QuickSearchAction.instance&quot;/&gt;
+        &lt;/file&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</pre>           
+
+<li>Adicione este par chave/valor ao arquivo <tt>Bundle.properties</tt>:
+ 
+ <pre>Toolbars/QuickSearch=Quick Search</pre>
+
+              <li>Execute o aplicativo da plataforma NetBeans e voc&ecirc; ver&aacute; que o recurso Pesquisa r&aacute;pida agora est&aacute; dispon&iacute;vel e funcionando:
+
+<p><p align="left"><img src="../../images/tutorials/qsearch/netbeans-platform-qsearch.png" alt="Plataforma NetBeans com recurso Pesquisa r&aacute;pida">
+
+
+       </ol>
+ 
+    </div>
+<!-- ======================================================================================= -->
+
+<h3><a name="enable2"></a>Habilitando o provedor de pesquisa na Web padr&atilde;o na plataforma NetBeans</h3>
+
+<p>Uma implementa&ccedil;&atilde;o de provedor de pesquisa na Web padr&atilde;o est&aacute; dispon&iacute;vel nos c&oacute;digos-fonte do NetBeans. Este provedor pesquisa no Google por textos que correspondam &agrave; string de pesquisa. No IDE, sua fun&ccedil;&atilde;o era pesquisar no <tt>netbeans.org</tt>, e em sites relacionados, por documenta&ccedil;&atilde;o on-line relacionada ao IDE. 
+ 
+ <p><b>Observa&ccedil;&atilde;o:</b> infelizmente, o provedor de pesquisa na Web foi desabilitado no IDE porque, ap&oacute;s o uso excessivo, o Google reclamava que as pesquisas automatizadas s&atilde;o contra seus termos de uso, parando de funcionar.
+ 
+ <p>Se voc&ecirc; aceitar a limita&ccedil;&atilde;o acima, poder&aacute; marcar este provedor de pesquisa na Web e us&aacute;-lo no seu aplicativo da plataforma NetBeans.
+ 
+ 
+
+<div class="indent">
+  
+      <ol>
+          <li>Verifique se o recurso Pesquisa r&aacute;pida est&aacute; habilitado, como descrito na se&ccedil;&atilde;o anterior.
+          <li>Adicione as marcas seguintes ao arquivo <tt>layer.xml</tt>:
+<pre>&lt;folder name=&quot;Guardian&quot;&gt;
+   &lt;file name=&quot;org-netbeans-modules-quicksearch-web-WebQuickSearchProviderImpl.instance&quot;/&gt;
+&lt;/folder&gt;</pre>           
+
+<li>Na pasta <tt>branding</tt> do aplicativo, crie a hierarquia de pastas mostrada abaixo, assim como o arquivo <tt>Bundle.properties</tt> exibido no instant&acirc;neo:
+ 
+<p><p align="left"><img border="1" src="../../images/tutorials/qsearch/brand-provider.png" alt="Provedor de marca">
+
+<p><p>No IDE, as propriedades acima s&atilde;o codificadas da seguinte maneira, mas para a plataforma NetBeans elas s&atilde;o indefinidas, e precisam ser marcados como mostrado acima:
+
+<pre>quicksearch.web.site=netbeans.org
+quicksearch.web.url_patterns=.*netbeans\.org/kb.*,\
+    /.*wiki\.netbeans\.org/.*faq.*,.*wiki\.netbeans\.org/.*howto.*,\
+    .*platform\.netbeans\.org/tutorials.*</pre>
+
+              <li>Execute o aplicativo da plataforma NetBeans e voc&ecirc; ver&aacute; que o provedor da Pesquisa r&aacute;pida na Web padr&atilde;o agora est&aacute; dispon&iacute;vel e funcionando:
+
+<p><p align="left"><img border="1" src="../../images/tutorials/qsearch/clare-wigfall.png" alt="Pesquisa no Guardian">
+
+
+       </ol>
+ 
+    </div>
+ </div>
+    
+<!-- ======================================================================================= -->
+
+<h2><a name="share"></a>Criando um bin&aacute;rio de m&oacute;dulo que pode ser compartilhado</h2>
+
+<p>Agora que o m&oacute;dulo est&aacute; conclu&iacute;do, voc&ecirc; pode permitir que ele seja utilizado por outras pessoas. Para isso, voc&ecirc; precisa criar um arquivo &quot;NBM&quot; (m&oacute;dulo NetBeans) bin&aacute;rio e distribui-lo. 
+
+<div class="indent">
+  
+      <ol>
+	      <li>Na janela Projetos, clique com o bot&atilde;o direito do mouse no projeto <tt>Pesquisa na zona do NetBeans</tt> e escolha Criar NBM.
+
+	      <p><p>O arquivo NBM &eacute; criado e voc&ecirc; pode visualiz&aacute;-lo na janela Arquivos (Ctrl+-2):
+	      <p><p align="left"><img border="1" src="../../images/tutorials/qsearch/shareable-binary.png" alt="NBM que pode ser compartilhado.">
+	      <li>Disponibilize-o para outras pessoas, por exemplo, atrav&eacute;s do <a href="http://plugins.netbeans.org/PluginPortal/">Portal de plug-in do NetBeans</a>. O destinat&aacute;rio deve usar o Gerenciador de plug-ins (Ferramentas &gt; Plug-ins) para instal&aacute;-lo.
+       </ol>
+ 
+    </div>
+
+
+<!-- ======================================================================================== -->
+
+
+  <br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Quick%20Search%20Integration%20Tutorial">Envie-nos seus coment&aacute;rios</a></div>
+<br style="clear:both;" />
+  
+  
+<!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>Pr&oacute;ximas etapas</h2>
+
+<p>Para obter mais informa&ccedil;&otilde;es sobre a cria&ccedil;&atilde;o e o desenvolvimento de m&oacute;dulos do NetBeans, consulte os seguintes recursos: 
+  <ul>
+	  <li><a href="https://platform.netbeans.org/index.html">P&aacute;gina inicial da Plataforma NetBeans </a></li>
+	  <li><a href="http://bits.netbeans.org/dev/javadoc/index.html">Lista de APIs do NetBeans (Vers&atilde;o de desenvolvimento atual)</a></li>
+  <li><a href="https://netbeans.org/kb/trails/platform_pt_BR.html">Outros tutoriais relacionados</a></li></ul>
+  </p>
+  
+  <p><p>
+<!-- ======================================================================================== -->
+<!-- 
+<h2><a name="version"></a>Versioning </h2>
+<p>
+<table width="76%" border="1">
+ <tbody>
+   <tr>
+      <td>
+        <div align="left"><b>Version</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Date</b></div>
+      </td>
+      <td>
+	<div align="left"><b>Changes</b></div>
+      </td>
+  </tr>
+  <tr>
+      <td>
+         1
+      </td>
+      <td>
+         19 July 2008
+      </td>
+      <td>
+      Initial version.
+      </td>
+  </tr>
+ </tbody>
+</table>
+-->
+</body>
+</html>

@@ -1,0 +1,589 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Maven を使用した NetBeans モジュールスイートの操作</title>
+    <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="AUDIENCE" content="NBUSER"/>
+    <meta name="TYPE" content="ARTICLE"/>
+    <meta name="EXPIRES" content="N"/>
+    <meta name="indexed" content="y"/>
+    <meta name="description" content="A short demonstration of how to use Maven to create and run a NetBeans Platform Module Suite."/>
+    <!--      Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+</head>
+<body>
+
+    <h1>Maven を使用した NetBeans モジュールスイートの操作</h1>
+
+    <p>このドキュメントでは、Maven 原型から NetBeans プラットフォームモジュールスイートを作成し、スイートを構築して IDE のインストール構成にインストールする方法を示します。このチュートリアルでは、3 つの NetBeans モジュールをサブプロジェクトとして含む Maven モジュールスイートプロジェクトを作成します。サブプロジェクトを含む Maven プロジェクトは、スイートのコンパイル方法とインストールターゲットを宣言するだけの単純な POM プロジェクトです。
+
+    </p>
+
+    <p>このドキュメントは、Ant ベースの「<a href="https://platform.netbeans.org/tutorials/nbm-selection-1.html">NetBeans 選択管理のチュートリアル</a>」に基づいており、NetBeans プラットフォームモジュールスイートの開発において、Ant を使用する場合と Maven を使用する場合の違いについていくつか説明します。これらの相違点を少し理解すれば、「<a href="https://netbeans.org/kb/trails/platform_ja.html">NetBeans プラットフォームの学習</a>」のチュートリアルを容易に理解できるようになります。</p>
+
+    <p class="tips">NetBeans プラットフォームをはじめて使用する場合は、スクリーンキャストシリーズの「<a href="https://platform.netbeans.org/tutorials/nbm-10-top-apis.html">NetBeans API のトップ 10</a>」を視聴いただくことをお勧めします。</p>
+
+    <p><b>目次</b></p>
+    <p><img src="../../images/articles/69/netbeans-stamp69.png" class="stamp" width="114" height="114" alt="このページの内容は NetBeans IDE 6.5、6.7、および 6.8 が対象です" title="このページの内容は NetBeans IDE 6.5、6.7、および 6.8 が対象です" /></p>
+
+    <ul class="toc">
+        <li><a href="#config">IDE での Maven の使用方法</a>
+            <ul>
+            <li><a href="#config1">Maven オプションの構成</a></li>
+            <li><a href="#config2">Maven リポジトリの表示</a></li>
+            </ul></li>
+        <li><a href="#01">NetBeans プラットフォームモジュールスイートの作成</a></li>
+        <li><a href="#02">MyAPI モジュールの変更</a>
+            <ul>
+            <li><a href="#02a">クラスの作成</a></li>
+            <li><a href="#02b">公開パッケージの指定</a></li>
+            </ul>
+        </li>
+        <li><a href="#03">MyViewer モジュールの作成</a>
+            <ul>
+            <li><a href="#03b">ウィンドウコンポーネントの作成</a></li>
+            </ul>
+        </li>
+        <li><a href="#04">MyEditor モジュールの作成</a>
+            <ul>
+            <li><a href="#04b">アクションの追加</a></li>
+            <li><a href="#04c">エディタコンポーネントの追加</a></li>
+            </ul>
+        </li>
+        <li><a href="#05">モジュールスイートの構築および実行</a>
+        <ul>
+            <li><a href="#05a">直接依存リソースの宣言</a></li>
+            <li><a href="#05b">NetBeans インストールの場所の指定</a></li>
+            <li><a href="#05c">アプリケーションの実行</a></li>
+            </ul>
+        </li>
+        <li><a href="#06">Lookup の動的な変更</a></li>
+      </ul>
+
+<p><b>このチュートリアルを行うには、次の表に示すソフトウェアおよびリソースが必要です。</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                <th class="tblheader" scope="col">必須バージョン</th>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://download.netbeans.org/netbeans/6.9/beta/">NetBeans IDE</a></td>
+                <td class="tbltd1">version 6.9</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                <td class="tbltd1">version 6 or above</td>
+            </tr>
+            <tr>
+                <td class="tbltd1"><a href="http://maven.apache.org/">Maven</a></td>
+                <td class="tbltd1">version 2.0.9 以降</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><strong class="notes">注:</strong> NetBeans プラットフォーム用のアプリケーション開発のために、別々のバージョンの NetBeans プラットフォームをダウンロードする必要はありません。通常、NetBeans IDE でアプリケーションおよびモジュールを開発し、NetBeans プラットフォームおよびアプリケーションを実行するのに必要なモジュールのみを追加します。</p>
+
+    <p>このチュートリアルを開始する前に、必要に応じて次のドキュメントをお読みください。</p>
+    <ul>
+        <li><a href="http://wiki.netbeans.org/NetBeansDeveloperFAQ">NetBeans 開発者の FAQ</a></li>
+        <li><a href="http://wiki.netbeans.org/MavenBestPractices">NetBeans 6.x での Apache Maven のベストプラクティス</a></li>
+        <li><a href="http://www.sonatype.com/books/maven-book/reference/introduction.html">Chapter 1. Introducing Apache Maven</a> (『<a href="http://www.sonatype.com/books/maven-book/reference/public-book.html">Maven: The Definitive Guide</a>』)</li>
+        <li><a href="https://netbeans.org/kb/docs/java/gui-functionality_ja.html">GUI 構築入門</a></li>
+    </ul>
+
+
+
+
+
+
+
+<!-- =================================================================== -->
+<!-- +++++++++++++++ Configuring Maven +++++++++++++++++++++++++++++++++ -->
+
+    <h2><a name="config"></a>IDE での Maven の使用方法</h2>
+    <p>これがはじめての Maven プロジェクトである場合は、Maven の構成設定および Maven リポジトリブラウザに慣れることをお勧めします。</p>
+
+    <div class="indent">
+        <a name="config1"></a>
+        <h3>Maven オプションの構成</h3>
+        <p>「オプション」ウィンドウの「Maven」タブを使用して、IDE における Maven の動作を設定したり、設定が正しいかどうかを確認したりできます。</p>
+
+        <ol>
+            <li>「オプション」ウィンドウの「その他」カテゴリを選択して、「Maven」タブをクリックします。</li>
+            <li>Maven をインストールするローカルの場所を指定します (2.0.9 以降が必要)。</li>
+            <li>Maven のローカルリポジトリの場所が正しいことを確認します。</li>
+            <li>「了解」をクリックします。</li>
+        </ol>
+        <p>ほとんどの場合、Maven の設定が標準的であれば、「オプション」ウィンドウの情報はすでに正しいものになっています。</p>
+
+        <p class="notes"><strong>注:</strong> Maven サポートは、Java SE 機能セットの一部として有効になっています。「オプション」ウィンドウで「Maven」タブが使用できない場合は、Java アプリケーションを作成して Java SE が有効になっているか確認してください。</p>
+
+        <h3><a name="config2"></a>Maven リポジトリの表示</h3>
+        <p>Maven ですべてのプロジェクトを構築するために使用されるアーティファクトは、Maven のローカルリポジトリに格納されます。アーティファクトがプロジェクトの依存リソースとして宣言されると、そのアーティファクトがインストールされていない場合は登録されたリモートリポジトリの 1 つからローカルリポジトリにダウンロードされます。</p>
+
+        <p>デフォルトで、NetBeans リポジトリおよびよく知られているインデックス付きの Maven リポジトリがいくつか登録され、リポジトリブラウザウィンドウに一覧表示されます。NetBeans リポジトリには、プロジェクトの構築に必要な、ほとんどの公開アーティファクトが含まれています。Maven リポジトリブラウザを使用すると、ローカルリポジトリとリモートリポジトリの内容を確認することができます。「ローカルリポジトリ」ノードを展開すると、ローカルにあるアーティファクトを表示できます。NetBeans リポジトリノードの下に一覧表示されているアーティファクトは、プロジェクトの依存リソースとして追加できますが、すべてのアーティファクトがローカルにあるわけではありません。これらはプロジェクトの依存リソースとして宣言されたときにだけ、ローカルリポジトリに追加されます。</p>
+
+        <p>Maven リポジトリブラウザを開くには、次の手順に従います。</p>
+        <ul>
+            <li>メインメニューから「ウィンドウ」&gt;「その他」&gt;「Maven リポジトリブラウザ」を選択します。<br/>
+            <img src="../../images/tutorials/maven-quickstart68/maven-nbm-netbeans-repo.png" alt="Maven リポジトリブラウザのスクリーンショット" title="Maven リポジトリブラウザのスクリーンショット" class="margin-around b-all"  />
+
+            </li>
+        </ul>
+    </div>
+
+
+    
+    <!-- =================================================================== -->
+    <!-- +++++++++++++++++++ Creating the Module Suite +++++++++++++++++++++ -->
+
+    <h2><a name="01"></a>NetBeans プラットフォームモジュールスイートの作成</h2>
+    <p>この節では、「新規プロジェクト」ウィザードを使用して、Maven 原型から NetBeans プラットフォームモジュールスイートを作成します。モジュールプロジェクトを含む POM プロジェクトがウィザードによって作成されます。また、ウィザードでは、スイートのサブプロジェクトとしてモジュールも作成します。
+    </p>
+
+    <ol>
+        <li>「新規プロジェクト」ウィザードを開き、「Maven」カテゴリから「Maven NetBeans モジュールスイート」を選択します。「次へ」をクリックします。</li>
+        <li>「プロジェクト名」に「<strong>MavenSelectionSuite</strong>」と入力します。「次へ」をクリックします。</li>
+        <li>「モジュールプロジェクトを作成」を選択し、モジュール名として「<strong>MyAPI</strong>」と入力します。「完了」をクリックします。</li>
+    </ol>
+
+    <p>「完了」をクリックすると、IDE によって MavenSelectionSuite プロジェクトおよびサブプロジェクトの MyAPI NetBeans Module が作成されます。<br/>
+    <img src="../../images/tutorials/maven-suite/maven-suite-projectswindow.png" alt="「プロジェクト」ウィンドウのスクリーンショット" title="「プロジェクト」ウィンドウのスクリーンショット" class="margin-around b-all"  />
+    </p>
+
+    <p>MavenSelectionSuite は、サブプロジェクト (この場合は NetBeans Module プロジェクト) のコンテナになる POM プロジェクトです。この POM プロジェクトにソースファイルは含まれません。プロジェクトの POM にはスイートをコンパイルするための命令が含まれており、プロジェクトの POM を見ると、packaging に <tt>pom</tt> が指定されているのが確認できます。</p>
+    <pre class="examplecode">     &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+    &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+    &lt;artifactId&gt;MavenSelectionSuite&lt;/artifactId&gt;
+    <strong>&lt;packaging&gt;pom&lt;/packaging&gt;</strong>
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+    &lt;name&gt;MavenSelectionSuite Netbeans Module Suite&lt;/name&gt;
+    ...
+        &lt;properties&gt;
+            &lt;netbeans.version&gt;RELEASE69&lt;/netbeans.version&gt;
+        &lt;/properties&gt;
+    <strong>&lt;modules&gt;
+        &lt;module&gt;MyAPI&lt;/module&gt;
+    &lt;/modules&gt;</strong>
+&lt;/project&gt;</pre>
+    <p>POM には、POM プロジェクトを構築するときに含まれるモジュールの一覧も含まれています。MyAPI プロジェクトがモジュールとして表示されているのが確認できます。</p>
+
+    <p>「プロジェクト」ウィンドウで「モジュール」ノードを展開すると、MyAPI プロジェクトがモジュールとして表示されているのが確認できます。「ファイル」ウィンドウでは、MyAPI プロジェクトディレクトリが <tt>MavenSelectionSuite</tt> ディレクトリの場所にあるのが確認できます。POM プロジェクトのディレクトリで新しいプロジェクトを作成すると、IDE によってこのプロジェクトが POM のモジュールの一覧に自動的に追加され、POM プロジェクトを構築および実行するときに含まれるようになります。</p>
+
+    <!--<p>The project also contains other XML files containing metadata about the project such as <tt>profiles.xml</tt>.
+    The <tt>profiles.xml</tt> file specifies the path to the NetBeans installation and is used by the IDE when running the project.
+    -->
+    
+    <p class="tips">Maven 原型から NetBeans プラットフォームモジュールスイートを作成する場合、Ant を使用するときとは異なり、「新規プロジェクト」ウィザードでターゲット NetBeans プラットフォームインストールを指定しません。NetBeans プラットフォームインストールを設定するには、POM プロジェクトの <tt>profiles.xml</tt> ファイルで <tt>&lt;netbeans.installation&gt;</tt> 要素を変更して、NetBeans プラットフォームインストールのパスを明示的に指定する必要があります。詳細は、このチュートリアルの「<a href="#05b">NetBeans インストールの場所の指定</a>」の節を参照してください。</p>
+    <!--see https://netbeans.org/bugzilla/show_bug.cgi?id=185941.-->
+
+
+
+<!-- =================================================================== -->
+<!-- ++++++++++++++++++ Adding Class to MyAPI Module +++++++++++++++++++ -->
+    
+    <h2><a name="02"></a>MyAPI モジュールの変更</h2>
+    <p>モジュールスイートを作成したときに MyAPI モジュールを作成しましたが、ここでモジュールにクラスを作成して、このクラスをほかのモジュールに公開する必要があります。</p>
+    
+    <div class="indent">
+        <a name="02a"></a>
+        <h3>MyAPI モジュールのクラスの作成</h3>
+        <p>この課題では、<tt>APIObject</tt> という名前の簡単なクラスを作成します。新しい <tt>APIObject</tt> のインスタンスが作成されるごとにフィールドの <tt>index</tt> は 1 ずつ増えるため、<tt>APIObject</tt> の各インスタンスは一意になります。</p>
+        <ol>
+            <li>「プロジェクト」ウィンドウで、「MyAPI」プロジェクトを展開します。</li>
+            <li>「ソースパッケージ」ノードを右クリックし、「新規」&gt;「Java クラス」を選択します。</li>
+            <li>「クラス名」に「<strong>APIObject</strong>」と入力し、「パッケージ」ドロップダウンリストから「<tt>com.mycompany.mavenselectionsuite</tt>」を選択します。「完了」をクリックします。</li>
+            <li>クラスに対して、いくつかのフィールドを宣言し、次の簡単なメソッドを追加します。
+            <pre class="examplecode">
+public final class APIObject {
+
+   private final Date date = new Date();
+   private static int count = 0;
+   private final int index;
+
+   public APIObject() {
+      index = count++;
+   }
+
+   public Date getDate() {
+      return date;
+   }
+
+   public int getIndex() {
+      return index;
+   }
+
+   public String toString() {
+       return index + &quot; - &quot; + date;
+   }
+
+}</pre>
+            </li>
+            <li>インポートを修正して変更内容を保存します。</li>
+        </ol>
+
+        <a name="02b"></a>
+        <h3>公開パッケージの指定</h3>
+        <p>このチュートリアルでは、<tt>APIObject</tt> のメソッドにアクセスする必要がある追加モジュールを作成します。この課題では、MyAPI モジュールの内容を公開パッケージとして設定し、ほかのモジュールがこのメソッドにアクセスできるようにします。<tt>com.mycompany.mavenselectionsuite</tt> を公開パッケージとして宣言するには、POM にある <tt>nbm-maven-plugin</tt> の <tt>configuration</tt> 要素を変更して、公開パッケージとしてエクスポートされたパッケージを指定します。エディタで POM を変更するか、プロジェクトの「プロパティー」ウィンドウで、公開するパッケージを選択できます。</p>
+
+        <ol>
+            <li>プロジェクトノードを右クリックして「プロパティー」を選択し、「プロパティー」ウィンドウを開きます。</li>
+            <li>「<strong>公開パッケージ</strong>」カテゴリの「<strong>com.mycompany.mavenselectionsuite</strong>」パッケージを選択します。「了解」をクリックします。<img src="../../images/tutorials/maven-suite/maven-suite-publicpackages.png" alt="「プロパティー」ウィンドウの「公開パッケージ」のスクリーンショット" title="「プロパティー」ウィンドウの「公開パッケージ」" class="margin-around b-all"  />
+            <p>エクスポートするパッケージを選択すると、IDE によって POM の <tt>nbm-maven-plugin</tt> 要素がそのパッケージを指定するように変更されます。</p>
+            <pre class="examplecode">&lt;plugin&gt;
+    &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+    &lt;artifactId&gt;nbm-maven-plugin&lt;/artifactId&gt;
+    &lt;extensions&gt;true&lt;/extensions&gt;
+    &lt;configuration&gt;
+        &lt;publicPackages&gt;
+            <strong>&lt;publicPackage&gt;com.mycompany.mavenselectionsuite&lt;/publicPackage&gt;</strong>
+        &lt;/publicPackages&gt;
+    &lt;/configuration&gt;
+&lt;/plugin&gt;</pre></li>
+            <li>プロジェクトを右クリックし、「構築」を選択します。</li>
+        </ol>
+
+        <p>プロジェクトを構築すると、<tt>nbm-maven-plugin</tt> によって、公開パッケージを指定するマニフェストヘッダーが JAR の <tt>MANIFEST.MF</tt> に生成されます。</p>
+
+        <p class="tips">詳細は、「<a href="http://mojo.codehaus.org/nbm-maven-plugin/manifest-mojo.html#publicPackages">nbm-maven-plugin マニフェストのドキュメント</a>」を参照してください。</p>
+    </div>
+    
+<!-- =================================================================== -->
+<!-- ++++++++++++++++++ Creating the MyViewer Module +++++++++++++++++++ -->
+
+    <h2><a name="03"></a>MyViewer モジュールの作成</h2>
+    <p>この節では、MyViewer という名前の新しいモジュールを作成して、1 つのウィンドウコンポーネントと 2 つのテキストフィールドを追加します。このコンポーネントは、<a href="http://wiki.netbeans.org/DevFaqLookup">Lookup</a> への変更を待機する <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util-lookup/org/openide/util/LookupListener.html">LookupListener</a></tt> を実装します。</p>
+
+    <div class="indent">
+        <h3><a name="03a"></a>モジュールの作成</h3>
+        <p>この課題では、<tt>MavenSelectionSuite</tt> ディレクトリに MyViewer NetBeans モジュールを作成します。</p>
+
+        <ol>
+            <li>メインメニューから「ファイル」&gt;「新規プロジェクト」(Ctrl-Shift-N) を選択します。</li>
+            <li>「Maven」カテゴリから「Maven NetBeans モジュール」を選択します。「次へ」をクリックします。</li>
+            <li>「プロジェクト名」に「<strong>MyViewer</strong>」と入力します。</li>
+            <li>「プロジェクトの場所」が「<tt>MavenSelectionSuite</tt>」ディレクトリであることを確認します。「完了」をクリックします。</li>
+            <li>「プロジェクト」ウィンドウの「ライブラリ」ノードを右クリックし、「依存リソースを追加」を選択します。</li>
+            <li>「開いているプロジェクト」タブで、「MyAPI NetBeans Module」を選択します。「了解」をクリックします。<br/>
+            <img src="../../images/tutorials/maven-suite/maven-suite-addapi.png" alt="「プロパティー」ウィンドウの「公開パッケージ」のスクリーンショット" title="「プロパティー」ウィンドウの「公開パッケージ」" class="margin-around b-all"  />
+            </li>
+        </ol>
+
+        <p>「了解」をクリックすると、IDE によって POM の依存リソースの一覧にアーティファクトが追加され、「ライブラリ」ノードの下にアーティファクトが表示されます。</p>
+
+        <p>MyViewer モジュールの POM を見ると、このモジュールの親プロジェクトは MavenSelectionSuite であること、<tt>packaging</tt> に <tt>nbm</tt> が指定されていること、および <strong>nbm-maven-plugin</strong> が NetBeans モジュールとしてプロジェクトの構築に使用されることが確認できます。</p>
+
+        <pre class="examplecode">
+&lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+<strong>&lt;parent&gt;
+    &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+    &lt;artifactId&gt;MavenSelectionSuite&lt;/artifactId&gt;
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+&lt;/parent&gt;</strong>
+&lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+&lt;artifactId&gt;MyViewer&lt;/artifactId&gt;
+<strong>&lt;packaging&gt;nbm&lt;/packaging&gt;</strong>
+&lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+&lt;name&gt;MyViewer NetBeans Module&lt;/name&gt;
+</pre>
+
+        
+        <a name="03b"></a>
+        <h3>ウィンドウコンポーネントの作成</h3>
+        <p>この課題では、1 つのウィンドウコンポーネントを作成して 2 つのテキストフィールドを追加します。</p>
+        <ol>
+            <li>MyViewer プロジェクトを右クリックし、「新規」&gt;「ウィンドウ」を選択します。</li>
+            <li>ドロップダウンリストから「<strong>navigator</strong>」を選択し、「アプリケーションの起動時に開く」を選択します。「次へ」をクリックします。</li>
+            <li>「クラス名の接頭辞」に「<strong>MyViewer</strong>」と入力します。「完了」をクリックします。</li>
+            <li>パレットから 2 つのラベルをコンポーネントにドラッグして、最上部のラベルのテキストを「<tt>[nothing selected]</tt>」に変更します。<br/>
+            <img src="../../images/tutorials/maven-suite/maven-suite-myviewertopcomponent.png" alt="ウィンドウコンポーネントのスクリーンショット" title="ウィンドウコンポーネントのテキストフィールド" class="margin-around b-all"  />
+
+            </li>
+            <li>「ソース」タブをクリックして、クラス署名が <tt>LookupListener</tt> を実装するように変更します。
+                <pre class="examplecode">public class MyViewerTopComponent extends TopComponent <strong>implements LookupListener</strong> {</pre></li>
+            <li>この行に挿入カーソルを置いて Alt-Enter を押し、abstract メソッドを実装します。</li>
+            <li>次の <tt>private</tt> フィールド <tt>result</tt> を追加して、初期値を NULL に設定します。
+            <pre class="examplecode">private Lookup.Result result = null;</pre></li>
+            <li><tt>componentOpened()</tt>、<tt>componentClosed()</tt>、および <tt>resultChanged()</tt> メソッドを次のように変更します。
+            <pre class="examplecode">
+public void componentOpened() {
+    <strong>result = Utilities.actionsGlobalContext().lookupResult(APIObject.class);
+    result.addLookupListener(this);</strong>
+}
+
+public void componentClosed() {
+    <strong>result.removeLookupListener (this);
+    result = null;</strong>
+}
+
+public void resultChanged(LookupEvent le) {
+    <strong>Lookup.Result r = (Lookup.Result) le.getSource();
+    Collection c = r.allInstances();
+    if (!c.isEmpty()) {
+        APIObject o = (APIObject) c.iterator().next();
+        jLabel1.setText (Integer.toString(o.getIndex()));
+        jLabel2.setText (o.getDate().toString());
+    } else {
+        jLabel1.setText(&quot;[no selection]&quot;);
+        jLabel2.setText (&quot;&quot;);
+    }</strong>
+}</pre>
+            <p><tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/util/Utilities.html#actionsGlobalContext%28%29">Utilities.actionsGlobalContext()</a></tt> を使用すると、コンポーネントが開かれるごとに、フォーカスを持つコンポーネントの Lookup オブジェクトを、クラスがグローバルに待機できるようになります。Lookup は、コンポーネントが閉じられると削除されます。フォームの JLabel が、フォーカスを持つ <tt>APIObject</tt> に従って更新されるように、<tt>resultChanged()</tt> メソッドは <tt>LookupListener</tt> を実装します。</p>
+            </li>
+            <li>インポートを修正して、必ず <strong><tt>org.openide.util.Utilities</tt></strong> を追加します。変更を保存します。</li>
+        </ol>
+    </div>
+
+
+
+<!-- =================================================================== -->
+<!-- ++++++++++++++++++ Creating the MyEditor Module +++++++++++++++++++ -->
+
+    <h2><a name="04"></a>MyEditor モジュールの作成</h2>
+
+    <p>この節では、MyEditor という新しいモジュールを作成します。このモジュールには、Lookup を介して <tt>APIObject</tt> のインスタンスを提供する <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/org/openide/windows/TopComponent.html">TopComponent</a></tt> が含まれます。また、MyEditor コンポーネントの新しいインスタンスを開くためのアクションも作成します。</p>
+
+    <div class="indent">
+        <a name="04a"></a>
+        <h3>モジュールの作成</h3>
+        <p>この課題では、<tt>MavenSelectionSuite</tt> ディレクトリに NetBeans モジュールを作成して、MyAPI モジュールに依存リソースを追加します。</p>
+        <ol>
+            <li>メインメニューから「ファイル」&gt;「新規プロジェクト」を選択します。</li>
+            <li>「Maven」カテゴリから「Maven NetBeans モジュール」を選択します。「次へ」をクリックします。</li>
+            <li>「プロジェクト名」に「<strong>MyEditor</strong>」と入力します。</li>
+            <li>「プロジェクトの場所」が「<tt>MavenSelectionSuite</tt>」ディレクトリであることを確認します。「完了」をクリックします。</li>
+            <li>「プロジェクト」ウィンドウで、プロジェクトの「ライブラリ」ノードを右クリックし、「依存リソースを追加」を選択します。</li>
+            <li>「開いているプロジェクト」タブで、「MyAPI NetBeans Module」を選択します。「了解」をクリックします。</li>
+        </ol>
+
+        <a name="04b"></a>
+        <h3>アクションの追加</h3>
+        <p>この課題では、MyEditor という名前のコンポーネントを開くメニュー項目を、「ファイル」メニューに追加するためのクラスを作成します。このコンポーネントの作成は次の課題で行います。</p>
+            <!-- issue: https://netbeans.org/bugzilla/show_bug.cgi?id=186876
+            In this section you need to create the action first, then the component.
+            If the component is created first, the New Action wizard will choke on what looks like
+            a lockedFile exception on the bundle.properties and the entries for the action are not generated in layer.xml.-->
+
+        <ol>
+            <li>「MyEditor」プロジェクトを右クリックして「新規」&gt;「アクション」を選択し、「新規アクション」ダイアログを開きます。</li>
+            <li>「常に有効化」を選択します。「次へ」をクリックします。</li>
+            <li>「GUI の登録」ページはデフォルトのままにします。「次へ」をクリックします。</li>
+            <li>「クラス名」に「<strong>OpenEditorAction</strong>」と入力します。</li>
+            <li>「表示名」に「<strong>Open Editor</strong>」と入力します。「完了」をクリックします。
+    
+            <p>IDE によってエディタで <tt>OpenEditorAction</tt> クラスが開き、<tt>layer.xml</tt> ファイルに次の内容が追加されます。</p>
+            <pre class="examplecode">
+&lt;filesystem&gt;
+    &lt;folder name=&quot;Actions&quot;&gt;
+        &lt;folder name=&quot;Build&quot;&gt;
+            &lt;file name=&quot;com-mycompany-myeditor-OpenEditorAction.instance&quot;&gt;
+                &lt;attr name=&quot;delegate&quot; newvalue=&quot;com.mycompany.myeditor.OpenEditorAction&quot;/&gt;
+                &lt;attr name=&quot;displayName&quot; bundlevalue=&quot;com.mycompany.myeditor.Bundle#CTL_OpenEditorAction&quot;/&gt;
+                &lt;attr name=&quot;instanceCreate&quot; methodvalue=&quot;org.openide.awt.Actions.alwaysEnabled&quot;/&gt;
+                &lt;attr name=&quot;noIconInMenu&quot; boolvalue=&quot;false&quot;/&gt;
+            &lt;/file&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+    &lt;folder name=&quot;Menu&quot;&gt;
+        &lt;folder name=&quot;File&quot;&gt;
+            &lt;file name=&quot;com-mycompany-myeditor-OpenEditorAction.shadow&quot;&gt;
+                &lt;attr name=&quot;originalFile&quot; stringvalue=&quot;Actions/Build/com-mycompany-myeditor-OpenEditorAction.instance&quot;/&gt;
+                &lt;attr name=&quot;position&quot; intvalue=&quot;0&quot;/&gt;
+            &lt;/file&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/filesystem&gt;</pre></li>
+            <li><tt>OpenEditorAction</tt> クラスを修正して <tt>actionPerformed</tt> メソッドを変更します。
+            <pre class="examplecode">public void actionPerformed(ActionEvent e) {
+    MyEditor editor = new MyEditor();
+    editor.open();
+    editor.requestActive();
+}</pre></li>
+        </ol>
+
+
+        <a name="04c"></a>
+        <h3>エディタコンポーネントの追加</h3>
+        <p>この課題では、<tt>OpenEditorAction</tt> によって呼び出されるとエディタ領域で開くコンポーネント MyEditor を作成します。コンポーネントの複数のインスタンスを作成できるようにするため、シングルトンコンポーネントの作成に使用されるウィンドウコンポーネントのテンプレートは使用しません。代わりに、JPanel フォームのテンプレートを使用してから、クラスを変更して <tt>TopComponent</tt> を拡張します。</p>
+
+
+        <ol>
+            <li>「ソースパッケージ」を右クリックして「新規」&gt;「その他」を選択し、「Swing GUI フォーム」カテゴリの「JPanel フォーム」を選択します。「次へ」をクリックします。</li>
+            <li>「クラス名」に「<strong>MyEditor</strong>」と入力し、「<tt>com.mycompany.myeditor</tt>」パッケージを選択します。「完了」をクリックします。</li>
+            <li>2 つのテキストフィールドをコンポーネントにドラッグします。</li>
+            <li>各テキストフィールドの <tt>editable</tt> プロパティーを選択解除して、これらのテキストフィールドを読み取り専用にします。<br/>
+            <img src="../../images/tutorials/maven-suite/maven-suite-editableprop.png" alt="ラベルの editable プロパティーのスクリーンショット" title="ラベルの editable プロパティー" class="margin-around b-all"  />
+
+            </li>
+            <li>「ソース」タブをクリックして、<tt>javax.swing.JPanel</tt> ではなく <tt>TopComponent</tt> を拡張するようにクラス署名を変更します。
+            <pre class="examplecode">public class MyEditor extends <strong>TopComponent</strong></pre></li>
+            <li>署名に挿入カーソルを置いて Alt-Enter を入力し、Maven リポジトリを検索して <tt>org.openide.windows</tt> アーティファクトに依存リソースを追加することでコードのエラーを修正します。インポートを修正します。<br/>
+            <img src="../../images/tutorials/maven-suite/maven-suite-add-topcomponent.png" alt="ラベルの editable プロパティーのスクリーンショット" title="ラベルの editable プロパティー" class="margin-around b-all"  />
+
+            </li>
+            <li>コンストラクタを変更して、クラスが呼び出されるたびに <tt>APIObject</tt> の新しいインスタンスが作成されるようにします。
+            <pre class="examplecode">
+public MyEditor() {
+    initComponents();
+    <strong>APIObject obj = new APIObject();
+    associateLookup(Lookups.singleton(obj));
+    jTextField1.setText(&quot;APIObject #&quot; + obj.getIndex());
+    jTextField2.setText(&quot;Created: &quot; + obj.getDate());
+    setDisplayName(&quot;MyEditor &quot; + obj.getIndex());</strong>
+
+}</pre>
+            <p>コンストラクタの <tt>associateLookup(Lookups.singleton(obj));</tt> の行により、<tt>APIObject</tt> の新しいインスタンスを含む Lookup が作成されます。</p></li>
+            <li>インポートを修正して変更内容を保存します。</li>
+        </ol>
+        <p>コンポーネントのテキストフィールドには、<tt>APIObject</tt> からのインデックス値および日付だけが表示されます。これにより、各 MyEditor コンポーネントが一意であり、フォーカスを持つ MyEditor コンポーネントの詳細を MyViewer が表示していることを確認できます。</p>
+
+        <p class="notes"><strong>注:</strong> <tt>OpenEditorAction</tt> のエラーは、<tt>MyEditor</tt> への変更を保存したあとで解決されます。 </p>
+    </div>
+
+
+
+    <!-- =================================================================== -->
+    <!-- ++++++++++++++++ Building and Running the  Module +++++++++++++++++ -->
+
+    <h2><a name="05"></a>モジュールスイートの構築および実行</h2>
+    <p>この時点で、スイートが正常に構築、インストール、および動作するかどうかを確認するための実行準備がほぼ整いました。</p>
+    <div class="indent">
+
+
+        <a name="05a"></a>
+        <h3>直接依存リソースの宣言</h3>
+        <p>スイートを構築および実行できるようにするには、MyEditor プロジェクトの依存リソースの 1 つを変更する必要があります。ここでモジュールスイートを構築しようとすると、MyEditor モジュールの実行時に <tt>org.openide.util-lookup</tt> アーティファクトが使用可能でなければならないため、スイートをコンパイルできないことを伝える内容が「出力」ウィンドウに表示されます。</p>
+
+        <p>プロジェクトノードを右クリックして「依存リソースグラフを表示」を選択すると、依存リソースグラフビューアによりモジュールの依存リソースを視覚化できます。</p>
+        <img src="../../images/tutorials/maven-suite/maven-suite-dependency-graph.png" alt="アーティファクト依存リソースグラフのスクリーンショット" title="アーティファクト依存リソースグラフ" class="margin-around b-all"  />
+
+        <p>MyEditor が <tt>org.openide.util-lookup</tt> に依存リソースを持っていないことが確認できます。依存リソースは推移的であり、プロジェクトはコンパイル時にはアーティファクトを使用できますが、実行時にアーティファクトを使用できるようにするためには、直接依存リソースである必要があります。アーティファクトを直接依存リソースとして宣言するように POM を変更する必要があります。</p>
+        
+        <p>POM を手動で編集するか、「プロジェクト」ウィンドウのポップアップメニュー項目を使用して、アーティファクトを直接依存リソースにできます。</p>
+
+        <ol>
+            <li>「MyEditor」モジュールの「ライブラリ」ノードを展開します。</li>
+            <li>「<tt>org.openide.util-lookup</tt>」アーティファクトを右クリックし、「直接依存リソースとして宣言」を選択します。
+            <p>「直接依存リソースとして宣言」を選択すると、IDE によって POM が変更され、アーティファクトが依存リソースとして追加されます。</p>
+            </li>
+        </ol>
+        <p class="notes"><strong>注:</strong> <tt>org.openide.util-lookup</tt> アーティファクトは、すでに MyViewer モジュールの直接依存リソースになっています。</p>
+
+
+        <a name="05b"></a>
+        <h3>NetBeans インストールの場所の指定</h3>
+        <p>Maven 原型を使用して NetBeans プラットフォームモジュールスイートを作成した場合、デフォルトではターゲット NetBeans インストールは指定されません。IDE のインストール場所にモジュールスイートをインストールして実行するには、POM プロジェクトの <tt>profiles.xml</tt> ファイルを編集して、インストールディレクトリのパスを指定する必要があります。</p>
+        <ol>
+            <li>MavenSelectionSuite アプリケーションの下の「プロジェクトファイル」ノードを展開し、<tt>profiles.xml</tt> をダブルクリックしてエディタでファイルを開きます。</li>
+            <li>ターゲット NetBeans プラットフォームのパスを指定するように <tt>&lt;netbeans.installation&gt;</tt> 要素を変更して、変更を保存します。
+                <pre class="examplecode">
+&lt;profile&gt;
+   &lt;id&gt;netbeans-ide&lt;/id&gt;
+   &lt;properties&gt;
+       &lt;netbeans.installation&gt;/home/me/netbeans-6.9&lt;/netbeans.installation&gt;
+   &lt;/properties&gt;
+&lt;/profile&gt;</pre>
+                <p class="notes"><strong>注:</strong> パスには、実行可能ファイルが含まれている <tt>bin</tt> ディレクトリが存在するディレクトリを指定する必要があります。</p>
+                <p>たとえば、OS X では次のようなパスになります。</p>
+            <pre class="examplecode">&lt;netbeans.installation&gt;/Applications/NetBeans/NetBeans6.9.app/Contents/Resources/NetBeans&lt;/netbeans.installation&gt;</pre>
+            </li>
+        </ol>
+
+
+
+        <a name="05c"></a>
+        <h3>アプリケーションの実行</h3>
+        <p>これで IDE のターゲットインストールが指定されたので、スイートプロジェクトで「実行」コマンドを使用できます。</p>
+
+        <ol>
+            <li>MavenSelectionSuite を右クリックして、「実行」を選択します。</li>
+        </ol>
+        <p>「実行」を選択すると、モジュールスイートがインストールされた IDE のインスタンスが起動します。</p>
+        <img src="../../images/tutorials/maven-suite/maven-suite-run1.png" alt="「My Viewer」および「MyEditor」ウィンドウのスクリーンショット" title="「My Viewer」および「MyEditor」ウィンドウ" class="margin-around b-all"  />
+        <p>アプリケーションが起動すると「MyViewer」ウィンドウが開き、2 つのテキストラベルが表示されます。ここで、「ファイル」メニューから「Open Editor」を選択すると、エディタ領域で MyEditor コンポーネントを開くことができます。MyViewer ウィンドウには、フォーカスを持つ MyEditor コンポーネントの詳細が表示されます。</p>
+        <p>モジュールスイートプロジェクトの「実行」アクションは、デフォルトで Reactor プラグインを使用して、スイートの一部として指定されたモジュールを再帰的に構築およびパッケージ化するように設定されています。プロジェクトの「プロパティー」ウィンドウを開くと、IDE のアクションにマップされている Maven ゴールを確認できます。
+        </p>
+        <img src="../../images/tutorials/maven-suite/maven-suite-run-action.png" alt="「My Viewer」および「MyEditor」ウィンドウのスクリーンショット" title="「My Viewer」および「MyEditor」ウィンドウ" class="margin-around b-all"  />
+        <p>「プロパティー」ウィンドウの「アクション」カテゴリで、「実行」アクションにマップされているゴールを確認できます。</p>
+    </div>
+
+
+
+
+    <!-- =================================================================== -->
+    <!-- ++++++++++++++++ Modifying the Lookup with Button +++++++++++++++++ -->
+
+    <h2><a name="06"></a>Lookup の動的な変更</h2>
+    <p>現時点では、新しい MyEditor コンポーネントを開くたびに新しい <tt>APIObject</tt> が作成されます。この節では、コンポーネントの現在の <tt>APIObject</tt> を新しいものに置き換えるボタンを MyEditor コンポーネントに追加します。<tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util-lookup/org/openide/util/lookup/InstanceContent.html">InstanceContent</a></tt> を使用して Lookup の内容の変更を動的に処理するようにコードを変更します。</p>
+    <ol>
+        <li>「MyEditor」プロジェクトを展開して、エディタの「デザイン」ビューで <tt>MyEditor</tt> フォームを開きます。</li>
+        <li>フォーム上にボタンをドラッグして、ボタンのテキストを「Replace」に設定します。</li>
+        <li>ボタンを右クリックして「イベント」&gt;「Action」&gt;「actionPerformed」を選択し、ボタンのイベントハンドラメソッドを作成して、ソースエディタでフォームを開きます。</li>
+        <li>次の <tt>final</tt> フィールドをクラスに追加します。
+        <pre class="examplecode">public class MyEditor extends TopComponent {
+    <strong>private final InstanceContent content = new InstanceContent();</strong></pre>
+
+        <p><tt>InstanceContent</tt> を利用するには、コンストラクタで <tt>Lookup</tt> ではなく <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util-lookup/org/openide/util/lookup/AbstractLookup.html#AbstractLookup%28org.openide.util.lookup.AbstractLookup.Content%29">AbstractLookup</a></tt> を使用する必要があります。</p>
+        </li>
+        <li>次のように、<tt>jButton1ActionPerformed</tt> イベントハンドラメソッドの本文に、クラスコンストラクタから行をコピーして <tt>content.set</tt> への呼び出しを追加します。
+        <pre class="examplecode">private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {
+    <strong>APIObject obj = new APIObject();
+    jTextField1.setText (&quot;APIObject #&quot; + obj.getIndex());
+    jTextField2.setText (&quot;Created: &quot; + obj.getDate());
+    setDisplayName (&quot;MyEditor &quot; + obj.getIndex());
+    content.set(Collections.singleton (obj), null);</strong>
+}</pre>
+        </li>
+        <li>コンストラクタで、イベントハンドラへコピーした行を削除し、<tt>AbstractLookup</tt> を使用するように <tt>associateLookup</tt> を変更し、<tt>jButton1ActionPerformed(null);</tt> を追加します。ここで、コンストラクタは次のようになっているはずです。
+        <pre class="examplecode">public MyEditor() {
+    initComponents();
+    <strong>associateLookup(new AbstractLookup(content));
+    jButton1ActionPerformed(null);</strong>
+}</pre>
+        <p>コンストラクタに <tt>jButton1ActionPerformed(null);</tt> を追加したことによって、このコンポーネントが作成されたときに確実に初期化されるようになりました。</p></li>
+        <li>インポートを修正して変更内容を保存します。</li>
+    </ol>
+
+    
+    <p>モジュールスイートプロジェクトを再度実行すると、各 MyEditor コンポーネントに新しいボタンが表示されます。このボタンをクリックすると、テキストフィールドのインデックス番号が増加します。「MyViewer」ウィンドウのラベルも、新しい値を反映して更新されます。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <p>このチュートリアルでは、Maven 原型から NetBeans プラットフォームモジュールスイートを作成して実行する方法を示しました。モジュールスイートの構造について、および公開パッケージを指定するモジュール POM の設定方法について確認しました。また、ターゲット NetBeans インストールを指定するように親 POM プロジェクトを変更し、IDE の「実行」コマンドによってスイートのインストールおよびプラットフォームの新しいインスタンスの起動が行われるようにする方法を学習しました。ほかの NetBeans プラットフォームアプリケーションおよびモジュール構築の例については、「<a href="https://netbeans.org/kb/trails/platform.html">NetBeans プラットフォームの学習</a>」に一覧表示されている各チュートリアルを参照してください。</p>
+
+
+<!-- ======================================================================================== -->
+
+
+    <h2><a name="nextsteps"></a>関連項目</h2>
+
+    <p>NetBeans プラットフォームでの作成と開発の詳細については、次のリソースを参照してください。</p>
+    <ul>
+        <li><a href="https://netbeans.org/kb/trails/platform_ja.html">NetBeans プラットフォームの学習</a></li>
+        <li><a href="http://wiki.netbeans.org/NetBeansDeveloperFAQ">NetBeans 開発者の FAQ</a></li>
+        <li><a href="http://bits.netbeans.org/dev/javadoc/">NetBeans API Javadoc</a></li>
+    </ul>
+    <p>NetBeans プラットフォームに関して質問がある場合は、dev@platform.netbeans.org のメーリングリストに投稿していただくか、<a href="https://netbeans.org/projects/platform/lists/dev/archive">NetBeans プラットフォームメーリングリストのアーカイブ</a>を参照してください。</p>
+
+
+    <!-- ======================================================================================== -->
+
+
+
+</body>
+
+</html>

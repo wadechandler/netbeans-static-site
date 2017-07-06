@@ -1,0 +1,285 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <!-- -*- xhtml -*- -->
+        <title>Writing POV-Ray Support for NetBeans I&#8212;Application Structure & File Support</title>
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+        <meta name="AUDIENCE" content="NBUSER"/>
+        <meta name="TYPE" content="ARTICLE"/>
+        <meta name="EXPIRES" content="N"/>
+        <meta name="developer" content="geertjan.wielenga@oracle.com"/>
+        <meta name="indexed" content="y"/>
+        <meta name="description"
+              content="NetBeans POV-Ray support tutorial Part I&#8212;creating support for .pov files"/>
+        <!--      Copyright (c) 2006 Sun Microsystems, Inc. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+    <body>
+        <h1>Writing POV-Ray Support for NetBeans I&#8212;Application Structure & File Support</h1>
+
+        <p>The POV-Ray tutorial is an advanced NetBeans Platform tutorial showing
+	    how to build an application for rendering POV-Ray files. In the process
+	    of creating the application, you will build on top of your existing
+	    NetBeans Platform knowledge, extending that knowledge into new areas,
+	    such as modular intercommunication and API design. You will touch upon
+	    many NetBeans APIs and learn how their best features can be combined
+	    in the creation of a real application.
+	</p>
+
+        <p class="notes"><b>Note:</b> For a quick visual impression of the application
+	     you'll be creating, see the screenshot in the <a href="nbm-povray-10.html">Conclusion</a> of this tutorial.
+	</p>
+
+        <p class="tips"><a href="http://povray.org">POV-Ray</a>&#8212;the Persistence Of Vision
+            Raytracer&#8212;is an open-source 3D rendering engine and one that only a programmer
+            could love.  Rather than having a graphical modeling tool, it is based
+            around a <i>scene</i> language which is &quot;compiled&quot; into an image.</p>
+
+	<p><b>Contents</b></p>
+
+        <p><img src="../images/articles/81/netbeans-stamp.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 7.1" title="Content on this page applies to NetBeans IDE 7.1"/></p>
+        <ul class="toc">
+            <li>Part  1: Application Structure & File Support</li>
+            <li>Part  2: <a href="nbm-povray-2.html">Project Type Design</a></li>
+            <li>Part  3: <a href="nbm-povray-3.html">Implementing a Project Type</a></li>
+            <li>Part  4: <a href="nbm-povray-4.html">Providing Project Templates</a></li>
+            <li>Part  5: <a href="nbm-povray-5.html">Creating an API</a></li>
+            <li>Part  6: <a href="nbm-povray-6.html">Implementing the API</a></li>
+            <li>Part  7: <a href="nbm-povray-7.html">Support For Running POV-Ray</a></li>
+            <li>Part  8: <a href="nbm-povray-8.html">Implementing ViewService and its Actions</a></li>
+            <li>Part  9: <a href="nbm-povray-9.html">Build Support</a></li>
+            <li>Part 10: <a href="nbm-povray-10.html">Conclusion</a></li>
+        </ul>
+
+	<p>For troubleshooting purposes, you can download the code sources of this
+	tutorial here:</p>
+
+	<p><a href="http://java.net/projects/nb-api-samples/sources/api-samples/show/versions/7.1/tutorials/PovSuite">http://java.net/projects/nb-api-samples/sources/api-samples/show/versions/7.1/tutorials/PovSuite</a></p>
+
+        <p><b>To follow this tutorial, you need the software and resources listed in the following
+                table.</b></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Software or Resource</th>
+                    <th class="tblheader" scope="col">Version Required</th>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                    <td class="tbltd1">version 7.1 or above</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                    <td class="tbltd1">version 7 or above</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p class="notes"><b>Note:</b> If you haven't developed a NetBeans Platform application before, you are advised to
+            work through several other tutorials before working on this one&#8212;doing so
+	    will familiarize you
+            with the basic concepts presented here.  Particularly recommended are:</p>
+
+        <ul>
+            <li><b><a href="http://wiki.netbeans.org/NbmIdioms">Introduction
+                        to NetBeans Idioms and Infrastructure</a></b>&#8212;covers
+                a lot of the concepts you will encounter here</li>
+            <li><b><a href="https://platform.netbeans.org/tutorials/nbm-quick-start.html">NetBeans
+			Platform Quick Start</a></b>&#8212;the essential starting point for
+		anyone interested in working with the NetBeans Platform
+	    </li>
+            <li><b><a href="https://platform.netbeans.org/tutorials/nbm-selection-1.html">Selection
+                        in NetBeans</a></b>&#8212;not directly relevant to writing project types,
+                which is the focus of this tutorial,
+		but will familiarize you with using the Lookup API which pops up in a number of places
+                here</li>
+            <li><b><a href="https://platform.netbeans.org/tutorials/nbm-filetype.html">File Type</a></b>&#8212;the
+                tutorial describing how new file types are supported in the NetBeans Platform</li>
+            <li><a href="http://wiki.netbeans.org/NetBeansDeveloperFAQ">NetBeans Developer FAQ</a>&#8212;contains
+                essential definitions and descriptions of API classes and concepts, and how
+                to perform the typical tasks you will need to do when using the NetBeans Platform</li>
+        </ul>
+
+        <h2 class="tutorial"><a name="createSuite"></a>Creating the Application and Modules</h2>
+        <p>Since support for POV-Ray will be made up of multiple modules, we will start
+            by creating a "NetBeans Platform Application" container, which holds multiple interdependent
+            modules, while providing a subset of NetBeans modules containing features
+            common to most desktop applications. Then we will walk through creating two modules.  The first implements support
+            for <a href="http://povray.org">POV-Ray Scene Files</a>.  The second
+            provides a POV-Ray project type, and allows scene files to be rendered into
+            image files.</p>
+
+        <div class="indent">
+            <ol>
+                <li><p>Select File &gt; New Project from the main menu.
+                        In the New Project dialog, select NetBeans Modules &gt;
+                        NetBeans Platform Application and click Next or press Enter:</p>
+                    <p><img alt="" src="../images/tutorials/povray/71/ch1/pic-1.png"/></p>
+                </li>
+                <li><p>Name the suite &quot;povsuite&quot; on the next screen, choose
+                        a location on your hard disk to put it.</p>
+                    <p><img alt="" src="../images/tutorials/povray/71/ch1/pic-2.png"/></p>
+                    <p>Then press Enter or click
+                        Finish.</p>
+                </li>
+            </ol>
+        </div>
+
+        <div class="indent">
+
+            <h3 class="tutorial"><a name="creatingthemoduleproject"></a>Creating the <tt>povfile</tt> Module Project</h3>
+            <p>Now we will create the first module for our suite&#8212;support for
+                <code>.pov</code> files&#8212;POV-Ray scene language files.</p>
+
+            <ol>
+                <li>Select
+                    File &gt; New Project again from the main menu.</li>
+
+                <li>This time, select NetBeans Modules &gt; Module in
+                    the New Project wizard, and click Next or press Enter.</li>
+
+                <li>On the next page of the wizard, give the module the project name
+                    "povfile" and then click Next.</li>
+
+                <li>Now specify, for code name base,
+                    &quot;org.netbeans.examples.modules.povfile&quot; and the display name
+                    &quot;Povray File Support&quot;.</li>
+
+                <li>Click Finish or press Enter to create the project.  It should
+                    automatically be added to the application we just created.</li>
+
+            </ol>
+
+            <h3 class="tutorial"><a name="creatingthemoduleproject"></a>Creating the <tt>povproject</tt> Module Project</h3>
+            <p>We will now repeat the last few steps to create another project,
+                in which we will implement a special POV-Ray project type, whose
+                compile actions will generate an image from a scene file.</p>
+
+            <ol>
+
+                <li>Select File &gt; New Project again from the main menu.</li>
+
+                <li>This time, select NetBeans Modules &gt; Module in
+                    the New Project wizard, and click Next or press Enter.</li>
+
+                <li>On the next page of the wizard, give the module the project name
+                    "povproject" and then click Next.</li>
+
+                <li>On the next page of the wizard, give the module the code name
+                    &quot;org.netbeans.examples.modules.povproject&quot; and the display name
+                    &quot;Povray Projects&quot;.</li>
+
+                <li>Click Finish or press Enter to create the project.  It should
+                    automatically be added to the application we just created.</li>
+
+            </ol>
+
+            <p>Your application should now look as follows:</p>
+
+            <p><img alt="" src="../images/tutorials/povray/71/ch1/pic-3.png"/></p>
+
+        </div>
+
+        <h2 class="tutorial"><a name="povfile-support"></a>Creating a File Type&#8212;Basic Support for .pov Files</h2>
+
+        <p>The first thing we will want to create is basic support that enables NetBeans
+            to recognize .pov files and open them in the editor&#8212;which will give us a place
+            to hang Actions, provide special icons, and other special support specific
+            to .pov files.</p>
+
+        <p>A
+            <code><a href="http://wiki.netbeans.info/wiki/view/DevFaqDataLoader">DataLoader</a></code>
+            is a factory which is registered against a particular MIME type or file extension.
+            It creates <code><a href="http://wiki.netbeans.info/wiki/view/DevFaqDataObject">DataObject</a></code>s&#8212;typically
+            one per file.  So, when you expand a folder in the Projects or Files tab
+            in the IDE, what happens under the hood is that all of the files in the folder you expanded
+            are found, and for each file, the system locates the <code>DataLoader</code> for its
+            file type and asks it to create a <code>DataObject</code> for it.</p>
+        <p><code>DataObject</code>s
+            contain logic that enables them to actually parse or understand a files contents, or
+            know what to do with that particular type of file.  So there is a 1:1 mapping between
+            files and <code>DataObjects</code> and a 1:1 mapping between <i>file types</i> and
+            <code>DataLoader</code>s.</p>
+
+        <p>NetBeans IDE has a template called &quot;File Type&quot; that makes it
+            very easy to generate basic support for a new file type:</p>
+
+        <div class="indent">
+
+            <ol>
+                <li>Expand the Povray File Support Module and its Source Packages subnode.</li>
+                <li>Right-click the package <code>org.netbeans.examples.modules.povfile</code> and
+                    choose New &gt; Other from the popup menu.</li>
+                <li><p>Select NetBeans Module Development &gt; File Type in the New File wizard:</p>
+                    <p><img alt="" src="../images/tutorials/povray/71/ch1/pic-4.png"/></p>
+                    <p>Click Next or press Enter.</p>
+                </li>
+
+                <li><p>On the next screen, you are asked to supply a MIME type and a file
+                        extension.  Enter &quot;text/x-povray&quot; for the MIME type, and two
+                        file extensions, &quot;.pov,.inc&quot; for the file extensions:</p>
+                    <p><img alt="" src="../images/tutorials/povray/71/ch1/pic-5.png"/></p>
+
+                    <p>Click
+                        Next or press Enter.</p>
+                </li>
+
+                <li><p>On the next screen, you are asked to supply a prefix for a the names of
+                        several Java classes that will be generated.  Enter &quot;Povray&quot;.  This
+                        screen also requests an icon.  Any 16x16 gif or png will do, or you can use
+                        <a href="../images/tutorials/povray/povicon.gif"><img alt="" src="../images/tutorials/povray/povicon.gif" /></a>.</p>
+                    <p><img alt="" src="../images/tutorials/povray/71/ch1/pic-6.png"/></p>
+                    <p>When you
+                        have entered the icon and the name, press Enter or click Finish and the IDE will generate
+                        the Java classes and metadata files needed for basic POV-Ray file support in NetBeans.</p></li>
+            </ol>
+
+        </div>
+
+        <p>You should now have the following file structure in the <code>povfile</code> package:</p>
+        <p><img alt="" src="../images/tutorials/povray/71/ch1/pic-7.png"/></p>
+        <ul>
+            <li><code><b>org.netbeans.examples.modules.povfile/</b></code>
+                <ul>
+                    <li><code><b>Bundle.properties</b></code> A resource bundle for miscellaneous localized strings</li>
+                    <li><code><b>PovrayDataObject.java</b></code> This is the object that
+                        understands what a .pov file is.  If we were to provide advanced support for
+                        POV-Ray files, we would probably parse those files here, and provide some sort
+                        of model of the structure of the file that could be shown in Navigator or manipulated
+                        programmatically</li>
+                    <li><code><b>PovrayResolver.xml</b></code> This is a small bit of XML that
+                        declares that <code>.pov</code> and <code>.inc</code> files map to the MIME type
+                        <code>text/x-povray</code> (which we have invented for purposes of this tutorial).
+                        This XML file is referenced from the module's <code>layer.xml</code> file.
+                    </li>
+
+                    <li><code><b>PovrayTemplate.pov</b></code> This is an empty template POV-Ray
+                        file which can be modified and will be used as the basis of new POV-Ray files
+                        in the New File wizard</li>
+
+                    <li><code><b>layer.xml</b></code> A module layer file which
+                        allows the module to install some objects declaratively.</li>
+                    <li><code><b>povicon.gif</b></code> The icon you chose in the wizard, which will appear
+                        on editor tabs for <code>.pov</code> and <code>.inc</code> files</li>
+
+
+                </ul>
+            </li>
+        </ul>
+
+        <p>At this point we have basic support for POV-Ray files&#8212;if you right-click the
+            module suite and click Run, NetBeans will install with both of the modules
+            installed&#8212;and if you create a fake <code>.pov</code> file in your home
+            directory and then browse, for example, in the Favorites tab (Window &gt; Favorites
+            from the main menu), you will see that it is indeed recognized by NetBeans,
+            and has the icon that you specified.</p>
+
+        <h2 class="tutorial"><a name="next"></a>Next Steps</h2>
+
+        <p>The <a href="nbm-povray-2.html">next section</a> will cover designing and
+            planning our project type and file support and how they will interrelate.</p>
+
+    </body>
+
+</html>

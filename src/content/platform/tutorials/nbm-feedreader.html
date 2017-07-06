@@ -1,0 +1,1214 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <!-- -*- xhtml -*- -->
+        <title>Feed Reader Tutorial for NetBeans Platform</title>
+        <link rel="stylesheet" type="text/css" href="https://netbeans.org/netbeans.css"/>
+        <meta name="AUDIENCE" content="NBUSER"/>
+        <meta name="TYPE" content="ARTICLE"/>
+        <meta name="EXPIRES" content="N"/>
+        <meta name="developer" content="geertjan.wielenga@oracle.com"/>
+        <meta name="indexed" content="y"/>
+        <meta name="description" content="FeedReader on 8.0."/>
+        <!--     Copyright (c) 2009, 2010, 2011, 2012, 2013, 2014 Oracle and/or its affiliates. All rights reserved. -->
+        <!--     Use is subject to license terms.-->
+    </head>
+
+    <body>
+
+        <h1>NetBeans Platform Feed Reader Tutorial</h1>
+
+        <p>
+            Welcome to the NetBeans Platform Feed Reader tutorial. 
+            The Feed Reader that you create in this
+            tutorial is a simple RSS/Atom feed browser, modeled 
+            after the Sage plug-in for Mozilla Firefox. It 
+            presents a tree of feeds with subnodes representing 
+            individual feed entries that you can open in a browser.</p>
+
+        <p>To illustrate the end result, here you see the Feed Reader that
+            you will create in this tutorial, displaying a feed entry from the
+            <a href="http://planetnetbeans.org/rss20.xml">Planet NetBeans feed</a>:</p>
+
+        <p><img src="../images/tutorials/feedreader/73/result-6.png" alt="feedreader result"/></p>
+
+        <p class="tips"> This is <u>not</u> a beginner's tutorial. The assumption
+            is that you are familiar with, and have used, NetBeans Platform 
+            idioms such as "<a href="http://wiki.netbeans.org/NetBeansDeveloperFAQ#Nodes_and_Explorer">Node</a>" and "<a href="http://wiki.netbeans.org/NetBeansDeveloperFAQ#Lookup">Lookup</a>". The <a href="https://netbeans.org/features/platform/all-docs.html">NetBeans Platform Learning Trail</a>
+            provides several quick starts and other beginner materials that
+            cover these topics in detail.</p>
+
+        <p><b class="notes">Note:</b> This document uses NetBeans IDE 8.0 and NetBeans Platform 8.0. If you
+            are using an earlier version, see <a href="74/nbm-feedreader.html">the previous version
+                of this document</a>.</p>
+
+        <p><b>Contents</b></p>
+
+        <p><img src="../images/articles/81/netbeans-stamp.png" class="stamp" width="114" height="114" alt="Content on this page applies to NetBeans IDE 8.0" title="Content on this page applies to NetBeans IDE 8.0"/></p>
+        <ul class="toc">
+            <li><a href="#two">Setting Up the Application</a></li>
+            <li><a href="#three">Creating the Feed Reader Window</a></li>
+            <li><a href="#four">Creating the Model</a></li>
+            <li><a href="#five">Creating the Node Hierarchy</a></li>
+            <li><a href="#six">Displaying the Node Hierarchy in the Feed Window</a></li>
+            <li><a href="#seven">Creating the Actions</a></li>
+        </ul>
+
+        <p><b>To follow this tutorial, you need the software and resources listed in the following 
+                table.</b></p>
+
+        <table>
+            <tbody>
+                <tr>
+                    <th class="tblheader" scope="col">Software or Resource</th>
+                    <th class="tblheader" scope="col">Version Required</th>
+                </tr> 
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/downloads/index.html">NetBeans IDE</a></td>
+                    <td class="tbltd1">version 8.0 or above</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">Java Developer Kit (JDK)</a></td>
+                    <td class="tbltd1">version 7 or above</td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://repo1.maven.org/maven2/net/java/dev/rome/rome/1.0.0">Rss and atOM utilitiEs</a></td>
+                    <td class="tbltd1"></td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://repo1.maven.org/maven2/net/java/dev/rome/rome-fetcher/1.0.0">Rome Fetcher</a></td>
+                    <td class="tbltd1"></td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="http://jdom.org/downloads/index.html">JDom</a></td>
+                    <td class="tbltd1"></td>
+                </tr>
+                <tr>
+                    <td class="tbltd1"><a href="https://netbeans.org/files/documents/4/550/feedreader-images.zip">FeedReader icon and splash screen</a></td>
+                    <td class="tbltd1"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p class="tips">For troubleshooting purposes, you are welcome to download the <a href="http://java.net/projects/nb-api-samples/sources/api-samples/show/versions/8.0/tutorials/FeedReader">completed tutorial source code</a>.</p>
+
+        <h2><a name="two"></a>Setting Up the Application</h2>
+        <p>Let's start with a quick revision of some basic concepts. 
+            Firstly, building an application on top of the NetBeans Platform
+            starts with generating a number of folders and files which serve
+            as the foundation of your application. For example,
+            NetBeans IDE provides several project wizards that set up all
+            the basic files needed by modules and applications built
+            on the NetBeans Platform.</p>
+        <ul>
+            <li>
+                <b>NetBeans Platform Application.</b> A project that groups a set of 
+                module projects and library wrapper module projects that have dependencies on 
+                each other, and lets you deploy them together as a unit. Automatically included
+                are a subset of the modules that make up the NetBeans Platform.</li>
+            <li>
+                <b>Module Suite.</b> Same as above, except that the pre-included modules are
+                more than only those relating to the NetBeans Platform&#8212;in this case,
+                all the modules that make up NetBeans IDE are included as well.</li>
+            <li>
+                <b>Library Wrapper Module.</b> A project that puts a library JAR file on its classpath and exports some or all of the JAR file's packages from the module as public packages.</li>
+            <li>
+                <b>Module.</b> A project for implementing the functionality, business logic, and user interface of a module or application built on the NetBeans Platform.</li>
+        </ul>
+        <p>Now we'll begin creating our own application, the Feed Reader.</p>
+        <div class="indent">
+            <h3>
+                Creating the Application Skeleton</h3>
+            <div class="indent">
+                <ol>
+                    <li>
+                        <p>Choose File &gt; New Project (Ctrl-Shift-N). Under
+                            Categories, select NetBeans Modules. Under Projects, select NetBeans Platform Application. 
+                            You should see the following:</p>
+                        <p><img alt="project wizard"  src="../images/tutorials/feedreader/73/paintapp-proj-wiz-1.png" /></p>
+                        <p class="tips">Depending on the modules installed in your IDE, different categories may be shown
+                            in the Categories list above.</p>
+                        <p>Click Next.</p></li>
+                    <li>
+                        <p>In the Name and Location panel, type <tt>FeedReader</tt>
+                            in Project Name. Change the Project Location to any
+                            directory on your computer:</p>
+                        <p><img alt="project wizard"  src="../images/tutorials/feedreader/73/paintapp-proj-wiz-2.png" /></p>
+                        <p>Click Finish.</p></li>
+                </ol>
+            </div>
+
+            <p>The IDE creates the <tt>FeedReader</tt>
+                project, which looks as follows in the
+                Projects window:</p>
+            <p><img alt="projects window"  src="../images/tutorials/feedreader/73/paintapp-proj-wiz-3.png"/></p>
+
+            <p>The project will contain the custom module projects that you
+                will create in the following sections. </p>
+
+            <h3>
+                Wrapping the Libraries</h3>
+
+            <p>You could bundle the entire Feed Reader application into a
+                single module. However, the application needs the Rome, Rome Fetcher, and JDom libraries:</p>
+            <ul>
+                <li>
+                    <b>Rome.</b> Reads RSS and Atom feeds, using a very simple API. </li>
+                <li>
+                    <b>Rome Fetcher.</b> Allows the retrieval of feeds via HTTP. </li>
+                <li>
+                    <b>JDom.</b> Is an XML parsing API. The only reason the Feed Reader will need it is because the Rome library uses it.</li>
+            </ul>
+
+            <p class="tips">Later, if you want to extend the Feed Reader
+                application with more modules that may use these libraries,
+                it would be better for them to depend on just the library modules,
+                rather than the entire Feed Reader. Also, library modules can
+                be "autoloading", which means that NetBeans will only load them
+                when needed. Until that happens, it won't take up any memory at runtime.</p>
+            <div class="indent">
+                <ol>
+                    <li><p>Right-click the Modules node in the project in
+                            the Projects window, as shown below, and click Add New Library:</p>
+                        <p><img alt="add new library"  src="../images/tutorials/feedreader/73/paintapp-proj-wiz-4.png"/></p></li>
+
+                    <li>
+                        In the Select Library panel, browse
+                        to the folder where you downloaded JDom, and then select <tt>jdom.jar</tt>
+                        and <tt>LICENSE.txt.</tt>
+                        Click Next.</li>
+                    <li>
+                        <p>In the Name and Location panel, accept all the defaults. The library wrapper module project
+                            will be stored within the application project. 
+                            You could also store it somewhere else, but for 
+                            versioning purposes it is a good idea to put it within
+                            the application project. Therefore, the <tt>FeedReader</tt>
+                            application project is selected in the 
+                            Add to Module Suite drop-down. Click Next.</p></li>
+                    <li>
+                        <p>In the Basic Module Configuration panel, type <tt>org.jdom</tt>
+                            as the code name base and leave all the other defaults unchanged. Click Finish.
+                            The new library wrapper module project opens 
+                            in the IDE and displays in the Projects window.
+                            You should now see the following in the Projects
+                            window:</p>
+
+                        <p><img alt="projects window"  src="../images/tutorials/feedreader/73/paintapp-proj-wiz-5.png"/></p>
+                        <p class="tips"> A frequent point of confusion is that you see two different "jdom" nodes above,
+                            each accompanied by a purple icon. The first of these, above, shows the relationship of the
+                            "jdom" module to the whole application. The second is the "jdom" project itself, containing
+                            its sources and libraries. This pattern is used throughout the application, with each module
+                            being shown in two different ways, as above.</p>                
+
+                    </li>
+                    <li>
+                        Return to step 1 of this section and create a library wrapper module project for Rome.
+                        Use code name base "org.rome" and accept all the other defaults.</li>
+                    <li>
+                        Return to step 1 of this section and create a library wrapper module project for Rome Fetcher.
+                        Use code name base "org.fetcher" and accept all the other defaults.</li>
+                </ol>
+            </div>
+
+            <p>You now have an application skeleton,
+                with three library wrapper module projects,
+                providing many useful Java classes that you will
+                be able to make use of throughout this tutorial:</p>
+            <p><img alt="projects window"  src="../images/tutorials/feedreader/73/paintapp-proj-wiz-6.png"/></p>
+
+            <h3>
+                Creating the Module Project </h3>
+            <p>In this section, we create a project for the functionality
+                that our application will provide. The project will make use of
+                the classes made available by the library wrapper modules that
+                we created in the previous section.</p>
+            <div class="indent">
+                <ol>
+                    <li>
+                        <p>Right-click the Modules node in the application project in
+                            the Projects window, as shown below, and click Add New:</p>
+                        <p><img alt=""  src="../images/tutorials/feedreader/73/new-mod-1.png"/></p>
+                    </li>
+                    <li>In the Name and Location panel, type <tt>FeedReader</tt>
+                        in Project Name. Accept all the other defaults. Click Next.</li>
+                    <li>In the Basic Module Configuration panel, type <tt>org.myorg.feedreader</tt>
+                        in Code Name Base.</li>
+                    <li>Do not select "Generate OSGi Bundle". Click Finish.</li>
+                </ol>
+
+                <p>
+                    The IDE creates the FeedReader project. 
+                    The project contains all of the module's sources and project 
+                    metadata, such as the project's Ant build script. The project 
+                    opens in the IDE. You can view its logical structure in the 
+                    Projects window (Ctrl-1) and its file structure in the Files 
+                    window (Ctrl-2). The Projects window should now show the 
+                    following:</p>
+
+                <p><img alt=""  src="../images/tutorials/feedreader/73/new-mod-2.png"/></p>
+
+            </div>
+
+            <h3><a name="dep1"></a>
+                Specifying the Application's Dependencies</h3>
+
+            <p>You need to subclass several classes that belong to the NetBeans APIs.
+                The classes belong to modules that need to be declared as dependencies
+                of your Feed Reader application. Use the Project Properties dialog
+                box for this purpose, as explained in the steps below.</p>
+            <div class="indent">
+                <ol>
+                    <li>
+                        <p>In the Projects window, right-click the
+                            <tt>FeedReader</tt>
+                            module project and choose Properties. In the 
+                            Project Properties dialog box, click Libraries.
+                        </p></li>
+                    <li>
+                        <p>Click Add Dependency.
+                            You will need the following APIs. Click the links below for further information on each of the APIs you will be using.</p>
+                        <p></p>
+                        <ul>
+                            <li><a href="http://bits.netbeans.org/dev/javadoc/org-openide-actions/org/openide/actions/doc-files/api.html">Actions APIs</a></li>
+                            <li><a href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/org/openide/loaders/doc-files/api.html">Datasystems API</a></li>
+                            <li><a href="http://bits.netbeans.org/dev/javadoc/org-openide-dialogs/org/openide/package-summary.html">Dialogs API</a></li>
+                            <li><a href="http://bits.netbeans.org/dev/javadoc/org-openide-explorer/org/openide/explorer/doc-files/api.html">Explorer & Property Sheet API</a></li>
+                            <li><a href="http://bits.netbeans.org/dev/javadoc/org-openide-filesystems/org/openide/filesystems/doc-files/api.html">File System API</a></li>
+                            <li><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util-lookup/org/openide/util/lookup/doc-files/lookup-api.html">Lookup API</a></li>
+                            <li><a href="http://bits.netbeans.org/dev/javadoc/org-openide-nodes/org/openide/nodes/doc-files/api.html">Nodes API</a></li>
+                            <li>rome</li>
+                            <li>rome-fetcher</li>
+                            <li><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-settings/overview-summary.html">Settings API</a></li>
+                            <li><a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/overview-summary.html">UI Utilities API</a></li>
+                            <li><a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/overview-summary.html">Utilities API</a></li>
+                            <li><a href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/org/openide/windows/package-summary.html">Window System API</a></li>
+                        </ul>
+
+                        <p>Click OK to exit the Project Properties dialog box.</p></li>
+
+                    <li><p>Expand the <tt>FeedReader</tt> project's Libraries
+                            node and notice the list of modules that are now
+                            available to this project:</p>
+
+
+                        <img alt=""  src="../images/tutorials/feedreader/73/new-dep-1.png"/>
+
+                    </li>
+                </ol>
+            </div>
+
+            <h3><a name="dep2"></a>
+                Setting Dependencies Between Library Wrapper Modules</h3>
+
+            <p>Now that we have set dependencies on the NetBeans API modules
+                that we will use, let's also set dependencies between our
+                library wrapper modules. For example, the Rome JAR makes use
+                of classes from the JDom JAR. Now that these are wrapped in
+                separate library wrapper modules, we need to specify the
+                relationship between the JARs via the library wrapper module's
+                Project Properties dialog box.</p>
+            <div class="indent">
+                <ol>
+                    <li>
+                        <p>First, lets make Rome dependent on JDom. Right-click the Rome
+                            library wrapper module project in the Projects window and choose
+                            Properties. In the Project Properties dialog box, click Libraries
+                            and then click Add Dependency. Add <tt>jdom</tt>. Click OK
+                            to exit the Project Properties dialog box. When you expand
+                            the Libraries node in the Rome project, you should now see the following:</p>
+                        <p><img alt="" src="../images/tutorials/feedreader/73/rome-props.png"/></p>
+                    </li>
+                    <li>
+                        <p>Finally, since Rome Fetcher depends on both
+                            Rome and JDom, you need to make Rome Fetcher
+                            dependent on Rome. Do so following the same instructions
+                            as the above, so that Rome Fetcher depends on Rome, as shown below:</p>
+
+                        <p><img alt="" src="../images/tutorials/feedreader/73/fetcher-props.png"/></p>
+
+                        Because Rome already 
+                        depends on JDom, you do not need to make 
+                        Rome Fetcher dependent on JDom.</li>
+                </ol>
+            </div>
+
+        </div>
+        <p>You have now created the source structure
+            of your new application. In the next section,
+            we will begin adding some code.</p>
+
+        <h2><a name="three"></a>
+            Creating the Feed Reader Window</h2>
+        <p>
+            In this section, you use the Java Class wizard as a starting point in
+            creating a new window. A different way to achieve the same end is to
+            use the New Window wizard, in the Module Development category in the
+            New File dialog. The New Window wizard is useful in that it integrates
+            with the Matisse GUI Builder, where you can design the layout of your
+            window. No layouting will need to be done in the case of the Feed Reader window,
+            therefore we will not use the New Window wizard in this case.</p>
+        <div class="indent">
+            <ol>
+                <li><p>Right-click the <tt>org.myorg.feedreader</tt> package node. Choose New &gt; Java Class.
+                        Enter <tt>FeedTopComponent</tt> as the Class Name. Ensure that <tt>org.myorg.feedreader</tt>
+                        is listed as the 
+                        Package. Click Finish. <tt>FeedTopComponent.java</tt> opens in the Source editor.</p></li>
+                <li>Near the top of the file, change the class declaration to the following:
+                    <pre class="examplecode">public class FeedTopComponent extends TopComponent {</pre>
+                    <p>Press Ctrl-Shift-I to let the IDE generate the required import statement.</p>
+                </li>
+
+                <li>Register the <tt>FeedTopComponent</tt> in the window system by adding annotations
+                    to the top of the class, as shown here, and then press Ctrl-Shift-I to let the IDE
+                    generate the appropriate import statements:
+
+                    <pre class="examplecode"><a href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/org/openide/windows/TopComponent.Description.html">@TopComponent.Description</a>(
+        preferredID = "FeedTopComponent",
+        persistenceType = TopComponent.PERSISTENCE_ALWAYS)
+<a href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/org/openide/windows/TopComponent.Registration.html">@TopComponent.Registration</a>(
+        mode = "explorer", 
+        openAtStartup = true)
+<a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/ActionID.html">@ActionID</a>(
+        category = "Window", 
+        id = "org.myorg.feedreader.FeedTopComponent")
+<a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/ActionReferences.html">@ActionReferences</a>({
+    <a href="http://bits.netbeans.org/dev/javadoc/org-openide-awt/org/openide/awt/ActionReference.html">@ActionReference</a>(
+        path = "Menu/Window", 
+        position = 0)
+})
+<a href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/org/openide/windows/TopComponent.OpenActionRegistration.html">@TopComponent.OpenActionRegistration</a>(
+        displayName = "#CTL_FeedAction")
+<a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/util/NbBundle.Messages.html">@Messages</a>({
+        "CTL_FeedAction=Open Feed Window"})
+public class FeedTopComponent extends TopComponent {</pre>          
+                    <p class="notes"><b>Note:</b> While the module is being compiled, the annotations
+                        above will be processed. XML entries will be created in the module's <tt>generated-layer.xml</tt>
+                        file, for each of the @TopComponent* and @Action* annotations. The <tt>generated-layer.xml</tt>
+                        file will be contributed by the module to the System Filesystem of the application. Read
+                        more <a href="http://wiki.netbeans.org/DevFaqSystemFilesystem">about the System Filesystem here</a>. For example, the <tt>FeedTopComponent</tt> will be displayed
+                        in the main area of the application, defined by the "editor"
+                        position, as specified by the <tt>@TopComponent.Registration</tt> annotation above. For each
+                        item defined in the <tt>@Messages</tt> annotation, a new key/value string is generated into a <tt>Bundle.java</tt>
+                        class.</p></li>
+
+                <li><p>Add a constructor to the <tt>FeedTopComponent</tt>, while again
+                        using the <tt>@Messages</tt> annotation referred to above:</p>
+
+                    <pre class="examplecode" style="overflow:auto;width:680px;">@Messages({
+    "CTL_FeedTopComponent=Feed Window",
+    "HINT_FeedTopComponent=This is a Feed Window"})
+private FeedTopComponent() {
+    setName(Bundle.CTL_FeedTopComponent());
+    setToolTipText(Bundle.HINT_FeedTopComponent());
+}</pre>
+                </li>
+                <li><p>In the Projects window, right-click the <tt>FeedReader</tt>
+                        project and choose Run, as shown below:</p>
+                    <p><img alt=""  src="../images/tutorials/feedreader/73/result-1.png"/></p>
+                    <p>The application starts up, the default splash screen is shown, and
+                        once the application has started, you should see your application,
+                        including the new window provided by your module:</p>
+                    <p><img alt=""  src="../images/tutorials/feedreader/73/result-2.png"/></p>
+
+
+                    <p><strong class="notes">Note: </strong> What you now have is an application consisting
+                        of the following modules:</p>
+                    <ul>
+                        <li>The modules provided by the NetBeans Platform, for bootstrapping
+                            the application, lifecycle management, window system, menu bars, toolbars, and other infrastructural
+                            concerns.</li>
+                        <li>The three library wrapper modules that you created in this tutorial.</li>
+                        <li>The FeedReader functionality module that
+                            you created in this tutorial, for providing the Feed window.</li>
+                    </ul>
+
+
+                    <p>In the application's Window menu, you should see the new menu item,
+                        which you can use for opening the Feed window, if it is closed.</p>
+                </li>
+            </ol>
+        </div>
+        <p>As you can see, without having done any coding, we have a 
+            complete application. It doesn't do much yet, but the entire
+            infrastructure exists and works as one would expect. Next, we begin using some
+            of the NetBeans APIs, to add code to our application.</p>
+
+        <h2><a name="four"></a>
+            Creating the Model</h2>
+        <p>
+            Now that you have laid the basis for your application, it's time to
+            begin adding your own code. We start by
+            creating a plain Java class that encapsulates a URL and its associated Rome feed. In
+            an MVC paradigm, this class  the <i>model</i> of the application.</p>
+        <div class="indent">
+            <ol>
+                <li>
+                    Right-click the <tt>FeedReader</tt>
+                    module project node, choose New &gt; Java Class. Name the class <tt>Feed</tt>
+                    and select <tt>org.myorg.feedreader</tt>
+                    in the Package drop-down. Click Finish.</li>
+                <li>
+                    In the Source Editor, replace the default <tt>Feed</tt>
+                    class with the following:
+                    <pre class="examplecode">package org.myorg.feedreader;
+
+import com.sun.syndication.feed.synd.SyndFeed;
+import com.sun.syndication.fetcher.FeedFetcher;
+import com.sun.syndication.fetcher.impl.HashMapFeedInfoCache;
+import com.sun.syndication.fetcher.impl.HttpURLFeedFetcher;
+import java.io.IOException;
+import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.net.URL;
+
+public class Feed implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    private static final FeedFetcher FEED_FETCHER =
+            new HttpURLFeedFetcher(HashMapFeedInfoCache.getInstance());
+
+    private transient SyndFeed syndFeed;
+    private final URL url;
+    private String name;
+
+    public Feed(URL url) {
+        this.url = url;
+        name = url.toExternalForm();
+    }
+
+    public URL getURL() {
+        return url;
+    }
+
+    public SyndFeed getSyndFeed() throws IOException {
+        if (syndFeed == null) {
+            try {
+                syndFeed = FEED_FETCHER.retrieveFeed(url);
+                String title = syndFeed.getTitle();
+                if (title != null) {
+                    name = title;
+                }
+            } catch (Exception ex) {
+                throw new IOException(ex);
+            }
+        }
+        return syndFeed;
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
+
+    public static Feed getSample() {
+        try {
+            return new Feed(new URL("http://planetnetbeans.org/rss20.xml"));
+        } catch (MalformedURLException x) {
+            throw new AssertionError(x);
+        }
+    }
+
+}</pre>
+                    <p class="notes"><b>Note:</b> In the next three steps, you're going to create a new <tt>layer.xml</tt> file. Each
+                        module in your application can have at most one of these files. The <tt>layer.xml</tt>
+                        file is registered in the manifest file of the module, by the wizard that you use
+                        to create it. The <tt>layer.xml</tt> file provides the module's contributions to
+                        the application's virtual filesystem, known as the System Filesystem. In this case,
+                        you're going to contribute a new folder, named "RssFeeds" to the virtual filesystem.
+                        Later in this tutorial, when you work on the view, the node hierarchy will be created
+                        on top of this virtual folder. Within the virtual folder, multiple feeds will be found.
+                        Right now, a sample feed is registered there, via the <tt>getSample</tt> method above.
+                        That method will be registered in the "RssFeeds" folder, in the third of the three steps
+                        that follow, so that when the "RssFeeds" folder is referred to in the view, later in
+                        this tutorial, the sample feed will automatically be created because the
+                        <tt>getSample</tt> method will be instantiated.</p>
+                </li>
+                <li><p>Right-click the <tt>org.myorg.feedreader</tt> package node and
+                        choose New | Other. In the Module Development category, choose
+                        XML Layer, as shown below:</p>
+                    <p><img alt="" src="../images/tutorials/feedreader/73/new-layer-1.png"/></p>
+                    <p>Click Next.</p>
+                </li>
+                <li><p>The layer file will be created in the location shown below. It will
+                        also be registered in the manifest file of the module.</p>
+                    <p><img alt="" src="../images/tutorials/feedreader/73/new-layer-2.png"/></p>
+                    <p>Click Finish. The <tt>layer.xml</tt> file is added to the module and
+                        registered in the module's <tt>manifest.mf</tt> file.</p>
+                </li>
+                <li><p>Change the content of the <tt>layer.xml</tt> to the following, to
+                        create your RssFeeds folder in the virtual filesystem:</p>
+
+                    <pre class="examplecode">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.2//EN" "https://netbeans.org/dtds/filesystem-1_2.dtd"&gt;
+&lt;filesystem&gt;
+    &lt;folder name="RssFeeds"&gt;
+        &lt;file name="sample.instance"&gt;
+            &lt;attr name="instanceCreate" methodvalue="org.myorg.feedreader.Feed.getSample"/&gt;
+        &lt;/file&gt;
+    &lt;/folder&gt;
+&lt;/filesystem&gt;</pre>
+
+                </li>
+
+
+            </ol>
+        </div>
+
+        <h2><a name="five"></a>
+            Creating the Node Hierarchy</h2>
+
+        <p>The application will have a node hierarchy consisting of three levels. Below, each node
+            is defined, together with a factory class for instantiating the node. The root node will be instantiated
+            within the <tt>TopComponent</tt>, later in the tutorial, in the section "Displaying the Node Hierarchy in the Feed Window".</p>
+
+        </p>
+        <div class="indent">
+            <h3><a name="root"></a>Creating the First Level Node: The Root Node</h3>
+            <p>The top level node of our Feed Reader is provided
+                by the RootNode class. It will create its child nodes
+                by wrapping a virtual folder, named "RssFeeds", which you created
+                in the previous section. The virtual folder will be received, later in the
+                tutorial, in the form
+                of a node, which is what the root node will wrap. The root node will have
+                the display name of the node that it wraps,
+                while providing the top level node in the node hierarchy, as shown below:</p>
+            <p>
+                <img alt="" src="../images/tutorials/feedreader/73/result-3.png"/>
+            </p>
+            <p class="notes"><b>Note:</b> In addition to child nodes,
+                when the user right-clicks the root node, 
+                the root node will provide a pop-up menu containing a menu item for
+                any action registered in the "Actions/RootActions" folder
+                in the application's virtual filesystem, that is, the System Filesystem. 
+                Right at the end of this tutorial, two actions
+                will be registered in that folder.</p>
+            <p>Take the following steps:   </p>
+            <div class="indent">
+                <ol>
+
+                    <li>
+                        Create a new class named <tt>RootNode.java</tt>
+                        in the <tt>org.myorg.feedreader</tt>
+                        package.</li>
+                    <li>
+                        Replace the default class with the following:
+                        <pre class="examplecode">package org.myorg.feedreader;
+
+import java.util.List;
+import javax.swing.Action;
+import org.openide.loaders.DataObjectNotFoundException;
+import org.openide.nodes.FilterNode;
+import org.openide.nodes.Node;
+import org.openide.util.Utilities;
+
+public class RootNode extends <a href="http://bits.netbeans.org/dev/javadoc/org-openide-nodes/org/openide/nodes/FilterNode.html">FilterNode</a> {
+
+    public RootNode(Node filterNode) throws DataObjectNotFoundException {
+        super(filterNode, new RssFolderChildren(filterNode));
+    }
+
+    @Override
+    public Action[] getActions(boolean bln) {
+        List&lt;? extends Action&gt; rootActions = Utilities.actionsForPath("Actions/RootActions");
+        return rootActions.toArray(new Action[rootActions.size()]);
+    }
+    
+}</pre>
+                    </li>
+                </ol>
+            </div>
+            <p class="notes"><b>Note:</b> A red underline marking remains in the class, because
+                you have not yet created the RssFolderChildren class.</p>
+            <h3><a name="rssfolderchildren"></a>Creating the Children of the Root Node</h3>
+            <p>In this section, we create the children of the root node. Each child
+                is a folder, containing RSS feeds. The RSS feeds, in turn,
+                contain the entries representing the feed articles, which
+                the user will read in a browser.</p>
+            <p>To create this class, take the following steps:</p>
+            <div class="indent">
+                <ol>
+                    <li>
+                        Create <tt>RssFolderChildren.java</tt>
+                        in the <tt>org.myorg.feedreader</tt>
+                        package.</li>
+                    <li>
+                        <p>Replace the default class with the following:</p>
+                        <pre class="examplecode">package org.myorg.feedreader;
+
+import java.io.IOException;
+import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
+import org.openide.loaders.DataObjectNotFoundException;
+import org.openide.nodes.FilterNode;
+import org.openide.nodes.Node;
+import org.openide.util.Exceptions;
+import org.openide.util.Lookup;
+
+public class RssFolderChildren extends <a href="http://bits.netbeans.org/dev/javadoc/org-openide-nodes/org/openide/nodes/FilterNode.Children.html">FilterNode.Children</a> {
+
+    RssFolderChildren(Node rssFolderNode) {
+        super(rssFolderNode);
+    }
+
+    @Override
+    protected Node[] createNodes(Node n) {
+        FileObject fo = n.getLookup().lookup(FileObject.class);
+        if (fo != null && fo.isFolder()) {
+            try {
+                return new Node[]{new RootNode(n)};
+            } catch (DataObjectNotFoundException ex) {
+                Exceptions.printStackTrace(ex);
+            }
+        } else {
+            Feed feed = getFeed(fo.getLookup());
+            if (feed != null) {
+                try {
+                    return new Node[]{new OneFeedNode(n, feed.getSyndFeed())};
+                } catch (IOException ioe) {
+                    Exceptions.printStackTrace(ioe);
+                }
+            }
+        }
+        // best effort
+        return new Node[]{new FilterNode(n)};
+    }
+
+    /**
+     * Looking up a feed
+     */
+    private static Feed getFeed(Lookup lookup) {
+        Feed f = FileUtil.getConfigObject("RssFeeds/sample.instance", Feed.class);
+        if (f == null) {
+            throw new IllegalStateException("Bogus file in feeds folder: "
+                    + lookup.lookup(FileObject.class));
+        }
+        return f;
+    }
+
+}</pre>
+                    </li>
+                    <p class="notes"><b>Note:</b> If you're using NetBeans Platform 7.2,
+                        replace <tt>getFeed(fo.getLookup())</tt>
+                        with <tt>getFeed(DataObject.find(fo).getLookup())</tt>.</p>
+                </ol>
+            </div>
+            <h3><a name="feed"></a>Creating the Second Level Node: The Feed Node</h3>
+            <p>Here we are concerned with feeds, that is, the containers for the entry nodes, as shown below
+                for the "Planet NetBeans" feed:</p>
+            <p>
+                <img alt="" src="../images/tutorials/feedreader/73/result-4.png"/>
+            </p>
+            <p>As can be seen, each of these nodes has
+                a list of entries, a display name, retrieved from the feed, and an icon. The icon
+                is provided in the table at the start of this tutorial. Unzip it from there
+                and add it to the main source package of the module.
+                Each Feed node also has a Delete menu item.</p>
+            <p>Take the following steps to create this class:   </p>
+            <div class="indent">
+                <ol>
+                    <li>
+                        Create <tt>OneFeedNode.java</tt>
+                        in the <tt>org.myorg.feedreader</tt>
+                        package.</li>
+                    <li>
+                        Replace the default class with the following:
+                        <pre class="examplecode">package org.myorg.feedreader;
+
+import com.sun.syndication.feed.synd.SyndFeed;
+import java.awt.Image;
+import javax.swing.Action;
+import org.openide.actions.DeleteAction;
+import org.openide.nodes.FilterNode;
+import org.openide.nodes.Node;
+import org.openide.util.ImageUtilities;
+import org.openide.util.actions.SystemAction;
+import org.openide.util.lookup.Lookups;
+
+/**
+ * Getting the feed node and wrapping it in a FilterNode
+ */
+public class OneFeedNode extends <a href="http://bits.netbeans.org/dev/javadoc/org-openide-nodes/org/openide/nodes/FilterNode.html">FilterNode</a> {
+
+    OneFeedNode(Node feedFileNode, SyndFeed feed) {
+        super(feedFileNode, Children.create(new FeedChildFactory(feed), false), Lookups.fixed(feed));
+    }
+
+    @Override
+    public String getDisplayName() {
+        return getLookup().lookup(SyndFeed.class).getTitle();
+    }
+
+    @Override
+    public Image getIcon(int type) {
+        return ImageUtilities.loadImage("org/myorg/feedreader/rss16.gif");
+    }
+
+    @Override
+    public Image getOpenedIcon(int type) {
+        return getIcon(type);
+    }
+
+    @Override
+    public Action[] getActions(boolean context) {
+        return new Action[]{SystemAction.get(DeleteAction.class)};
+    }
+    
+}</pre>
+
+                    </li>
+                </ol>
+            </div>
+            <p>Several red underline markings remain in the class, because
+                we have not created our <tt>FeedChildFactory</tt> class yet.</p>
+
+            <h3><a name="feed"></a>Creating the Children of the Feed Node</h3>
+            <p>The children of the Feed node are Entry nodes, which in turn are created
+                by a <tt>ChildFactory</tt> class, as defined below.</p>
+
+            <p>To create this class, take the following steps:</p>
+            <div class="indent">
+                <ol>
+                    <li>
+                        Create <tt>FeedChildFactory.java</tt>
+                        in the <tt>org.myorg.feedreader</tt>
+                        package.</li>
+                    <li>
+                        <p>Replace the default class with the following:</p>
+
+                        <pre class="examplecode">package org.myorg.feedreader;
+
+import com.sun.syndication.feed.synd.SyndEntry;
+import com.sun.syndication.feed.synd.SyndFeed;
+import java.beans.IntrospectionException;
+import java.util.List;
+import org.openide.nodes.ChildFactory;
+import org.openide.nodes.Node;
+import org.openide.util.Exceptions;
+import org.openide.util.NbCollections;
+
+public class FeedChildFactory extends <a href="http://bits.netbeans.org/dev/javadoc/org-openide-nodes/org/openide/nodes/ChildFactory.html">ChildFactory&lt;SyndEntry&gt;</a> {
+
+    private final SyndFeed feed;
+
+    public FeedChildFactory(SyndFeed feed) {
+        this.feed = feed;
+    }
+
+    @Override
+    protected boolean createKeys(List&lt;SyndEntry&gt; list) {
+        list.addAll(<a href="http://bits.netbeans.org/dev/javadoc/org-openide-util/org/openide/util/NbCollections.html">NbCollections</a>.checkedListByCopy(feed.getEntries(), SyndEntry.class, true));
+        return true;
+    }
+
+    @Override
+    protected Node createNodeForKey(SyndEntry entry) {
+        OneEntryNode node = null;
+        try {
+            node = new OneEntryNode(entry);
+        } catch (IntrospectionException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+        return node;
+    }
+
+}</pre>
+                    </li>
+                </ol>
+            </div>
+
+            <h3><a name="entry"></a>Creating the Third Level Node: The Entry Node</h3>
+            <p>Finally, we deal with the lowest level nodes, those
+                that represent entries provided by the feed, such as the highlighted
+                entry below:</p>
+            <p>
+                <img alt="" src="../images/tutorials/feedreader/73/result-5.png"/>
+            </p>
+            <p>To create this class, take the following steps:</p>
+            <div class="indent">
+                <ol>
+                    <li>
+                        Create <tt>OneEntryNode.java</tt>
+                        in the <tt>org.myorg.feedreader</tt>
+                        package.</li>
+                    <li>
+                        Replace the default class with the following:
+                        <pre class="examplecode">package org.myorg.feedreader;
+
+import com.sun.syndication.feed.synd.SyndContent;
+import com.sun.syndication.feed.synd.SyndEntry;
+import java.awt.BorderLayout;
+import java.beans.IntrospectionException;
+import javax.swing.Action;
+import javax.swing.JEditorPane;
+import javax.swing.JScrollPane;
+import org.openide.actions.OpenAction;
+import org.openide.cookies.OpenCookie;
+import org.openide.nodes.BeanNode;
+import org.openide.nodes.FilterNode;
+import org.openide.util.actions.SystemAction;
+import org.openide.util.lookup.Lookups;
+import org.openide.windows.TopComponent;
+
+class OneEntryNode extends <a href="http://bits.netbeans.org/dev/javadoc/org-openide-nodes/org/openide/nodes/FilterNode.html">FilterNode</a> {
+
+    private final SyndEntry entry;
+
+    public OneEntryNode(SyndEntry entry) throws IntrospectionException {
+        super(  new BeanNode&lt;SyndEntry&gt;(entry), 
+                Children.LEAF,
+                Lookups.fixed(new EntryOpenCookie(entry)));
+        this.entry = entry;
+    }
+
+    /**
+     * Using HtmlDisplayName ensures any HTML in RSS entry titles are properly
+     * handled, escaped, entities resolved, etc.
+     */
+    @Override
+    public String getHtmlDisplayName() {
+        return entry.getTitle();
+    }
+
+    /**
+     * Making a tooltip out of the entry's description
+     */
+    @Override
+    public String getShortDescription() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Author: ").append(entry.getAuthor()).append("; ");
+        if (entry.getPublishedDate() != null) {
+            sb.append("Published: ").append(entry.getPublishedDate().toString());
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Providing the Open action on a feed entry
+     */
+    @Override
+    public Action[] getActions(boolean popup) {
+        return new Action[]{SystemAction.get(OpenAction.class)};
+    }
+
+    @Override
+    public Action getPreferredAction() {
+        return getActions(false)[0];
+    }
+
+    /**
+     * Specifying what should happen when the user invokes the Open action
+     */
+    private static class EntryOpenCookie implements OpenCookie {
+
+        private final SyndEntry entry;
+
+        EntryOpenCookie(SyndEntry entry) {
+            this.entry = entry;
+        }
+
+        @Override
+        public void open() {
+            BrowserTopComponent btc = new BrowserTopComponent(entry);
+            btc.open();
+            btc.requestActive();
+        }
+
+    }
+
+    public static final class BrowserTopComponent extends TopComponent {
+        public BrowserTopComponent(SyndEntry entry) {
+            setName(entry.getTitle());
+            setLayout(new BorderLayout());
+            JEditorPane editorPane = new JEditorPane();
+            editorPane.setEditable(false);
+            SyndContent description = entry.getDescription();
+            if (description != null) {
+                editorPane.setContentType("text/html");
+                editorPane.setText(description.getValue());
+            }
+            add(new JScrollPane(editorPane), BorderLayout.CENTER);
+            putClientProperty(/*PrintManager.PRINT_PRINTABLE*/"print.printable", true);
+        }
+    }
+    
+}</pre>
+                        <p class="tips"> Instead of a <tt>JEditorPane</tt>, you
+                            can use the JavaFX WebView component. A NetBeans module
+                            providing the JavaFX WebView component embedded in a <tt>TopComponent</tt>,
+                            together with all its dependencies,
+                            is found here: <a href="http://java.net/projects/javafxbrowser">http://java.net/projects/javafxbrowser</a>.</p>
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+        <h2><a name="six"></a>
+            Displaying the Node Hierarchy in the Feed Window</h2>
+        <p>In this section, we use a NetBeans Platform component called <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-explorer/org/openide/explorer/view/BeanTreeView.html">BeanTreeView</a></tt>
+            to display a hierarchy of feeds in our <tt>TopComponent</tt>.</p>
+        <div class="indent">
+            <ol>
+                <li>
+                    Open <tt>FeedTopComponent.java</tt> and type <tt>implements <a href="http://bits.netbeans.org/dev/javadoc/org-openide-explorer/org/openide/explorer/ExplorerManager.Provider.html">ExplorerManager.Provider</a></tt>
+                    at the end of the class declaration.</li>
+                <li>
+                    Press Alt-Enter in the line and click on the suggestion. The IDE adds an import statement for the required
+                    package <tt><a href="http://bits.netbeans.org/dev/javadoc/org-openide-explorer/org/openide/explorer/ExplorerManager.html">org.openide.explorer.ExplorerManager</a></tt>.
+                    Press Alt-Enter again and click on the suggestion. The IDE implements the abstract
+                    method <tt>getExplorerManager()</tt>. </li>
+                <li>
+                    Type <tt>return manager;</tt>
+                    in the body of the new <tt>getExplorerManager()</tt>
+                    method. Press Alt-Enter in the line and let the IDE create a field called <tt>manager</tt>
+                    for you. Replace the default definition with this one:
+                    <pre class="examplecode">private final ExplorerManager manager = new ExplorerManager();</pre>
+                </li>
+                <li>
+                    Finally, add the following code to the end of the constructor:
+                    <pre class="examplecode">setLayout(new BorderLayout());
+add(new BeanTreeView(), BorderLayout.CENTER);
+try {
+    FileObject rssFeedsFolder = FileUtil.getConfigFile("RssFeeds");
+    Node rssFeedsNode = DataObject.find(rssFeedsFolder).getNodeDelegate();
+    manager.setRootContext(new RootNode(rssFeedsNode));
+} catch (DataObjectNotFoundException ex) {
+    Exceptions.printStackTrace(ex);
+}
+ActionMap map = getActionMap();
+map.put("delete", ExplorerUtils.actionDelete(manager, true));
+associateLookup(ExplorerUtils.createLookup(manager, map));</pre>
+                </li>
+
+                <li><p>
+                        Now a lot of code is underlined, because you have not declared their
+                        associated packages. Press Ctrl-Shift-I and the IDE adds several import 
+                        statements below the package statement. The complete 
+                        list of import statements should be as follows:</p>
+
+                    <pre class="examplecode">import java.awt.BorderLayout;
+import java.util.logging.Logger;
+import javax.swing.ActionMap;
+import org.openide.util.NbBundle;
+import org.openide.windows.TopComponent;
+import org.openide.windows.WindowManager;
+import org.openide.util.ImageUtilities;
+import org.netbeans.api.settings.ConvertAsProperties;
+import org.openide.explorer.ExplorerManager;
+import org.openide.explorer.ExplorerUtils;
+import org.openide.explorer.view.BeanTreeView;</pre></li>
+                <li><p>
+                        Right-click the application and choose Run. You should see the application shown at the start of this tutorial:</p>
+                    <p><img src="../images/tutorials/feedreader/73/result-6.png" alt="feedreader result"/></p></li>
+            </ol>
+        </div>
+        </div>
+
+        <h2><a name="seven"></a>
+            Creating the Actions</h2>
+
+        <p>Two <tt>Action</tt> classes are defined below. Via annotations, they are registered
+            in the "Actions/RootActions" folder, which is where the <tt>RootNode</tt>, defined earlier
+            in this tutorial, will find them.</p>
+        <div class="indent">
+
+            <h3><a name="action1"></a>Creating the Add Feed Action</h3>
+            <p>In this section, we create the menu item that adds new
+                feeds. As you can see in the previous section, the
+                Add Feed Action is bound to the context-menu of the
+                Root Node.</p>
+            <p>To create this class, take the following steps:</p>
+            <div class="indent">
+                <ol>
+                    <li>
+                        Create <tt>AddRssAction.java</tt>
+                        in the <tt>org.myorg.feedreader</tt>
+                        package.</li>
+                    <li>
+                        <p>Replace the default class with the following:</p>
+                        <pre class="examplecode">package org.myorg.feedreader;
+
+import java.awt.event.ActionEvent;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectOutputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import javax.swing.AbstractAction;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionRegistration;
+import org.openide.filesystems.FileLock;
+import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataFolder;
+import org.openide.util.Exceptions;
+import org.openide.util.NbBundle.Messages;
+
+@ActionID(category = "RootActions", id = "org.myorg.feedreader.AddRssAction")
+@ActionRegistration(displayName = "#FN_addbutton")
+@Messages("FN_addbutton=Add Feed")
+public class AddRssAction extends AbstractAction {
+
+    private final DataFolder folder;
+
+    public AddRssAction(DataFolder df) {
+        folder = df;
+    }
+
+    @Messages({
+            "FN_askurl_msg=Enter the URL of an RSS/Atom Feed",
+            "FN_askurl_title=New Feed",
+            "FN_askurl_err=Invalid URL: {0}|",
+            "FN_cannotConnect_err=Cannot Connect!"
+    })
+    @Override
+    public void actionPerformed(ActionEvent ae) {
+        <a href="http://bits.netbeans.org/dev/javadoc/org-openide-dialogs/org/openide/NotifyDescriptor.html">NotifyDescriptor</a>.InputLine nd = new NotifyDescriptor.InputLine(
+                Bundle.FN_askurl_msg(),
+                Bundle.FN_askurl_title(),
+                NotifyDescriptor.OK_CANCEL_OPTION,
+                NotifyDescriptor.PLAIN_MESSAGE);
+        Object result = <a href="http://bits.netbeans.org/dev/javadoc/org-openide-dialogs/org/openide/DialogDisplayer.html">DialogDisplayer</a>.getDefault().notify(nd);
+        if (result.equals(NotifyDescriptor.OK_OPTION)) {
+            String urlString = nd.getInputText();
+            URL url;
+            try {
+                url = new URL(urlString);
+            } catch (MalformedURLException e) {
+                Exceptions.attachLocalizedMessage(e, Bundle.FN_askurl_err(result));
+                Exceptions.printStackTrace(e);
+                return;
+            }
+            try {
+                checkConnection(url);
+            } catch (IOException e) {
+                Exceptions.attachLocalizedMessage(e, Bundle.FN_cannotConnect_err());
+                Exceptions.printStackTrace(e);
+                return;
+            }
+            Feed f = new Feed(url);
+            FileObject fld = folder.getPrimaryFile();
+            String baseName = "RssFeed";
+            int ix = 1;
+            while (fld.getFileObject(baseName + ix, "ser") != null) {
+                ix++;
+            }
+            try {
+                FileObject writeTo = fld.createData(baseName + ix, "ser");
+                FileLock lock = writeTo.lock();
+                try {
+                    ObjectOutputStream str = new ObjectOutputStream(writeTo.getOutputStream(lock));
+                    try {
+                        str.writeObject(f);
+                    } finally {
+                        str.close();
+                    }
+                } finally {
+                    lock.releaseLock();
+                }
+            } catch (IOException ioe) {
+                Exceptions.printStackTrace(ioe);
+            }
+        }
+    }
+
+    private static void checkConnection(final URL url) throws IOException {
+        InputStream is = url.openStream();
+        is.close();
+    }
+    
+}</pre>
+                    </li>
+                </ol>
+            </div>
+        </div>
+        <div class="indent">
+
+            <h3><a name="action2"></a>Creating the Add Folder Action</h3>
+            <p>In this section, we create the menu item that adds new
+                folders, in which new feeds can be created. As you can see in an earlier section, the
+                Add Folder Action is bound to the context-menu of the
+                Root Node.</p>
+            <p>To create this class, take the following steps:</p>
+            <div class="indent">
+                <ol>
+                    <li>
+                        Create <tt>AddFolderAction.java</tt>
+                        in the <tt>org.myorg.feedreader</tt>
+                        package.</li>
+                    <li>
+                        <p>Replace the default class with the following:</p>
+                        <pre class="examplecode">package org.myorg.feedreader;
+
+import java.awt.event.ActionEvent;
+import java.io.IOException;
+import javax.swing.AbstractAction;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionRegistration;
+import org.openide.loaders.DataFolder;
+import org.openide.util.Exceptions;
+import org.openide.util.NbBundle.Messages;
+
+@ActionID(id = "org.myorg.feedreader.AddFolderAction", category = "RootActions")
+@ActionRegistration(displayName = "#FN_addfolderbutton")
+@Messages("FN_addfolderbutton=Add Folder")
+public class AddFolderAction extends AbstractAction {
+
+    private final DataFolder folder;
+
+    public AddFolderAction(DataFolder df) {
+        folder = df;
+    }
+
+    @Messages({
+            "FN_askfolder_msg=Enter the folder name",
+            "FN_askfolder_title=New Folder"
+    })
+    @Override
+    public void actionPerformed(ActionEvent ae) {
+        <a href="http://bits.netbeans.org/dev/javadoc/org-openide-dialogs/org/openide/NotifyDescriptor.html">NotifyDescriptor</a>.InputLine nd = new NotifyDescriptor.InputLine(
+                Bundle.FN_askfolder_msg(),
+                Bundle.FN_askfolder_title(),
+                NotifyDescriptor.OK_CANCEL_OPTION,
+                NotifyDescriptor.PLAIN_MESSAGE);
+        Object result = <a href="http://bits.netbeans.org/dev/javadoc/org-openide-dialogs/org/openide/DialogDisplayer.html">DialogDisplayer</a>.getDefault().notify(nd);
+        if (result.equals(NotifyDescriptor.OK_OPTION)) {
+            final String folderString = nd.getInputText();
+            try {
+                DataFolder.create(folder, folderString);
+            } catch (IOException ex) {
+                Exceptions.printStackTrace(ex);
+            }
+        }
+    }
+    
+}</pre>
+                    </li>
+
+                </ol>
+
+            </div>
+        </div>
+
+        <div class="indent">
+
+            <h3><a name="action3"></a>Using the Actions</h3>
+
+            <p>Run the application again and notice that the root node now
+                provides access to two actions, when you right-click on the root node:</p>
+            <p><img alt="" src="../images/tutorials/feedreader/73/result-7.png"/></p>
+            <p>Use the actions to create new folders and register new feeds in the application.</p>
+            <p>For example, use this NASA feed to try out the "Add Feed" action:</p>
+            <p><a href="http://www.nasa.gov/rss/breaking_news.rss">http://www.nasa.gov/rss/breaking_news.rss</a></p>
+            <p>You should see a new feed is added and the result should be something like this:</p>
+            <p><img alt=""  src="../images/tutorials/feedreader/73/new-feed.png"/></p>
+        </div>
+        </div>
+
+        <div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback: NetBeans Platform 8.0 Feed Reader Tutorial">Send Us Your Feedback</a>
+            <br style="clear:both;" /></div>
+    </body>
+</html>

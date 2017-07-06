@@ -1,0 +1,1244 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<!--
+Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+-->
+<head>
+
+<!--     Use is subject to license terms.-->
+<meta name="AUTHOR" content="John Jullion-Ceccarelli, Geertjan Wielenga, and Patrick Keegan">
+<meta name="KEYWORDS" content="NETBEANS, IDE, TRANSITION, MIGRATION, DOCUMENTATION">
+<meta name="DESCRIPTION" content="How to configure complex classpaths, debugging and single-file targets, and other advanced
+	settings in NetBeans IDE free-form projects.">
+<title>Advanced Free-Form Project Configuration</title>
+<link REL="STYLESHEET" HREF="../../netbeans.css" TYPE="text/css">
+</head>
+<body>
+<h1>Advanced Free-Form Project Configuration<a name="top"></a></h1>
+
+<p>Free-form projects in NetBeans IDE provide a very powerful tool for Java
+  developers who build and run their applications using an Ant script.</p>
+<p>If you are comfortable working with Ant, you can edit your Ant script and the
+  IDE project configuration file to achieve an even tighter integration between
+NetBeans IDE and your build process.</p>
+<p class="notes"><b>Note:</b> For detailed information about free-form projects, see <a href="http://www.oracle.com/pls/topic/lookup?ctx=nb7400&id=NBDAG406">Creating Free-Form Projects</a> in <i>Developing Applications with NetBeans IDE</i>.</p>
+<p>This article assumes that you have already used the New Project wizard to set up
+a free-form project. </p>
+
+<p>This article covers the following information:</p>
+<ul class="toc">
+  <li><a href="#hook">Mapping IDE Commands to Ant Targets</a>
+    <ul>
+      <li><a href="#prop_box">Mapping IDE Commands in the Project Properties Dialog
+        Box</a></li>
+      <li><a href="#in_file">Mapping IDE Commands in project.xml</a></li>
+      <li><a href="#shortcuts">Adding Shortcuts to Project Node Contextual Menu</a></li>
+    </ul>
+  </li>
+  <li><a href="#edit">Editing the project.xml File</a>
+    <ul>
+      <li><a href="#props_proj">Using Properties in the project.xml File</a></li>
+      <li><a href="#validating">Validating the project.xml File</a></li>
+    </ul>
+  </li>
+    <li><a href="#debugj2se">Creating a Target to Debug your Java SE Application</a></li>
+  <li><a href="#debugweb">Creating a Target to Debug your Web Application</a></li>
+  <li><a href="#profilej2se">Creating a Target to Profile your Java SE Application</a></li>
+  <li><a href="#compilesingle">Creating a Target to Compile a Single
+    File</a>
+  <li><a href="#runsingle">Writing a Target to Run/Debug/Test a Single
+    File</a>
+    <ul>
+      <li><a href="#run_sing">Running the Selected File</a></li>
+      <li><a href="#reference">Getting a Reference to the Currently Selected File
+        in the IDE</a></li>
+      <li><a href="#debug_sing">Debugging the Selected File</a></li>
+      <li><a href="#profile_sing">Profiling the Selected File</a></li>
+    </ul>
+  </li>
+  <li><a href="#fix">Writing a Target for the Apply Code Changes Command</a></li>
+</ul>
+    <p>You can also download <a href="https://netbeans.org/kb/articles/nb_targets.xml" target="targets">Sample Ant Targets</a>.</p>
+<h2>
+Managing the Classpath in Free-form Projects</h2>
+<p>
+In free-form projects, your Ant script handles the classpath for all of your
+source folders. To make project sources available to Ant, you need to specify
+the classpath for the project sources. If you have any custom tasks, you also
+need to add these tasks to Ant's classpath.</p>
+<div class="indent">
+<h3>
+Specifying the Classpath for Project Sources</h3>
+<p>
+In free-form projects you tell the IDE what classes to make available for code
+completion and refactoring and specify the classpath for these project sources.
+You specify the classpath in the Java Sources Classpath settings in the
+Project Properties dialog box. You do this because by default the IDE
+ignores your environment's CLASSPATH variable whenever it runs Ant.</p>
+<p>
+The classpath variable you set in the Project Properties dialog box does not
+affect the actual classpath of the project, which is specified in the Ant
+script. Declaring the classpath in the Project Properties dialog box does not
+change the actual compilation or runtime classpath of the source folders.
+However, the project classpath variable must match the classpath used by
+your Ant script in order to provide the correct information for
+code completion, error highlighting, and refactoring commands.
+You have to set an explicit classpath in your build scripts because
+the IDE ignores your environment's CLASSPATH variable whenever it runs Ant.
+If you change the classpath of one, you must change the class path of the other</p>
+<h3 class="tutorial">Specifying the Classpath for Custom Tasks</h3>
+<p>
+In free-form projects, you can call up and run custom Ant tasks in your
+build script. For your Ant script to use customs tasks, you must
+include the tasks in the Ant script's classpath. For example, you
+may add a task to your build script to format your code with Jalopy.
+In order to do this, however, you have to add the Jalopy JAR file to
+Ant's classpath. </p>
+<p>
+You can add custom tasks to Ant's classpath within the IDE by doing
+either of the following:</p>
+<ul>
+<li>
+Providing an explicit classpath to the tasks in your build script.
+This is the recommended method for specifying the location of JAR
+files that contain custom tasks used by your Ant script, as it ensures
+that your build scripts will be fully portable. You can write your tasks
+and include instructions to compile them and produce a JAR file in the
+build file. To use these tasks, include the long form of <code>taskdef</code>,
+which includes a classpath. Here is a simple example of such a task:</li>
+</ul>
+<pre class="examplecode">&lt;project name=&quot;test&quot; default=&quot;all&quot; basedir=&quot;.&quot;&gt;
+    &lt;target name=&quot;init&quot;&gt;
+        &lt;javac srcdir=&quot;tasksource&quot; destdir=&quot;build/taskclasses&quot;/&gt;
+        &lt;jar jarfile=&quot;mytasks.jar&quot;&gt;
+            &lt;fileset dir=&quot;build/taskclasses&quot;/&gt;
+        &lt;/jar&gt;
+        &lt;taskdef name=&quot;customtask&quot; classname=&quot;com.mycom.MyCustomTask&quot;&gt;
+            &lt;classpath&gt;
+                 &lt;pathelement location=&quot;mytasks.jar&quot;/&gt;
+            &lt;/classpath&gt;
+        &lt;/taskdef&gt;
+    &lt;/target&gt;
+&lt;/project&gt;</pre>
+<p>
+The advantage of this method is that no special preparation is needed to
+begin using the script. The script is entirely self-contained and
+portable. This method also makes it easier to develop your tasks within
+the IDE, as the script compiles them for you automatically.</p>
+<p>
+To make your build scripts even more robust, use a property instead
+of a hard-coded location to specify the classpath to your tasks.
+You can store the property in the build script itself or in a separate 
+<code>ant.properties</code> file. You can then change the classpath setting throughout
+your script by simply changing the value of the specified property.</p>
+<ul>
+<li>
+Configuring the Ant Classpath property in the Options window. If you cannot
+declare a classpath in your build script, or you are using third-party build
+scripts which you cannot alter, you can add tasks to Ant's classpath in the
+IDE in the Options window.</li>
+</ul>
+<p class="notes"><b>Note:</b>
+ If you modify the Ant classpath in the Options window, the task is on Ant's
+ classpath for all projects when you run Ant in the IDE.</p>
+</div>
+<h2>Mapping IDE Commands to Ant Targets<a name="hook"></a></h2>
+<p>There are three ways to map an IDE command to a target in an Ant script:</p>
+<ul>
+  <li>By adjusting the settings in the Build and Run page of a project's Project
+    Properties dialog box</li>
+    <li>By having the IDE generate a target for you and then customizing this target to
+    your needs. This works for the Debug Project and Compile File commands.
+    The IDE offers to generate these targets the first time you run those
+    commands in the project.</li>
+  <li>By manually editing the project's <tt>project.xml</tt> file.</li>
+</ul>
+<div class="indent">
+<h3 class="tutorial">Mapping IDE Commands in the Project Properties Dialog Box<a name="prop_box"></a></h3>
+<p>The Project Properties dialog box is the main tool for configuring free-form
+  projects in the IDE. To open the dialog box, right-click the free-form project
+  node (icon) in the Projects window and choose Properties. In the Build and Run
+  page, you can set the Ant target to run for the following commands:</p>
+<ul>
+  <li>Build Project</li>
+  <li>Clean Project</li>
+  <li>Generate Javadoc</li>
+  <li>Run Project (free-form Java projects)</li>
+  <li>Deploy Project (free-form Web projects)</li>
+  <li>Test Project</li>
+</ul>
+<p><b>Note: </b>If your Ant script uses an <tt>import</tt> statement to import
+  targets from another Ant script, the targets do not show up in the drop-down
+  lists in the Project Properties dialog box. To map commands to these targets,
+  you have to type the names of the targets into the drop-down lists.</p>
+<p>You can also add shortcuts for any target in your Ant script to the contextual
+  menu of the project's node in the Custom Menu Items list.</p>
+<h3 class="tutorial">Mapping IDE Commands in <tt>project.xml<a name="in_file"></a></tt></h3>
+<p>Each IDE project has a <tt>project.xml</tt> file that contains important metadata
+  about your project's contents, the location of the project's Ant script, which
+  targets to run for IDE commands, and other information. If you want to map commands
+  that work on the presently selected files in the IDE, or if you want to map
+  a command to a target in a separate Ant script, you have to edit the <tt>project.xml</tt>
+  file by hand. In the Files window, expand the root folder for your project and
+  the <tt>nbproject</tt> folder, then double-click <tt>project.xml</tt>.</p>
+<p>The <tt>ide-actions</tt> element holds the mappings for IDE commands. You enter
+  an <tt>action</tt> element with the name for any of the standard IDE actions
+  and define the script and target to which you want to map the command. </p>
+<p>The standard IDE actions that are available are as follows:</p>
+<ul>
+  <li><tt>build</tt> - Build project (F11)</li>
+  <li><tt>rebuild</tt> - Clean and build project (Shift-F11)</li>
+  <li><tt>compile.single</tt> - Compile selected file (F9)</li>
+  <li><tt>clean</tt> - Clean project</li>
+  <li><tt>run</tt> - Run project (F6)</li>
+  <li><tt>run.single</tt> - Run selected file (Shift-F6)</li>
+  <li><tt>redeploy</tt> - For Web application projects, build project, undeploy
+    project from server, and deploy project to server</li>
+  <li><tt>test</tt> - Run JUnit tests for project (Alt-F6)</li>
+  <li><tt>test.single</tt> - Run the JUnit test for selected file (Ctrl-F6)</li>
+  <li><tt>debug.test.single</tt> - Debug the JUnit test for selected file (Ctrl-Shift-F6)</li>
+  <li><tt>debug</tt> - Run project in the debugger (F5)</li>
+  <li><tt>debug.single</tt> - Debug selected file (Ctrl-Shift-F5)</li>
+  <li><tt>debug.fix</tt> - Run the Apply Code Changes command to reload the selected file during a debugging session</li>
+  <li><tt>debug.stepinto</tt> - Execute one line of the project main class in
+    the debugger and pause (F7)</li>
+  <li><tt>profile.test.single</tt> - Profile the JUnit test for the selected file</li>
+  <li><tt>profile</tt> - Run project in the profiler (Alt-F2)</li>
+  <li><tt>profile.single</tt> - Profile the selected file</li>
+  <li><tt>javadoc</tt> - Generate Javadoc for project</li>
+</ul>
+<p>For example, the following maps the Debug Project to the <tt>debug-nb</tt>
+  target of the project's Ant script:</p>
+<pre class="examplecode">  &lt;action name=&quot;debug&quot;&gt;
+    &lt;target&gt;debug-nb&lt;/target&gt;
+  &lt;/action&gt;</pre>
+<p>The Ant targets for NetBeans IDE commands do not have to live in the same Ant
+  script that you use to build and run the project. This is useful for users who
+  cannot alter their Ant script. The following maps the Debug Project to the <tt>debug-nb</tt>
+  target in a separate Ant script:</p>
+<pre class="examplecode">  &lt;action name=&quot;debug&quot;&gt;
+    &lt;script&gt;path/to/my/nbtargets.xml&lt;/script&gt;
+    &lt;target&gt;debug-nb&lt;/target&gt;
+  &lt;/action&gt;</pre>
+<p><b>Note:</b> <tt>&lt;script&gt;</tt> must precede <tt>&lt;target&gt;</tt>.</p>
+<p>You can also configure a command to run multiple targets. The targets are run
+  in the order they appear in the action. For example, the mapping for the Clean
+  and Build Project command looks like this:</p>
+<pre class="examplecode">   &lt;action name=&quot;rebuild&quot;&gt;
+        &lt;target&gt;clean&lt;/target&gt;
+        &lt;target&gt;compile&lt;/target&gt;
+    &lt;/action&gt;</pre>
+<h3 class="tutorial">Adding Shortcuts to Project Node Contextual Menu<a name="shortcuts"></a></h3>
+<p><tt>project.xml</tt> also has a <tt>context-menu</tt> element that controls
+  the contents of a project node's contextual menu. If you manually add an action
+  that is run on the project, make sure you register the action name in <tt>&lt;context-menu&gt;</tt>
+  as well. If you use the Project Properties dialog box to configure a standard
+  project command, the IDE automatically adds the command to the project's contextual
+  menu.</p>
+</div>
+<h2>Editing the project.xml File<a name="edit"></a></h2>
+<p>Each IDE project has a <tt>project.xml</tt> file that includes important information
+  about the project, such as:
+<ul>
+  <li>Mappings between project commands and targets in an Ant script</li>
+  <li>Information about the project's contents, classpath, and target Java platform.
+    This information is used to visualize the project and enable code completion
+    and refactoring</li>
+</ul><div class="indent">
+<h3 class="tutorial">Using Properties in the <tt>project.xml</tt> File<a name="props_proj"></a></h3>
+<p>You can define properties inside the <tt>project.xml</tt> file itself or store
+  them in a separate <tt>.properties</tt> file. One way of keeping your <tt>project.xml</tt>
+  file synchronized with the information in your Ant script is to import properties
+  into <tt>project.xml</tt> from the same <tt>.properties</tt> file that is used
+  by your Ant script. </p>
+<p>Note, however, that all file paths in <tt>project.xml</tt> are by default relative
+  to the project folder. If your Ant script is not located in the project folder,
+  a <tt>classdir</tt> property that points to <tt>build/classes/</tt> does not
+  point to the same directory for the Ant script and for the <tt>project.xml</tt>
+  file. (The project folder is the folder that contains your <tt>nbproject</tt>
+  folder, not the <tt>nbproject</tt> folder itself. By default, the new free-form
+  project wizard makes your Ant script's parent folder the project folder.) </p>
+<p>You can solve this problem by defining properties for important paths (like
+  <tt>project.dir</tt>) and using these properties to be more exact (for example,
+  <tt>classdir=${project.dir}/build/classes</tt>).</p>
+<p>To create and import properties in <tt>project.xml</tt>, enter the following
+  between the <tt>name</tt> element and the <tt>folders</tt> element: </p>
+<pre class="examplecode">&lt;properties&gt;
+  &lt;property name=&quot;<i>name</i>&quot;&gt;<i>value</i>&lt;/property&gt;
+  &lt;property-file&gt;<i>my-properties-file</i>.properties&lt;/property-file&gt;
+  &lt;property-file&gt;<i>another-properties-file</i>.properties&lt;/property-file&gt;
+&lt;/properties&gt; </pre>
+<p>Note that the syntax is different than the syntax used in Ant scripts. Also
+  note that you while you can add properties in any order, properties can only
+  refer to other properties that have been defined previously in <tt>project.xml</tt>.
+  The properties file path itself can also use property substitutions. </p>
+<h3 class="tutorial">Validating the <tt>project.xml</tt> File<a name="validating"></a></h3>
+<p>The IDE comes bundled with the XML schemas for free-form <tt>project.xml</tt>
+  files and automatically validates a free-form <tt>project.xml</tt> file every
+  time you edit and save it. You can view the XML schemas for the free-form <tt>project.xml</tt>
+  file at the following locations:
+<ul>
+  <li><a href="https://netbeans.org/ns/freeform-project/1.xsd">https://netbeans.org/ns/freeform-project/1.xsd</a>.
+    Controls the main section of the free-form <tt>project.xml</tt> (<tt>&lt;general-data&gt;</tt>).
+  </li>
+  <li><a href="https://netbeans.org/ns/freeform-project-java/1.xsd">https://netbeans.org/ns/freeform-project-java/1.xsd</a>.
+    Controls the <tt>&lt;java-data&gt;</tt> section.</li>
+  <li><a href="https://netbeans.org/ns/freeform-project-web/1.xsd">https://netbeans.org/ns/freeform-project-web/1.xsd</a>.
+    Controls the <tt>&lt;web-data&gt;</tt> section (if you have one). </li>
+</ul>
+</div>
+<h2>Creating a Target to Debug Your Java SE Application<a name="debugj2se"></a></h2>
+<p>Similar to commands for compiling and running, debugging commands rely on
+various information, such as the location of your
+sources, the location of the compiled classes and other items on the classpath,
+and name of the project's main class. </p>
+<p>In free-form projects, the IDE does not "know"
+	about any of these things. When you run a command in the IDE (such as Build Project),
+	the IDE simply calls a target in your build script and lets the script handle
+	the command. Therefore, for debugging to work, you also have to have a build script
+	target for debugging. The IDE provides some custom Ant tasks to work with the debugger
+	and also can generate a basic debug target, which attempts to fill in important
+	details based on other targets in your script.</p>
+<p>To set up debugging in a free-form project, you need to do the following:</p>
+<ul>
+<li>Make sure that your classes are compiled with debugging information included. For
+example, you might accomplish this in the <tt>compile</tt>
+target of your build script by including the argument <tt>debug="true"</tt> in the <tt>&lt;javac&gt;</tt> task.</li>
+<li>If the output of a free-form project is on the classpath of another project,
+map the free-form project's source packages to their outputs. This ensures that you can use the
+debugger to step into the project's sources when you start a debugging session in a
+project that has a dependency on the free-form project. You can do this in the Output
+panel of the Project Properties dialog box for the free-form project. You can open the
+Project Properties dialog box by right-clicking the project's node in the
+Projects window and choosing Properties.<!--TODO explain this more?--></li>
+<li>Create a target in your build script for debugging and map that target to
+the IDE's Debug Project command. The IDE can assist you by generating a basic target
+and mapping, but you might need to modify the target.</li>
+</ul>
+<div class="indent">
+<h3 class="tutorial">Creating the Debug Target </h3>
+    <p>If you do not have a <tt>debug</tt> target written for your project, the IDE
+    will offer to generate a basic target for you when you first try to debug the project. You can
+    then inspect the target and customize it for the project's specific requirements.</p>
+
+  <p><b>Note:</b>Before you have the debug target generated, it is a good idea to
+first make sure that you have a target mapped to the Run Project command.
+When the IDE generates a debug target, it looks for
+            information in the target you have mapped to the Run Project command to
+            determine such things such as the run classpath and the project's main
+            class. If you have a target mapped to the Run Project command, there is a
+            good chance that the generated debug target will work without further customization.</p>
+
+        <p>To create a debug target for a free-form project:</p>
+    <ol>
+        <li>In the Projects window, right-click the project's node and choose Set Main Project.</li>
+        <li>Choose Run &gt; Debug Main Project.</li>
+        <li>In the Debug Project dialog box that appears, click Generate.
+        <p>A target called <tt>debug-nb</tt> is created in a file called <tt>ide-targets.xml</tt>.
+        The generated <tt>ide-targets.xml</tt> file is a build script that
+        imports your main <tt>build.xml</tt> file, so your debug target can take advantage of
+        targets and properties set by or referenced by your main build script.</p>
+        <p>In addition, a mapping for this target is created in the <tt>project.xml</tt> file so
+        that the target is called whenever you choose the Debug Project command in the IDE. If
+        you write the target from scratch, you need to also create this mapping yourself. See
+        <a href="#map_projectxml">Manually Mapping a Target to a Menu Item</a>.</p></li>
+        <li>Verify that the generated <tt>debug-nb</tt> target properly takes into account all
+        of the elements of your project. In particular, you might need to modify the
+        <tt>&lt;classpath&gt;</tt> argument in the target if it does not include all of the items
+        in your run classpath.</li>
+    </ol>
+    <p>Once the target is created, you can start debugging. To start debugging:
+    <ol>
+        <li>Set a breakpoint in your main class. You can do so by clicking in the left margin of
+        the line where you want to set the breakpoint. The line with the breakpoint is
+        highlighted in pink.</li>
+        <li>Once again, right-click the project's node and choose Debug Project.
+        <p>The target should run and start execution of the program. Progress of the
+        running target is shown in the Output window and the status of the debugger is
+        shown in the status bar at the bottom of the Output window.</li>
+    </ol>
+
+
+
+    <h3 class="tutorial"> A Typical Free-Form Project Debug Target </h3>
+    <p>The generated Ant target does the following:
+
+    <ul>
+        <li>Starts the debugger with the <tt>nbjpdastart</tt> task.</li>
+        <li>Stores the address at which the debugger listens for the application in
+        the <tt>jpda.address</tt> property (<tt>addressproperty=&quot;jpda.address&quot;</tt>).
+        You do not have to define the <tt>jpda.address</tt> property in your Ant script
+        or properties file. It is defined by the IDE. </li>
+        <li>Establishes the runtime classpath. If the IDE is not able to determine your runtime
+        classpath, placeholders are put in the script, which you need to fill in yourself.</li>
+        <li>Runs the application in debug mode. Setting (<tt>fork=&quot;true&quot;</tt>
+ensures the process is launched in a separate virtual machine.</li>
+    </ul>
+
+    <p><b>Note</b>: You can add any additional JVM arguments or program arguments
+in the <tt>java</tt> task as well.
+
+    <p>A generated debug target where the IDE is able to guess the runtime classpath looks something
+    like the following (where <tt><i>italicized</i></tt> items would have values specific to your project):
+
+<pre class="examplecode">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+    &lt;project basedir=".." name="<i>YourProjectName</i>"&gt;
+        &lt;import file="../build.xml"/&gt;
+        &lt;!-- TODO: edit the following target according to your needs --&gt;
+        &lt;!-- (more info: https://netbeans.org/kb/articles/freeform-config.html) --&gt;
+        &lt;target name="debug-nb"&gt;
+            &lt;nbjpdastart addressproperty="jpda.address" name="<i>NameOfProject</i>" transport="dt_socket"&gt;
+                &lt;classpath path="<i>ClasspathSpecifiedInYourRunTarget</i>"/&gt;
+            &lt;/nbjpdastart&gt;
+            &lt;java classname="<i>MainClassSpecifiedInRunTarget</i>" classpath="<i>ClasspathSpecifiedInYourRunTarget</i>" fork="true"&gt;
+                &lt;jvmarg value="-Xdebug"/&gt;
+                &lt;jvmarg value="-Xnoagent"/&gt;
+                &lt;jvmarg value="-Djava.compiler=none"/&gt;
+                &lt;jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/&gt;
+            &lt;/java&gt;
+        &lt;/target&gt;
+    &lt;/project&gt;</pre>
+
+
+
+    <p>If you do not have a run target mapped or the IDE otherwise can not determine
+    the project's classpath or main class, the generated debug target includes "TODO" placeholders
+    for you to fill in these values as in the example below.</p>
+<pre class="examplecode">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+    &lt;project basedir=".." name="<i>YourProjectName</i>"&gt;
+        &lt;!-- TODO: edit the following target according to your needs --&gt;
+        &lt;!-- (more info: https://netbeans.org/kb/articles/freeform-config.html) --&gt;
+        &lt;target name="debug-nb"&gt;
+            &lt;path id="cp"&gt;
+                &lt;!-- TODO configure the runtime classpath for your project here: --&gt;
+            &lt;/path&gt;
+            &lt;nbjpdastart addressproperty="jpda.address" name="<i>NameOfProject</i>" transport="dt_socket"&gt;
+                &lt;classpath refid="cp"/&gt;
+            &lt;/nbjpdastart&gt;
+            &lt;!-- TODO configure the main class for your project here: --&gt;
+            &lt;java classname="<i>some.main.Class</i>" fork="true"&gt;
+                &lt;classpath refid="cp"/&gt;
+                &lt;jvmarg value="-Xdebug"/&gt;
+                &lt;jvmarg value="-Xnoagent"/&gt;
+                &lt;jvmarg value="-Djava.compiler=none"/&gt;
+                &lt;jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/&gt;
+            &lt;/java&gt;
+        &lt;/target&gt;
+    &lt;/project&gt;</pre>
+    <p>To specify the runtime classpath, insert <tt>pathelement</tt> elements within the <tt>path</tt>
+    element and point them to the directories that contain the items in your classpath. For example, you
+can use the <tt>location</tt> attribute of <tt>pathelement</tt> to specify
+the location of the classpath items relative to your project directory. The project directory
+ is usually the one that contains the project's <tt>build.xml</tt> file. Below is an example:
+<pre class="examplecode">&lt;path id="cp"&gt;
+    &lt;pathelement location="libs"&gt;
+    &lt;pathelement location="build"&gt;
+&lt;/path&gt;</pre>
+
+
+    <a name="map_projectxml"></a>
+    <h3 class="tutorial">Manually Mapping a Target to a Menu Item</h3>
+    <p>When you have the IDE generate a target, the IDE automatically provides
+    the mapping between the target and the IDE command's menu item. However, if you have
+    created the target manually, you need to also create the mapping manually.</p>
+
+    <p><b>To map the Debug Project command to a  target in an external Ant script: </b>
+    <ol>
+        <li>Open the project's <tt>project.xml</tt> file in the editor.</li>
+        <li>Add the following to <tt>&lt;ide-actions&gt;</tt>:
+    <pre>  &lt;action name=&quot;debug&quot;&gt;
+        &lt;script&gt;<i>path_to_Ant_script</i>&lt;/script&gt;
+        &lt;target&gt;<i>target_name</i>&lt;/target&gt;
+    &lt;/action&gt; </pre></li>
+        <li>Add the command to the project node's contextual menu, by adding the following
+            line to the <tt>&lt;context-menu&gt;</tt> target:
+            <pre>  &lt;ide-action name=&quot;debug&quot;/&gt;</pre>
+            The IDE maps the Debug Project action to the specified
+            target in the project's Ant script.
+        </li>
+    </ol>
+
+
+<!--<p>Let's look at a target that runs the project in the debugger. To view all of
+  the targets discussed below, see these <a href="nb_targets.xml" target="targets">sample
+  NetBeans IDE targets</a>. Of course, you have to change the names of the properties
+  and the target dependencies to match the properties and targets in your Ant
+  script.</p>
+
+
+<p>Now let's map the <tt>debug</tt> target to the Debug Project command. If the
+  <tt>debug</tt> target is in the same Ant script that is used to build and run
+  the project, open the project's Project Properties dialog box, go to Build and
+  Run, and set Debug Project to the <tt>debug</tt> target. </p>
+<p>If you keep this target in a separate Ant script, open the project's <tt>project.xml</tt>
+  file and enter the following under<tt> ide-actions</tt>:</p>
+<pre class="examplecode">  &lt;action name=&quot;debug&quot;&gt;
+    &lt;script&gt;path/to/my/nbtargets.xml&lt;/script&gt;
+    &lt;target&gt;debug&lt;/target&gt;
+  &lt;/action&gt;</pre>
+<p>Of course, you have to point the <tt>script</tt> element to your Ant script.</p>
+<p><a href="#top">Back to top</a></p>
+-->
+
+</div>
+<h2>Creating a Target to Debug Your Web Application<a name="debugweb"></a></h2>
+<p>Now let's look at a target to attach a debugger to a web application.
+First, choose Run &gt; Debug Main Project (F5).
+If you do not have a target <a href="#hook">mapped</a> to the Debug command,
+you are prompted to let the IDE generate an IDE-specific debug target for you
+ in the <tt>nbproject/ide-targets.xml</tt> file. When you click Generate,
+ the <tt>debug-nb</tt> target is generated, together with the <tt>-load-props</tt>,
+ <tt>-check-props</tt>, <tt>-init</tt>, and <tt>debug-display-browser</tt> targets, which support the debug target.
+ The targets are displayed in the Source Editor as follows:</p>
+<p>(<b>Note:</b> These targets are not generated in the IDE. Therefore, you need to
+ change the generated code so that it looks as follows.)</p>
+ <a name="debug.target"></a>
+<pre class="examplecode">    &lt;target name="-load-props"&gt;
+       &lt;property file="nbproject/project.properties"/&gt;
+    &lt;/target&gt;
+
+    &lt;target name="-check-props"&gt;
+       &lt;fail unless="session.name"/&gt;
+       &lt;fail unless="jpda.host"/&gt;
+       &lt;fail unless="jpda.address"/&gt;
+       &lt;fail unless="jpda.transport"/&gt;
+       &lt;fail unless="web.docbase.dir"/&gt;
+       &lt;fail unless="debug.sourcepath"/&gt;
+       &lt;fail unless="client.url"/&gt;
+    &lt;/target&gt;
+
+    &lt;target depends="-load-props, -check-props" name="-init"/&gt;
+
+    &lt;target depends="-init" name="debug-nb" description="Debug Project"&gt;
+       &lt;nbjpdaconnect address="${jpda.address}" host="${jpda.host}"
+        name="${session.name}" transport="${jpda.transport}"&gt;
+            &lt;sourcepath&gt;
+		&lt;path path="${debug.sourcepath}"/&gt;
+            &lt;/sourcepath&gt;
+       &lt;/nbjpdaconnect&gt;
+       &lt;antcall target="debug-display-browser"/&gt;
+    &lt;/target&gt;
+
+    &lt;target name="debug-display-browser"&gt;
+       &lt;nbbrowse url="${client.url}"/&gt;
+    &lt;/target&gt;</pre>
+<p>There's no need for you to customize the generated targets. All you have to do is set the properties
+ that the IDE requires to use the targets it generated. For example, you need to tell the IDE where
+ your application's sources are. To do this, you will set properties in the <tt>nbproject/debug.properties</tt>
+ file that the IDE created for you when it generated the <tt>debug-nb</tt> target above.
+ Using the <tt>-load-props</tt> target above, the IDE will load the properties when you run the <tt>debug-nb</tt> target</p>
+<p>(<b>Note:</b> This file is not generated in the IDE. You need to
+ go to the Files window, expand the project node, right-click the <tt>nbproject</tt> folder, and
+ choose New &gt; File/Folder. Choose Other &gt; Properties File, name the file <tt>debug</tt>,
+ and click Finish. In the new <tt>debug.properties</tt> file, add the following properties.)</p>
+ <a name="debug.properties"></a>
+ <pre class="examplecode">  jpda.session.name=MyProject
+  jpda.host=localhost
+
+  # Sun Java System Application Server using shared memory (on Windows)
+  # jpda.address=localhost4848
+  # jpda.transport=dt_shmem
+
+  # Sun Java System Application Server using a socket
+  # jpda.address=9009
+  # jpda.transport=dt_socket
+
+  # Tomcat using shared memory (on Windows)
+   jpda.address=tomcat_shared_memory_id
+   jpda.transport=dt_shmem
+
+  # Tomcat using a socket
+  #jpda.address=11555
+  #jpda.transport=dt_socket
+
+  src.folders=src
+  web.docbase.dir=web
+
+  # you can change this property to a list of your source folders
+  debug.sourcepath=${src.folders}:${web.docbase.dir}
+
+  # Client URL for Tomcat
+  client.url=http://localhost:8084/MyProject
+
+  # Client URL for Sun Java System Application Server
+  # client.url=http://localhost:8080</pre>
+<p>The table below explains the properties defined above.</p>
+<table border="1" cellpadding="5" cellspacing="0" summary="The left column lists the
+   property. The right columns lists the value and notes.">
+  <tr class="valign-top">
+    <th scope="col" class="align-left">Property</th>
+    <th scope="col" class="align-left">Value</th>
+    <th scope="col" class="align-left">Notes</th>
+  </tr>
+  <tr class="valign-top">
+      <td><tt>jpda.session.name</tt></td>
+      <td>&nbsp;</td>
+      <td>The display name given in the Sessions window when you debug the project.</td>
+  </tr>
+  <tr class="valign-top">
+      <td><tt>jpda.host</tt></td>
+      <td>&nbsp;</td>
+      <td>The host that the application to be debugged uses to connect to
+     the debugger, such as <tt>localhost</tt>.</td>
+  </tr>
+  <tr class="valign-top">
+      <td><tt>jpda.address</tt></td>
+      <td>The bundled Tomcat Web Server defaults are <tt>11555</tt> for socket connections
+        and <tt>tomcat_shared_memory_id</tt> for shared memory connections.</td>
+      <td>To set a different address, right-click the Tomcat node in the Services window
+      and choose Properties. In the Properties sheet, change the Debugging Port property (for socket connections) or
+      Name property (for shared memory connections). Then close the Properties sheet. Now stop and restart the Tomcat Web Server,
+      if you had already started it.</td>
+  </tr>
+  <tr class="valign-top">
+      <td><tt>jpda.transport</tt></td>
+      <td><tt>dt_socket</tt> (for socket connections) or <tt>shmem</tt> (for shared memory connections)</td>
+      <td>To set a different transport, right-click the Tomcat node in the Services window
+      and choose Properties. In the Properties sheet, change the Debugging Type. Then close the Properties sheet.
+      Now stop and restart the Tomcat Web Server, if you had already started it.</td>
+ </tr>
+
+ <tr class="valign-top">
+      <td><tt>web.docbase.dir</tt><br>
+        <tt>src.folders</tt></td>
+      <td>The location of your web root (<tt>web.docbase.dir</tt>) and Java
+         source files (<tt>src.folders</tt>).</td>
+      <td>Multiple source roots can be included in
+        the sourcepath by means of the ":" delimiter.
+        Note that the Java source folders must be specified as Source Package Folders in the Java Sources panel
+        of the Project Properties dialog box. (Right click the project, choose
+        Properties, then click Java Sources in the Project Properties dialog box.)</td>
+  </tr>
+  <tr class="valign-top">
+      <td><tt>client.url</tt></td>
+      <td>&nbsp;</td>
+      <td>The URL that should be opened in the IDE's default browser,
+     such as <tt>http://localhost:8084/MyProject</tt>.</td>
+  </tr>
+</table>
+
+<p>Note that the <tt>debug-nb</tt> target is automatically mapped
+ to the Debug Project command. However, if you keep this target in a
+ different Ant script, open the project's <tt>project.xml</tt>
+  file and change the <tt>script</tt> element in the <tt>ide-actions</tt> section:</p>
+<pre class="examplecode">  &lt;action name=&quot;debug&quot;&gt;
+    &lt;script&gt;path-to-my-debug-target.xml&lt;/script&gt;
+    &lt;target&gt;debug-nb&lt;/target&gt;
+  &lt;/action&gt;</pre>
+<div class="indent">
+<h3 class="tutorial">Using the Debug Target</h3>
+<p>Before you can use your debug target, you need to
+ deploy your application. Therefore, start the server and
+ run deploy the application. Note that the first time that you run the application per session, the Tomcat Web Server asks you
+	 for a username and password. The only acceptable username and password is
+	 that of a user with a "manager" role. This is defined in the <tt>conf/tomcat-users.xml</tt>
+	 file in the Tomcat Web Server's base directory. To identify the location of this directory,
+	 right-click the Tomcat Web Server instance node in the Services window and select
+	 Properties. In the Properties dialog box, the Base Directory property
+	 points to the Tomcat Web Server's base directory.</p>
+
+<p>Once the application is deployed, stop the server and restart it in debug mode. The way this is done depends on the server:</p>
+<ul><li>Bundled Tomcat Web Server
+        <p>Expand the Servers node in the Services window, right-click the
+            Bundled Tomcat node, choose Start/Stop Server,
+    and click Start Server (Debug).</p></li>
+<li>External Tomcat Web Server
+        <p>Run the following command:</p>
+<pre class="examplecode">  catalina jpda start </pre></li></ul>
+<p>Once the server has started in debug mode,
+    choose Run &gt; Debug Main Project (F5). The application is deployed
+    and is attached to the debugger. The debugger stops at the first breakpoint,
+ after which you can step into (F7) or over (F8) the code.</p>
+ <a name="troubleshoot-debug"></a>
+ <h3 class="tutorial">Troubleshooting the Debug Target</h3>
+
+<p>Even though the IDE does its best to <a href="#debugweb">generate a complete debug target for you</a>, with properties that
+
+ are tailored to your specific environment, you should always analyze
+ and fine tune the debug process. Work through the questions below when you encounter
+ problems while using an Ant debug target from the NetBeans IDE.</p>
+<div class="indent">
+<h4 class="tutorial">Has the web application been correctly deployed?</h4>
+<p>Check that the web application has been deployed:</p>
+
+<ol><li>In the Services window, expand the Servers node,
+start the server (if not started), expand the server's instance node, and
+expand the Web Applications node.</li>
+<li>If you do not see your application's context (<tt>/MyProject</tt>, for the
+application in this document), it has not been correctly deployed.</li>
+<li>Deploy the application.</li></ol>
+
+<h4>Are you behind a firewall?</h4>
+<p>Check that your proxy settings are correct. Depending on your proxy type do the
+ following:</p>
+ <ul><li><b>HTTP Proxy.</b> Choose Tools &gt; Setup Wizard. In the wizard, select
+	 the Use HTTP Proxy Server checkbox. Type the proxy host name in the Proxy
+	 Server Name field and the port number in the Port field. Click Finish.</li>
+	 <li><b>SOCKS Proxy.</b> You must pass the SOCKS proxy host and proxy port parameters
+	 to the JVM software when you start the IDE. On Microsoft Windows machines,
+	 use the <tt>IDE-HOME/etc/netbeans.conf</tt> file to pass the parameters.
+	 On UNIX and Linux machines, you can write a wrapper shell script.
+	 Go to Help &gt; Help Contents for details.</li></ul>
+
+<h4>Is the server running in debug mode?</h4>
+<p>Check that the server has been started in debug mode:</p>
+<ol><li>In the Services window,
+			  expand the Servers node and check that the server is running. Note
+			   that even if it is running, it may not be running in debug mode.</li>
+	<li>If it is not running, right-click it, choose Start/Stop Server,
+	and click Start Server (Debug). If it is running, but you are not sure that it
+	is running in debug mode, stop the server and restart it in debug mode.</li></ol>
+
+<h4>Are the server's port and address set correctly?</h4>
+<p>Check that the <tt>jpda.address</tt> set in <tt>debug.properties</tt> matches
+		  the server's settings:</p>
+<ol><li>Right-click the server's node in the Services window
+	and choose Properties.</li><li>In the Properties sheet:
+	<ul><li>Check the Debugging Port property (for socket connections). By default,
+		it should be <tt>9009</tt> for the SJS
+		Application Server or <tt>11555</tt> for the Tomcat Web Server.</li>
+	<li>Check the Name property (for shared memory connections). By default, it should be
+	<tt>localhost4848</tt> for the SJS Application Server or
+	<tt>tomcat_shared_memory_id</tt> for the Tomcat Web Server.</ul>
+If you change the server's Debugging Port property or Name property, make sure that
+ it matches the related property in the <tt>debug.properties</tt> file.</li>
+ <li>Close the Properties sheet and stop and restart the server,
+ if you had already started it.</li></ol>
+
+<p>Check that the <tt>jpda.transport</tt> set in <tt>debug.properties</tt> matches
+the server's settings:</p>
+<ol><li>Right-click the server's node in the Services window
+	and choose Properties.</li><li>In the Properties sheet,
+	check the Debugging Type property:
+	<ul><li><tt>dt_socket</tt> for socket connections</li>
+		<li><tt>dt_shmem</tt> for shared memory (Windows)</li></ul>
+If you change the server's Debugging Type property, make sure that
+ it matches the related property in the <tt>debug.properties</tt> file.</li>
+<li>Close the Properties sheet and stop and restart the server,
+  if you had already started it.</li></ol>
+
+ <h4>Unable to step through your code?</h4>
+ <p>If you are unable to step from line to line in your code, but only from breakpoint to breakpoint,
+the IDE has not been able to find your sources. This is because you have not specified your sources
+correctly.
+<ul>
+<li><b>Servlets:</b> Choose Window &gt; Debugging &gt; Sources. The Sources window displays all the Java source
+folders that are available for debugging. If you want to debug a source folder that is not
+available in the Sources window, specify it in the Project Properties dialog box:
+   <ol><li>Right-click
+       the project node, choose Properties, click Java Sources.</li>
+        <li>Add the source folders to be debugged
+	to the Source Package Folders table or to the Test Package Folders table.</li></ol>
+Note that the target you use for compiling servlets must specify <tt>debug="true"</tt> when
+calling the <tt>javac</tt> task. If a
+  servlet is compiled without debug info, the debugger will not stop on its breakpoints.</li>
+
+<li>	<b>JSP pages:</b> Make sure that you have defined a context path for the project:
+ <ol><li>Right-click
+	 the project node, choose Properties, click Web Sources.</li><li>Type the context path. For example,
+	  type <tt>/MyProject</tt> in the Context Path field.</li></ol>
+<p>Note that if you have set your breakpoints <i>before</i> specifying the context path, you must
+remove and reset the breakpoints after specifying the context path. In other words,
+ the context path must be set first.</p></li></ul>
+<p>Also make sure that the sources are correctly specified in the <tt><a href="#debug.properties">debug.properties</a></tt> file
+and in the <tt><a href="#debug.target">debug-nb</a></tt> target. Note that if your <tt>nbproject</tt> folder
+ is not housed within the folder that houses your sources folder, you should set the following
+ properties for your <tt>src.folder</tt> and <tt>web.docbase.folders</tt> properties:</p>
+<ul><li><tt>src.folders=${project.dir}/src</tt>
+  <li><tt>web.docbase.dir=${project.dir}/web</tt></ul>
+
+</div>
+<p><a href="#top">Back to top</a></p>
+</div>
+
+<a name="profilej2se"></a>
+<h2>Creating a Target to Profile Your Java SE Application</h2>
+<p>Similar to the commands for compiling and running, profiling commands rely on
+information such as the location of the sources, 
+compiled classes and other items on the classpath and the name of the project's main class. </p>
+
+<p>In free-form projects the IDE does not "know" about any of these things. 
+When you run a command in the IDE (such as Build Project),
+the IDE simply calls a target in the build script and lets the script handle the command. 
+Therefore, for debugging to work you need to have a build script target for debugging. 
+The IDE provides some custom Ant tasks to work with the profiler, and the IDE
+can generate a basic profile target and attempt to determine the important
+details for the profile target based on other targets in the script.</p>
+
+<p>To set up profiling in a free-form project you need to create a target 
+in your build script for profiling and map that target to the IDE's Profile Project command. 
+The IDE can assist you by generating a basic target and mapping, but you might need to 
+modify the target.</p>
+
+<div class="indent">
+    <h3 class="tutorial">Creating the Profile Target </h3>
+    
+    <p>If you do not have a <tt>profile</tt> target written for your project the IDE
+    will offer to generate a basic target for you when you first try to profile the project. 
+    You can then inspect the target and customize it according to the specific requirements of the project.</p>
+
+    <p class="notes"><b>Note:</b>
+    Before the profile target is generated it is recommended that you
+    first confirm that you have a target mapped to the Run Project command.
+    When the IDE generates a profile target the IDE looks for
+    the information in the target that is mapped to the Run Project command to
+    determine details such as the run classpath and the project's main class. 
+    If a target is already mapped to the Run Project command there is a
+    good chance that the generated profile target will work without further customization.</p>
+
+    <p>Perform the following steps to create a profile target for a free-form project.</p>
+    <ol>
+        <li>Select the project node in the Projects window.</li>
+        <li>In the main menu choose Run &gt; Set Main Project and select the project name.</li>
+        <li>Choose Profile &gt; Profile Main Project.</li>
+        <li>Click Generate in the Profile Project dialog box.<br>
+            <img src="../../images_www/articles/72/kb-articles/freeform-config-profile-generatetarget.png" alt="screenshot of Profile Project dialog box" title="Click Generate in the Profile Project dialog box" class="margin-around b-all">
+        <p>When you click Generate a target named <tt>profile-nb</tt> is created in the <tt>ide-targets.xml</tt> XML file.
+        The generated <tt>ide-targets.xml</tt> file is a build script that imports your main <tt>build.xml</tt> file.
+        This enables your profile target to take advantage of
+        targets and properties set by or referenced by your main build script.</p>
+        
+        <p>In addition, a mapping for this target is created in the <tt>project.xml</tt> file so
+        that the target is called when you choose the Profile Project command in the IDE. 
+        If you write the target from scratch you also need to create this mapping yourself. 
+        See <a href="#map_projectxml">Manually Mapping a Target to a Menu Item</a>.</p>
+        </li>
+        <li>Verify that the generated <tt>profile-nb</tt> target properly takes into account all
+        of the elements of your project. In particular, you might need to modify the
+        <tt>&lt;classpath&gt;</tt> argument in the target if it does not include all of the items
+        in your run classpath.</li>
+    </ol>
+    
+    <p>After the target is created you can start profiling. 
+    Perform the following steps to start profiling.</p>
+    <ol>
+        <li>Right-click the project's node and choose Profile Project.</li>
+        <li>Configure the profiling session and confirm the settings.
+        <p>The target should run and start execution of the program. 
+        The progress of the running target is shown in the Output window and the status 
+        of the profiler is shown in the status bar at the bottom of the Output window.</p>
+        </li>
+    </ol>
+
+
+
+    <h3 class="tutorial">A Typical Free-Form Project Profile Target </h3>
+    <p>The generated Ant target does the following:</p>
+
+    <ul>
+        <li>Starts the profiler with the <tt>startprofiler</tt> task. 
+            Setting the <tt>freeform</tt> attribute to true will force displaying the 
+            profiling session configuration dialog.</li>
+        <li>The previous task sets the <tt>profiler.configured</tt> to <tt>true</tt> 
+            if the configuration was confirmed. 
+            It also stores the profiler agent JVM arguments in the <tt>agent.jvmargs</tt> property.</li>
+        <li>Establishes the runtime classpath. If the IDE is not able to determine your runtime
+            classpath the IDE adds placeholders to the script which you need to fill in yourself.</li>
+        <li>Runs the application in profile mode. Setting <tt>fork=&quot;true&quot;</tt>
+            ensures the process is launched in a separate virtual machine.</li>
+    </ul>
+
+    <p class="notes"><b>Note.</b> You can add any additional JVM arguments or program arguments
+    in the <tt>java</tt> task as well.</p>
+
+    <p>A generated profile target where the IDE is able to guess the runtime classpath will look
+    similar to the following (where the <tt><i>italicized</i></tt> items would have values 
+    specific to your project).</p>
+
+<pre class="examplecode">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+    &lt;project basedir=".." name="<i>YourProjectName</i>"&gt;
+        &lt;import file="../build.xml"/&gt;
+        &lt;target name="-profile-check"&gt;
+            &lt;startprofiler freeform="true"/&gt;
+        &lt;/target&gt;
+        &lt;!-- TODO: edit the following target according to your needs --&gt;
+        &lt;!-- (more info: https://netbeans.org/kb/articles/freeform-config.html#profilej2se) --&gt;
+        &lt;target name="profile-nb" if="profiler.configured" depends="-profile-check"&gt;
+            &lt;java classname="${mainclass}" dir="." fork="true"&gt;
+                &lt;classpath&gt;
+                    &lt;pathelement path="<i>ClasspathSpecifiedInYourRunTarget</i>"/&gt;
+                &lt;/classpath&gt;
+                &lt;jvmarg line="${agent.jvmargs}"/&gt;
+            &lt;/java&gt;
+        &lt;/target&gt;
+    &lt;/project&gt;</pre>
+
+
+
+    <p>If you do not have a run target mapped or the IDE otherwise cannot determine
+    the project's classpath or main class, the generated profile target 
+    includes "TODO" placeholders for you to fill in these values as in the example below.</p>
+    
+<pre class="examplecode">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+    &lt;project basedir=".." name="<i>YourProjectName</i>"&gt;
+        &lt;target name="-profile-check"&gt;
+            &lt;startprofiler freeform="true"/&gt;
+        &lt;/target&gt;
+        &lt;!-- TODO: edit the following target according to your needs --&gt;
+        &lt;!-- (more info: https://netbeans.org/kb/articles/freeform-config.html#profilej2se) --&gt;
+        &lt;target depends="-profile-check" if="profiler.configured" name="profile-nb"&gt;
+            &lt;path id="cp"&gt;
+                &lt;!-- TODO configure the runtime classpath for your project here: --&gt;
+            &lt;/path&gt;
+            &lt;!-- TODO configure the main class for your project here: --&gt;
+            &lt;java classname="some.main.Class" fork="true"&gt;
+                &lt;classpath refid="cp"/&gt;
+                &lt;jvmarg line="${agent.jvmargs}"/&gt;
+            &lt;/java&gt;
+        &lt;/target&gt;
+    &lt;/project&gt;</pre>
+    
+    <p>To specify the runtime classpath, insert <tt>pathelement</tt> elements within the <tt>path</tt>
+    element and point them to the directories that contain the items in your classpath. 
+    For example, you can use the <tt>location</tt> attribute of <tt>pathelement</tt> to specify
+    the location of the classpath items relative to your project directory. 
+    The project directory is usually the directory that contains the project's <tt>build.xml</tt> file. 
+    Below is an example of using the <tt>pathelement</tt> attributes.</p>
+<pre class="examplecode">&lt;path id="cp"&gt;
+    &lt;pathelement location="libs"&gt;
+    &lt;pathelement location="build"&gt;
+&lt;/path&gt;</pre>
+
+
+    <a name="map_projectxml"></a>
+    <h3 class="tutorial">Manually Mapping a Target to a Menu Item</h3>
+    <p>When the IDE generates a target for you, the IDE automatically provides
+    the mapping between the target and the IDE command's menu item. 
+    However, if you created the target manually you will need to also create the mapping manually.</p>
+
+    <p>To map the Profile Project command to a target in an external Ant script, perform the following steps.</p>
+    <ol>
+        <li>Open the project's <tt>project.xml</tt> file and add the following to <tt>&lt;ide-actions&gt;</tt>.
+<pre>&lt;action name=&quot;profile&quot;&gt;
+    &lt;script&gt;<i>path_to_Ant_script</i>&lt;/script&gt;
+    &lt;target&gt;<i>target_name</i>&lt;/target&gt;
+&lt;/action&gt; </pre></li>
+        <li>Add the command to the project node's contextual menu, by adding the following
+            line to the <tt>&lt;context-menu&gt;</tt> target.
+            <pre>&lt;ide-action name=&quot;profile&quot;/&gt;</pre>
+            <p>The IDE maps the Profile Project action to the specified
+            target in the project's Ant script.</p>
+        </li>
+    </ol>
+</div>
+
+
+<h2>Creating a Target to Compile a Single File<a name="compilesingle"></a></h2>
+If you want to be able to select files in the IDE and compile them individually,
+you need an Ant target for the Compile File command. The IDE offers to
+generate a target the first time you choose the command. The generated target looks
+something like this:
+
+<pre class="examplecode"> &lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project basedir=".." name="<i>MyProjectName</i>"&gt;
+    &lt;!-- TODO: edit the following target according to your needs --&gt;
+    &lt;!-- (more info: https://netbeans.org/kb/archive/index.html) --&gt;
+    &lt;target name="compile-selected-files-in-src"&gt;
+        &lt;fail unless="files"&gt;Must set property 'files'&lt;/fail&gt;
+        &lt;!-- TODO decide on and define some value for ${build.classes.dir} --&gt;
+        &lt;mkdir dir="${build.classes.dir}"/&gt;
+        &lt;javac destdir="${build.classes.dir}" includes="${files}" source="1.5" srcdir="src"/&gt;
+    &lt;/target>
+&lt;/project>
+</pre>
+
+In the generated target,
+you need to specify the directory where to put the compiled class or classes. You can do so by
+specifying a value for the <tt>build.classes.dir</tt> property in the generated target.
+For example, you might add the following line to the line above the
+<tt>&lt;target name="compile-selected-files-in-src"&gt;</tt> entry:
+<pre>&lt;property name="build.classes.dir"  value="build"/&gt;</pre>
+<p>Alternatively, you can replace the value of the provided <tt>build.classes.dir</tt>
+or rewrite the target entirely.</p>
+<p>The value of the <tt>includes</tt>tt> parameter is the value of the generated <tt>files</tt>
+property. The IDE uses this property to store the name of the currently selected file (or files).</p>
+
+
+    <p>Note: You can configure multiple <tt>compile.single</tt> actions to overload
+  the F9 shortcut and menu command with different functionality depending on what
+  file is selected. For example, you could set up a separate <tt>compile-selected-files</tt>
+  target for JUnit test classes, then map <tt>compile.single</tt> to that target
+  for all sources in JUnit test directories. Or you could change the pattern to
+  <tt>\.xml$</tt> and map F9 to a Validate XML target for all XML files. </p>
+
+
+<h2>Writing a Target to Run/Debug/Test a Single File<a name="runsingle"></a></h2>
+<p>The IDE does not generate targets for the Run File, Debug File, Test File, and
+ Debug Test for File commands, but you can create your own targets and map
+them to the following predefined actions:</p>
+<ul>
+  <li><tt>run.single</tt> - Run selected file (Shift-F6)</li>
+  <li><tt>debug.single</tt> - Debug selected file (Ctrl-Shift-F5)</li>
+  <li><tt>test.single</tt> - Run the JUnit test for selected file (Ctrl-F6)</li>
+  <li><tt>debug.test.single</tt> - Debug the JUnit test for selected file (Ctrl-Shift-F6)</li>
+</ul>
+<p>Each of these actions contains a <tt>context</tt> element that gets a reference
+  to the currently selected files and stores it in a property of your choice.
+  You use this <tt></tt>property in your Ant targets to specify which files to
+  process.</p>
+  <div class="indent">
+<h3 class="tutorial">Running the Selected File<a name="run_sing"></a></h3>
+<p>Let's demonstrate how this works when you run a class. A typical target for
+ running a project looks something like the following:</p>
+ <pre class="examplecode">
+    &lt;target name="run2" depends=&quot;...&quot;&gt;
+        &lt;java fork="true" classname="<i>MyMainClass</i>" classpath="<i>MyRunClasspath</i>" /&gt;
+    &lt;/target&gt;
+ </pre>
+ <p>The target runs the file specified by <tt>classname</tt>. To run the
+ currently selected file in the IDE, you need to modify the above target to
+something like the following:
+
+<pre class="examplecode">  &lt;target name=&quot;run-selected-file&quot; depends=&quot;compile&quot; description=&quot;Run Single File&quot;&gt;
+      &lt;fail unless=&quot;runclass&quot;&gt;Must set property 'classname'&lt;/fail&gt;
+      &lt;java classname=&quot;${runclass}&quot;&gt;
+         &lt;classpath refid=&quot;run.classpath&quot;/&gt;
+      &lt;/java&gt;
+   &lt;/target&gt;</pre>
+
+
+<h3 class="tutorial">Getting a Reference to the Currently Selected File in the IDE<a name="reference"></a></h3>
+<p>Once you have an Ant target for running the selected file, you have
+  to get a reference to that file in the IDE and store it in
+  a property. For example, the run-selected-file target above looks for the
+  currently selected file in the <tt>runclass</tt> property. </p>
+<p>You store this reference in the same place where you map the build target (<tt>run-selected-file</tt>)
+  to the IDE action. First we will look at how to do this and then we will explain
+  it in detail:</p>
+
+<pre class="examplecode">    &lt;action name=&quot;run.single&quot;&gt;
+        &lt;target&gt;run-single&lt;/target&gt;
+        &lt;context&gt;
+            &lt;property&gt;runclass&lt;/property&gt;
+            &lt;folder&gt;${src.dir}&lt;/folder&gt;
+            &lt;pattern&gt;\.java$&lt;/pattern&gt;
+            &lt;format&gt;java-name&lt;/format&gt;
+            &lt;arity&gt;
+                &lt;one-file-only/&gt;
+            &lt;/arity&gt;
+        &lt;/context&gt;
+    &lt;/action&gt;
+</pre>
+
+<p>The <tt>runclass</tt> property is a newly defined property that holds the file
+  that you want to run and is referenced by the <tt>java</tt> task.
+</p>
+
+<p>Now let's take a look at the following lines to see how it works.</p>
+
+<pre class="examplecode">&lt;action name=&quot;run.single&quot;&gt;
+      &lt;target&gt;run-selected-file&lt;/target&gt;
+      &lt;context&gt;
+        &lt;property&gt;runclass&lt;/property&gt;</pre>
+<ul>
+    <li><tt>&lt;action name=&quot;run.single&quot;&gt;</tt> maps the Run File command and the F9 shortcut to the <tt>run-selected-file</tt>
+    target. </li>
+    <li><tt>&lt;context&gt;</tt> sets the context on which the Ant target is executed.
+    In this case, it is the name of file that you want to run.</li>
+    <li><tt>runclass</tt> is the name of the property that holds the context. You can
+    choose any unique name for this property. This property must be set by the
+    IDE before the target can be run. </li>
+  <li><tt>&lt;arity&gt;</tt> specifies that <tt>runclass</tt> can hold only one file.
+ If you want the property to be able to hold more than one file (such as for the
+ Compile File target), you can use the following, where the comma (,) is the
+separator between file names:
+<pre class="examplecode">        &lt;arity&gt;
+          &lt;separated-files&gt;,&lt;/separated-files&gt;
+        &lt;/arity&gt;</pre></li>
+  <li><tt>&lt;format&gt;java-name&lt;/format&gt;</tt> specifies that the IDE
+    should pass the relative file name to the target but delimited by periods (.)
+and without an extension. Other formatting options include the following:
+    <ul>
+      <li><tt>relative-path</tt> - specifies that the IDE
+    should pass the relative file name to the target</li>
+      <li><tt>relative-path-noext</tt> - Same as <tt>relative-path</tt>, but the
+        file's extension is removed </li>
+      <li><tt>absolute-path</tt> - Absolute file name</li>
+      <li><tt>absolute-path-noext</tt> - Same as <tt>absolute-path</tt>, but the
+        file's extension is removed </li>
+    </ul>
+  </li>
+  <li><tt>&lt;folder&gt;${src.dir}&lt;/folder&gt;</tt> specifies that the file
+    name should be relative to the <tt>src.dir</tt> directory and that this action
+    is only enabled for the <tt>src.dir</tt> directory.
+    <p><b>Note:</b> The IDE does not define the ${src.dir} property for you. You
+        have to define the property or import the .properties file that the Ant is
+        using in project.xml. See <a href="#props_proj">Using Properties in the <tt>project.xml</tt>
+File</a> for more information. </p></li>
+  <li><tt>&lt;pattern&gt;\.java$&lt;/pattern&gt;</tt> is the regular expression
+    which the file names must pass. You use <tt>&lt;pattern&gt;</tt> to limit
+    which files can be passed to the Ant target. In this case, you want the target
+    be executed only with files that end in <tt>.java</tt>.</li>
+</ul>
+
+
+<h3 class="tutorial">Debugging the Selected File<a name="debug_sing"></a></h3>
+<p>The process is basically the same for writing targets to debug and run a single
+  file. The <tt>debug-selected-files</tt> target looks something like this:</p>
+<pre class="examplecode">    &lt;target name=&quot;debug-selected-files&quot; depends=&quot;compile&quot; if=&quot;netbeans.home&quot; description=&quot;Debug a Single File&quot;&gt;
+       &lt;fail unless=&quot;classname&quot;&gt;Must set property 'classname'&lt;/fail&gt;
+       &lt;nbjpdastart name=&quot;${classname}&quot; addressproperty=&quot;jpda.address&quot; transport=&quot;dt_socket&quot;&gt;
+          &lt;classpath refid=&quot;run.classpath&quot;/&gt;
+          &lt;!-- Optional - If source roots are properly declared in project, should
+          work without setting source path.
+          &lt;sourcepath refid=&quot;debug.sourcepath&quot;/&gt; --&gt;
+       &lt;/nbjpdastart&gt;
+       &lt;java classname=&quot;${classname}&quot; fork=&quot;true&quot;&gt;
+          &lt;jvmarg value=&quot;-Xdebug&quot;/&gt;
+          &lt;jvmarg value=&quot;-Xnoagent&quot;/&gt;
+          &lt;jvmarg value=&quot;-Djava.compiler=none&quot;/&gt;
+          &lt;jvmarg value=&quot;-Xrunjdwp:transport=dt_socket,address=${jpda.address}&quot;/&gt;
+          &lt;classpath refid=&quot;run.classpath&quot;/&gt;
+       &lt;/java&gt;
+     &lt;/target&gt;</pre>
+<ul>
+  <li>This is basically the same as the <tt>debug</tt> target. Instead of passing
+    the program main class to <tt>java</tt>, you pass the <tt>classname</tt> property,
+    which is set by the IDE to the currently selected file.</li>
+</ul>
+<p>Then you map the <tt>debug-selected-files</tt> target to the <tt>debug.single</tt>
+  action:</p>
+<pre class="examplecode">   &lt;action name=&quot;debug.single&quot;&gt;
+      &lt;target&gt;debug-selected-files&lt;/target&gt;
+      &lt;context&gt;
+         &lt;property&gt;classname&lt;/property&gt;
+         &lt;folder&gt;${src.dir}&lt;/folder&gt;
+         &lt;pattern&gt;\.java$&lt;/pattern&gt;
+         &lt;format&gt;java-name&lt;/format&gt;
+         &lt;arity&gt;
+            &lt;one-file-only/&gt;
+         &lt;/arity&gt;
+      &lt;/context&gt;
+   &lt;/action&gt;</pre>
+<ul>
+  <li><tt>&lt;property&gt;</tt> now stores the context in the <tt>classname</tt>
+    property.</li>
+  <li>Since <tt>java</tt> can only take single file, you set <tt>&lt;arity&gt;</tt>
+    to <tt>&lt;one-file-only&gt;</tt>.</li>
+  <li>Setting <tt>&lt;format&gt;</tt> to <tt>java-name</tt> and making it relative
+    to <tt>src.dir</tt> creates a fully-qualified class name for the currently
+    selected file.
+        <p><b>Note:</b> The IDE does not define the <tt>${src.dir}</tt> property for
+            you. You have to define the property or import the <tt>.properties</tt> file
+            that the Ant is using in <tt>project.xml</tt>. See <a href="#props_proj">Using
+    Properties in the <tt>project.xml</tt> File</a> for more information.</p> </li>
+</ul>
+
+<a name="profile_sing"></a>
+<h3 class="tutorial">Profiling the Selected File</h3>
+<p>The process is basically the same for writing targets to debug and run a single
+  file. The <tt>profile-selected-files</tt> target looks similar to the following:</p>
+<pre class="examplecode">    
+&lt;target name="-profile-check"&gt;
+    &lt;startprofiler freeform="true"/&gt;
+&lt;/target&gt;
+&lt;!-- TODO: edit the following target according to your needs --&gt;
+&lt;!-- (more info: https://netbeans.org/kb/articles/freeform-config.html#profile_sing) --&gt;
+&lt;target depends="-profile-check" if="profiler.configured" name="profile-selected-file-in-src"&gt;
+    &lt;fail unless="profile.class"&gt;Must set property 'profile.class'&lt;/fail&gt;
+    &lt;path id="cp"&gt;
+        &lt;pathelement location="build"/&gt;
+    &lt;/path>&gt;
+    &lt;java classname="${profile.class}" fork="true"&gt;
+        &lt;classpath refid="cp"/&gt;
+        &lt;jvmarg line="${agent.jvmargs}"/&gt;
+    &lt;/java&gt;
+&lt;/target&gt;
+</pre>
+<ul>
+  <li>This is basically the same as the <tt>profile</tt> target. Instead of passing
+    the program main class to <tt>java</tt> you pass the <tt>profile.class</tt> property,
+    which is set by the IDE to the currently selected file.</li>
+</ul>
+<p>Then you map the <tt>profile-selected-files</tt> target to the <tt>profile.single</tt> action.</p>
+<pre class="examplecode">   &lt;action name=&quot;profile.single&quot;&gt;
+      &lt;target&gt;profile-selected-files&lt;/target&gt;
+      &lt;context&gt;
+         &lt;property&gt;profile.class&lt;/property&gt;
+         &lt;folder&gt;${src.dir}&lt;/folder&gt;
+         &lt;pattern&gt;\.java$&lt;/pattern&gt;
+         &lt;format&gt;java-name&lt;/format&gt;
+         &lt;arity&gt;
+            &lt;one-file-only/&gt;
+         &lt;/arity&gt;
+      &lt;/context&gt;
+   &lt;/action&gt;</pre>
+<ul>
+  <li><tt>&lt;property&gt;</tt> now stores the context in the <tt>profile.class</tt>
+    property.</li>
+  <li>Because <tt>java</tt> can only take a single file, you set <tt>&lt;arity&gt;</tt>
+    to <tt>&lt;one-file-only&gt;</tt>.</li>
+  <li>Setting <tt>&lt;format&gt;</tt> to <tt>java-name</tt> and making it relative
+    to <tt>src.dir</tt> creates a fully-qualified class name for the currently
+    selected file.
+        <p><b>Note:</b> The IDE does not define the <tt>${src.dir}</tt> property for
+            you. You need to define the property or import the <tt>.properties</tt> file
+            that Ant is using in <tt>project.xml</tt>. See <a href="#props_proj">Using
+            Properties in the <tt>project.xml</tt> File</a> for more information.</p> 
+  </li>
+</ul>
+
+<p><a href="#top">Back to top</a></p></div>
+<h2>Writing a Target for the Apply Code Changes Command<a name="fix"></a></h2>
+<p>The Apply Code Changes command allows you to make changes to your code during a debugging
+  session and continue debugging with the changed code without restarting your
+  program. The IDE contains a <tt>nbjpdareload</tt> task that you can use to write
+  a target for the Apply Code Changes command. </p>
+<p>A typical target for the fix command looks something like this:</p>
+<pre class="examplecode">  &lt;target name=&quot;debug-fix&quot;&gt;
+    &lt;javac srcdir=&quot;${src.dir}&quot; destdir=&quot;${classes.dir}&quot; debug=&quot;true&quot; &gt;
+      &lt;classpath refid=&quot;javac.classpath&quot;/&gt;
+      &lt;include name=&quot;${fix.file}.java&quot;/&gt;
+    &lt;/javac&gt;
+    &lt;nbjpdareload&gt;
+      &lt;fileset dir=&quot;${classes.dir}&quot;&gt;
+        &lt;include name=&quot;${fix.file}.class&quot;/&gt;
+      &lt;/fileset&gt;
+    &lt;/nbjpdareload&gt;
+  &lt;/target&gt;</pre>
+<ul>
+  <li>The target compiles the currently selected file using the<tt> ${fix.file}</tt>
+    property. (In the next section you will set up the IDE to store the name of
+    the currently selected file in this property.) </li>
+  <li>The <tt>nbjpdareload</tt> task reloads the corrected file in the application.
+  </li>
+</ul>
+<p>To hook this target up to the Apply Code Changes command (the same as the Fix command
+in previous versions of the IDE), define the following action in <tt>&lt;ide-actions&gt;</tt>
+  in <tt>project.xml</tt>:</p>
+<pre class="examplecode">  &lt;action name=&quot;debug.fix&quot;&gt;
+    &lt;target&gt;debug-fix&lt;/target&gt;
+    &lt;context&gt;
+      &lt;property&gt;fix.file&lt;/property&gt;
+      &lt;folder&gt;${src.dir}&lt;/folder&gt;
+      &lt;pattern&gt;\.java$&lt;/pattern&gt;
+      &lt;format&gt;relative-path-noext&lt;/format&gt;
+      &lt;arity&gt;
+        &lt;one-file-only/&gt;
+      &lt;/arity&gt;
+    &lt;/context&gt;
+  &lt;/action&gt;</pre>
+<ul>
+  <li><tt>&lt;property&gt;</tt> now stores the context in the <tt>fix.file</tt>
+    property.
+  <li>Since you can only run the Fix command on one file at a time, you set <tt>&lt;arity&gt;</tt>
+    to <tt>&lt;one-file-only&gt;</tt>.</li>
+  <li>You have to pass the full path to the <tt>.java</tt> file to the <tt>javac</tt>
+    task and the full path to the <tt>.class</tt> file to the <tt>nbjpdareload</tt>
+    task. You therefore set the <tt>&lt;format&gt;</tt> to <tt>rel-path-noext</tt>,
+    then append <tt>.class</tt> or <tt>.java</tt> in the <tt>debug-fix</tt> target
+    as necessary.
+        <p><b>Note:</b> The IDE does not define the <tt>${src.dir}</tt> property for
+            you. You have to define the property or import the <tt>.properties</tt> file
+            that the Ant is using in <tt>project.xml</tt>. See <a href="#props_proj">Using
+    Properties in the <tt>project.xml</tt> File</a> for more information. </p></li>
+</ul>
+<br>
+<div class="feedback-box">
+    <a href="/about/contact_form.html?to=3&amp;subject=Feedback:%20Advanced%20Freeform%20Project%20Configuration">Send Feedback on This Tutorial</a>
+</div>
+<br style="clear:both;">
+<p><a href="#top">Back to top</a></p>
+
+</body>
+</html>

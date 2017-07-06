@@ -1,0 +1,401 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<META NAME="AUDIENCE" CONTENT="NBUSER">
+<META NAME="TYPE" CONTENT="ARTICLE">
+<META NAME="TOPIC" CONTENT="ADVANCED">
+<META NAME="description" CONTENT="Using BEA WebLogic JRockit TM with NetBeans 4.0">
+<head>
+<title>Using BEA WebLogic JRockit TM with NetBeans 4.0</title>
+<link rel="stylesheet" type="text/css" href="../../netbeans.css">
+</head>
+<body>
+
+<h1>Using BEA WebLogic JRockit<sup>TM</sup> with NetBeans 4.0</h1>
+<div class="articledate" style="margin-left:0px;">Contributed by Stephan Kesper as part of the <a href="../../competition/win-with-netbeans.html">Win With NetBeans</a> comptetition</div></p>
+<p></p>
+<p>A heavy user of the NetBeans IDE will experience from time to time that a classpath 
+scanning takes more time than expected. Also he might experience that NetBeans can be 
+resource consuming, especially on older machines. Hence it might be a good idea 
+to search for methods to speed up the IDE. But how can this be done? Well one 
+possibility is described here in terms of using a different JVM. 
+</p><p>
+The main advantages for using JRockit is that it is optimized for performance on
+Intel plattforms and it ships with profiling and managing products like the console which
+will be described here and the JRockit Runtime Analyzer. 
+</p>
+<p>This article describes how to use the BEA WebLogic JRockit JVM ("JRockit") as
+a runtime environment for the NetBeans IDE.
+</p>
+
+<p>JRockit can be freely downloaded and used for production or development purposes if you
+agree to the End-User License Agreement which can be accessed
+<a href="http://www.bea.com/framework.jsp?CNT=index.htm&FP=/content/legal/" target="_blank">here</a>
+</p>
+<p>This article covers:</p>
+<ul>
+<li><a href="#basics">Basics</a></li>
+<ul><li><a href="#intro">Introduction</a></li>
+<li><a href="#download">Download and Installation</a></li>
+</ul>
+<li><a href="#running">Running NetBeans with JRockit</a></li>
+<ul><li><a href="#configuration">Configuration</a></li>
+
+<li><a href="#usage">Usage</a></li>
+</ul>
+<li><a href="#advanced">Advanced Usage</a></li>
+<ul><li><a href="#console">The Console</a></li>
+<li><a href="#jra">The JRockit Runtime Analyser (JRA)</a></li></ul>
+<li><a href="#issues">Issues</a></li>
+</ul>
+<h2>Basics<a name="basics"></a></h2><br/>
+<div class='indent'>
+<h3 class='tutorial'>Introduction<a name="intro"></a></h3>
+<p>
+
+<b>Why do we need another JVM?</b><br>
+Well this question is not easy to answer because definitely not every body needs it. So
+to make a first cut: Only developers of Java applications and Java based web applications
+might want to read this article and might be interested. But also Administrators and
+Operators of highavailable Websites might find something here. 
+</p><p>
+If you've ever tried to use the profiling of the JVM or wanted to have a deeper look into
+what is going on in your virtual machine while your program is allready running, you might
+run into the problem that the information provided by the VM is very low level. You will
+have a hard time to go into the depths of analysing the data that is produced by the VM.
+(For instance if you switch on the -Xprof parameter of the JVM 1.4.x or the -agentlib:hprof 
+of the JVM 5.0)
+</p><p>
+And some information might not be available any way, even if you use the profiling. One
+solution to that problem could be, that you write your own profiling agent. Java gives you
+access to deep VM information through the <i>Java Virtual Machine Profiler Interface</i>
+(JVMPI). But that means that you'll have to implement your own profiling in a native way. There is - as
+far as I know - no standard java way to access lowlevel profiling informations.
+</p><p>
+If you use JRockit you'll not have to worry about this. There is the so called "Console" that
+ships with JRockit and gives you direct access to vital informations of the applications that
+run in your JVM. Even to the point that it estimates execution times of single methods, gives you
+an overview of the most used classes and counts exceptions thrown.
+</p><p>
+<b>Is it for debugging only?</b><br>
+That's a definite "NO". JRockit has been designed and optimized for intel platforms to achieve
+best performance and reliability. It serves as JVM for the BEA WebLogic Server.
+</p><p>
+
+I don't want this to be another product presentation of BEA, so I suggest, if you are 
+interested in JRockit and/or the WebLogic Server details, please follow 
+<a href="http://www.bea.com/framework.jsp?CNT=index.htm&FP=/content/products/server">this</a>
+link. 
+</p><p>
+<b>How do I exploit it?</b><br>
+There are basically two ways. Once you've installed the JRockit JDK you can develop and 
+execute Java Applications with out even noticing, that you are using a different JVM except
+that you might notice a considerable performance boost to some of your applications. It is 
+to be mentioned that if you program nonsense, there is no way that your program executes
+any faster than before. So we are not talking about magic! ;-)
+</p><p>
+<ol>
+<li>The first major advantage you might want to exploit is that the JRockit Console gives you
+access to fine granular information collected somewhere in the depths of the JVM. You'll understand
+how to use and instrumentalize the Console for your application in a later chapter. 
+</li>
+<li>The second advantage is that you'll use the JRockit Runtime Analyzer (JRA) to collect information
+during runtime. If you are using JRockit in a production environment, this tool can give you 
+access to the necessary information during runtime without restarting the application. Specifically
+in a web environment where it is impossible just to restart an instrumentalized version of the
+server that becomes very important.
+</li>
+</ol>
+
+<h3 class='tutorial'>Download<a name="download"></a></h3>
+
+<p>To download the JRockit environment you'll have to access the website of BEA Systems, Inc.
+<a href="http://www.bea.com" target="_blank">http://www.bea.com</a> or you just click
+<a href="http://commerce.bea.com/products/weblogicjrockit/other_versions.jsp" target="_blank">here</a>
+to access the download area directly.
+</p><p>
+The JRA must be downloaded separately via 
+<a href="http://www.bea.com/framework.jsp?CNT=index.htm&FP=/content/products/weblogic/jrockit/">http://www.bea.com/framework.jsp</a>
+</p><p>
+The documentation for the JRA and JRockit itself are also interesting, available through the link
+<a href="http://edocs.bea.com/jrockit/webdocs/index.html" target="_blank">http://edocs.bea.com/jrockit/webdocs/index.html</a>
+</p><p>
+<h3 class='tutorial'>Installation</h3>
+
+After the download you'll need to install your JRE and/or the JDK. 
+<p>
+<img src="../../images_www/articles/win-with-netbeans/jr_inst.jpg" class="b-none">
+</p>
+After that a call to <code>java -version</code> should give you something like this:
+<pre class='examplecode'>java version "1.5.0"
+Java(TM) 2 Runtime Environment, Standard Edition (build 1.5.0-b64)
+BEA WebLogic JRockit(R) (build dra-38972-20041208-2001-win-ia32, R25.0.0-75, GC: System 
+optimized over throughput (initial strategy singleparpar))
+</pre>
+Nothing more is to do. 
+</p><p>
+If you are using different JDK's from different vendors at the same time I suggest to create batch
+files that switch the used JDK to the appropriate one. 
+</p>
+</div>
+<h2>Running NetBeans with JRockit<a name="running"></a></h2><br/>
+<div class='indent'>
+<h3 class='tutorial'>Configuration<a name="configuration"></a></h3>
+
+Entry point for the configuration is the <code>etc/netbeans.conf</code>. You'll find it in your
+NetBeans installation directory. In that file you'll have to change the lines:
+<pre class='examplecode'>
+# default location of J2SE JDK, can be overridden by using --jdkhome dir  switch
+netbeans_jdkhome="C:\Programme\Java\jdk1.5.0"
+</pre>
+to
+<pre class='examplecode'>
+# default location of J2SE JDK, can be overridden by using --jdkhome dir switch
+# netbeans_jdkhome="C:\Programme\Java\jdk1.5.0"
+netbeans_jdkhome="C:\Programme\Java\jrockit-jdk1.5.0"
+</pre>
+You might need to adjust the paths to the proper installation directories of your JDK installation.
+If you change it here, please be sure that you are <b>not</b> using the <code>--jdkhome</code> switch.
+
+</p><p>
+To provide access to the console, the JVM must be started with a commandline switch called <code>-Xmanagement</code>.
+You can add this also in the <code>etc/netbeans.conf</code> file to the line
+<pre class='examplecode'>netbeans_default_options="-J-Xms32m -J-Xmx250m -J-Xverify:none -J-Xmanagement"
+</pre>
+to start NetBeans itself with the management option. Then you are able to analyze NetBeans' JVM, Garbage Collector 
+and see into the details of what has been programmed for the IDE ;-)
+</p><p>
+That's it. Now you are using JRockit as JVM for NetBeans - wasn't so hard, eh?
+</p><p>
+After restart of NetBeans you should find under Help->About in the details section a screen that looks
+like this one:
+</p><p>
+<img src="../../images_www/articles/win-with-netbeans/nb_about.jpg" class="b-none">
+</p><p>
+
+Since the time stamp of the <code>src.zip</code> of JRockit can be different from your JDK installation, NetBeans
+might need to scan that again. But this will only happen once.
+<h3 class='tutorial'>Usage<a name="usage"></a></h3>
+There is a certain amount of additional parameters that can be used to tweak JRockit. Here is a comprehensive
+list, but please access 
+<a href="http://e-docs.bea.com/jrockit/jrdocs/refman/index.html" target="_blank">hhttp://e-docs.bea.com/jrockit/jrdocs/refman/index.html</a>
+for a detailed description.
+<p>
+<pre class='examplecode'>
+    -Xgcprio:[throughput|pausetime]
+              sets prio for the gc-system
+                  throughput    optimizes the gc-behavior to achieve optimal
+                                throughput (initially starts off with
+                                single-spaced parallel GC mode but may switch
+                                to other GC modes dynamically during runtime)
+                  pausetime     optimizes the gc-behavior to achieve minimal
+                                pause times (initially starts off with
+                                single-spaced concurrent GC mode but may switch
+                                to other GC modes dynamically during runtime)
+    -Xcleartype:[alloc|gc|local]
+              defines which type of clearing should be performed
+                  alloc         starts at allocation time (default)
+                  gc            starts when the gc is running
+                  local         starts when you get to a local area
+    -Xgc:[singlecon|gencon|parallel]
+              used to set a static garbage collector
+              will override the options -Xgcprio, -server, and -client
+                  singlecon     use the single-spaced concurrent garbage
+                                collector algorithm (default in client mode)
+                  gencon        use the generational concurrent
+                                garbage collector algorithm
+                  parallel      use the single-spaced parallel
+                                garbage collector algorithm
+                                (default in server mode)
+    -Xms&lt;size>[g|G|m|M|k|K]
+              sets the initial Java heap size (ms)
+                  server mode:  the default value is 25% of the amount
+                                of free physical memory in the system
+                                up to 64 MB with a minimum of 8 MB (default)
+                  client mode:  the default value is 25% of the amount
+                                of free physical memory in the system
+                                up to 16 MB with a minimum of 8 MB
+    -Xmx&lt;size>[g|G|m|M|k|K]
+              sets the maximum Java heap size (mx)
+                  server mode:  the default value is the smallest of 75% of
+                                physical memory and 1536 MB (default)
+                  client mode:  the default value is the smallest of 75% of
+                                physical memory and 64 MB
+    -Xns&lt;size>[g|G|m|M|k|K]
+              sets the initial Java nursery size for generational collectors
+                  server mode:  the default value is 10 MB per (default)
+                  client mode:  the default value is 2 MB
+    -Xss&lt;size>[g|G|m|M|k|K]
+              set initial stack size
+    -Xpausetarget=&lt;optimal_pause_time>[ms|s]
+              JRockit will optimize the pause time to the given target,
+              uses -Xgcprio:pausetime
+                  ms            pause time specified in milliseconds (default)
+                  s             pause time specified in seconds
+    -Xnoclassgc
+              disable class garbage collection
+    -Xgcpause
+              print pause times caused by the garbage collector
+    -Xgcreport
+              write extensive memory report at end of run
+    -Xdebug
+              enables debugging support in the VM
+    -Xjvmpi:[&lt;argument1>=&lt;value1>[,&lt;argumentN>=&lt;valueN>]]
+              enable/disable groups of jvmpi events when running jvmpi
+                  entryexit     (default on)
+                  allocs        (default on)
+                  monitors      (default on)
+                  arenadelete   (default off)
+    -Xmanagement
+              enable the management server needed by the
+              JRockit Console
+    -Xnoopt
+              do not optimize code
+    -Xstrictfp
+              always use strict floating point calculations
+    -Xnohup
+              used to not process CTRL_LOGOFF_EVENT or SIGHUP events
+    -Xrun&lt;library>
+              loads and runs a library
+    -Xverbose[:memory|codegen|load]
+              enable verbose output
+    -Xverboselog:&lt;file>
+              log verbose output to a file
+    -Xverbosetimestamp
+              adds a timestampt to the verbose printout
+    -Xverify
+              do full bytecode verification
+
+</pre>
+</p><p></div>
+<h2>Advanced Usage<a name="advanced"></a></h2><br/>
+<div class='indent'>
+<h3 class='tutorial'>Console<a name="console"></a></h3>
+The console is the vital part of the information retrieval. When you start it the first time, you'll see
+nothing. Well too bad... You'll have to connect to a JRockit instance. The standard port of the connection
+is 7091 which is by default also the management port for remote administration of the JVM. 
+</p><p>
+<b>Remark:</b> So if you start an application with JRockit in <code>-Xmanagement</code> mode, you'll be 
+able to connect with Sun's jconsole Tool to the JVM and manage all Management Beans (MXBeans). Thats also
+very handy. But consider, that the Sun jconsole is not the JRockit console: Two different tools!
+</p><p>
+So you create a new connection using the button or the menu "New Connection...". A dialog pops up where
+you can enter the needed informations:
+
+</p><p>
+<img src="../../images_www/articles/win-with-netbeans/jr_connect.jpg" class="b-none">
+</p><p>
+As you can see, this works also remotely. So if you are on a management dedicated computer and you want to monitor
+your Web Application Servers running on JRockit on a different server somewhere in the network, you can do 
+so remotely unless no firewall restricts access to the ports.
+</p><p>
+If the connection could be established, the console is allready collecting data. And you'll see in the
+Overview section an image like this:
+</p><p>
+<img src="../../images_www/articles/win-with-netbeans/jr_console.jpg" class="b-none">
+</p><p>
+Very interesting from a developers point of view, specifically for the developers of the NetBeans platform itself,
+is the method profiler. It counts invocations of specific methods and collects execution times.
+</p><p>
+<img src="../../images_www/articles/win-with-netbeans/jr_methprof.jpg" class="b-none">
+</p><p>
+Profiling sessions are organized by named templates. In each template you can define specific objects to
+observe. You just provide in the dialog that opens after you pushed the add button the full qualified 
+class name of the class you would like to monitor and in a second step you'll be asked to select from a 
+list the methods to be monitored. You have to consider that monitoring of abstract or native methods is 
+not supported. After that hit the start button and wonder how fast the numbers increase. Then you'll know 
+where the execution time goes to...
+</p><p>
+On the "Memory" tab of the JRockit console you are able to manage the memory that is currently used by 
+the JRockit Process. It is possible to lock the heap size or you can resize the the heap during runtime.
+That is also a nice feature if you are not able to restart your application at your will.
+</p><p>
+
+In the system tab you get some informations of the runtime environment of the JVM you are looking at. Very 
+neat is the feature that you can tie Virtual Machine processes to specific Processors on a multi processor
+plattform. If you have one...
+</p><p>
+Notifications might only be sensefull if you are monitoring a high available platform and you want to be 
+notified automatically by the system if the heap size reaches a specific amount or the CPU load exceeds
+90% or something like that. You can define listeners in this tab for such events and define what should be
+done in such a case. Typically an email would be send out to an emergency administrator account. 
+</p><p>
+The last tab is the exception counter. If you provide an exception class name, all exceptions of this type 
+thrown will be counted. This might be of interrest if you have well dedicated exceptions where you 
+exactly know in which cases such an exception is thrown. Counting highlevel exceptions might scare you but 
+you might not be able to extract some valuable information out of this.
+</p><p>
+<img src="../../images_www/articles/win-with-netbeans/jr_excnt.jpg" class="b-none">
+</p><p>
+<h3 class='tutorial'>JRockit Runtime Analyzer<a name="jra"></a></h3>
+The runtime analyzer targets specifically people who are not able to restart a server for debugging or
+runtime analysis. Specifically people like Administrators of 24/7 websites. Since this is not the target for
+NetBeans developers, it is just briefly described here.
+</p><p>
+The tool is designed to collect data starting at a specific time and for a specified amount of time. Before
+and after this, the JVM is running like if you where not collecting any data. So there is nothing to worry 
+about loosing performance due to instrumentalization of the JVM. It is so deeply implemented that you'll be
+unable to recognize any difference during runtime when runtime analysis is switched off.
+</p><p>
+The profiling will create an XML file on the machine that runs the JVM. The JRA tool then is designed to 
+analyze offline the collected data. 
+</p><p>
+The collection process is started with a commandline tool called "JraRecordingStarter.jar" it needs some
+arguments. A simple call could be:
+
+<pre class='examplecode'>java -jar JraRecordingStarter.jar localhost 7091 myrecord.xml 300
+</pre>
+Where you provide the target host where the JVM is running, the management port, the name of the created
+XML file and the recording time in seconds.
+</p><p>
+The created XML is zip'ed after it is completely flushed to disk. 
+</p><p>
+Then you are able to use the RuntimeAnalyzer to analyze the created results: 
+</p><p>
+<img src="../../images_www/articles/win-with-netbeans/jra_overview.jpg" class="b-none">
+</p><p>
+Also the executed garbage collections during the time of recording can be accessed and measured. Be aware
+that my recording was very short in time and there was not much to collect. So in a real scenario you can
+see much more information.
+</p><p>
+<img src="../../images_www/articles/win-with-netbeans/jra_gc.jpg" class="b-none">
+</p><p>
+</div>
+<h2>Issues<a name="issues"></a></h2>
+<div class='indent'>
+<p>There is a problem currently in the JRockit 5.0 Release. It appears as an error message in the NetBeans
+Status field:
+</p><p>
+<img src="../../images_www/articles/win-with-netbeans/nb_error.jpg" class="b-none">
+</p><p>
+It has something to do with a final package local method being overridden in a different package. It is a bug
+in JRockit with the current release. And it is supposed to be fixed in the next patch release. So you'll
+have to wait or ignore. What ever fits you best ;-)
+</p><p>
+Unfortunately this error has impact on the NetBeans usage. You might not be able to access your java source
+files in the project view pane. How ever you can access them through the file view instead. But that is 
+really anoying. Good news: This error has been reported to BEA and they mentioned in the developer forum that
+this error should be fixed with the next patch release.
+</p><p>
+So I suggest you wait until the next patch release of JRockit.
+</p>
+</div>
+<h2>Finally</h2>
+<div class='indent'>
+<p>JRockit is a high performance JVM that works pretty good with NetBeans. I have been very supprised how
+fast actually the classpath scanning can be finished. Also improved startup time of NetBeans is definitely a 
+plus.
+</p><p>
+One might argue that there is not really a need for developers to switch the JVM but if you are a so called 
+"early adopter" you should definitely give it a try. It's worth it specifically if you are using NetBeans 
+on a daily basis.
+</p>
+<br/ >
+</div>
+<h2>Trademarks</h2>
+
+<i>BEA and WebLogic are registered trademarks of BEA Systems, Inc. BEA WebLogic Platform, 
+BEA WebLogic Server are trademarks of BEA Systems, Inc.<br>
+All other trademarks are the property of their respective companies.</i>
+
+</body>
+</html>

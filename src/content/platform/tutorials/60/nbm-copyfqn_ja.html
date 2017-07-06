@@ -1,0 +1,576 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<!-- -*- xhtml -*- -->
+<title>NetBeans プラットフォーム 6.0: NetBeans Java 言語インフラストラクチャーのチュートリアル</title>
+    <link rel="stylesheet" type="text/css" href="../../../netbeans.css"> 
+  <meta name="AUDIENCE" content="NBUSER">
+  <meta name="TYPE" content="ARTICLE">
+  <meta name="EXPIRES" content="N">
+  <meta name="developer" content="geertjan.wielenga@sun.com">
+  <meta name="indexed" content="y">
+  <meta name="description"
+ content="A walk-through of the Retouche approach.">
+<!--      Copyright (c) 2007 Sun Microsystems, Inc. All rights reserved. -->
+<!--     Use is subject to license terms.-->
+</head>
+<body>
+<h1>NetBeans Java 言語インフラストラクチャーのチュートリアル</h1>
+
+<p>このチュートリアルでは、新しい NetBeans 6.0「Retouche」API について学習します。この API によって NetBeans Java エディタにアクセスできるようになります。
+
+   </p><p><b>目次</b></p>
+   
+      <img  src="../../images/articles/60/netbeans-stamp60-61.gif" class="stamp" width="114" height="114" alt="このページの内容は NetBeans IDE 6.1 が対象です" title="このページの内容は NetBeans IDE 6.1 が対象です"> </p>
+      <ul class="toc">
+            <li><a href="#intro">Java 言語インフラストラクチャーについて</a></li>
+            <li><a href="#setting-up-the-module">モジュールの設定</a></li>
+            <li><a href="#creating-a-context-sensitive-toolbar-button">コンテキストを区別するツールバーボタンの作成</a></li>
+            <li><a href="#identifying-java-source-files">Java ソースファイルの識別</a></li>
+            <li><a href="#determining-open-state">開いている状態の判定</a></li>
+            <li><a href="#detecting-the-element-under-the-caret">キャレットの下の要素の検出</a></li>
+            <li><a href="#doing-something-useful">便利な使い方</a></li>
+       </ul>
+         
+<p><b>このチュートリアルを行うには、次の表に示すソフトウェアおよびリソースが必要です。</b></p>
+
+    <table>
+        <tbody>
+            <tr>
+                <th class="tblheader" scope="col">ソフトウェアまたはリソース</th>
+                <th class="tblheader" scope="col">必須バージョン</th>
+            </tr> 
+             <tr>
+                <td class="tbltd1">NetBeans IDE</td>
+                <td class="tbltd1"><a href="http://download.netbeans.org/netbeans/6.1/final/">version 6.1</a> または<br>
+                version 6.0</td>
+            </tr>
+            <tr>
+                <td class="tbltd1">Java Developer Kit (JDK)</td>
+                <td class="tbltd1"><a href="http://java.sun.com/javase/downloads/index.jsp">version 6</a> または<br>
+                version 5</td>
+            </tr>
+        </tbody>
+    </table>
+    
+      <p class="tips">トラブルシューティングのために、<a href="http://plugins.netbeans.org/PluginPortal/faces/PluginDetailPage.jsp?pluginid=2753">完了したサンプルをダウンロード</a>してソースを調べることもできます (任意)。
+
+</p><p></p><h2><a name="intro"></a>Java 言語インフラストラクチャーについて</h2>
+
+ <p>NetBeans IDE 6.0 より以前は、Java コード生成および Java リファクタリングを含め、Java エディタをサポートする Java 言語インフラストラクチャーは、JMI for Java と呼ばれるもの (「MDR」ともいう) に基づいていました。JMI for Java には、単一の読み取りに対するロックなど、いくつかの構造上の問題点がありました。つまり、モデルから情報を読み取るだけの場合もロックされるわけですが、これは通常は書き込み時にのみ必要なものです。数年かけて JMI はデバッグされ、パフォーマンスに関しては改善されています。しかし、自身の Java パーサーの内部コピーを使用するという問題が残っています。つまり、Java ソースを独自の手法で解釈するため JDK の Java コンパイラとは異なることになります。より複雑で繊細な Java の概念を取り入れた JDK 5 が汎用的に導入され、その違いを処理することがいっそう困難になっています。このように、JMI のパフォーマンスに関して問題があること、また 正式な言語モデルが JDK Java コンパイラをプログラムのツールとして活用するように開発されていることから、JMI for Java が廃止され JDK Java コンパイラに基づく新しい手法が取り入れられました。 
+ 
+ </p><p>こうして Retouche が生まれました。Retouche とはフランス語で「改良」を意味します。Retouche は、NetBeans IDE における新しい高速の Java 言語インフラストラクチャーです。NetBeans 6.0 で実現された優れた Java エディタの機能をすべてサポートしています。本質的に、Retouche は JDK Java コンパイラのインスタンスをラップし、たとえば抽象構文ツリー (AST と呼ぶ) や解析のさまざまな段階で発生するシンボリックの解決といった、自身のアーティファクトを消費します。Retouche を使用するときには、それらのアーティファクトをいくつか取り扱う必要があります。たとえば、<a href="http://java.sun.com/javase/6/docs/jdk/api/javac/tree/index.html">コンパイラツリー API</a> はそれらの 1 つです。コンパイラツリー API のクラスのパッケージは <tt>com.sun.*</tt> と命名されています。したがって、技術的にはこれは非 JDK API ですが、JDK Java に由来するものです。Retouche の使用に伴う JDK Java コンパイラのアーティファクトの別の例として、JDK API における正式言語モデルがあげられます。これは、<tt>javax.language.model.*</tt> パッケージに含まれています。
+ 
+
+</p><p></p><h2><a name="setting-up-the-module"></a>モジュールの設定</h2>
+
+     <p>この節では、ウィザードを使用してモジュールプロジェクトを作成し、関係する NetBeans モジュールとの依存関係を設定します。 
+         
+         </p><ol>
+         
+         <li>「ファイル」&gt;「新規プロジェクト」を選択します。「新規プロジェクト」ウィザードで、「カテゴリ」の下にある「NetBeans モジュール」と「プロジェクト」の下にある「モジュールプロジェクト」を選択し、「次へ」をクリックします。 
+     
+     </li><li>「プロジェクト名」に「<tt>CopyFQN</tt>」と入力し、「プロジェクトの場所」をディスク上の適切なフォルダに設定します。「スタンドアロンモジュール」および「主プロジェクトとして設定」が選択されていない場合は、それらを選択します。「次へ」をクリックします。
+     
+     </li><li>「コード名ベース」に「<tt>org.netbeans.modules.copyfqn</tt>」、「モジュール表示名」に「<tt>CopyFQN</tt>」と入力します。「完了」をクリックします。
+     
+     </li><li>プロジェクトを右クリックして「プロパティー」を選択し、「プロジェクトプロパティー」ダイアログで「ライブラリ」をクリックして次の API との依存関係を宣言します。
+     
+     <p></p><ul>
+         <li>データシステム API
+         </li><li>エディタライブラリ 2
+         </li><li>ファイルシステム API
+         </li><li>Javac API ラッパー
+         </li><li>Java ソース
+         </li><li>ノード API
+         </li><li>テキスト API
+         </li><li>UI ユーティリティー API
+         </li><li>ユーティリティー API
+         </li><li>ウィンドウシステム API
+     </li></ul>
+     
+     <p>次のような表示になります。
+     
+</p><p align="left"><img border="1" src="../../images/tutorials/copyfqn/proj-props-copyfqn-60.png" alt="CopyFQN">
+     
+     
+     
+     </p><p>「了解」をクリックします。
+     
+ </p></li>
+ 
+ <p></p><h2><a name="creating-a-context-sensitive-toolbar-button"></a>コンテキストを区別するツールバーボタンの作成</h2>
+
+ <p>この節では、ツールバー上にコンテキスト認識ボタンを作成します。新しい Retouche API とは関係ありませんが、このチュートリアルのあとのほうで、Retouche API の実装と相互に作用するためのユーザーインタフェース要素を提供します。
+ 
+ </p><ol>
+     <li>モジュールプロジェクトを右クリックして「新規」&gt;「その他」を選択し、「モジュールの開発」カテゴリの「アクション」を選択します。「次へ」をクリックします。
+     
+     </li><li>次に示すように、「条件付で有効」を選択してすべての項目をデフォルトのままにします。これによってアクションは <tt>DataObjects</tt> を区別できるようになり、<tt>DataObject</tt> が 1 つ選択されたときにだけ有効になります。</p>
+     
+     
+     <p align="left"><img border="1" src="../../images/tutorials/copyfqn/cookie-action-60.png" alt="CookieAction">
+     
+     </p><p>「次へ」をクリックします。 
+     
+     </p></li><li>「カテゴリ」で「編集」を、「ツールバー」で「編集」を選択します。 </p>
+     
+     <p>画面は次のようになります。
+     
+     </p><p align="left"><img border="1" src="../../images/tutorials/copyfqn/gui-registration-60.png" alt="GUI の登録">
+     
+     </p><p>「次へ」をクリックします。</p> 
+     
+     </li><li>「クラス名」に「<tt>CopyFQNAction</tt>」、「表示名」に「<tt>CopyFQN</tt>」と入力します。 
+         
+         </li><li>ツールバーボタンとして表示されるアイコンを参照します。例として、このチュートリアルで使用されているものを使用します。</p>
+     
+     <p align="left"><img border="1" src="../../images/tutorials/copyfqn/icon.png" alt="アイコン">
+     
+     </p><p>「完了」をクリックします。</p>
+     
+     <p>新しい <tt>CopyFQNAction.java</tt> クラスに、次のようなコードが見つかるはずです。
+     
+</p><pre class="examplecode">public final class CopyFQNAction extends CookieAction {
+    
+    protected void performAction(Node[] activatedNodes) {
+        DataObject dataObject = activatedNodes[0].getLookup().lookup(org.openide.loaders.DataObject.class);
+        // TODO dataObject を使用
+    }
+    
+    protected int mode() {
+        return CookieAction.MODE_EXACTLY_ONE;
+    }
+    
+    public String getName() {
+        return NbBundle.getMessage(CopyFQNAction.class, &quot;CTL_CopyFQNAction&quot;);
+    }
+    
+    protected Class[] cookieClasses() {
+        return new Class[] {
+            DataObject.class
+        };
+    }
+    
+    protected String iconResource() {
+        return &quot;org/netbeans/modules/copyfqn/icon.png&quot;;
+    }
+    
+    public HelpCtx getHelpCtx() {
+        return HelpCtx.DEFAULT_HELP;
+    }
+    
+    protected boolean asynchronous() {
+        return false;</pre>     
+     
+     <p><b class="notes">注: </b>このあと、このチュートリアルでは、すべてこの <tt>performAction()</tt> メソッドに重点を置いて進めます。</p>
+
+     <p>これで、データオブジェクトを区別するアクションが作成されました。続いて、その働きについて確認します。 
+     
+     </p></li><li>モジュールを右クリックして「インストール」を選択します。</p>
+     
+     <p>モジュールがインストールされると、ツールバーに新しいボタンが表示されます。 
+     
+          </p></li><li>「プロジェクト」ウィンドウでノードを選択してから、ツールバーのボタンを確認します。ファイルまたはフォルダ (パッケージを含む) を示すノードを選択した場合は、次に示すようにボタンが使用可能になっています。</p>
+         
+          <p align="left"><img border="1" src="../../images/tutorials/copyfqn/ctx-sensitive-on.png" alt="アイコン">
+    
+          </p><p>一方、プロジェクトを示すノードを選択した場合は、次に示すようにボタンは使用できなくなっています。</p>
+         
+          <p align="left"><img border="1" src="../../images/tutorials/copyfqn/ctx-sensitive-off.png" alt="アイコン">
+         
+     </p></li>
+ </ol>
+ <p>次の節では、ここで確認したプロジェクトノードと、ファイルノードまたはフォルダノードの区別だけでなく、Java クラスのファイルノードとその他すべての種類のファイルノードの区別について学習します。
+  
+  
+ </p><p></p><h2><a name="identifying-java-source-files"></a>Java ソースファイルの識別</h2>
+
+ <p>この節では、<a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/overview-summary.html">Java ソース</a>と呼ばれる、新しい Retouche API の 1 つを使用します。ここで使用する <a href="http://www.netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/JavaSource.html">JavaSource</a> クラスは、Java ソースファイルを表しています。使用中のデータオブジェクトに関連付けられたファイルオブジェクトの、このクラスのインスタンスを返します。null が返された場合は、ファイルオブジェクトは Java ソースファイルではありません。ファイルが選択されている状態でボタンをクリックすると、ステータスバーに結果が表示されるようにします。
+ 
+ </p><ol>
+     
+     <li><tt>performAction()</tt> メソッドに、次に示す強調表示された行を追加します。
+     
+     <pre class="examplecode">protected void performAction(Node[] activatedNodes) {
+    DataObject dataObject = activatedNodes[0].getLookup().lookup(org.openide.loaders.DataObject.class);
+    // TODO dataObject を使用
+
+    <b>FileObject fileObject = dataObject.getPrimaryFile();
+
+    <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/JavaSource.html">JavaSource</a> javaSource = <a href="http://www.netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/JavaSource.html#forFileObject(org.openide.filesystems.FileObject)">JavaSource.forFileObject(fileObject)</a>;
+    if (javaSource == null) {
+        StatusDisplayer.getDefault().setStatusText(&quot;Not a Java file: &quot; + fileObject.getPath());
+    } else {
+        StatusDisplayer.getDefault().setStatusText(&quot;Hurray! A Java file: &quot; + fileObject.getPath());
+    }</b>
+}</pre>
+      
+</li><li>インポート文が次のようになっていることを確認します。
+
+<pre class="examplecode">import org.netbeans.api.java.source.JavaSource;
+import org.openide.awt.StatusDisplayer;
+import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.nodes.Node;
+import org.openide.util.HelpCtx;
+import org.openide.util.NbBundle;
+import org.openide.util.actions.CookieAction;</pre>
+
+     </li><li>モジュールをもう一度インストールします。
+     
+     </li><li>ファイルノードを選択し、ボタンを押します。</p> 
+     
+     <p>次に示すように、Java ファイルを選択したときだけ「Hurray!」のメッセージが表示されます。
+     
+</p><p align="left"><img border="1" src="../../images/tutorials/copyfqn/message-java-file-60.png" alt="message-java-file-60">
+     
+
+</p><p>別の手法として、<i>Java ファイルが選択されたときにだけボタンを使用可能にする</i>という方法もあります。これを実装するには、次のように <tt>CookieAction.enable()</tt> メソッドをオーバーライドします。
+
+</p><pre class="examplecode">@Override
+protected boolean enable(Node[] activatedNodes) {
+    if (super.enable(activatedNodes)) {
+        DataObject dataObject = activatedNodes[0].getLookup().lookup(org.openide.loaders.DataObject.class);
+        FileObject fileObject = dataObject.getPrimaryFile();
+        JavaSource javaSource = JavaSource.forFileObject(fileObject);
+        if (javaSource == null) {
+            return false;
+        }
+        return true;
+    }
+    return false;
+}</pre>
+
+<p>このメソッドは、Java ファイル<i>以外</i>のすべてのファイルをフィルタで除外します。これによって、現在のファイルが Java ファイルであるときだけボタンが使用可能になります。
+
+ </p></li>
+
+
+ <p></p><h2><a name="determining-open-state"></a>開いている状態の判定</h2>
+
+ <p>この節では、はじめて明示的に呼び出された Retouche タスクを取り扱います。このようなタスクは JavaSource クラスの <tt>runUserActionTask</tt> メソッドによってもたらされます。この種のタスクによって、構文解析の段階を制御できるようになります。これは、ユーザーの入力にすぐに応答する際に適用できます。タスク内で行われることはすべて単体として処理されます。ここでは、ツールバーのボタンによって表されるアクションの呼び出しのあと、すぐにステータスバーのテキストを表示するようにします。
+ 
+ </p><ol>
+     
+     <li><tt>performAction()</tt> メソッドの「Hurray!」メッセージを次の行に置き換えます。
+
+<pre class="examplecode"><a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/JavaSource.html#runUserActionTask(org.netbeans.api.java.source.Task,%20boolean)">javaSource.runUserActionTask</a>(new <a href="http://bits.netbeans.org/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/Task.html">Task</a>&lt;<a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/CompilationController.html">CompilationController</a>&gt;());</pre>       
+
+<p>これで、次に示すような電球がエディタの左側のバーに表示されるはずです。
+      
+ </p><p align="left"><img border="1" src="../../images/tutorials/copyfqn/runuserasactiontask-60.png" alt="アイコン">
+         
+      </p></li><li>電球をクリックします。あるいは、その行にキャレットを置いて Alt-Enter キーを押します。これで、IDE によってメソッドが実装されます。
+      
+      </li><li>メソッドの最後に <tt>true</tt> の Boolean を加え、IDE が try/catch ブロックのスニペットをラップするように変更します。コードは次のようになります。
+      
+     <pre class="examplecode">protected void performAction(Node[] activatedNodes) {
+    DataObject dataObject = activatedNodes[0].getLookup().lookup(org.openide.loaders.DataObject.class);
+    // TODO dataObject を使用
+
+    FileObject fileObject = dataObject.getPrimaryFile();
+
+    JavaSource javaSource = JavaSource.forFileObject(fileObject);
+    if (javaSource == null) {
+        StatusDisplayer.getDefault().setStatusText(&quot;Not a Java file: &quot; + fileObject.getPath());
+     } else {
+     
+            <b>try {
+                javaSource.runUserActionTask(new Task&lt;CompilationController&gt;() {
+
+                    public void run(CompilationController arg0) throws Exception {
+                        throw new UnsupportedOperationException(&quot;Not supported yet.&quot;);
+                    }
+                }, true);
+            } catch (IOException ex) {
+                Exceptions.printStackTrace(ex);
+            }</b>
+            
+     }
+
+}</pre>
+
+      </li><li>次のように、<tt>run()</tt> メソッドを実装します。
+     
+     <pre class="examplecode">public void run(CompilationController compilationController) throws Exception {
+     
+      <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/CompilationController.html#toPhase(org.netbeans.api.java.source.JavaSource.Phase)">compilationController.toPhase(Phase.ELEMENTS_RESOLVED)</a>;
+      
+      <a href="http://java.sun.com/j2se/1.5.0/docs/api/javax/swing/text/Document.html">Document</a> document = <a href="https://netbeans.org/download/dev/javadoc/org-netbeans-modules-java-source/org/netbeans/api/java/source/CompilationController.html#getDocument()">compilationController.getDocument()</a>;
+      if (document != null) {
+         StatusDisplayer.getDefault().setStatusText(&quot;Hurray, the Java file is open!&quot;);
+      } else {
+         StatusDisplayer.getDefault().setStatusText(&quot;The Java file is closed!&quot;);
+      }
+      
+}</pre>
+
+</li><li>インポート文が次のようになっていることを確認します。
+
+<pre class="examplecode">import java.io.IOException;
+import javax.swing.text.Document;
+import org.netbeans.api.java.source.CompilationController;
+import org.netbeans.api.java.source.JavaSource;
+import org.netbeans.api.java.source.JavaSource.Phase;
+import org.netbeans.api.java.source.Task;
+import org.openide.awt.StatusDisplayer;
+import org.openide.filesystems.FileObject;
+import org.openide.loaders.DataObject;
+import org.openide.nodes.Node;
+import org.openide.util.Exceptions;
+import org.openide.util.HelpCtx;
+import org.openide.util.NbBundle;
+import org.openide.util.actions.CookieAction;</pre>
+
+     </li><li>モジュールをもう一度インストールします。
+     
+     </li><li>ファイルノードを選択し、ボタンを押します。</p> 
+     
+     <p>次に示すように、Java エディタで開いている Java ファイルを選択するときだけ「Hurray!」のメッセージが表示されます。
+     
+     </p><p align="left"><img border="1" src="../../images/tutorials/copyfqn/message-java-file-open-60.png" alt="message-java-file-open-60">
+
+ </p></li>
+
+
+ <p></p><h2><a name="detecting-the-element-under-the-caret"></a>キャレットの下の要素の検出</h2>
+
+ <p>この節では、Java ファイルを取り扱っていてそれが開いている状態であるため、随時キャレットの下の要素の型を検出できます。
+ 
+ </p><ol>
+     
+     <li>はじめに入出力 API との依存関係を宣言すると、「出力」ウィンドウに結果を出力できます。 
+     
+     </li><li><tt>run()</tt> メソッドの「Hurray!」のメッセージを、次に示す強調表示された行に置き換えます。
+  
+ <pre class="examplecode">public void run(CompilationController compilationController) throws Exception {
+    
+    compilationController.toPhase(Phase.ELEMENTS_RESOLVED);
+    Document document = compilationController.getDocument();
+    
+    if (document != null) {
+        <b>new MemberVisitor(compilationController).scan(compilationController.getCompilationUnit(), null);</b>
+    } else {
+        StatusDisplayer.getDefault().setStatusText(&quot;The Java file is closed!&quot;);
+    }
+    
+}</pre>   
+ 
+    
+<p></p></li><li>また、ここに示す <tt>MemberVisitor</tt> クラスは、<tt>CopyFQNAction</tt> クラスの内部クラスとして定義されます。
+    
+                                                                                                                                                                                       
+ <pre class="examplecode">private static class MemberVisitor extends TreePathScanner&lt;Void, Void&gt; {
+
+    private CompilationInfo info;
+
+    public MemberVisitor(CompilationInfo info) {
+        this.info = info;
+    }
+
+    @Override
+    public Void visitClass(ClassTree t, Void v) {
+        Element el = info.getTrees().getElement(getCurrentPath());
+        if (el == null) {
+            StatusDisplayer.getDefault().setStatusText(&quot;Cannot resolve class!&quot;);
+        } else {
+            TypeElement te = (TypeElement) el;
+            List<? extends Element> enclosedElements = te.getEnclosedElements();
+            InputOutput io = IOProvider.getDefault().getIO(&quot;Analysis of &quot;  
+                        + info.getFileObject().getName(), true);
+            for (int i = 0; i &lt; enclosedElements.size(); i++) {
+            Element enclosedElement = (Element) enclosedElements.get(i);
+                if (enclosedElement.getKind() == ElementKind.CONSTRUCTOR) {
+                    io.getOut().println(&quot;Constructor: &quot; 
+                        + enclosedElement.getSimpleName());
+                } else if (enclosedElement.getKind() == ElementKind.METHOD) {
+                    io.getOut().println(&quot;Method: &quot; 
+                        + enclosedElement.getSimpleName());
+                } else if (enclosedElement.getKind() == ElementKind.FIELD) {
+                    io.getOut().println(&quot;Field: &quot; 
+                        + enclosedElement.getSimpleName());
+                } else {
+                    io.getOut().println(&quot;Other: &quot; 
+                        + enclosedElement.getSimpleName());
+                }
+            }
+            io.getOut().close();
+        }
+        return null;
+    }
+
+}</pre>
+    
+    </li><li>モジュールをもう一度インストールし、Java クラスを開きます。そのあとで、ボタンをクリックすると、次のようにコンストラクタ、メソッド、およびフィールドが「出力」ウィンドウに示されます。</p>
+     
+ 
+ <p align="left"><img border="1" src="../../images/tutorials/copyfqn/output-window-60.png" alt="message-constructor-60">
+         
+  
+ </p></li><li>次に、「出力」ウィンドウにすべての要素を出力するのではなく、キャレットの下にある要素だけを出力します。<tt>visitClass</tt> メソッドを、次に示す強調表示されたコードに置き換えるだけです。
+                                                                                                                                                        
+ <pre class="examplecode">private static class MemberVisitor extends TreePathScanner&lt;Void, Void&gt; {
+
+    private CompilationInfo info;
+
+    public MemberVisitor(CompilationInfo info) {
+        this.info = info;
+    }
+
+    <b>@Override
+    public Void visitClass(ClassTree t, Void v) {
+        try {
+            JTextComponent editor = EditorRegistry.lastFocusedComponent();
+            if (editor.getDocument() == info.getDocument()) {
+                int dot = editor.getCaret().getDot();
+                TreePath tp = info.getTreeUtilities().pathFor(dot);
+                Element el = info.getTrees().getElement(tp);
+                if (el == null) {
+                    StatusDisplayer.getDefault().setStatusText(&quot;Cannot resolve class!&quot;);
+                } else {
+                    InputOutput io = IOProvider.getDefault().getIO(&quot;Analysis of &quot; 
+                            + info.getFileObject().getName(), true);
+                    if (el.getKind() == ElementKind.CONSTRUCTOR) {
+                        io.getOut().println(&quot;Hurray, this is a constructor: &quot; 
+                            + el.getSimpleName());
+                    } else if (el.getKind() == ElementKind.METHOD) {
+                        io.getOut().println(&quot;Hurray, this is a method: &quot; 
+                            + el.getSimpleName());
+                    } else if (el.getKind() == ElementKind.FIELD) {
+                        io.getOut().println(&quot;Hurray, this is a field: &quot; 
+                            + el.getSimpleName());
+                    } else {
+                        io.getOut().println(&quot;Hurray, this is something else: &quot; 
+                            + el.getSimpleName());
+                    }
+                    io.getOut().close();
+                }
+            }
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+        return null;
+    }</b>
+
+}</pre>  
+   
+      </li><li>モジュールをインストールします。
+    
+    </li><li>Java コードの任意の場所にキャレットを置き、ボタンを押します。「出力」ウィンドウに、キャレットの下にあるコードに関する情報がある場合には、それが表示されます。たとえば、メソッド内にキャレットを置いたあとにボタンを押すと、「出力」ウィンドウには、次のように、キャレットがメソッド内にあることが表示されます。</p> 
+ 
+   <p align="left"><img border="1" src="../../images/tutorials/copyfqn/message-constructor-60.png" alt="message-constructor-60">
+
+   
+   </p></li><li>キャレットの下にある要素の名前だけでなく、より多くの情報を検出することもできます。<tt>visitClass</tt> メソッドで、次に示す太字の行に置き換えます。
+     
+    
+   <pre class="examplecode">@Override
+public Void visitClass(ClassTree t, Void v) {
+    try {
+        JTextComponent editor = EditorRegistry.lastFocusedComponent();
+        if (editor.getDocument() == info.getDocument()) {
+            int dot = editor.getCaret().getDot();
+            TreePath tp = info.getTreeUtilities().pathFor(dot);
+            Element el = info.getTrees().getElement(tp);
+            if (el == null) {
+                StatusDisplayer.getDefault().setStatusText(&quot;Cannot resolve class!&quot;);
+            } else {
+                InputOutput io = IOProvider.getDefault().getIO(&quot;Analysis of &quot; 
+                    + info.getFileObject().getName(), true);
+                <b>String te = null;
+                if (el.getKind() == ElementKind.CONSTRUCTOR) {
+                    te = ((TypeElement) ((ExecutableElement) el).getEnclosingElement()).getQualifiedName().toString();
+                    io.getOut().println(&quot;Hurray, this is a constructor's qualified name: &quot; + te);
+                } else if (el.getKind() == ElementKind.METHOD) {
+                    te = ((ExecutableElement) el).getReturnType().toString();
+                    io.getOut().println(&quot;Hurray, this is a method's return type: &quot; + te);
+                } else if (el.getKind() == ElementKind.FIELD) {
+                    te = ((VariableElement) el).asType().toString();
+                    io.getOut().println(&quot;Hurray, this is a field's type: &quot; + te);
+                }</b> else {
+                    io.getOut().println(&quot;Hurray, this is something else: &quot; 
+                        + el.getSimpleName());
+                }
+                io.getOut().close();
+            }
+        }
+    } catch (IOException ex) {
+        Exceptions.printStackTrace(ex);
+    }
+    return null;
+}</pre>
+    
+</li><li>モジュールをもう一度インストールします。今度は、キャレットが、コンストラクタ、メソッド、あるいはフィールドの上にあるときにボタンをクリックすると、「出力」ウィンドウに要素に関するより詳細な情報が表示されます。
+    
+ </li></ol>
+
+<p>ここでは、Java ファイルを取り扱っているかどうか、ドキュメントが開いているかどうか、また、キャレットの下の要素の型を検出できることを学習しました。しかし、この情報をどのように使ったらよいのでしょうか。次の節では、この新たに学習したことが役に立つことがわかる簡単なシナリオを紹介します。</p>
+
+
+<p></p><h2><a name="doing-something-useful"></a>便利な使い方</h2>
+
+<p>この節では、<tt>java.awt.datatransfer.Clipboard</tt> にあるクリップボードの内容が、キャレットの下にある要素に基づくように設定します。ボタンを押すと、キャレットの下にある要素がクリップボードにコピーされ、コード内の任意の場所にその内容をペーストできます。 
+ 
+ </p><ol>
+     
+     <li>次に示すように、はじめにクリップボードの宣言を行い、コンストラクタを定義します。
+     
+     <pre class="examplecode">private Clipboard clipboard;
+
+public CopyFQNAction() {
+    clipboard = Lookup.getDefault().lookup(ExClipboard.class);
+    if (clipboard == null) {
+        clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+    }
+}</pre>
+      
+     </li><li>次に、コード内の「Hurray!」の行を、次の手順で定義するメソッドに文字列として要素を送信する行に置き換えます。<tt>setClipboardContents</tt> メソッドを呼び出すことになります。したがって、たとえば、最初の「Hurray!」の行を次に置き換えます。
+     
+<pre class="examplecode">setClipboardContents(te);</pre>
+
+<p>ほかの「Hurray!」の行についても同様のことを行い、必ずメソッドに正しい文字列が渡されるようにします。
+
+     </p><p><b class="notes">注: </b>まだ <tt>setClipboardContents</tt> メソッドを定義していないため、この手順で追加した各行には赤い下線が付きます。次の手順で、新しいメソッドを追加します。
+
+     </p></li><li>最後に、クラスの最後に次の内容を追加します。このメソッドは、文字列を受け取ってそれをクリップボードにコピーします。
+     
+     <pre class="examplecode">private void setClipboardContents(String content) {
+    if (clipboard != null) {
+        if (content == null) {
+            StatusDisplayer.getDefault().setStatusText(&quot;&quot;);
+            clipboard.setContents(null, null);
+        } else {
+            StatusDisplayer.getDefault().setStatusText(&quot;Clipboard: &quot; + content);
+            clipboard.setContents(new StringSelection(content), null);
+        }
+    }
+}</pre>
+
+
+ </li></ol>
+ 
+<br>
+<div class="feedback-box"><a href="https://netbeans.org/about/contact_form.html?to=3&amp;subject=Feedback:%20Java%20Language%20Infrastructure%20Tutorial%20Part%201">ご意見をお寄せください</a></div>
+<br style="clear:both;" />
+
+    
+ <!-- ======================================================================================== -->
+
+<h2><a name="nextsteps"></a>関連項目</h2>
+
+<p>NetBeans モジュールの作成と開発の詳細については、次のリソースを参照してください。 
+  </p><ul>
+	  <li><a href="http://wiki.netbeans.org/Java_DevelopersGuide">Java Developer's Guide</a></li>
+	  <li><a href="http://wiki.netbeans.org/RetoucheDeveloperFAQ">Retouche Developer FAQ</a></li>
+	  <li><a href="https://netbeans.org/kb/trails/platform.html">その他の関連チュートリアル</a></li>
+	  <li><a href="https://netbeans.org/download/dev/javadoc/">NetBeans API Javadoc</a></li>
+  </ul>
+  
+  <hr>
+    
+    <!-- ======================================================================================== -->
+
+    </ol></ol></ol></body>
+</html>
