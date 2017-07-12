@@ -1,12 +1,10 @@
 buildscript {
     //have to apply here for this to be applied at the right time
     apply from: file("gradle/deps.gradle")
-    repositories sharedRepositories
-    dependencies sharedDependencies
+    initScript(buildscript)
 }
 apply from: file("gradle/utils.gradle")
 apply plugin: 'org.jbake.site'
-apply plugin: 'org.akhikhl.gretty'
 apply plugin: 'io.freefair.jsass-base'
 
 loadGlobals(globalsFile)
@@ -29,10 +27,36 @@ task compileSass(type: io.freefair.gradle.plugins.jsass.SassCompile,
     destinationDir = generatedAssetDir
 }
 
-task preprocessContentStatics(type: Copy,
-description: "Pre-processes all .html, .md, and possibly other files which have metadata/front matter in a side car file of the same name and extension with an extra .yml extension after that",
-group: "Build") {
+task preprocessAssets(type: Copy,
+    description: "Pre-processes all .css, .js (not in the minimize list), images, etc from the content directory into the generated assets directory",
+    group: "Build") {
+    from contentDir
+    into generatedAssetDir
+    filteringCharset 'UTF-8'
+    includeEmptyDirs false
+    
+    include "**/*.js", "**/.css",
+        "**/*.png", "**/*.gif",
+        "**/*.jpeg", "**/.jpg",
+        "**/*.svg"
+    
+    exclude "/templates/**"
+}
 
+task preprocessContentStatics(type: Copy,
+    description: "Pre-processes all .html, .md, and possibly other files which have metadata/front matter in a side car file of the same name and extension with an extra .yml extension after that",
+    group: "Build") {
+
+}
+
+task preprocessTemplates(type: Copy,
+    description: "Pre-processes the templates for JBake to use for baking",
+    group: "Build") {
+    from templateDir
+    into generatedTemplateDir
+    filteringCharset 'UTF-8'
+    includeEmptyDirs false
+    include "**/*"
 }
 
 task preprocessContentTemplates(type: Copy,
@@ -50,6 +74,8 @@ task preprocessContentTemplates(type: Copy,
     
     //we need to do both of these to make sure we are or are not up to date
     include "**/*.gsp", "**/*.gsp.yml"
+    
+    exclude "/templates/**"
     
     rename '(.*)\\.gsp', '$1'
     
@@ -86,18 +112,30 @@ task preprocessContentTemplates(type: Copy,
 jbake {
     groovyTemplatesVersion = "${libs.groovy}"
     version  = "${libs.jbake}"
-    //we'll use the folder gretty sets up for this to be able to run a local server easily
-    //so what ever other job moves this to the asf-site branch will have to copy/update from here
-    destDirName = "${bakedDir}"
+    //the following vars are set the way they are because the way the jbake plugin works
+    srcDirName = generatedDirRelativePath
+    destDirName = bakedDirRelativePath
     configuration.putAll(globals)
-    configuration['content.folder'] = "${buildDir}/generated-content"
-    configuration['asset.folder'] = "${buildDir}/generated-assets"
-    configuration['template.folder'] = "${templateDir}"
 }
 
-gretty {
-    servletContainer = "tomcat8"
-    contextPath = "/"
+task("run", type: JavaExec, group: "Run", overwrite: true) {
+    
+    def wDir = new File(buildDir, "tomcat")
+    
+    doFirst {
+        wDir.mkdirs()
+    }
+    
+    main "TomcatMain"
+    classpath buildscript.configurations.classpath + files("${rootProject.projectDir}/buildSrc/build/classes/main")
+    args = [bakedDir, 8080, "SHUTDOWN", 8081]
+    workingDir = wDir
+}
+
+task("stop", type: JavaExec, group: "Run", overwrite: true) {
+    main "TomcatStopMain"
+    classpath buildscript.configurations.classpath + files("${rootProject.projectDir}/buildSrc/build/classes/main")
+    args = ["SHUTDOWN", 8081]
 }
 
 wrapper {
