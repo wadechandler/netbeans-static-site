@@ -41,7 +41,6 @@
         </footer>
 
         <link rel="stylesheet" property="stylesheet" href="${content.rootpath ? content.rootpath : "/"}css/onepager.css">
-
-        <script src="${content.rootpath ? content.rootpath : "/"}/js/onepager.min.js"></script>
+        <script src="${content.rootpath ? content.rootpath : "/"}js/onepager.min.js"></script>
     </body>
 </html>

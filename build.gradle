@@ -20,14 +20,15 @@ loadGlobals(globalsFile)
 //...this means in either the content or the assets folders, and this will be the
 //generatedAssetsDir and generatedContentDir
 
-task compileSass(type: io.freefair.gradle.plugins.jsass.SassCompile,
+task compileContentSass(type: io.freefair.gradle.plugins.jsass.SassCompile,
     description: "Compiles the projects SaSS files to the build directory.",
     group: "Build") {
     sourceDir = contentDir
     destinationDir = generatedAssetDir
+    includePaths = files(new File(contentDir, "css"))
 }
 
-task preprocessAssets(type: Copy,
+task preprocessContentAssets(type: Copy,
     description: "Pre-processes all .css, .js (not in the minimize list), images, etc from the content directory into the generated assets directory",
     group: "Build") {
     from contentDir
@@ -37,8 +38,9 @@ task preprocessAssets(type: Copy,
     
     include "**/*.js", "**/.css",
         "**/*.png", "**/*.gif",
-        "**/*.jpeg", "**/.jpg",
-        "**/*.svg"
+        "**/*.jpeg", "**/*.jpg",
+        "**/*.svg", "**/*.ttf",
+        "**/*.woff"
     
     exclude "/templates/**"
 }
@@ -47,10 +49,10 @@ task preprocessContentStatics(type: Copy,
     description: "Pre-processes all .html, .md, and possibly other files which have metadata/front matter in a side car file of the same name and extension with an extra .yml extension after that",
     group: "Build") {
     from contentDir
-    into generatedAssetDir
+    into generatedContentDir
     filteringCharset 'UTF-8'
     includeEmptyDirs false
-    include "**/*.html.yml", "**/*.md.yml"
+    include "**/*.html.yml", "**/*.md.yml", "**/*.html", "**/*.md"
     exclude "/templates/**"
 }
 
@@ -92,13 +94,16 @@ task preprocessContentTemplates(type: Copy,
     
     eachFile { details ->
         if(details.sourcePath.endsWith(".yml")) {
-            details.exclude()
+            //we don't want to do anything else with this
+            //it will just be copied into the generated folder
+            //but will not be merged by jbake as there will not
+            //be meta info
             return
         }
         def contentFile = file("${contentDir}/${details.sourcePath}")
         def ymlFile = file("${contentFile}.yml")
         if(ymlFile.exists()) {
-            def mergeData = createMergeData(ymlFile.absolutePath,
+            def mergeData = createMergeData(file("${generatedContentDir}/${details.path}.yml").absolutePath,
                 file("${generatedContentDir}/${details.path}").absolutePath)
             mergeList << mergeData
         } else {
@@ -111,6 +116,16 @@ task preprocessContentTemplates(type: Copy,
             mergeContentAndMetadata(data)
         }
     }
+
+}
+
+task preprocessContent(dependsOn: ["compileContentSass",
+"preprocessContentAssets",
+"preprocessContentStatics",
+"preprocessTemplates",
+"preprocessContentTemplates"],
+    description: "Runs all preprocess tasks to prepare for a bake",
+    group: "Build") {
 
 }
 
@@ -129,6 +144,7 @@ task("run", type: JavaExec, group: "Run", overwrite: true) {
     
     doFirst {
         wDir.mkdirs()
+        bakedDir.mkdirs()
     }
     
     main "TomcatMain"
