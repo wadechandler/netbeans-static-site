@@ -40,7 +40,7 @@ task preprocessContentAssets(type: Copy,
         "**/*.png", "**/*.gif",
         "**/*.jpeg", "**/*.jpg",
         "**/*.svg", "**/*.ttf",
-        "**/*.woff"
+        "**/*.woff", "**/.htaccess"
     
     exclude "/templates/**"
 }
@@ -54,6 +54,32 @@ task preprocessContentStatics(type: Copy,
     includeEmptyDirs false
     include "**/*.html.yml", "**/*.md.yml", "**/*.html", "**/*.md"
     exclude "/templates/**"
+    
+    def mergeList = []
+    
+    eachFile { details ->
+        if(details.sourcePath.endsWith(".yml")) {
+            //we don't want to do anything else with this
+            //it will just be copied into the generated folder
+            //but will not be merged by
+            return
+        }
+        def contentFile = file("${contentDir}/${details.sourcePath}")
+        def ymlFile = file("${contentFile}.yml")
+        if(ymlFile.exists()) {
+            def mergeData = createMergeData(file("${generatedContentDir}/${details.path}.yml").absolutePath,
+                file("${generatedContentDir}/${details.path}").absolutePath)
+            mergeList << mergeData
+        } else {
+            logger.info("The content file ${contentFile} can not be merged because the corresponding YAML file ${ymlFile} was not found.")
+        }
+    }
+    doLast {
+        //let's merge up the metadata with the content yml+content from the merge map
+        mergeList.each { data ->
+            mergeContentAndMetadata(data)
+        }
+    }
 }
 
 task preprocessTemplates(type: Copy,
@@ -135,6 +161,10 @@ jbake {
     //the following vars are set the way they are because the way the jbake plugin works
     srcDirName = generatedDirRelativePath
     destDirName = bakedDirRelativePath
+    //this will cause builds to be faster as only changes will be baked,
+    //and since it is in the build directory, can be cleaned
+    configuration["db.store"]="local"
+    configuration["db.path"]=cacheDir.absolutePath
     configuration.putAll(globals)
 }
 

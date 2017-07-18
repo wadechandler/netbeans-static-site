@@ -1,7 +1,10 @@
 <%include "header.gsp"%>
-
-<div class="page-header">
-    <h1>${content.title}</h1>
-</div>
-${content.body}
+<main>
+    <article>
+        <% if(content.summary) { %>
+        <h1>${content.summary}</h1>
+        <%}%>
+        ${content.body}
+    </article>
+</main>
 <%include "footer.gsp"%>
