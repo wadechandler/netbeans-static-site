@@ -1,8 +1,8 @@
 <%include "header.gsp"%>
 <main>
     <article>
-        <% if(content.summary) { %>
-        <h1>${content.summary}</h1>
+        <% if((content.metadata && content.metadata.summary) || content.summary) { %>
+        <h1>${content.summary ?: content.metadata.summary}</h1>
         <%}%>
         ${content.body}
     </article>
