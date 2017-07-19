@@ -1,4 +1,4 @@
-#The Apache NetBeans Static Web Site Project
+# The Apache NetBeans Static Web Site Project
 
 The Apache NetBeans Static Web Site is built using the following technologies:
 
@@ -26,7 +26,7 @@ sources, and have an understanding of how they function. The goal is certainly f
 but it is entirely possible something has been missed. Please update this README accordingly when/if
 something is missing.
 
-##The Source and Build Layout and Important Concepts
+## The Source and Build Layout and Important Concepts
 
 The project source layout is roughly:
 
@@ -66,7 +66,7 @@ Much of the above is standard Gradle build stuff. The rest is explained below:
 |src/content|The main content files top level sources directory|
 |src/content/templates|A folder for JBakes templates; this build uses Groovy templates|
 
-###globals.yml
+### globals.yml
 
 JBake configuration can go here, but in some cases, the configuration is better
 defined in the `jbake` configuration inside `build.gradle` as it can be calculated
@@ -78,14 +78,14 @@ data is used both for JBake configuration, those common to JBake, and thus
 accessible by the JBake templates, and is also accessible in pure object form
 by the "content templates" (more on these later)
 
-###buildSrc
+### buildSrc
 
 Gradle will build `buildSrc` as a project before configuring and executing the
 rest of the build. Classes in this project can be used to do some very specific
 things in the build. They can provide utilities or they can setup and run
 an Apache Tomcat server (which they do).
 
-###src/content/templates
+### src/content/templates
 
 The JBake templates go here. This project specifically uses Groovy templates. These
 should not be confused with "content templates" which is a concept to be described
@@ -96,7 +96,7 @@ An example is `type: page` in content metadata which maps to the JBake template
 a `post.gsp` file. Posts are useful for a "blog like" area of the site where
 news items may be kept etc.
 
-###src/content (\*\*/\*.html.gsp and \*\*/\*.md.gsp and YAML) or Content Templates
+### src/content (\*\*/\*.html.gsp and \*\*/\*.md.gsp and YAML) or Content Templates
 
 This build treats files ending in `.html.gsp` and `.md.gsp` specially. These files
 will be preprocessed before JBake accesses them, and turned into `.html` and `.md`
@@ -163,7 +163,7 @@ must be escaped accordingly as it will collide with Groovy syntax
 at times, and thus is a good reason to keep JavaScript separated
 into files, and not be inlined.
 
-###src/content (\*\*/\*.html and \*\*/\*.md and YAML) or Static Content
+### src/content (\*\*/\*.html and \*\*/\*.md and YAML) or Static Content
 
 This build treats static content files ending in `.html` and `.md` similar
 to the "Content Templates" except it does not process the content files as
@@ -181,7 +181,7 @@ It is expected that
 content files in this build will not have metadata added directly to them,
 or the result will be undefined or may cause errors in JBake.
 
-###Build Layout
+### Build Layout
 
 During build, certain structures are setup in the `build` directory
 of the main project. This directory should **never** be added to the
@@ -214,7 +214,7 @@ build
 
 Specifics on the above may be added here if it is deemed more necessary.
 
-###Things To Keep In Mind
+### Things To Keep In Mind
 
 The various preprocess tasks move files into different areas
 of the "Build Layout" from the "Source Layout". Those tasks
@@ -225,27 +225,27 @@ the place to look. Some items could be affected by variables
 defined in `deps.gradle`, `utils.gradle`, or sources under
 `buildSrc` as well, so keep this in mind.
 
-##How To Bake The Site
+## How To Bake The Site
 
 There are multiple preprocess tasks in the build which setup the JBake data and structures. These structures
 and data are setup in a way JBake understands and is configured in the build.
 
 Run the following gradle build to preprocess content plus run JBake, and bake the web site:
 
-###Linux and Mac
+### Linux and Mac
 
 `./gradlew preprocessContent bake`
 
-###Windows
+### Windows
 
 `gradlew preprocessContent bake`
 
-##Using The Local Tomcat Web Server
+## Using The Local Tomcat Web Server
 
 Once the server is running, the site can be baked or built multiple times, and the site can be
 continually viewed in the browser.
 
-###Run Tomcat
+### Run Tomcat
 
 From a separate terminal, change to the project directory, and run:
 
@@ -256,7 +256,7 @@ server to fork, and continue to exist independent of the Gradle
 build. At the moment it consumes the shell/command line. This also
 hogs a Gradle daemon.
 
-###Stop Tomcat
+### Stop Tomcat
 
 To stop the local Tomcat server, from a seperate terminal run:
 
@@ -265,9 +265,9 @@ To stop the local Tomcat server, from a seperate terminal run:
 or in the same one as `run` press `CONTROL-C`; hopefully this will
 change in the future.
 
-##Gradle Tasks of Note
+## Gradle Tasks of Note
 
-###Build tasks
+### Build tasks
 
 1. clean - deletes the build directory
 2. compileContentSass - compiles the projects SaSS files to the build directory.
@@ -277,11 +277,11 @@ change in the future.
 6. preprocessContentTemplates - pre-processes the *.gsp and *.gsp.yml files under content for baking as Groovy templates; edit global.yml to add data used in content other than YAML front matter
 7. preprocessTemplates - pre-processes the templates for JBake to use for baking
 
-###Documentation tasks
+### Documentation tasks
 
 1. bake - bakes a jbake project; the final generator
 
-###Run tasks
+### Run tasks
 
 1. run - runs the Tomcat server
 2. stop - stops the Tomcat server
