@@ -107,7 +107,7 @@ The YAML file will be merged into the final file as the JBake metadata. The comm
 JBake metadata attributes defined in the documentation will be added to the top
 of the files such as `title=Some Title` if in the YAML file exists the value
 `title: Some Title`. The same is true for `type` such that `type: page` becomes
-`type=post`. The common attributes along with the entirety of the YAML file will
+`type=page`. The common attributes along with the entirety of the YAML file will
 be rolled up into a JSON attribute (as defined in the JBake documentation), and
 will be named `metadata`.
 
