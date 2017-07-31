@@ -9,10 +9,14 @@ class Utils {
     
     static final globals = new ConcurrentHashMap()
     
+    static def Map flatten(Map m, String separator = '.') { 
+        m.collectEntries { k, v ->  v instanceof Map ? flatten(v, separator).collectEntries { q, r ->  [(k + separator + q): r] } : [(k):v] } 
+    }
+
     //load the actual globals.yml file and setup for use by all config
     static def loadGlobals(File globalsFile) {
         if(globalsFile.exists()) {
-            def map = loadYaml(globalsFile)
+            def map = loadYaml(globalsFile)          
             globals.putAll(map)
         }
     }
