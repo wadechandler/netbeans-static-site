@@ -16,7 +16,7 @@ class Utils {
     //load the actual globals.yml file and setup for use by all config
     static def loadGlobals(File globalsFile) {
         if(globalsFile.exists()) {
-            def map = loadYaml(globalsFile)          
+            def map = loadYaml(globalsFile)
             globals.putAll(map)
         }
     }
