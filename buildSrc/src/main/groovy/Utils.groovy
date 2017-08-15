@@ -8,15 +8,49 @@ import org.yaml.snakeyaml.Yaml
 class Utils {
     
     static final globals = new ConcurrentHashMap()
-    
-    static def Map flatten(Map m, String separator = '.') { 
-        m.collectEntries { k, v ->  v instanceof Map ? flatten(v, separator).collectEntries { q, r ->  [(k + separator + q): r] } : [(k):v] } 
+
+    private static def Map _addFlattenedProperties(Map m,
+            String separator = '.',
+            String key = '',
+            Map receiver=[:],
+            boolean top=true) {
+        
+        m.each {
+            k, v ->
+            if(v instanceof Map) {
+                _addFlattenedProperties(v, separator, "${key?:''}${key?separator:''}${k}", receiver, false)
+            } else {
+                receiver["${key?:''}${key?separator:''}${k}"] = v
+            }
+        }
+        //if we're the top caller
+        if(top) {
+            receiver.putAll(m)
+        }
+        return receiver
     }
 
-    //load the actual globals.yml file and setup for use by all config
+    private static def Map addFlattendProperties(Map m) {
+        _addFlattenedProperties(m)
+    }
+
+    /**
+     * <p>Load the actual globals.yml file into the globals static map
+     * to allow it to be used by any and all jobs; beyond this point
+     * it is expected to be read-only and not edited. This will also
+     * map all structured keys into Java Property like concatenations
+     * such that if a yaml file contains a structure which would
+     * produce a map hierarchy like <code>object.another.somethingElse</code>
+     * the loaded map will contain an actual key "object.another.somethingElse"
+     * with the same value associated to it. This will only happen for final
+     * scalar values and not lists.</p>
+     *
+     * @param globalsFile the file to load
+     */
     static def loadGlobals(File globalsFile) {
         if(globalsFile.exists()) {
             def map = loadYaml(globalsFile)
+            map = addFlattendProperties(map)
             globals.putAll(map)
         }
     }
