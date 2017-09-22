@@ -2,9 +2,15 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>${content.title ? content.title : "NetBeans - Fits the pieces together"}</title>
+        <title>${content.metadata && content.metadata.title ? content.metadata.title : "NetBeans - Fits the pieces together"}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link href='//fonts.googleapis.com/css?family=Open+Sans:400,300,700,800,600' rel='stylesheet' type='text/css'>
+        <% if(content.metadata && content.metadata.keywords) {%>
+        <meta name="keywords" content="${content.metadata.keywords}">
+        <%}%>
+        <% if(content.metadata && content.metadata.description) {%>
+        <meta name="description" content="${content.metadata.description}">
+        <%}%>
     </head>
     <body>
         <header>
