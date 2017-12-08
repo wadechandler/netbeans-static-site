@@ -1,15 +1,49 @@
 # The Apache NetBeans Static Web Site Project
 
+## Introduction. Objectives.
+
+The NetBeans project has a huge website at https://www.netbeans.org. The site
+has grown over the years (see what it looked like in [2000](https://web.archive.org/web/20000815081507/http://netbeans.org),
+[2004](https://web.archive.org/web/20040929080548/http://www.netbeans.org:80/), [2008](https://web.archive.org/web/20080524000203/http://www.netbeans.org/),
+[2012](https://web.archive.org/web/20120627104128/http://netbeans.org/) or [2017](https://web.archive.org/web/20170601072549/https://netbeans.org/).
+
+Now that [NetBeans](https://github.com/apache/incubator-netbeans) is being
+donated by Oracle to the Apache Foundation, a new static web site must be
+created, trying to keep as much information as possible
+from the "old" website.
+
+This is ongoing effort is being performed in these two steps:
+
+1. Wade Chandler as made a great effort retrieving as much information as
+   possible from the old website. This is actually kept in _this project_,
+   available [here at github](https://github.com/wadechandler/netbeans-static-site).
+   The objective of this project is to clean up and organize the information,
+   creating an initial static web site.
+2. Once the initial static web site is polished it will be uploaded to a proper
+   final Apache repository.
+
+## About this repository
+
+As stated above, the objective of this repository is to construct an initial "Apache NetBeans Static Web Site"
+the Apache NetBeans project. This repository will accept pull requests from the rest of the NetBeans
+Team and NetBeans Contributors.
+
+The tasks to do are described in a specific [NetBeans Wiki Page](https://cwiki.apache.org/confluence/display/NETBEANS/New+NetBeans+Web+Site+Planning).
+
+## Tooling
+
 The Apache NetBeans Static Web Site is built using the following technologies:
 
 1. Gradle
-2. JBake
+2. [JBake](http://jbake.org/) see also [JBake documentation](http://jbake.org/docs/2.5.1/)
 3. SaSS
 4. Apache Groovy
 5. SnakeYaml
 6. Apache Tomcat
 
 ... and others
+
+You *do not need* to install any of these. The tools will be automatically installed.
 
 The project uses Gradle, Groovy, and JBake to create a template based statically compiled web site.
 The technologies used compliment each other. JBake performs the final steps of preparing the site.
