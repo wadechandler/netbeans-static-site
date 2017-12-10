@@ -3,7 +3,7 @@
 <main class='grid-container'>
 
     <div class="responsive-embed widescreen">
-        <iframe width="560" height="315" src='https://www.youtube.com/watch?v=Z4PBNSRp5g8' frameborder="0" allowfullscreen></iframe>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/Z4PBNSRp5g8" frameborder="0" gesture="media" allow="encrypted-media" allowfullscreen></iframe>
     </div>
 
     <div class="callout large">
