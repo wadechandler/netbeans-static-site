@@ -11,35 +11,30 @@
         <% if(content.metadata && content.metadata.description) {%>
         <meta name="description" content="${content.metadata.description}">
         <%}%>
+        <link href='${content.rootpath ? content.rootpath : "/"}css/foundation.min.css' rel='stylesheet' type='text/css'>
+        <link href='${content.rootpath ? content.rootpath : "/"}css/netbeans.css' rel='stylesheet' type='text/css'>
     </head>
     <body>
-        <header>
-            <div class="inner flex-container-small">
-                <nav>
-                    <div id="burger-menu">
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                    </div>
-                    <ul>
-                        <li><a class="nav-link" href="//netbeans.org/features/index.html">NetBeans IDE</a></li>
-                        <li><a class="nav-link" href="//netbeans.org/features/platform/index.html">NetBeans Platform</a></li>
-                        <li><a class="nav-link" href="//netbeans.org/enterprise/index.html">Enterprise</a></li>
-                        <li><a class="nav-link" href="//plugins.netbeans.org/PluginPortal/">Plugins</a></li>
-                        <li><a class="nav-link" href="//netbeans.org/kb/index.html">Docs & Support</a></li>
-                        <li><a class="nav-link" href="//netbeans.org/community/index.html">Community</a></li>
-                    </ul>
-                </nav>
+        <% /* Foundation 6 top bar. See https://foundation.zurb.com/sites/docs/top-bar.html */ %>
+        <div class="title-bar" data-responsive-toggle="responsive-menu" data-hide-for="medium">
+          <button class="menu-icon" type="button" data-toggle="responsive-menu"></button>
+          <div class="title-bar-title">NetBeans</div>
+        </div>
+        <div class="top-bar" id="responsive-menu">
+          <div class="top-bar-left">
+            <ul class="dropdown menu" data-dropdown-menu>
+              <li><a href="//netbeans.org/features/index.html">NetBeans IDE</a></li>
+              <li><a href="//netbeans.org/features/platform/index.html">NetBeans Platform</a></li>
+              <li><a href="//netbeans.org/enterprise/index.html">Enterprise</a></li>
+              <li><a href="//plugins.netbeans.org/PluginPortal/">Plugins</a></li>
+              <li><a href="//netbeans.org/kb/index.html">Docs & Support</a></li>
+              <li><a href="//netbeans.org/community/index.html">Community</a></li>
+            </ul>
+          </div>
+          <div class="top-bar-right">
+            <ul class="menu">
+              <li><a href="/"><img style='height: 24px; vertical-align: middle;' src="${content.rootpath ? content.rootpath : "/"}images/logo-2.svg" alt="logo" /> Apache NetBeans</a></li>
+            </ul>
+          </div>
+        </div>
 
-                <a href="/" id="logo">
-                    <img src="${content.rootpath ? content.rootpath : "/"}images/logo-2.svg" alt="logo" />
-                    <div>
-                        Apache <strong>Net</strong>Beans
-                    </div>
-                </a>
-            </div>
-            <form class="search-field">
-                <input type="text" />
-                <button class="search with-icon"></button>
-            </form>
-        </header>
