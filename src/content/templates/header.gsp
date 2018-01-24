@@ -27,7 +27,7 @@
                         <li><a class="nav-link" href="//netbeans.org/enterprise/index.html">Enterprise</a></li>
                         <li><a class="nav-link" href="//plugins.netbeans.org/PluginPortal/">Plugins</a></li>
                         <li><a class="nav-link" href="//netbeans.org/kb/index.html">Docs & Support</a></li>
-                        <li><a class="nav-link" href="//netbeans.org/community/index.html">Community</a></li>
+                        <li><a class="nav-link" href="../community/index.html">Community</a></li>
                     </ul>
                 </nav>
 
